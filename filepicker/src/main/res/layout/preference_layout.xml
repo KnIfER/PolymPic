@@ -1,0 +1,37 @@
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/webcontentlister"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    >
+	<androidx.appcompat.widget.Toolbar
+		xmlns:app="http://schemas.android.com/apk/res-auto"
+		android:id="@+id/toolbar"
+		android:layout_width="match_parent"
+		android:layout_height="45dp"
+		android:background="#000000ff"
+		app:contentInsetLeft="0dp"
+		app:contentInsetStart="0dp"
+		app:contentInsetStartWithNavigation="0dp"
+		>
+		<RelativeLayout
+			android:layout_width="match_parent"
+			android:layout_height="match_parent"
+			android:background="#00ff0000"
+			>
+			<TextView
+				android:id="@+id/text1"
+				android:layout_width="match_parent"
+				android:layout_height="match_parent"
+				android:gravity="center_vertical"
+				android:maxLines="2"
+				android:ellipsize="end"
+				android:textColor="#000"
+				android:textStyle="bold"
+				android:text="@string/settings"
+				/>
+		</RelativeLayout>
+	</androidx.appcompat.widget.Toolbar>
+
+</LinearLayout>

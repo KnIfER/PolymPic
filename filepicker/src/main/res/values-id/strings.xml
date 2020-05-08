@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="view">View</string>
+	<string name="settings">Pengaturan</string>
+
+	<string name="cancel">Batal</string>
+	<string name="yes">Ya</string>
+	<string name="no">Tidak</string>
+	<string name="copy_to">Salin ke</string>
+	<string name="move_to">Pindah ke</string>
+	<string name="playlist">Playlist</string>
+	<string name="open">Buka</string>
+	<string name="sortby">Urutkan berdasar</string>
+	<string name="thumbnail">Pratinjau</string>
+	<string name="about">Tentang</string>
+	<string name="refresh">Muat ulang</string>
+	<string name="lock">Kunci</string>
+	<string name="name">Nama</string>
+	<string name="last_modified">Terakhir diubah</string>
+	<string name="size">Ukuran</string>
+	<string name="large">Besar</string>
+	<string name="small">Kecil</string>
+	<string name="medium">Medium</string>
+	<string name="delete">Hapus</string>
+	<string name="share">Bagikan</string>
+	<string name="select_all">Pilih semua</string>
+	<string name="grid">Kotak</string>
+	<string name="list">Daftar</string>
+	<string name="file_type">Jenis berkas</string>
+	<string name="slideshow">Slideshow</string>
+	<string name="exit">Keluar</string>
+</resources>

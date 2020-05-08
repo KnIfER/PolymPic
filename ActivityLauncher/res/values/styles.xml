@@ -1,0 +1,62 @@
+<resources>
+
+    <!--
+        Base application theme, dependent on API level. This theme is replaced
+        by AppBaseTheme from res/values-vXX/styles.xml on newer devices.
+    -->
+    <style name="AppBaseTheme" parent="android:Theme.Translucent.NoTitleBar">
+        <!--
+            Theme customizations available in newer API levels can go in
+            res/values-vXX/styles.xml, while customizations related to
+            backward-compatibility can go here.
+        -->
+    </style>
+
+    <!-- Application theme. -->
+    <style name="AppTheme" parent="AppBaseTheme">
+        <!-- All customizations that are NOT specific to a particular API-level can go here. -->
+    </style>
+
+	<style name="AppThemeRaw" parent="Theme.AppCompat.Light.NoActionBar">
+		<!-- Customize your theme here. -->
+		<item name="colorAccent">@color/colorAccent</item>
+		<item name="colorPrimary">@color/colorPrimary</item>
+		<item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+		<!--item name="android:windowBackground">@android:color/transparent</item-->
+		<item name="windowActionBar">false</item>
+		<item name="windowNoTitle">true</item>
+		<item name="android:windowBackground">#fff</item>
+	</style>
+
+	<!-- Application theme. -->
+	<style name="ActivityTheme" parent="AppThemeRaw">
+		<!-- All customizations that are NOT specific to a particular API-level can go here. -->
+	</style>
+
+	<style name="scroll" parent="ActivityTheme">
+		<item name="colorPrimary">@android:color/white</item>
+	</style>
+
+	<style name="toolbarBaseTheme" parent="AppTheme">
+		<item name="android:textColorSecondary">@android:color/white</item>
+		<item name="colorAccent">@color/colorHeaderBlue</item>
+		<item name="actionOverflowMenuStyle">@style/OverflowMenuStyle</item>
+		<item name="android:actionButtonStyle">@style/ActionButtonStyle</item>
+		<item name="android:minWidth">0dip</item>
+		<!-- 	    <item name="contentInsetStartWithNavigation">0dip</item> -->
+	</style>
+
+	<style name="ActionButtonStyle" parent="@android:style/Widget.Holo.Light.ActionButton">
+		<item name="android:minWidth">@dimen/abarmin</item>
+		<item name="android:maxWidth">@dimen/abarmax</item>
+		<item name="android:paddingLeft">0dip</item>
+		<item name="android:paddingRight">0dip</item>
+	</style>
+
+	<style name="OverflowMenuStyle" parent="Base.Widget.AppCompat.ListView.Menu">
+		<item name="overlapAnchor">true</item>
+		<item name="android:dropDownVerticalOffset">0dip</item>
+		<item name="android:dropDownHorizontalOffset">15dip</item>
+		<item name="android:popupBackground">@drawable/popup_shadow</item>
+	</style>
+</resources>

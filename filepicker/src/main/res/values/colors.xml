@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#3F51B5</color>
+    <color name="textColorPrimary">#FFFFFF</color>
+    <color name="textColorSecondary">#FFFFFF</color>
+    <color name="colorHeader">@color/colorPrimary</color>
+    
+	<color name="bluecircle">#FF3F51F5</color>
+	<color name="bluecircleshallow">#aF3F51F5</color>
+	<color name="green3">#3300f0ff</color>
+	<color name="green4">#12B1B7</color>
+	<color name="darker_gray">#ff666666</color>
+</resources>

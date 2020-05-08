@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="view">Visão</string>
+	<string name="settings">Configurações</string>
+	<string name="cancel">Cancelar</string>
+	<string name="yes">Sim</string>
+	<string name="no">Não</string>
+	<string name="copy_to">Copiar para</string>
+	<string name="move_to">Mover para</string>
+	<string name="playlist">Listas de Reprodução</string>
+	<string name="open">Abrir</string>
+	<string name="sortby">Ordenar por</string>
+	<string name="show">Exposição</string>
+	<string name="thumbnail">Miniatura</string>
+	<string name="about">Sobre</string>
+	<string name="rename">Renomear</string>
+	<string name="refresh">Atualizar</string>
+	<string name="lock">Bloquear</string>
+	<string name="name">Nome</string>
+	<string name="last_modified">Data de modificação</string>
+	<string name="size">Tamanho</string>
+	<string name="large">Grande</string>
+	<string name="small">Pequeno</string>
+	<string name="medium">Médio</string>
+	<string name="delete">Excluir</string>
+	<string name="share">Compartilhar</string>
+	<string name="select_all">Selecionar tudo</string>
+	<string name="grid">Grade</string>
+	<string name="list">Lista</string>
+	<string name="file_type">Tipo de arquivo</string>
+	<string name="slideshow">Apresentação</string>
+</resources>

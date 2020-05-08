@@ -1,0 +1,80 @@
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/dialog"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_marginLeft="18dp"
+    android:layout_marginRight="18dp"
+    android:background="@android:color/white">
+    <SeekBar
+        android:id="@+id/seekbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/resultN"
+        android:max="20"
+        android:progress="1"
+        />
+
+	<TextView
+        android:id="@+id/label"
+	    android:padding="4dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+	    />
+    
+    <LinearLayout
+    android:orientation="horizontal"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center_horizontal"
+    android:layout_alignParentBottom="true"
+    style="?android:attr/background"
+    android:id="@+id/linearLayout">
+
+    <Button
+        android:layout_weight="1"
+        style="?android:attr/buttonStyle"
+        android:background="?android:selectableItemBackground"
+        android:text="@string/cancel"
+        android:textStyle="bold"
+        android:id="@+id/btn1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/colorHeader"
+        android:layout_margin="8dp"
+        android:padding="4dp"/>
+    <Button
+        android:layout_weight="1"
+        style="?android:attr/buttonStyle"
+        android:background="?android:selectableItemBackground"
+        android:text="@string/no"
+        android:id="@+id/btn2"
+        android:textStyle="bold"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/colorAccent"
+        android:layout_margin="8dp"
+        android:padding="4dp"/>
+
+    <Button
+        android:layout_weight="1"
+        style="?android:attr/buttonStyle"
+        android:background="?android:selectableItemBackground"
+        android:text="@string/yes"
+        android:textStyle="bold"
+        android:id="@+id/btn3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/colorAccent"
+        android:layout_margin="8dp"
+        android:padding="4dp"/>
+
+
+</LinearLayout>
+
+
+</LinearLayout>
+
+
+

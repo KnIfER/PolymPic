@@ -1,0 +1,47 @@
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android" 
+	android:layout_width="match_parent" 
+	android:layout_height="wrap_content" 
+	android:gravity="center"
+	android:background="@drawable/popup_shadow_s"
+	android:minHeight="49dp"
+    >
+    
+<ImageView
+	android:id="@+id/toolbar_action1" 
+	android:layout_width="wrap_content" 
+	android:layout_height="wrap_content"
+	android:clickable="true"
+	android:src="@mipmap/ic_type_file"
+	android:layout_gravity="center_vertical|left"
+	android:layout_marginRight="2dp"
+    />
+    
+<EditText 
+	android:id="@+id/edt_input" 
+	android:layout_width="match_parent" 
+	android:layout_height="match_parent" 
+	android:layout_marginRight="38dp" 
+	android:layout_marginLeft="30dp" 
+	
+	android:layout_gravity="center_vertical|left"
+	android:gravity="center"
+	android:textColor="@android:color/black" 
+	android:textSize="18sp"
+    android:imeOptions="actionDone"
+    android:background="@null"
+    android:singleLine="true"
+
+    android:hint=""
+/> 
+<ImageView
+	android:id="@+id/done" 
+	android:layout_width="wrap_content" 
+	android:layout_height="wrap_content"
+	android:clickable="true"
+	android:src="@mipmap/yeah"
+	android:layout_gravity="center_vertical|right"
+	android:layout_marginRight="2dp"
+    />
+    
+</FrameLayout>

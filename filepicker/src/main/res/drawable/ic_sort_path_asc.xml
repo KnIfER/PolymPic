@@ -1,0 +1,19 @@
+<vector android:height="24dp"
+    android:viewportHeight="24.0" android:viewportWidth="24.0"
+    android:width="24dp" xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--<path android:fillColor="#ff0" android:pathData="M0,0L0,24 24,24 24,0 0,0"/>-->
+
+    <path android:fillColor="#fff" android:pathData="M7.6,16h3.6v-1.2L7.6,14.8v1.2zM7.6,8.8v1.2h10.8L18.4,8.8L7.6,8.8zM7.6,13h7.2v-1.2L7.6,11.8v1.2z
+"/>
+    <!--<path android:fillColor="#fff" android:pathData="M8,16h2.4L10.4,6.4h-2.4v9.6zM4.4,16h2.4v-4.8L4.4,11.2v4.8zM11.6,9.4v6.6h2.4L14,9.4h-2.4z-->
+    <!--"/>-->
+    <path android:fillColor="#FFF" android:pathData="M18.94,18.66 l-2.36,-1 l-2.36,1 l2.36,-4.36z  "/>
+
+
+    <!--float scaler = .6f;-->
+    <!--float scalerY = scaler;-->
+    <!--float transX=1f;-->
+    <!--float transY=.4f;-->
+
+</vector>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">PolymPic</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+	<string name="tools" />
+
+
+	<string name="stg_require">Please grant storage permission.</string>
+	<string name="stg_statement">This app cannot work without storage permission.</string>
+	<string name="stg_grantnow">Grant now</string>
+	<string name="trialin">Trial…… #</string>
+	<string name="stgerr_fail">Sorry, but cannot use this app on you device.</string>
+</resources>

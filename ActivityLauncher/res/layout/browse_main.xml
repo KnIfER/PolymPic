@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+	android:id="@+id/toptopP"
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:splitview="http://schemas.android.com/apk/res-auto"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	android:background="#fcfcfc"
+	android:orientation="vertical"
+	android:fitsSystemWindows="true"
+	>
+	<WebView
+		android:id="@+id/webview"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		/>
+	<Toolbar
+		android:id="@+id/bottombar"
+		android:layout_width="match_parent"
+		android:layout_height="50dp"
+		android:orientation="horizontal"
+		android:background="@drawable/toolbardrawable"
+		android:layout_gravity="bottom"
+		>
+
+	</Toolbar>
+</FrameLayout>

@@ -1,0 +1,15 @@
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
+    <style name="MaterialCheckbox">
+        <item name="android:layout_width">@dimen/checkbox_dimens_raw</item>
+        <item name="android:layout_height">@dimen/checkbox_dimens_raw</item>
+        <item name="android:layout_gravity">center</item>
+        <item name="android:layout_marginRight">@dimen/checkbox_margin</item>
+        <item name="android:background">?android:attr/selectableItemBackgroundBorderless</item>
+    </style>
+    <style name="MaterialCheckbox2" parent="MaterialCheckbox">
+        <item name="android:layout_width">@dimen/checkbox_dimens</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:layout_gravity">center_vertical</item>
+        <item name="android:paddingRight">@dimen/checkbox_margin</item>
+    </style>
+</resources>

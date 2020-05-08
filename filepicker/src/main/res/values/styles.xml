@@ -1,0 +1,77 @@
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <style name="UrlTextStyle" >
+        <item name="colorAccent">@android:color/white</item>
+    </style>
+
+    <style name="NumberKicker">
+        <item name="internalLayout">@layout/number_picker_material</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:fadingEdge">vertical</item>
+        <item name="android:fadingEdgeLength">50dip</item>
+        <item name="solidColor">#00000000</item>
+        <item name="selectionDivider">@drawable/number_picker_divider_material</item>
+        <item name="selectionDividerHeight">2dp</item>
+        <item name="selectionDividersDistance">48dp</item>
+        <item name="internalMinWidth">64dp</item>
+        <item name="internalMaxHeight">180dp</item>
+    </style>
+    <style name="NumberKicker_l" parent="NumberKicker">
+        <item name="internalLayout">@layout/number_picker_material_l</item>
+        <item name="solidColor">#fff</item>
+        <item name="selectionDivider">@drawable/number_picker_divider_material_l</item>
+    </style>
+
+    <style name="CheckBox">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:paddingTop">4dp</item>
+        <item name="android:paddingBottom">4dp</item>
+        <item name="android:textColor">#fff</item>
+        <item name="android:tint">#fff</item>
+    </style>
+
+    <style name="GridMode">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:gravity">center_horizontal</item>
+        <item name="android:textColor">#fff</item>
+        <item name="android:background">@drawable/listviewselector4</item>
+        <item name="android:paddingTop">5dp</item>
+        <item name="android:paddingBottom">5dp</item>
+    </style>
+    <style name="GridMode_l" parent="GridMode">
+        <item name="android:background">@drawable/listviewselector5</item>
+    </style>
+
+    <style name="SortMode">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:background">@drawable/listviewselector4</item>
+    </style>
+    <style name="SortMode_l" parent="SortMode">
+        <item name="android:background">@drawable/listviewselector5</item>
+    </style>
+    <style name="MaterialCheckbox">
+        <item name="android:layout_width">@dimen/checkbox_dimens_raw</item>
+        <item name="android:layout_height">@dimen/checkbox_dimens_raw</item>
+        <item name="android:layout_gravity">center</item>
+        <item name="android:layout_marginRight">@dimen/checkbox_margin</item>
+        <!--<item name="android:background">@drawable/abc_action_bar_item_background_material</item>-->
+    </style>
+    <style name="MaterialCheckbox2" parent="MaterialCheckbox">
+        <item name="android:layout_width">@dimen/checkbox_dimens</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:layout_gravity">center_vertical</item>
+        <item name="android:paddingRight">@dimen/checkbox_margin</item>
+    </style>
+
+	<style name="fp_dialog_animation" parent="android:Animation">
+		<item name="android:windowEnterAnimation">@anim/fp_dialog_enter</item>
+		<item name="android:windowExitAnimation">@anim/fp_dialog_exit</item>
+	</style>
+
+</resources>

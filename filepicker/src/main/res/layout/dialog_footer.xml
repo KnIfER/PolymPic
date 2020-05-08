@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center_horizontal"
+    android:layout_alignParentBottom="true"
+    > 
+<LinearLayout
+    android:id="@+id/bottombar"
+    android:orientation="horizontal"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center_horizontal"
+    style="?android:attr/background"
+    >
+
+    <Button
+        android:layout_weight="1"
+        style="?android:attr/buttonStyle"
+        android:background="@null"
+        android:text="@string/favorite"
+        android:textStyle="bold"
+        android:id="@+id/favorite"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/colorAccent"
+        android:layout_margin="8dp"
+        android:padding="4dp"/>
+
+    <Button
+        android:layout_weight="1"
+        style="?android:attr/buttonStyle"
+        android:background="@null"
+        android:text="@string/cancel"
+        android:id="@+id/cancel"
+        android:textStyle="bold"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/colorAccent"
+        android:layout_margin="8dp"
+        android:padding="4dp"/>
+
+    <Button
+        android:id="@+id/select"
+        android:layout_weight="1"
+        style="?android:attr/buttonStyle"
+        android:background="@null"
+        android:text="@string/fp_select"
+        android:textStyle="bold"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/colorHeader"
+        android:layout_margin="8dp"
+        android:padding="4dp"/>
+</LinearLayout>
+
+      
+      <LinearLayout
+        android:id="@+id/bottombar2"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:orientation="horizontal"
+        android:background="@color/colorPrimary"
+        android:gravity="center_vertical|fill_horizontal"
+        android:paddingBottom="5dp"
+        >
+            <android.widget.ImageView
+                android:id="@+id/browser_widget7"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+	            android:background="@drawable/surrtrip1"
+                android:clickable="true"
+                android:padding="0dp"
+                android:src="@drawable/chevron_left"
+                android:text="asd"
+                />
+            <android.widget.ImageView
+                android:id="@+id/browser_widget8"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+	            android:background="@drawable/surrtrip1"
+                android:clickable="true"
+                android:padding="0dp"
+                android:src="@drawable/chevron_right"
+                />
+            <android.widget.ImageView
+                android:id="@+id/browser_widget10"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+	            android:background="@drawable/surrtrip1"
+                android:clickable="true"
+                android:padding="8dp"
+                android:src="@drawable/ic_sync_black_24dp"
+                />
+
+				<android.widget.ImageView
+                android:id="@+id/browser_widget11"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="match_parent"
+	            android:background="@drawable/surrtrip1"
+                android:clickable="true"
+                android:padding="6dp"
+                android:src="@drawable/ic_view_comfy_black_24dp"
+                />
+
+
+            <android.widget.ImageView
+                android:id="@+id/browser_widget12"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+	            android:background="@drawable/surrtrip1"
+                android:clickable="true"
+                android:padding="8dp"
+                android:src="@drawable/abc_ic_menu_moreoverflow_mtrl_alpha"
+                />
+
+    </LinearLayout>
+
+</LinearLayout>

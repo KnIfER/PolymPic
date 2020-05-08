@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:UIStyles="http://schemas.android.com/apk/res-auto"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_height="wrap_content"
+    android:layout_width="fill_parent"
+    android:orientation="horizontal"
+    android:gravity="start"
+    >
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:gravity="center"
+        android:text="执行"
+        android:textSize="14sp"
+        android:singleLine="true"
+        android:textColor="@android:color/white"
+        android:shadowColor="#000000"
+        android:shadowRadius="5"
+        android:paddingStart="9dp"
+        />
+
+    <TextView
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:gravity="center"
+        android:text="菜单项(单击禁/启用)"
+        android:textSize="14sp"
+        android:singleLine="true"
+        android:textColor="@android:color/white"
+        android:shadowColor="#000000"
+        android:shadowRadius="5"
+        android:paddingStart="9dp"
+        />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:gravity="center"
+        android:text="快捷图标"
+        android:textSize="14sp"
+        android:singleLine="true"
+        android:textColor="@android:color/white"
+        android:shadowColor="#000000"
+        android:shadowRadius="5"
+        android:paddingStart="9dp"
+        />
+</LinearLayout>

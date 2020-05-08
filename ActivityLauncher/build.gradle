@@ -1,0 +1,97 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion ver_compileSdkVersion as int
+    buildToolsVersion ver_buildToolsVersion
+
+    sourceSets {
+        main {
+            manifest.srcFile 'AndroidManifest_as.xml'
+            java.srcDirs = ['src']
+            resources.srcDirs = ['src']
+            aidl.srcDirs = ['src']
+            renderscript.srcDirs = ['src']
+            res.srcDirs = ['res']
+            assets.srcDirs = ['assets']
+            jniLibs.srcDirs = ['libs']
+        }
+        androidTest.setRoot('tests')
+    }
+
+    defaultConfig {
+        applicationId "com.knaiver.polymer"
+        minSdkVersion ver_minsdk
+        targetSdkVersion ver_aimsdk
+        vectorDrawables.generatedDensities = ['hdpi']
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    //signingConfigs {
+    //  release {
+    //    keyAlias 'xxx'
+    //    keyPassword 'xxx'
+    //    storeFile file('/Users/xxx/work/keystore/xxx.key')
+    //    storePassword 'xxx'
+    //  }
+    //}
+
+    lintOptions {
+        abortOnError false
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            useProguard = false
+            //proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard.cfg'
+            //signingConfig signingConfigs.release
+        }
+    }
+
+    lintOptions {
+        abortOnError false
+    }
+
+}
+
+dependencies {
+    api 'com.alibaba:fastjson:1.2.62'
+    api project(':glide')
+    //api libs_glide
+    //annotationProcessor libs_glide
+    compileOnly project(':multiline')
+    annotationProcessor project(':multiline')
+    testCompileOnly project(':multiline')
+    testAnnotationProcessor project(':multiline')
+    api(project(':filepicker'))
+
+    if (use_compat_official == '1') {
+        api(libs_compat)
+    } else {
+        implementation (project(':AxtAppCompat'))
+        implementation(libs_appres)
+        configurations {
+            //all*.exclude group: 'androidx.appcompat'
+        }
+    }
+    if (use_mat_official == '1') {
+        api(libs_mat) {
+            exclude module: "appcompat"
+            exclude module: "appcompat-resources"
+        }
+    } else {
+        implementation(project(':AweDesigner'))
+    }
+    if (use_prefer_official == '1') {
+        api(libs_prefer) {
+            exclude module: "appcompat"
+            exclude module: "appcompat-resources"
+        }
+    } else {
+        api(project(':AppPreference'))
+    }
+    //api 'javax.xml.bind:jaxb-api:2.2.9'
+    //api fileTree(dir: 'libs', include: ['*.jar'])
+}

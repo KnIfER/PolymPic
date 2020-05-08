@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto">
+	<PreferenceCategory
+		android:key="category_program"
+		android:title="@string/thumbnail"
+		app:icon="@drawable/drawer_menu_icon_setting"
+		>
+		<com.knziha.filepicker.settings.TwinkleSwitchPreference
+			android:defaultValue="false"
+			android:key="use_ffmpeg_for_thumbs"
+			android:persistent="false"
+			android:title="使用FFmpeg生成缩略图"
+			android:summary="兼容性选项"
+			/>
+
+		<com.knziha.filepicker.settings.TwinkleSwitchPreference
+			android:defaultValue="true"
+			android:key="auto_delete_thumbs"
+			android:persistent="false"
+			android:title="自动删除缩略图缓存"
+			android:summary="遵循Lru规则删除最少使用的缩略图" />
+
+		<com.knziha.filepicker.settings.IntPreference
+			android:defaultValue="256"
+			android:key="cache_s"
+			android:persistent="true"
+			android:title="缩略图缓存池大小"
+			android:summary=""
+			suffix=" mb"
+			/>
+
+		<Preference
+			android:key="clear_cache"
+			android:persistent="false"
+			android:title="清除缩略图缓存"
+			/>
+
+		<com.knziha.filepicker.settings.FilePickerPreference
+			android:defaultValue="@null"
+			android:key="cache_p"
+			android:persistent="true"
+			android:title="缩略图缓存路径"
+			app:selection_type="dir_select"
+			app:selection_mode="single_mode"
+			/>
+	</PreferenceCategory>
+</PreferenceScreen>

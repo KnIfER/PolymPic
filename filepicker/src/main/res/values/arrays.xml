@@ -1,0 +1,51 @@
+<resources>
+    
+    <string-array name="internal_favor_dirs">
+    </string-array>
+    <string-array name="stellarium" />
+    <integer-array name="stellariumblow" />
+
+
+    <string-array name="menu_common" >
+        <item>@string/init_favorite</item>
+        <item>@string/go_to</item>
+        <item>@string/settings</item>
+        <item>@string/lock</item>
+        <item>@string/slideshow</item>
+        <item>@string/property_f</item>
+    </string-array>
+
+<!--    <drawable-array name="icons_common" >
+        <item>@drawable/favorcover</item>
+        &lt;!&ndash;<item>显示缩略图</item>&ndash;&gt;
+        <item>@drawable/fp_lock</item>
+        <item>@drawable/info</item>
+    </drawable-array>-->
+
+    <string-array name="menu_selecting" >
+        <item>@string/view</item>
+        <item>@string/break_selection</item>
+        <item>@string/go_to</item>
+        <item>@string/lock</item>
+        <item>@string/property</item>
+        <item>@string/send_dot</item>
+        <item>@string/share_dot</item>
+        <item>@string/move_to_folder</item>
+        <item>@string/copy_to_folder</item>
+    </string-array>
+
+<!--
+    <integer-array name="icons_selecting" >
+        <item>@drawable/ic_view_comfy_black_24dp</item>
+        &lt;!&ndash;<item>显示缩略图</item>&ndash;&gt;
+        <item>@drawable/fp_move</item>
+        <item>@drawable/fp_lock</item>
+        <item>@drawable/info</item>
+        <item>@drawable/ic_send_black_24dp</item>
+        <item>@drawable/ic_share_black_24dp</item>
+        <item>@drawable/fp_move</item>
+        <item>@drawable/fp_copy</item>
+    </integer-array>
+-->
+
+</resources>

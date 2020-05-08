@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="FilePickerPreference">
+        <attr name="selection_mode" format="enum">
+            <enum name="single_mode" value="0"/>
+            <enum name="multi_mode" value="1"/>
+        </attr>
+        <attr name="selection_type" format="enum">
+            <enum name="file_select" value="0"/>
+            <enum name="dir_select" value="1"/>
+            <enum name="file_dir_select" value="2"/>
+        </attr>
+
+        <attr
+            name="root_dir"
+            format="string"/>
+
+        <attr
+            name="error_dir"
+            format="string"/>
+
+        <attr
+            name="offset_dir"
+            format="string"/>
+
+        <attr
+            name="extensions"
+            format="string"/>
+
+        <attr
+            name="title_text"
+            format="string"/>
+
+    </declare-styleable>
+
+    <declare-styleable name="NumberKicker">
+        <attr name="solidColor" format="color|reference" />
+        <attr name="selectionDivider" format="reference" />
+        <attr name="selectionDividerHeight" format="dimension" />
+        <attr name="selectionDividersDistance" format="dimension" />
+        <attr name="internalMinHeight" format="dimension" />
+        <attr name="internalMaxHeight" format="dimension" />
+        <attr name="internalMinWidth" format="dimension" />
+        <attr name="internalMaxWidth" format="dimension" />
+        <attr name="internalLayout" format="reference" />
+        <attr name="virtualButtonPressedDrawable" format="reference"/>
+        <attr name="hideWheelUntilFocused" format="boolean"/>
+    </declare-styleable>
+    <attr name="numberPickerStyle" format="reference" />
+
+    <declare-styleable name="CheckBox_Sample">
+        <attr name="size" format="dimension" />
+        <attr name="statecount" format="integer" />
+        <attr name="color_border" format="color" />
+        <attr name="color_background" format="color" />
+    </declare-styleable>
+
+
+
+
+    <!--<declare-styleable name="constants">-->
+    <!--<attr name="_0" format="integer" />-->
+    <!--</declare-styleable>-->
+
+    <declare-styleable name="single">
+        <attr name="s0" format="reference|color" />
+    </declare-styleable>
+
+    <declare-styleable name="dual">
+        <attr name="d0" format="integer" />
+        <attr name="d1" format="integer" />
+    </declare-styleable>
+
+    <declare-styleable name="triple">
+        <attr name="t1" format="integer" />
+        <attr name="t2" format="integer" />
+        <attr name="t3" format="integer" />
+    </declare-styleable>
+
+
+    <declare-styleable name="UIStyles">
+        <attr name="dim0" format="dimension"/>
+        <attr name="dim1" format="dimension"/>
+    </declare-styleable>
+</resources>

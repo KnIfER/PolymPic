@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout 
+	        xmlns:android="http://schemas.android.com/apk/res/android"
+	        android:id="@+id/lvitems"
+	        android:layout_height="match_parent"
+	        android:layout_width="wrap_content"
+			android:background="@drawable/abc_action_bar_item_background_material"
+	        android:layout_marginLeft="1dp"
+	        android:layout_marginRight="1dp"
+	        >
+    
+	<TextView
+	        android:id="@android:id/text1"
+	        android:layout_height="match_parent"
+	        android:layout_width="wrap_content"
+	        android:text="分组1"
+	        android:textSize="16sp"
+	        android:textColor="#f8efefef"
+	        android:background="@drawable/topbmark"
+	        android:padding="2dp"
+	        android:gravity="center"
+	        />
+    <ImageView 
+        android:id="@+id/close"
+        android:layout_width="22dp"
+        android:layout_height="22dp"
+        android:src="@drawable/cha"
+        android:layout_margin="2dp"
+        android:layout_marginTop="4dp"
+        />
+</FrameLayout>

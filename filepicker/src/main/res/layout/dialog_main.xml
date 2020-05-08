@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:id="@+id/root"
+    >
+
+    <LinearLayout
+        android:id="@+id/header"
+	    android:background="@color/colorHeader"
+	    android:orientation="horizontal"
+	    android:layout_width="match_parent"
+	    android:layout_height="?android:listPreferredItemHeightSmall"
+	    android:clickable="true"
+        >
+
+ 
+	        
+	    <ImageView
+	        android:id="@+id/toolbar_action1" 
+	        android:paddingLeft="@dimen/toolbar_image_margin"
+	        android:layout_width="wrap_content"
+	        android:layout_height="match_parent"
+	        android:src="@mipmap/ic_directory_parent"
+	        android:scaleType="centerInside"
+	        android:background="@drawable/abc_action_bar_item_background_material"
+	        />
+	
+	 			
+            <TextView
+                android:id="@+id/title"
+                android:paddingLeft="16dp"
+                android:paddingStart="16dp"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="match_parent"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                style="?android:attr/textViewStyle"
+                android:textColor="@color/textColorPrimary"
+                android:gravity="left|center"
+                />
+	
+				
+	    	<ImageView
+		        android:id="@+id/etSearch"
+		        android:layout_width="@dimen/checkbox_dimens_raw"
+		        android:layout_height="@dimen/checkbox_dimens_raw"
+		        android:layout_gravity="center"
+		        android:layout_marginRight="@dimen/checkbox_margin"
+		        android:src="@drawable/search_toolbar"
+		        android:padding="2dp"
+		    	android:clickable="true"
+	        	android:background="@drawable/abc_action_bar_item_background_material"
+	        />
+			    
+		    <ImageView
+		        android:id="@+id/new_folder"
+		        android:layout_width="@dimen/checkbox_dimens_raw"
+		        android:layout_height="@dimen/checkbox_dimens_raw"
+		        android:layout_gravity="center"
+		        android:layout_marginRight="@dimen/checkbox_margin"
+		        android:src="@mipmap/ic_new_folder"
+		    	android:clickable="true"
+	            android:background="@drawable/abc_action_bar_item_background_material"
+	        />
+
+		    <ImageView
+		        android:id="@+id/inter_sel"
+		        android:layout_width="@dimen/checkbox_dimens_raw"
+		        android:layout_height="@dimen/checkbox_dimens_raw"
+		        android:layout_gravity="center"
+		        android:layout_marginRight="@dimen/checkbox_margin"
+		        android:src="@mipmap/intervalsele"
+		    	android:clickable="true"
+	            android:background="@drawable/abc_action_bar_item_background_material"
+	        />
+	       <com.knziha.filepicker.widget.MaterialCheckbox
+		        android:id="@+id/toggle_all"
+                style="@style/MaterialCheckbox"
+	        />
+
+        <!--android:background="?android:attr/selectableItemBackgroundBorderless"-->
+</LinearLayout>
+
+
+  	        <com.knziha.filepicker.widget.TextViewmy
+	            android:id="@+id/dir_path"
+	            android:layout_width="match_parent"
+	            android:layout_height="wrap_content"
+	            android:paddingLeft="16dp"
+	            android:theme="@style/UrlTextStyle"
+	            android:textColor="@color/textColorSecondary"
+	            android:background="@color/colorHeader"
+       			android:layout_below="@+id/header"
+       			android:maxLines="6"
+				android:gravity="bottom"
+        	/> 
+        	
+    	        
+    <ImageView
+        android:layout_marginLeft= "24dp"
+        android:layout_marginTop="21dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_star_black_24dp"
+        android:scaleType="centerInside"
+        android:background="@null"
+        android:foreground="@drawable/ic_stars_black_24dp"
+        android:id="@+id/star" /><!-->哟哟哟我真牛D！<-->
+        
+ 
+	    
+
+    <include
+        layout="@layout/dialog_footer"
+        android:id="@+id/footer" />
+	    
+
+    <com.knziha.filepicker.view.GridViewmy
+        android:id="@+id/fileList"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+   		style="?android:attr/background"
+        android:foreground="@drawable/bottom_shadow"
+        android:layout_above="@+id/footer"
+        android:dividerHeight="1dp"
+        android:layout_below="@id/dir_path"
+   		android:layout_gravity="center_horizontal"
+        tools:listitem="@layout/dialog_file_list_item"
+		android:numColumns="1"
+		android:layoutMode="opticalBounds"
+        />
+
+    
+    
+      <com.knziha.filepicker.widget.RecyclerViewmy
+        android:id="@+id/favorList"
+        android:layout_marginLeft="46dp"
+        android:layout_marginRight="48dp"
+        android:layout_marginTop="6dp"
+        android:paddingTop="0dp"
+        android:paddingBottom="2dp"
+        android:paddingLeft="2dp"
+        android:layout_width="match_parent"
+	    android:layout_height="43dp"
+        android:layout_gravity="center_horizontal"
+        tools:listitem="@layout/favor_list_item"
+        android:divider="#889999"
+        android:dividerHeight="1dp"
+        android:background="#1fffffff"
+        />
+    
+    
+</RelativeLayout>

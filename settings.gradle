@@ -1,0 +1,21 @@
+include ':ActivityLauncher'
+
+include ':AxtAppCompat'
+include ':AweDesigner'
+include ':AppPreference'
+
+include ':viewpager'
+
+
+include ':filepicker'
+include ':GestureView'
+
+include ':multiline'
+
+
+include ':glide'
+include ':gif_decoder'
+include ':gif_encoder'
+include ':annotation'
+include ':annotation:compiler'
+include ':disklrucache'

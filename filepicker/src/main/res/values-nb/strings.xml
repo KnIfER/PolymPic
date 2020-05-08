@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="view">View</string>
+	<string name="settings">Innstillinger</string>
+	<string name="cancel">Avbryt</string>
+	<string name="yes">Ja</string>
+	<string name="no">Nei</string>
+	<string name="copy_to">Kopier til</string>
+	<string name="move_to">Flytt til</string>
+	<string name="playlist">Spillelister</string>
+	<string name="open">Åpne</string>
+	<string name="sortby">Sortér etter</string>
+	<string name="show">Vis meg</string>
+	<string name="thumbnail">Miniatyrbilde</string>
+	<string name="about">Om</string>
+	<string name="rename">Gi nytt navn</string>
+	<string name="refresh">Oppdater</string>
+	<string name="lock">Lås</string>
+	<string name="name">Navn</string>
+	<string name="last_modified">Sist endret</string>
+	<string name="size">Størrelse</string>
+	<string name="large">Stor</string>
+	<string name="small">Liten</string>
+	<string name="medium">Middels</string>
+	<string name="delete">Slett</string>
+	<string name="share">Del</string>
+	<string name="select_all">Velg alle</string>
+	<string name="grid">Rutenett</string>
+	<string name="list">Liste</string>
+	<string name="file_type">Filtype</string>
+	<string name="slideshow">Lysbildeshow</string>
+</resources>

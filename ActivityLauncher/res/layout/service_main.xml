@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.KnaIvER.polymer.widgets.SplitView
+	android:id="@+id/toptopP"
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:splitview="http://schemas.android.com/apk/res-auto"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	android:background="#fcfcfc"
+	android:orientation="vertical"
+
+	splitview:primaryContent="@+id/toptop"
+	splitview:handle="@+id/bottombar"
+	splitview:secondaryContent="@+id/bottombar"
+	splitview:CompensationTop="80dp"
+	android:fitsSystemWindows="true"
+	>
+	<com.KnaIvER.polymer.widgets.WindowHacker
+		android:id="@+id/toptop"
+		android:layout_width="match_parent"
+		android:layout_height="0dp"
+		android:layout_weight="1"
+		splitview:handle="@+id/toptopP"
+		android:paddingTop="10dp"
+		>
+		<Button
+				style="?android:attr/buttonBarButtonStyle"
+				android:layout_height="wrap_content"
+				android:layout_width="wrap_content"
+				android:text="Open"
+				android:layout_alignParentLeft="true"
+				android:textColor="#f00"
+				android:id="@+id/open_btn"/>
+		<Button
+				style="?android:attr/buttonBarButtonStyle"
+				android:layout_height="wrap_content"
+				android:layout_width="wrap_content"
+				android:text="Exit"
+				android:layout_alignParentRight="true"
+				android:textColor="#00f"
+				android:id="@+id/exit_btn"/>
+
+		<ImageView
+			android:id="@+id/logo"
+			android:layout_width="90dp"
+			android:layout_height="90dp"
+			android:background="@drawable/polymer"
+			android:layout_above="@+id/etSearch"
+			android:layout_centerInParent="true"
+			android:layout_margin="10dp"
+			/>
+		<EditText
+			android:id="@+id/etSearch"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:maxHeight="500dp"
+			android:minHeight="@dimen/_40_"
+			android:background="@drawable/corner"
+			android:layout_centerInParent="true"
+			android:layout_marginHorizontal="25dp"
+			android:paddingStart="20dp"
+			/>
+	</com.KnaIvER.polymer.widgets.WindowHacker>
+
+	<Toolbar
+		android:id="@+id/bottombar"
+		android:layout_width="match_parent"
+		android:layout_height="50dp"
+		android:orientation="horizontal"
+		android:background="@drawable/toolbardrawable"
+		>
+
+	</Toolbar>
+</com.KnaIvER.polymer.widgets.SplitView>
