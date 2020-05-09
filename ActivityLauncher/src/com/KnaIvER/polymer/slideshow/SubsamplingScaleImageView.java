@@ -164,9 +164,9 @@ public class SubsamplingScaleImageView extends View {
 	private TileMap[] tileMipMaps;
 	
 	// Overlay tile boundaries and other info
-	private boolean SSVD=true;//debug
+	private boolean SSVD=false;//debug
 	
-	private boolean SSVDF=true;//debug
+	private boolean SSVDF=false;//debug
 	
 	private boolean SSVDF2=false;//debug
 	
@@ -184,10 +184,6 @@ public class SubsamplingScaleImageView extends View {
 	
 	// Pan limiting style
 	private int panLimit = PAN_LIMIT_INSIDE;//PAN_LIMIT_INSIDE
-	
-	// Minimum scale type
-	private int minimumScaleType = SCALE_TYPE_CENTER_INSIDE;
-	
 	// overrides for the dimensions of the generated tiles
 	public static final int TILE_SIZE_AUTO = Integer.MAX_VALUE;
 	private int maxTileWidth = TILE_SIZE_AUTO;
@@ -204,11 +200,6 @@ public class SubsamplingScaleImageView extends View {
 	private boolean zoomEnabled = true;
 	private boolean rotationEnabled = true;
 	private boolean quickScaleEnabled = true;
-	
-	// Double tap zoom behaviour
-	private float doubleTapZoomScale = 1F;
-	private int doubleTapZoomStyle = ZOOM_FOCUS_FIXED;
-	private int doubleTapZoomDuration = 250;
 	
 	// Current scale and scale at start of zoom
 	public float scale;
@@ -941,7 +932,7 @@ public class SubsamplingScaleImageView extends View {
 	}
 	
 	HashSet<Integer> touch_partisheet = new HashSet<>();
-	boolean is_classical_pan_shrinking=true;
+	boolean is_classical_pan_shrinking=false;
 	PointF tmpCenter = new PointF();
 	private boolean onTouchEventInternal(@NonNull MotionEvent event) {
 		int touchCount = event.getPointerCount();
@@ -1477,89 +1468,66 @@ public class SubsamplingScaleImageView extends View {
 				//final float vX = (float) (velocityX * cos - velocityY * -sin);
 				//final float vY = (float) (velocityX * -sin + velocityY * cos);
 				//touch_partisheet.remove(touch_id);
-				if(is_classical_pan_shrinking) {
-					//if(touch_partisheet.contains(touch_id))
-					//	touch_partisheet.clear();
-				}else {
-					//touch_partisheet.remove(touch_id);
-				}
+				//if(is_classical_pan_shrinking) {
+				//	if(touch_partisheet.contains(touch_id))
+				//		touch_partisheet.clear();
+				//}else {
+				//	touch_partisheet.remove(touch_id);
+				//}
 				
 				touch_partisheet.clear();
 				waitingNextTouchResume = true;
 				
-				//rotation must be fixed. scale must be fixed.
-				float toRotation = SnapRotation(rotation);
-				boolean shouldAnimate = toRotation!=rotation;
-				float toScale = currentMinScale();
-				
 				if(view_pager_toguard.isFakeDragging()){
-					CMN.Log("endFakeDrag2");
+					//CMN.Log("endFakeDrag2");
 					//view_pager_toguard.skipScroll=touchCount>1?1:0;
 					view_pager_toguard.skipScroll=0;
 					view_pager_toguard.endFakeDrag();
 					//view_pager_toguard.skipScroll=0;
 				}
-	
-				tmpCenter.set(getScreenWidth()/2, getScreenHeight()/2);
 				
-				boolean resetScale=false;
-				if(scale>toScale) {
-					toScale=scale;
-					if(scale>maxScale){
-						toScale=maxScale;
-						shouldAnimate = true;
-					}
-				} else if(scale<toScale){
-					resetScale = shouldAnimate = true;
-					tmpCenter.set(getSWidth() / 2, getSHeight() / 2);
-				}
-				
-				if(true){//!shouldAnimate
-//					float scaleHeight = scale * sHeight;
-//					float scaleWidth = scale * sWidth;
-//					float screenWidth = getScreenWidth();
-//					float screenHeight = getScreenHeight();
-//
-//					float minX = screenWidth-scaleWidth;
-//					float maxX = 0;
-//					if(minX>0) maxX=minX=minX/2;
-//
-//					float minY = screenHeight-scaleHeight;
-//					float maxY = 0;
-//					if(minY>0) minY=maxY=minY/2;
-//
-//					if(vTranslate.x<minX || vTranslate.x>maxX
-//						||vTranslate.y<minY || vTranslate.y>maxY) {
+				if(!(doubleTapDetected && !quickScaleMoved)){
+					float toRotation = SnapRotation(rotation);
+					boolean shouldAnimate = toRotation!=rotation;
+					float toScale = currentMinScale();
 					
-						strTemp.scale = scale;
-						strTemp.vTranslate.set(vTranslate);
-						strTemp.rotate = rotation;
-						fitToBounds_internal2(true, strTemp);
-						if(strTemp.vTranslate.x!=vTranslate.x || strTemp.vTranslate.y!=vTranslate.y){
-							if (!resetScale) {
-								centerToSourceCoord(tmpCenter, strTemp.vTranslate);
-							}
-							CMN.Log("strTemp.vTranslate.x!=vTranslate.x || strTemp.vTranslate.y!=vTranslate.y", strTemp.vTranslate.x, vTranslate.x, strTemp.vTranslate.y, vTranslate.y);
+					tmpCenter.set(getScreenWidth()/2, getScreenHeight()/2);
+					
+					boolean resetScale=false;
+					if(scale>toScale) {
+						toScale=scale;
+						if(scale>maxScale){
+							toScale=maxScale;
 							shouldAnimate = true;
-						} else if (!resetScale) {
-							centerToSourceCoord(tmpCenter, vTranslate);
 						}
-//					}
-				}
-				
-				//CMN.Log("ACTION_UP", touchCount, "shouldAnimate", shouldAnimate);
-				if(doubleTapDetected && !quickScaleMoved){
-					//doubleTapZoom(viewToSourceCoord(doubleTapFocus), doubleTapFocus);
-				} else if(shouldAnimate) {
-					//Log.e("fatal","taegtescale="+","+sat.scale+","+minScale()+"minscale");
-					//rotation > Math.PI ? (float) (2 * Math.PI) : 0
-					//baby I'll take after everything.
-					new AnimationBuilder(toScale, tmpCenter, toRotation)
-							.withEasing(EASE_OUT_QUAD).withPanLimited(false)
-							.withOrigin(ORIGIN_ANIM)
-							.withInterruptible(!quickScaleMoved)
-							.withDuration(250)
-							.start();
+					} else if(scale<toScale){
+						resetScale = shouldAnimate = true;
+						tmpCenter.set(getSWidth() / 2, getSHeight() / 2);
+					}
+					
+					strTemp.scale = scale;
+					strTemp.vTranslate.set(vTranslate);
+					strTemp.rotate = rotation;
+					fitToBounds_internal2(true, strTemp);
+					if(strTemp.vTranslate.x!=vTranslate.x || strTemp.vTranslate.y!=vTranslate.y){
+						if (!resetScale) {
+							centerToSourceCoord(tmpCenter, strTemp.vTranslate);
+						}
+						CMN.Log("strTemp.vTranslate.x!=vTranslate.x || strTemp.vTranslate.y!=vTranslate.y", strTemp.vTranslate.x, vTranslate.x, strTemp.vTranslate.y, vTranslate.y);
+						shouldAnimate = true;
+					} else if (!resetScale) {
+						centerToSourceCoord(tmpCenter, vTranslate);
+					}
+					
+					if(shouldAnimate) {
+						//Take after everything.
+						new AnimationBuilder(toScale, tmpCenter, toRotation)
+								.withEasing(EASE_OUT_QUAD).withPanLimited(false)
+								.withOrigin(ORIGIN_ANIM)
+								.withInterruptible(!quickScaleMoved)
+								.withDuration(250)
+								.start();
+					}
 				}
 				
 				handler.removeMessages(MESSAGE_LONG_CLICK);
@@ -1569,6 +1537,7 @@ public class SubsamplingScaleImageView extends View {
 						doubleTapZoom(quickScaleSCenter, vCenterStart);
 					}
 				}
+				
 				if (maxTouchCount > 0 && (isZooming || isPanning) || touch_partisheet.size()==1) {
 					if (isZooming && touchCount == 2 || touch_partisheet.size()==1) {
 						// Convert from zoom to pan with remaining touch
@@ -1727,7 +1696,7 @@ public class SubsamplingScaleImageView extends View {
 		
 		new AnimationBuilder(targetScale, sCenter)
 				.withInterruptible(true)
-				.withDuration(doubleTapZoomDuration)
+				.withDuration(250)
 				.withOrigin(ORIGIN_DOUBLE_TAP_ZOOM)
 				.start();
 		
@@ -3561,7 +3530,7 @@ public class SubsamplingScaleImageView extends View {
 			level2 = scaleMin1;
 		}
 		if(level2<zoomInLevel*quickZoomLevels[0]){
-			quickZoomLevels[1] = 1.2f*zoomInLevel*quickZoomLevels[0];
+			quickZoomLevels[1] = level2*zoomInLevel;//1.2f*zoomInLevel*quickZoomLevels[0];
 			quickZoomLevelCount = 2;
 		} else {
 			quickZoomLevels[1] = level2;
@@ -3691,118 +3660,20 @@ public class SubsamplingScaleImageView extends View {
 		return (int)(density * px);
 	}
 	
-	/**
-	 *
-	 * Swap the default region decoder implementation for one of your own. You must do this before setting the image file or
-	 * asset, and you cannot use a custom decoder when using layout XML to set an asset name. Your class must have a
-	 * public default constructor.
-	 * @param regionDecoderClass The {@link ImageRegionDecoder} implementation to use.
-	 */
 	public final void setRegionDecoderClass(@NonNull Class<? extends ImageRegionDecoder> regionDecoderClass) {
-		if (regionDecoderClass == null) {
-			throw new IllegalArgumentException("Decoder class cannot be set to null");
-		}
 		this.regionDecoderFactory = new CompatDecoderFactory<>(regionDecoderClass);
 	}
 	
-	/**
-	 * Swap the default region decoder implementation for one of your own. You must do this before setting the image file or
-	 * asset, and you cannot use a custom decoder when using layout XML to set an asset name.
-	 * @param regionDecoderFactory The {@link DecoderFactory} implementation that produces {@link ImageRegionDecoder}
-	 *                             instances.
-	 */
 	public final void setRegionDecoderFactory(@NonNull DecoderFactory<? extends ImageRegionDecoder> regionDecoderFactory) {
-		if (regionDecoderFactory == null) {
-			throw new IllegalArgumentException("Decoder factory cannot be set to null");
-		}
 		this.regionDecoderFactory = regionDecoderFactory;
 	}
 	
-	/**
-	 * Swap the default bitmap decoder implementation for one of your own. You must do this before setting the image file or
-	 * asset, and you cannot use a custom decoder when using layout XML to set an asset name. Your class must have a
-	 * public default constructor.
-	 * @param bitmapDecoderClass The {@link ImageDecoder} implementation to use.
-	 */
 	public final void setBitmapDecoderClass(@NonNull Class<? extends ImageDecoder> bitmapDecoderClass) {
-		if (bitmapDecoderClass == null) {
-			throw new IllegalArgumentException("Decoder class cannot be set to null");
-		}
 		this.bitmapDecoderFactory = new CompatDecoderFactory<>(bitmapDecoderClass);
 	}
 	
-	/**
-	 * Swap the default bitmap decoder implementation for one of your own. You must do this before setting the image file or
-	 * asset, and you cannot use a custom decoder when using layout XML to set an asset name.
-	 * @param bitmapDecoderFactory The {@link DecoderFactory} implementation that produces {@link ImageDecoder} instances.
-	 */
 	public final void setBitmapDecoderFactory(@NonNull DecoderFactory<? extends ImageDecoder> bitmapDecoderFactory) {
-		if (bitmapDecoderFactory == null) {
-			throw new IllegalArgumentException("Decoder factory cannot be set to null");
-		}
 		this.bitmapDecoderFactory = bitmapDecoderFactory;
-	}
-	
-	/**
-	 * Calculate how much further the image can be panned in each direction. The results are set on
-	 * the supplied {@link RectF} and expressed as screen pixels. For example, if the image cannot be
-	 * panned any further towards the left, the value of {@link RectF#left} will be set to 0.
-	 * @param vTarget target object for results. Re-use for efficiency.
-	 */
-	public final void getPanRemaining(RectF vTarget) {
-		if (!isReady()) {
-			return;
-		}
-		
-		float scaleWidth = scale * sWidth();
-		float scaleHeight = scale * sHeight();
-		
-		if (panLimit == PAN_LIMIT_CENTER) {
-			vTarget.top = Math.max(0, -(vTranslate.y - (getScreenHeight() / 2)));
-			vTarget.left = Math.max(0, -(vTranslate.x - (getScreenWidth() / 2)));
-			vTarget.bottom = Math.max(0, vTranslate.y - ((getScreenHeight() / 2) - scaleHeight));
-			vTarget.right = Math.max(0, vTranslate.x - ((getScreenWidth() / 2) - scaleWidth));
-		} else if (panLimit == PAN_LIMIT_OUTSIDE) {
-			vTarget.top = Math.max(0, -(vTranslate.y - getScreenHeight()));
-			vTarget.left = Math.max(0, -(vTranslate.x - getScreenWidth()));
-			vTarget.bottom = Math.max(0, vTranslate.y + scaleHeight);
-			vTarget.right = Math.max(0, vTranslate.x + scaleWidth);
-		} else {
-			vTarget.top = Math.max(0, -vTranslate.y);
-			vTarget.left = Math.max(0, -vTranslate.x);
-			vTarget.bottom = Math.max(0, (scaleHeight + vTranslate.y) - getScreenHeight());
-			vTarget.right = Math.max(0, (scaleWidth + vTranslate.x) - getScreenWidth());
-		}
-	}
-	
-	/**
-	 * Set the pan limiting style. See static fields. Normally {@link #PAN_LIMIT_INSIDE} is best, for image galleries.
-	 * @param panLimit a pan limit constant. See static fields.
-	 */
-	public final void setPanLimit(int panLimit) {
-		if (!VALID_PAN_LIMITS.contains(panLimit)) {
-			throw new IllegalArgumentException("Invalid pan limit: " + panLimit);
-		}
-		this.panLimit = panLimit;
-		if (isReady()) {
-			fitToBounds(true,true);
-			invalidate();
-		}
-	}
-	
-	/**
-	 * Set the minimum scale type. See static fields. Normally {@link #SCALE_TYPE_CENTER_INSIDE} is best, for image galleries.
-	 * @param scaleType a scale type constant. See static fields.
-	 */
-	public final void setMinimumScaleType(int scaleType) {
-		if (!VALID_SCALE_TYPES.contains(scaleType)) {
-			throw new IllegalArgumentException("Invalid scale type: " + scaleType);
-		}
-		this.minimumScaleType = scaleType;
-		if (isReady()) {
-			fitToBounds(true,true);
-			invalidate();
-		}
 	}
 	
 	/**
@@ -4142,28 +4013,6 @@ public class SubsamplingScaleImageView extends View {
 	}
 	
 	/**
-	 * Set the scale the image will zoom in to when double tapped. This also the scale point where a double tap is interpreted
-	 * as a zoom out gesture - if the scale is greater than 90% of this value, a double tap zooms out. Avoid using values
-	 * greater than the max zoom.
-	 * @param doubleTapZoomScale New value for double tap gesture zoom scale.
-	 */
-	public final void setDoubleTapZoomScale(float doubleTapZoomScale) {
-		this.doubleTapZoomScale = doubleTapZoomScale;
-	}
-	
-	/**
-	 * A density aware alternative to {@link #setDoubleTapZoomScale(float)}; this allows you to express the scale the
-	 * image will zoom in to when double tapped in terms of the image pixel density. Values lower than the max scale will
-	 * be ignored. A sensible starting point is 160 - the default used by this view.
-	 * @param dpi New value for double tap gesture zoom scale.
-	 */
-	public final void setDoubleTapZoomDpi(int dpi) {
-		DisplayMetrics metrics = getResources().getDisplayMetrics();
-		float averageDpi = (metrics.xdpi + metrics.ydpi)/2;
-		setDoubleTapZoomScale(averageDpi/dpi);
-	}
-	
-	/**
 	 * Set the type of zoom animation to be used for double taps. See static fields.
 	 * @param doubleTapZoomStyle New value for zoom style.
 	 */
@@ -4171,15 +4020,6 @@ public class SubsamplingScaleImageView extends View {
 		if (!VALID_ZOOM_STYLES.contains(doubleTapZoomStyle)) {
 			throw new IllegalArgumentException("Invalid zoom style: " + doubleTapZoomStyle);
 		}
-		this.doubleTapZoomStyle = doubleTapZoomStyle;
-	}
-	
-	/**
-	 * Set the duration of the double tap zoom animation.
-	 * @param durationMs Duration in milliseconds.
-	 */
-	public final void setDoubleTapZoomDuration(int durationMs) {
-		this.doubleTapZoomDuration = Math.max(0, durationMs);
 	}
 	
 	/**
@@ -4200,10 +4040,6 @@ public class SubsamplingScaleImageView extends View {
 	 * @param executor an {@link Executor} for image loading.
 	 */
 	public void setExecutor(@NonNull Executor executor) {
-		//noinspection ConstantConditions
-		if (executor == null) {
-			throw new NullPointerException("Executor must not be null");
-		}
 		this.executor = executor;
 	}
 	
@@ -4325,7 +4161,6 @@ public class SubsamplingScaleImageView extends View {
 	 * then set your options and call {@link #start()}.
 	 */
 	public final class AnimationBuilder {
-		
 		private final float targetScale;
 		private final PointF targetSCenter;
 		private final float targetRotation;
@@ -4533,7 +4368,6 @@ public class SubsamplingScaleImageView extends View {
 	 * where the view's internal state gets wiped or draw events stop.
 	 */
 	public interface OnAnimationEventListener {
-		
 		/**
 		 * The animation has completed, having reached its endpoint.
 		 */
@@ -4555,18 +4389,15 @@ public class SubsamplingScaleImageView extends View {
 	 * Default implementation of {@link OnAnimationEventListener} for extension. This does nothing in any method.
 	 */
 	public static class DefaultOnAnimationEventListener implements OnAnimationEventListener {
-		
 		@Override public void onComplete() { }
 		@Override public void onInterruptedByUser() { }
 		@Override public void onInterruptedByNewAnim() { }
-		
 	}
 	
 	/**
 	 * An event listener, allowing subclasses and activities to be notified of significant events.
 	 */
 	public interface OnImageEventListener {
-		
 		/**
 		 * Called when the dimensions of the image and view are known, and either a preview image,
 		 * the full size image, or base layer tiles are loaded. This indicates the scale and translate
@@ -4621,14 +4452,12 @@ public class SubsamplingScaleImageView extends View {
 	 * Default implementation of {@link OnImageEventListener} for extension. This does nothing in any method.
 	 */
 	public static class DefaultOnImageEventListener implements OnImageEventListener {
-		
 		@Override public void onReady() { }
 		@Override public void onImageLoaded() { }
 		@Override public void onPreviewLoadError(Exception e) { }
 		@Override public void onImageLoadError(Exception e) { }
 		@Override public void onTileLoadError(Exception e) { }
 		@Override public void onPreviewReleased() { }
-		
 	}
 	
 	/**
@@ -4638,7 +4467,6 @@ public class SubsamplingScaleImageView extends View {
 	 * implementation should return quickly.
 	 */
 	public interface OnStateChangedListener {
-		
 		/**
 		 * The scale has changed. Use with {@link #getMaxScale()} and {@link #getMinScale()} to determine
 		 * whether the image is fully zoomed in or out.
@@ -4666,11 +4494,8 @@ public class SubsamplingScaleImageView extends View {
 	 * Default implementation of {@link OnStateChangedListener}. This does nothing in any method.
 	 */
 	public static class DefaultOnStateChangedListener implements OnStateChangedListener {
-		
 		@Override public void onCenterChanged(PointF newCenter, int origin) { }
 		@Override public void onScaleChanged(float newScale, int origin) { }
 		@Override public void onRotationChanged(float newRotation, int origin) { }
-		
 	}
-	
 }
