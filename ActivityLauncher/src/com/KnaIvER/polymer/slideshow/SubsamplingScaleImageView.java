@@ -393,8 +393,7 @@ public class SubsamplingScaleImageView extends View {
 	public SubsamplingScaleImageView(Context context, AttributeSet attr) {
 		super(context, attr);
 		density = getResources().getDisplayMetrics().density;
-		setMinimumDpi(160);
-		setDoubleTapZoomDpi(160);
+		//setMinimumDpi(160);
 		setMinimumTileDpi(320);
 		setGestureDetector(context);
 		createPaints();
@@ -927,7 +926,7 @@ public class SubsamplingScaleImageView extends View {
 		float rotationBefore = rotation;
 		
 		boolean handled = onTouchEventInternal(event);
-		sendStateChanged(scaleBefore, vTranslateBefore, rotationBefore, ORIGIN_TOUCH);
+		//sendStateChanged(scaleBefore, vTranslateBefore, rotationBefore, ORIGIN_TOUCH);
 		return handled||super.onTouchEvent(event);
 	}
 	
@@ -2008,7 +2007,7 @@ public class SubsamplingScaleImageView extends View {
 			//nono fitToBounds(finished || (anim.scaleStart == anim.scaleEnd),false);
 			fitToBounds(false,false);
 			
-			sendStateChanged(scaleBefore, vTranslateBefore, rotationBefore, anim.origin);
+			//sendStateChanged(scaleBefore, vTranslateBefore, rotationBefore, anim.origin);
 			refreshRequiredTiles(finished);
 			if (finished) {
 				if (anim.listener != null) {
@@ -3677,56 +3676,6 @@ public class SubsamplingScaleImageView extends View {
 	}
 	
 	/**
-	 * Set the maximum scale allowed. A value of 1 means 1:1 pixels at maximum scale. You may wish to set this according
-	 * to screen density - on a retina screen, 1:1 may still be too small. Consider using {@link #setMinimumDpi(int)},
-	 * which is density aware.
-	 * @param maxScale maximum scale expressed as a source/view pixels ratio.
-	 */
-	public final void setMaxScale(float maxScale) {
-		this.maxScale = maxScale;
-	}
-	
-	/**
-	 * Set the minimum scale allowed. A value of 1 means 1:1 pixels at minimum scale. You may wish to set this according
-	 * to screen density. Consider using {@link #setMaximumDpi(int)}, which is density aware.
-	 * @param minScale minimum scale expressed as a source/view pixels ratio.
-	 */
-	public final void setMinScale(float minScale) {
-		this.minScale = minScale;
-	}
-	
-	/**
-	 * This is a screen density aware alternative to {@link #setMaxScale(float)}; it allows you to express the maximum
-	 * allowed scale in terms of the minimum pixel density. This avoids the problem of 1:1 scale still being
-	 * too small on a high density screen. A sensible starting point is 160 - the default used by this view.
-	 * @param dpi Source image pixel density at maximum zoom.
-	 */
-	public final void setMinimumDpi(int dpi) {
-		DisplayMetrics metrics = getResources().getDisplayMetrics();
-		float averageDpi = (metrics.xdpi + metrics.ydpi)/2;
-		setMaxScale(averageDpi/dpi);
-	}
-	
-	/**
-	 * This is a screen density aware alternative to {@link #setMinScale(float)}; it allows you to express the minimum
-	 * allowed scale in terms of the maximum pixel density.
-	 * @param dpi Source image pixel density at minimum zoom.
-	 */
-	public final void setMaximumDpi(int dpi) {
-		DisplayMetrics metrics = getResources().getDisplayMetrics();
-		float averageDpi = (metrics.xdpi + metrics.ydpi)/2;
-		setMinScale(averageDpi / dpi);
-	}
-	
-	/**
-	 * Returns the maximum allowed scale.
-	 * @return the maximum scale as a source/view pixels ratio.
-	 */
-	public float getMaxScale() {
-		return maxScale;
-	}
-	
-	/**
 	 * Returns the minimum allowed scale.
 	 * @return the minimum scale as a source/view pixels ratio.
 	 */
@@ -4467,12 +4416,6 @@ public class SubsamplingScaleImageView extends View {
 	 * implementation should return quickly.
 	 */
 	public interface OnStateChangedListener {
-		/**
-		 * The scale has changed. Use with {@link #getMaxScale()} and {@link #getMinScale()} to determine
-		 * whether the image is fully zoomed in or out.
-		 * @param newScale The new scale.
-		 * @param origin Where the event originated from - one of {@link #ORIGIN_ANIM}, {@link #ORIGIN_TOUCH}.
-		 */
 		void onScaleChanged(float newScale, int origin);
 		
 		/**
