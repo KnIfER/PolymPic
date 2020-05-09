@@ -106,32 +106,10 @@ public class SubsamplingScaleImageView extends View {
 	/** Rotate the image 270 degrees clockwise. */
 	public static final int ORIENTATION_270 = 270;
 	
-	private static final List<Integer> VALID_ORIENTATIONS = Arrays.asList(ORIENTATION_0, ORIENTATION_90, ORIENTATION_180, ORIENTATION_270, ORIENTATION_USE_EXIF);
-	
-	/** During zoom animation, keep the point of the image that was tapped in the same place, and scale the image around it. */
-	public static final int ZOOM_FOCUS_FIXED = 1;
-	/** During zoom animation, move the point of the image that was tapped to the center of the screen. */
-	public static final int ZOOM_FOCUS_CENTER = 2;
-	/** Zoom in to and center the tapped point immediately without animating. */
-	public static final int ZOOM_FOCUS_CENTER_IMMEDIATE = 3;
-	
-	private static final List<Integer> VALID_ZOOM_STYLES = Arrays.asList(ZOOM_FOCUS_FIXED, ZOOM_FOCUS_CENTER, ZOOM_FOCUS_CENTER_IMMEDIATE);
-	
 	/** Quadratic ease out. Not recommended for scale animation, but good for panning. */
 	public static final int EASE_OUT_QUAD = 1;
 	/** Quadratic ease in and out. */
 	public static final int EASE_IN_OUT_QUAD = 2;
-	
-	private static final List<Integer> VALID_EASING_STYLES = Arrays.asList(EASE_IN_OUT_QUAD, EASE_OUT_QUAD);
-	
-	/** Don't allow the image to be panned off screen. As much of the image as possible is always displayed, centered in the view when it is smaller. This is the best option for galleries. */
-	public static final int PAN_LIMIT_INSIDE = 1;
-	/** Allows the image to be panned until it is just off screen, but no further. The edge of the image will stop when it is flush with the screen edge. */
-	public static final int PAN_LIMIT_OUTSIDE = 2;
-	/** Allows the image to be panned until a corner reaches the center of the screen but no further. Useful when you want to pan any spot on the image to the exact center of the screen. */
-	public static final int PAN_LIMIT_CENTER = 3;
-	
-	private static final List<Integer> VALID_PAN_LIMITS = Arrays.asList(PAN_LIMIT_INSIDE, PAN_LIMIT_OUTSIDE, PAN_LIMIT_CENTER);
 	
 	/** Scale the image so that both dimensions of the image will be equal to or less than the corresponding dimension of the view. The image is then centered in the view. This is the default behaviour and best for galleries. */
 	public static final int SCALE_TYPE_CENTER_INSIDE = 1;
@@ -182,8 +160,6 @@ public class SubsamplingScaleImageView extends View {
 	// Density to reach before loading higher resolution tiles
 	public int minimumTileDpi = -1;
 	
-	// Pan limiting style
-	private int panLimit = PAN_LIMIT_INSIDE;//PAN_LIMIT_INSIDE
 	// overrides for the dimensions of the generated tiles
 	public static final int TILE_SIZE_AUTO = Integer.MAX_VALUE;
 	private int maxTileWidth = TILE_SIZE_AUTO;
@@ -469,13 +445,12 @@ public class SubsamplingScaleImageView extends View {
 	 * @param orientation orientation to be set. See ORIENTATION_ static fields for valid values.
 	 */
 	public final void setOrientation(int orientation) {
-		if (!VALID_ORIENTATIONS.contains(orientation)) {
-			throw new IllegalArgumentException("Invalid orientation: " + orientation);
+		if(orientation>=0&&orientation<=270 && orientation%90==0){
+			this.orientation = orientation;
+			reset(false);
+			invalidate();
+			//requestLayout();
 		}
-		this.orientation = orientation;
-		reset(false);
-		invalidate();
-		//requestLayout();
 	}
 	
 	/**
@@ -2378,9 +2353,6 @@ public class SubsamplingScaleImageView extends View {
 	 */
 	private void fitToBounds_internal2(boolean center, ScaleTranslateRotate sat) {
 		//if(true) return;
-		if (panLimit == PAN_LIMIT_OUTSIDE && isReady()) {
-			center = false;
-		}
 		// TODO: Rotation
 		PointF vTranslate = sat.vTranslate;
 		float scale = limitedScale(sat.scale);
@@ -2390,10 +2362,7 @@ public class SubsamplingScaleImageView extends View {
 		float sew = getScreenExifWidth();
 		float seh = getScreenExifHeight();
 		float se_delta = (getScreenWidth() - sew)/2;
-		if (panLimit == PAN_LIMIT_CENTER && isReady()) {
-			vTranslate.x = Math.max(vTranslate.x, getScreenExifWidth()/2 - scaleWidth);
-			vTranslate.y = Math.max(vTranslate.y, getScreenExifHeight()/2 - scaleHeight);
-		} else if (center) {
+		if (center) {
 			//CMN.Log("minHeight=", getScreenExifWidth() - scaleWidth, se_delta);
 			vTranslate.x = Math.max(vTranslate.x, sew + se_delta - scaleWidth);
 			vTranslate.y = Math.max(vTranslate.y, seh - se_delta - scaleHeight);
@@ -2408,10 +2377,7 @@ public class SubsamplingScaleImageView extends View {
 		
 		float maxTx;
 		float maxTy;
-		if (panLimit == PAN_LIMIT_CENTER && isReady()) {
-			maxTx = Math.max(0, getScreenWidth()/2);
-			maxTy = Math.max(0, getScreenHeight()/2);
-		} else if (center) {
+		if (center) {
 			maxTx = Math.max(se_delta, (getScreenWidth() - scaleWidth) * xPaddingRatio);
 			maxTy = Math.max(-se_delta, (getScreenHeight() - scaleHeight) * yPaddingRatio);
 		} else {
@@ -2438,19 +2404,13 @@ public class SubsamplingScaleImageView extends View {
 			fitToBounds_internal2(center, sat);
 			return;
 		}
-		if (panLimit == PAN_LIMIT_OUTSIDE && isReady()) {
-			center = false;
-		}
 		// TODO: Rotation
 		PointF vTranslate = sat.vTranslate;
 		float scale = limitedScale(sat.scale);
 		float scaleWidth = scale * sWidth();
 		float scaleHeight = scale * sHeight();
 		
-		if (panLimit == PAN_LIMIT_CENTER && isReady()) {
-			vTranslate.x = Math.max(vTranslate.x, getScreenWidth()/2 - scaleWidth);
-			vTranslate.y = Math.max(vTranslate.y, getScreenHeight()/2 - scaleHeight);
-		} else if (center) {
+		if (center) {
 			vTranslate.x = Math.max(vTranslate.x, getScreenWidth() - scaleWidth);
 			vTranslate.y = Math.max(vTranslate.y, getScreenHeight() - scaleHeight);
 		} else {
@@ -2464,10 +2424,7 @@ public class SubsamplingScaleImageView extends View {
 		
 		float maxTx;
 		float maxTy;
-		if (panLimit == PAN_LIMIT_CENTER && isReady()) {
-			maxTx = Math.max(0, getScreenWidth()/2);
-			maxTy = Math.max(0, getScreenHeight()/2);
-		} else if (center) {
+		if (center) {
 			maxTx = Math.max(0, (getScreenWidth() - scaleWidth) * xPaddingRatio);
 			maxTy = Math.max(0, (getScreenHeight() - scaleHeight) * yPaddingRatio);
 		} else {
@@ -4040,9 +3997,6 @@ public class SubsamplingScaleImageView extends View {
 		 */
 		@NonNull
 		public AnimationBuilder withEasing(int easing) {
-			if (!VALID_EASING_STYLES.contains(easing)) {
-				throw new IllegalArgumentException("Unknown easing type: " + easing);
-			}
 			this.easing = easing;
 			return this;
 		}
