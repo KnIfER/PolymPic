@@ -1547,7 +1547,7 @@ public class SubsamplingScaleImageView extends View {
 //					}
 				}
 				
-				CMN.Log("ACTION_UP", touchCount, "shouldAnimate", shouldAnimate);
+				//CMN.Log("ACTION_UP", touchCount, "shouldAnimate", shouldAnimate);
 				if(doubleTapDetected && !quickScaleMoved){
 					//doubleTapZoom(viewToSourceCoord(doubleTapFocus), doubleTapFocus);
 				} else if(shouldAnimate) {
@@ -1706,20 +1706,31 @@ public class SubsamplingScaleImageView extends View {
 			}
 		}
 		float doubleTapZoomScale = minScale*15;//Math.min(maxScale, SubsamplingScaleImageView.this.doubleTapZoomScale);
-		boolean zoomedIn = scale < minScale();
-		float targetScale = zoomedIn ? minScale()*35 : minScale();
-		//CMN.Log("kiam doubletap targetScale=", targetScale, minScale());
-		if (doubleTapZoomStyle == ZOOM_FOCUS_CENTER_IMMEDIATE) {
-			setScaleAndCenter(targetScale, sCenter);
-		} else if (doubleTapZoomStyle == ZOOM_FOCUS_CENTER || !zoomedIn || !panEnabled) {
-			new AnimationBuilder(targetScale, sCenter).withInterruptible(true).withDuration(doubleTapZoomDuration).withOrigin(ORIGIN_DOUBLE_TAP_ZOOM).start();
-		} else if (doubleTapZoomStyle == ZOOM_FOCUS_FIXED) {
-			new AnimationBuilder(targetScale, sCenter, vFocus)
-					.withInterruptible(false)
-					.withDuration(doubleTapZoomDuration)
-					.withOrigin(ORIGIN_DOUBLE_TAP_ZOOM)
-					.start();
+		float scaleMin = currentMinScale();
+		float targetScale;
+		computeQuickZoomLevels();
+		float padding = 0.01f;
+		if(quickZoomLevelCount==2){
+			targetScale = scale >= quickZoomLevels[1]?quickZoomLevels[0]:quickZoomLevels[1];
+		} else {
+			if(scale <= quickZoomLevels[1]-padding){
+				targetScale = quickZoomLevels[1];
+			} else if(scale <= quickZoomLevels[2]-padding){
+				targetScale = quickZoomLevels[2];
+			} else {
+				targetScale = quickZoomLevels[0];
+			}
 		}
+		
+		
+		CMN.Log("kiam doubletap targetScale=", targetScale, currentMinScale());
+		
+		new AnimationBuilder(targetScale, sCenter)
+				.withInterruptible(true)
+				.withDuration(doubleTapZoomDuration)
+				.withOrigin(ORIGIN_DOUBLE_TAP_ZOOM)
+				.start();
+		
 		if(isProxy){
 		
 		} else {
@@ -3502,18 +3513,10 @@ public class SubsamplingScaleImageView extends View {
 	private float minScale() {//
 		int vPadding = getPaddingBottom() + getPaddingTop();
 		int hPadding = getPaddingLeft() + getPaddingRight();
-		float ret;
-		if (minimumScaleType == SCALE_TYPE_CENTER_CROP || minimumScaleType == SCALE_TYPE_START) {
-			ret = Math.max((getScreenWidth() - hPadding) / (float) exifWidth(), (getScreenHeight() - vPadding) / (float) exifHeight());
-		} else if (minimumScaleType == SCALE_TYPE_CUSTOM && minScale > 0) {
-			ret = minScale;
-		} else {
-			ret = Math.min((getScreenWidth() - hPadding) / (float) exifWidth(), (getScreenHeight() - vPadding) / (float) exifHeight());
-		}
+		float ret = Math.min((getScreenWidth() - hPadding) / (float) exifWidth(), (getScreenHeight() - vPadding) / (float) exifHeight());
 		if(ret<=0 || ret==Float.NaN) ret = 0.05f;
 		return ret;
 	}
-	
 	
 	/**
 	 * Returns the minimum allowed scale.
@@ -3528,13 +3531,42 @@ public class SubsamplingScaleImageView extends View {
 			sw = sHeight;
 			sh = sWidth;
 		}
-		if (minimumScaleType == SCALE_TYPE_CENTER_CROP || minimumScaleType == SCALE_TYPE_START) {
-			return Math.max((getScreenWidth() - hPadding) / (float) sw, (getScreenHeight() - vPadding) / (float) sh);
-		} else if (minimumScaleType == SCALE_TYPE_CUSTOM && minScale > 0) {
-			return minScale;
+		return Math.min((getScreenWidth() - hPadding) / (float) sw, (getScreenHeight() - vPadding) / (float) sh);
+	}
+	
+	/**
+	 * Returns the minimum allowed scale.
+	 */
+	float[] quickZoomLevels = new float[3];
+	float quickZoomLevelCount = 2;
+	private void computeQuickZoomLevels() {//
+		int vPadding = getPaddingBottom() + getPaddingTop();
+		int hPadding = getPaddingLeft() + getPaddingRight();
+		int sw = sWidth;
+		int sh = sHeight;
+		double r = rotation % doublePI;
+		if(r>halfPI*2.5 && r<halfPI*3.5 || r>halfPI*0.5 && r<halfPI*1.5){
+			sw = sHeight;
+			sh = sWidth;
+		}
+		float scaleMin1 = (getScreenWidth() - hPadding) / (float) sw;
+		float scaleMin2 = (getScreenHeight() - vPadding) / (float) sh;
+		float zoomInLevel = 2.5f;
+		float level2;
+		if(scaleMin1<scaleMin2){
+			quickZoomLevels[0] = scaleMin1;
+			level2 = scaleMin2;
 		} else {
-			//CMN.Log(getMeasuredWidth(), getScreenWidth(), "currentMinScale", view_pager_toguard.getMeasuredWidth(), (getScreenWidth() - hPadding) / (float) sw, (getScreenHeight() - vPadding) / (float) sh);
-			return Math.min((getScreenWidth() - hPadding) / (float) sw, (getScreenHeight() - vPadding) / (float) sh);
+			quickZoomLevels[0] = scaleMin2;
+			level2 = scaleMin1;
+		}
+		if(level2<zoomInLevel*quickZoomLevels[0]){
+			quickZoomLevels[1] = 1.2f*zoomInLevel*quickZoomLevels[0];
+			quickZoomLevelCount = 2;
+		} else {
+			quickZoomLevels[1] = level2;
+			quickZoomLevels[2] = level2*zoomInLevel;
+			quickZoomLevelCount = 3;
 		}
 	}
 	
