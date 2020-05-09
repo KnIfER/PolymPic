@@ -201,6 +201,10 @@ public class SubsamplingScaleImageView extends View {
 	private boolean rotationEnabled = true;
 	private boolean quickScaleEnabled = true;
 	
+	// Double tap zoom behaviour
+	private float[] quickZoomLevels = new float[3];
+	private float quickZoomLevelCount = 2;
+	
 	// Current scale and scale at start of zoom
 	public float scale;
 	private float scaleStart;
@@ -214,8 +218,8 @@ public class SubsamplingScaleImageView extends View {
 	// Screen coordinate of top-left corner of source image
 	public PointF vTranslate = new PointF();
 	PointF vTranslateOrg = new PointF();
-	private PointF vTranslateStart;
-	private PointF vTranslateBefore;
+	private PointF vTranslateStart = new PointF();
+	private PointF vTranslateBefore = new PointF();
 	
 	// Source coordinate to center on, used when new position is set externally before view is ready
 	private float pendingScale;
@@ -254,8 +258,8 @@ public class SubsamplingScaleImageView extends View {
 	private PointF doubleTapFocus = new PointF();
 	// Debug values
 	private final PointF vCenterStart = new PointF(0, 0);
-	private PointF sCenterStart;
-	private PointF vCenterStartNow;
+	private PointF sCenterStart = new PointF();
+	private PointF vCenterStartNow = new PointF();
 	private float vDistStart;
 	private float lastAngle;
 	
@@ -587,15 +591,7 @@ public class SubsamplingScaleImageView extends View {
 	 */
 	private void reset(boolean newImage) {
 		debug("reset newImage=" + newImage);
-		//scale = 0f;
-		//scaleStart = 0f;
-		//rotation = 0;
-		//vTranslate = null;
-		//vTranslateStart = null;
-		//vTranslateBefore = null;
 		pendingScale = 0f;
-//		sPendingCenter = null;
-//		sRequestedCenter = null;
 		isZooming = false;
 		isPanning = false;
 		isQuickScaling = false;
@@ -604,11 +600,6 @@ public class SubsamplingScaleImageView extends View {
 		vDistStart = 0;
 		quickScaleLastDistance = 0f;
 		quickScaleMoved = false;
-//		quickScaleSCenter = null;
-//		quickScaleVLastPoint = null;
-//		quickScaleVStart = null;
-//		anim = null;
-//		sRect = null;
 		if (newImage) {
 			uri = null;
 			decoderLock.writeLock().lock();
@@ -623,8 +614,6 @@ public class SubsamplingScaleImageView extends View {
 			sWidth = 0;
 			sHeight = 0;
 			sOrientation = 0;
-//			sRegion = null;
-//			pRegion = null;
 			readySent = false;
 			imageLoadedSent = false;
 		}
@@ -894,19 +883,14 @@ public class SubsamplingScaleImageView extends View {
 		//	}
 		//}
 		
-		if (anim != null && !anim.interruptible) {
-			requestDisallowInterceptTouchEvent(true);
-			return true;
-		} else {
-			//if (anim != null && anim.listener != null) //anim.listener.onInterruptedByUser();
-			anim = null;
+		if (anim != null){
+			if(!anim.interruptible) {
+				//requestDisallowInterceptTouchEvent(true);
+				return true;
+			} else {
+				anim = null;
+			}
 		}
-		
-		
-		if (vTranslateStart == null) { vTranslateStart = new PointF(0, 0); }
-		if (vTranslateBefore == null) { vTranslateBefore = new PointF(0, 0); }
-		if (sCenterStart == null) { sCenterStart = new PointF(0, 0); }
-		if (vCenterStartNow == null) { vCenterStartNow = new PointF(0, 0); }
 		
 		// Store current values so we can send an event if they change
 		float scaleBefore = scale;
@@ -1521,7 +1505,7 @@ public class SubsamplingScaleImageView extends View {
 				if (isQuickScaling) {
 					isQuickScaling=false;
 					if (!quickScaleMoved) {
-						doubleTapZoom(quickScaleSCenter, vCenterStart);
+						doubleTapZoom(quickScaleSCenter/*, vCenterStart*/);
 					}
 				}
 				
@@ -1608,7 +1592,7 @@ public class SubsamplingScaleImageView extends View {
 				view_to_guard.setImageMatrix(mat);
 				mat.reset();
 				mat.postScale(scale / getMinScale(), scale / getMinScale());
-				mat.postRotate(getRequiredRotation());
+				//mat.postRotate(getRequiredRotation());
 				mat.postTranslate(vTranslate.x, vTranslate.y);
 				mat.postRotate((float) Math.toDegrees(rotation), getScreenWidth() / 2, getScreenHeight() / 2);
 				//re-paint
@@ -1645,53 +1629,73 @@ public class SubsamplingScaleImageView extends View {
 		}
 	}
 	
+	/** Compute Quick Double Tap Zoom Levels. see {@link #currentMinScale} */
+	private void computeQuickZoomLevels() {
+		int vPadding = getPaddingBottom() + getPaddingTop();
+		int hPadding = getPaddingLeft() + getPaddingRight();
+		int sw = sWidth;
+		int sh = sHeight;
+		double r = rotation % doublePI;
+		if(r>halfPI*2.5 && r<halfPI*3.5 || r>halfPI*0.5 && r<halfPI*1.5){
+			sw = sHeight;
+			sh = sWidth;
+		}
+		float scaleMin1 = (getScreenWidth() - hPadding) / (float) sw;
+		float scaleMin2 = (getScreenHeight() - vPadding) / (float) sh;
+		float zoomInLevel = 2.5f;
+		float level2;
+		if(scaleMin1<scaleMin2){
+			quickZoomLevels[0] = scaleMin1;
+			level2 = scaleMin2;
+		} else {
+			quickZoomLevels[0] = scaleMin2;
+			level2 = scaleMin1;
+		}
+		if(level2<zoomInLevel*quickZoomLevels[0]){
+			quickZoomLevels[1] = level2*zoomInLevel;//1.2f*zoomInLevel*quickZoomLevels[0];
+			quickZoomLevelCount = 2;
+		} else {
+			quickZoomLevels[1] = level2;
+			quickZoomLevels[2] = level2*zoomInLevel;
+			quickZoomLevelCount = 3;
+		}
+	}
+	
 	/**
 	 * Double tap zoom handler triggered from gesture detector or on touch, depending on whether
 	 * quick scale is enabled.
 	 */
-	private void doubleTapZoom(PointF sCenter, PointF vFocus) {
-		if (!panEnabled) {
-			if (sRequestedCenter != null) {
-				// With a center specified from code, zoom around that point.
-				sCenter.x = sRequestedCenter.x;
-				sCenter.y = sRequestedCenter.y;
-			} else {
-				// With no requested center, scale around the image center.
-				sCenter.x = sWidth()/2;
-				sCenter.y = sHeight()/2;
-			}
-		}
-		float doubleTapZoomScale = minScale*15;//Math.min(maxScale, SubsamplingScaleImageView.this.doubleTapZoomScale);
+	private void doubleTapZoom(PointF sCenter) {
 		float scaleMin = currentMinScale();
 		float targetScale;
 		computeQuickZoomLevels();
 		float padding = 0.01f;
+		float currentScale = scale;
+		
+		if(anim!=null){
+			if(anim.origin == ORIGIN_DOUBLE_TAP_ZOOM){
+				currentScale = anim.scaleEnd;
+			}
+			anim=null;
+		}
+		
 		if(quickZoomLevelCount==2){
-			targetScale = scale >= quickZoomLevels[1]?quickZoomLevels[0]:quickZoomLevels[1];
+			targetScale = currentScale >= quickZoomLevels[1]?quickZoomLevels[0]:quickZoomLevels[1];
 		} else {
-			if(scale <= quickZoomLevels[1]-padding){
+			if(currentScale <= quickZoomLevels[1]-padding){
 				targetScale = quickZoomLevels[1];
-			} else if(scale <= quickZoomLevels[2]-padding){
+			} else if(currentScale <= quickZoomLevels[2]-padding){
 				targetScale = quickZoomLevels[2];
 			} else {
 				targetScale = quickZoomLevels[0];
 			}
 		}
 		
-		
-		CMN.Log("kiam doubletap targetScale=", targetScale, currentMinScale());
-		
 		new AnimationBuilder(targetScale, sCenter)
-				.withInterruptible(true)
-				.withDuration(250)
+				.withInterruptible(false)
+				.withDuration(250) //doubleTapZoomDuration
 				.withOrigin(ORIGIN_DOUBLE_TAP_ZOOM)
 				.start();
-		
-		if(isProxy){
-		
-		} else {
-			//invalidate();
-		}
 	}
 	
 	/** Count number of set bits */
@@ -1865,20 +1869,7 @@ public class SubsamplingScaleImageView extends View {
 //									drawAreaCount+=bmWidth*bmHeight;
 									setMatrixArray(srcArray, 0, 0,bmWidth , 0, bmWidth, bmHeight, 0, bmHeight);
 									setMatrixArray(dstArray, VR.left, VR.top, VR.right, VR.top, VR.right, VR.bottom, VR.left, VR.bottom);
-//									switch (getRequiredRotation()) {
-//										case ORIENTATION_0:
-//											setMatrixArray(dstArray, VR.left, VR.top, VR.right, VR.top, VR.right, VR.bottom, VR.left, VR.bottom);
-//										break;
-//										case ORIENTATION_90:
-//											setMatrixArray(dstArray, VR.right, VR.top, VR.right, VR.bottom, VR.left, VR.bottom, VR.left, VR.top);
-//										break;
-//										case ORIENTATION_180:
-//											setMatrixArray(dstArray, VR.right, VR.bottom, VR.left, VR.bottom, VR.left, VR.top, VR.right, VR.top);
-//										break;
-//										case ORIENTATION_270:
-//											setMatrixArray(dstArray, VR.left, VR.bottom, VR.left, VR.top, VR.right, VR.top, VR.right, VR.bottom);
-//										break;
-//									}
+
 									matrix.setPolyToPoly(srcArray, 0, dstArray, 0, 4);
 									matrix.postRotate(degree, mScreenWidth, mScreenHeight);
 									canvas.drawBitmap(bm, matrix, bitmapPaint);
@@ -2954,8 +2945,8 @@ public class SubsamplingScaleImageView extends View {
 	 * Set scale, center and orientation from saved state.
 	 */
 	private void restoreState(ImageViewState state) {
-		if (state != null && VALID_ORIENTATIONS.contains(state.getOrientation())) {
-			this.orientation = state.getOrientation();
+		if (state != null) {
+			//this.orientation = state.getOrientation();
 			this.pendingScale = state.getScale();
 			this.sPendingCenter = state.getCenter();
 			setRotationInternal(0);
@@ -2997,14 +2988,10 @@ public class SubsamplingScaleImageView extends View {
 	 */
 	@SuppressWarnings("SuspiciousNameCombination")
 	private int sWidth() {
-		int rotation = getRequiredRotation();
-		if (rotation == 90 || rotation == 270) {
-			return sHeight;
-		} else {
-			return sWidth;
-		}
+		return sWidth;
 	}
 	
+	@SuppressWarnings("SuspiciousNameCombination")
 	private int exifWidth() {
 		if (sOrientation == 90 || sOrientation == 270) {
 			return sHeight;
@@ -3013,6 +3000,7 @@ public class SubsamplingScaleImageView extends View {
 		}
 	}
 	
+	@SuppressWarnings("SuspiciousNameCombination")
 	private int exifSWidth() {
 		double r = rotation % doublePI;
 		if(r>halfPI*2.5 && r<halfPI*3.5 || r>halfPI*0.5 && r<halfPI*1.5 ){
@@ -3048,14 +3036,10 @@ public class SubsamplingScaleImageView extends View {
 	 */
 	@SuppressWarnings("SuspiciousNameCombination")
 	private int sHeight() {
-		int rotation = getRequiredRotation();
-		if (rotation == 90 || rotation == 270) {
-			return sWidth;
-		} else {
-			return sHeight;
-		}
+		return sHeight;
 	}
 	
+	@SuppressWarnings("SuspiciousNameCombination")
 	private int exifHeight() {
 		if (sOrientation == 90 || sOrientation == 270) {
 			return sWidth;
@@ -3070,27 +3054,7 @@ public class SubsamplingScaleImageView extends View {
 	@SuppressWarnings("SuspiciousNameCombination")
 	@AnyThread
 	private void fileSRect(Rect sRect, Rect target) {
-		if (getRequiredRotation() == 0) {
-			target.set(sRect);
-		} else if (getRequiredRotation() == 90) {
-			target.set(sRect.top, sHeight - sRect.right, sRect.bottom, sHeight - sRect.left);
-		} else if (getRequiredRotation() == 180) {
-			target.set(sWidth - sRect.right, sHeight - sRect.bottom, sWidth - sRect.left, sHeight - sRect.top);
-		} else {
-			target.set(sWidth - sRect.bottom, sRect.left, sWidth - sRect.top, sRect.right);
-		}
-	}
-	
-	/**
-	 * Determines the rotation to be applied to tiles, based on EXIF orientation or chosen setting.
-	 */
-	@AnyThread
-	private int getRequiredRotation() {
-		if (orientation == ORIENTATION_USE_EXIF) {
-			return sOrientation;
-		} else {
-			return orientation;
-		}
+		target.set(sRect);
 	}
 	
 	/**
@@ -3484,42 +3448,6 @@ public class SubsamplingScaleImageView extends View {
 	}
 	
 	/**
-	 * Returns the minimum allowed scale.
-	 */
-	float[] quickZoomLevels = new float[3];
-	float quickZoomLevelCount = 2;
-	private void computeQuickZoomLevels() {//
-		int vPadding = getPaddingBottom() + getPaddingTop();
-		int hPadding = getPaddingLeft() + getPaddingRight();
-		int sw = sWidth;
-		int sh = sHeight;
-		double r = rotation % doublePI;
-		if(r>halfPI*2.5 && r<halfPI*3.5 || r>halfPI*0.5 && r<halfPI*1.5){
-			sw = sHeight;
-			sh = sWidth;
-		}
-		float scaleMin1 = (getScreenWidth() - hPadding) / (float) sw;
-		float scaleMin2 = (getScreenHeight() - vPadding) / (float) sh;
-		float zoomInLevel = 2.5f;
-		float level2;
-		if(scaleMin1<scaleMin2){
-			quickZoomLevels[0] = scaleMin1;
-			level2 = scaleMin2;
-		} else {
-			quickZoomLevels[0] = scaleMin2;
-			level2 = scaleMin1;
-		}
-		if(level2<zoomInLevel*quickZoomLevels[0]){
-			quickZoomLevels[1] = level2*zoomInLevel;//1.2f*zoomInLevel*quickZoomLevels[0];
-			quickZoomLevelCount = 2;
-		} else {
-			quickZoomLevels[1] = level2;
-			quickZoomLevels[2] = level2*zoomInLevel;
-			quickZoomLevelCount = 3;
-		}
-	}
-	
-	/**
 	 * Adjust a requested scale to be within the allowed limits.
 	 */
 	private float limitedScale(float targetScale) {
@@ -3804,7 +3732,7 @@ public class SubsamplingScaleImageView extends View {
 	}
 	
 	/**
-	 * Get source width, ignoring orientation. If {@link #getOrientation()} returns 90 or 270, you can use {@link #getSHeight()}
+	 * Get source width, ignoring orientation. If {@link #orientation} returns 90 or 270, you can use {@link #getSHeight()}
 	 * for the apparent width.
 	 * @return the source image width in pixels.
 	 */
@@ -3813,30 +3741,12 @@ public class SubsamplingScaleImageView extends View {
 	}
 	
 	/**
-	 * Get source height, ignoring orientation. If {@link #getOrientation()} returns 90 or 270, you can use {@link #getSWidth()}
+	 * Get source height, ignoring orientation. If {@link #orientation} returns 90 or 270, you can use {@link #getSWidth()}
 	 * for the apparent height.
 	 * @return the source image height in pixels.
 	 */
 	public final int getSHeight() {
 		return sHeight;
-	}
-	
-	/**
-	 * Returns the orientation setting. This can return {@link #ORIENTATION_USE_EXIF}, in which case it doesn't tell you
-	 * the applied orientation of the image. For that, use {@link #getAppliedOrientation()}.
-	 * @return the orientation setting. See static fields.
-	 */
-	public final int getOrientation() {
-		return orientation;
-	}
-	
-	/**
-	 * Returns the actual orientation of the image relative to the source file. This will be based on the source file's
-	 * EXIF orientation if you're using ORIENTATION_USE_EXIF. Values are 0, 90, 180, 270.
-	 * @return the orientation applied after EXIF information has been extracted. See static fields.
-	 */
-	public final int getAppliedOrientation() {
-		return getRequiredRotation();
 	}
 	
 	/**
@@ -3848,7 +3758,7 @@ public class SubsamplingScaleImageView extends View {
 	public final ImageViewState getState() {
 		if (sWidth > 0 && sHeight > 0) {
 			//noinspection ConstantConditions
-			return new ImageViewState(getScale(), getCenter(), getOrientation());
+			return new ImageViewState(getScale(), getCenter(), rotation);
 		}
 		return null;
 	}
@@ -3940,16 +3850,6 @@ public class SubsamplingScaleImageView extends View {
 			tileBgPaint.setColor(tileBgColor);
 		}
 		invalidate();
-	}
-	
-	/**
-	 * Set the type of zoom animation to be used for double taps. See static fields.
-	 * @param doubleTapZoomStyle New value for zoom style.
-	 */
-	public final void setDoubleTapZoomStyle(int doubleTapZoomStyle) {
-		if (!VALID_ZOOM_STYLES.contains(doubleTapZoomStyle)) {
-			throw new IllegalArgumentException("Invalid zoom style: " + doubleTapZoomStyle);
-		}
 	}
 	
 	/**
