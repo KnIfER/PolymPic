@@ -277,12 +277,6 @@ public class SubsamplingScaleImageView extends View {
 	// Whether a base layer loaded notification has been sent to subclasses
 	private boolean imageLoadedSent;
 	
-	// Event listener
-	private OnImageEventListener onImageEventListener;
-	
-	// Scale and center listener
-	private OnStateChangedListener onStateChangedListener;
-	
 	// Long click listener
 	private OnLongClickListener onLongClickListener;
 	
@@ -904,13 +898,7 @@ public class SubsamplingScaleImageView extends View {
 			requestDisallowInterceptTouchEvent(true);
 			return true;
 		} else {
-			if (anim != null && anim.listener != null) {
-				try {
-					anim.listener.onInterruptedByUser();
-				} catch (Exception e) {
-					Log.w(TAG, "Error thrown by animation listener", e);
-				}
-			}
+			//if (anim != null && anim.listener != null) //anim.listener.onInterruptedByUser();
 			anim = null;
 		}
 		
@@ -2010,9 +1998,7 @@ public class SubsamplingScaleImageView extends View {
 			//sendStateChanged(scaleBefore, vTranslateBefore, rotationBefore, anim.origin);
 			refreshRequiredTiles(finished);
 			if (finished) {
-				if (anim.listener != null) {
-					anim.listener.onComplete();
-				}
+				//if (anim.listener != null) anim.listener.onComplete();
 				anim = null;
 			}
 			
@@ -2074,9 +2060,7 @@ public class SubsamplingScaleImageView extends View {
 		if (!readySent && ready) {
 			preDraw();
 			readySent = true;
-			if (onImageEventListener != null) {
-				onImageEventListener.onReady();
-			}
+			//if (onImageEventListener != null) onImageEventListener.onReady();
 			// Restart an animation that was waiting for the view to be ready
 			if (pendingAnimation != null) {
 				pendingAnimation.start();
@@ -2096,9 +2080,7 @@ public class SubsamplingScaleImageView extends View {
 			preDraw();
 			imageLoadedSent = true;
 			onImageLoaded();
-			if (onImageEventListener != null) {
-				onImageEventListener.onImageLoaded();
-			}
+			//if (onImageEventListener != null) onImageEventListener.onImageLoaded();
 		}
 		return imageLoaded;
 	}
@@ -2955,7 +2937,6 @@ public class SubsamplingScaleImageView extends View {
 		private int easing = EASE_IN_OUT_QUAD; // Easing style
 		private int origin = ORIGIN_ANIM; // Animation origin (API, double tap or fling)
 		private long time = System.currentTimeMillis(); // Start time
-		private OnAnimationEventListener listener; // Event listener
 	}
 	
 	private static class ScaleTranslateRotate {
@@ -4021,24 +4002,6 @@ public class SubsamplingScaleImageView extends View {
 		this.onLongClickListener = onLongClickListener;
 	}
 	
-	/**
-	 * Add a listener allowing notification of load and error events. Extend {@link DefaultOnImageEventListener}
-	 * to simplify implementation.
-	 * @param onImageEventListener an {@link OnImageEventListener} instance.
-	 */
-	public void setOnImageEventListener(OnImageEventListener onImageEventListener) {
-		this.onImageEventListener = onImageEventListener;
-	}
-	
-	/**
-	 * Add a listener for pan and zoom events. Extend {@link DefaultOnStateChangedListener} to simplify
-	 * implementation.
-	 * @param onStateChangedListener an {@link OnStateChangedListener} instance.
-	 */
-	public void setOnStateChangedListener(OnStateChangedListener onStateChangedListener) {
-		this.onStateChangedListener = onStateChangedListener;
-	}
-	
 	private void sendStateChanged(float oldScale, PointF oldVTranslate, float oldRotation, int origin) {
 		if (onStateChangedListener != null) {
 			if (scale != oldScale) {
@@ -4119,7 +4082,6 @@ public class SubsamplingScaleImageView extends View {
 		private int origin = ORIGIN_ANIM;
 		private boolean interruptible = true;
 		private boolean panLimited = true;
-		private OnAnimationEventListener listener;
 		
 		private AnimationBuilder(PointF sCenter) {
 			this.targetScale = scale;
@@ -4200,17 +4162,6 @@ public class SubsamplingScaleImageView extends View {
 		}
 		
 		/**
-		 * Add an animation event listener.
-		 * @param listener The listener.
-		 * @return this builder for method chaining.
-		 */
-		@NonNull
-		public AnimationBuilder withOnAnimationEventListener(OnAnimationEventListener listener) {
-			this.listener = listener;
-			return this;
-		}
-		
-		/**
 		 * Only for internal use. When set to true, the animation proceeds towards the actual end point - the nearest
 		 * point to the center allowed by pan limits. When false, animation is in the direction of the requested end
 		 * point and is stopped when the limit for each axis is reached. The latter behaviour is used for flings but
@@ -4242,13 +4193,8 @@ public class SubsamplingScaleImageView extends View {
 				anim = null;
 				return;
 			}
-			if (anim != null && anim.listener != null) {
-				try {
-					anim.listener.onInterruptedByNewAnim();
-				} catch (Exception e) {
-					Log.w(TAG, "Error thrown by animation listener", e);
-				}
-			}
+			//if (anim != null && anim.listener != null) anim.listener.onInterruptedByNewAnim();
+			
 			int vxCenter = getPaddingLeft() + (getScreenWidth() - getPaddingRight() - getPaddingLeft())/2;
 			int vyCenter = getPaddingTop() + (getScreenHeight() - getPaddingBottom() - getPaddingTop())/2;
 			float targetScale = limitedScale(this.targetScale);
@@ -4272,7 +4218,6 @@ public class SubsamplingScaleImageView extends View {
 			anim.easing = easing;
 			anim.origin = origin;
 			anim.time = System.currentTimeMillis();
-			anim.listener = listener;
 			
 			if (vFocus != null) {
 				// Calculate where translation will be at the end of the anim
@@ -4308,137 +4253,5 @@ public class SubsamplingScaleImageView extends View {
 		int ret = view_pager_toguard==null?getHeight():view_pager_toguard.getMeasuredHeight();
 		if(ret==0&&dm!=null) ret = dm.heightPixels;
 		return ret;
-	}
-	
-	/**
-	 * An event listener for animations, allows events to be triggered when an animation completes,
-	 * is aborted by another animation starting, or is aborted by a touch event. Note that none of
-	 * these events are triggered if the activity is paused, the image is swapped, or in other cases
-	 * where the view's internal state gets wiped or draw events stop.
-	 */
-	public interface OnAnimationEventListener {
-		/**
-		 * The animation has completed, having reached its endpoint.
-		 */
-		void onComplete();
-		
-		/**
-		 * The animation has been aborted before reaching its endpoint because the user touched the screen.
-		 */
-		void onInterruptedByUser();
-		
-		/**
-		 * The animation has been aborted before reaching its endpoint because a new animation has been started.
-		 */
-		void onInterruptedByNewAnim();
-		
-	}
-	
-	/**
-	 * Default implementation of {@link OnAnimationEventListener} for extension. This does nothing in any method.
-	 */
-	public static class DefaultOnAnimationEventListener implements OnAnimationEventListener {
-		@Override public void onComplete() { }
-		@Override public void onInterruptedByUser() { }
-		@Override public void onInterruptedByNewAnim() { }
-	}
-	
-	/**
-	 * An event listener, allowing subclasses and activities to be notified of significant events.
-	 */
-	public interface OnImageEventListener {
-		/**
-		 * Called when the dimensions of the image and view are known, and either a preview image,
-		 * the full size image, or base layer tiles are loaded. This indicates the scale and translate
-		 * are known and the next draw will display an image. This event can be used to hide a loading
-		 * graphic, or inform a subclass that it is safe to draw overlays.
-		 */
-		void onReady();
-		
-		/**
-		 * Called when the full size image is ready. When using tiling, this means the lowest resolution
-		 * base layer of tiles are loaded, and when tiling is disabled, the image bitmap is loaded.
-		 * This event could be used as a trigger to enable gestures if you wanted interaction disabled
-		 * while only a preview is displayed, otherwise for most cases {@link #onReady()} is the best
-		 * event to listen to.
-		 */
-		void onImageLoaded();
-		
-		/**
-		 * Called when a preview image could not be loaded. This method cannot be relied upon; certain
-		 * encoding types of supported image formats can result in corrupt or blank images being loaded
-		 * and displayed with no detectable error. The view will continue to load the full size image.
-		 * @param e The exception thrown. This error is logged by the view.
-		 */
-		void onPreviewLoadError(Exception e);
-		
-		/**
-		 * Indicates an error initiliasing the decoder when using a tiling, or when loading the full
-		 * size bitmap when tiling is disabled. This method cannot be relied upon; certain encoding
-		 * types of supported image formats can result in corrupt or blank images being loaded and
-		 * displayed with no detectable error.
-		 * @param e The exception thrown. This error is also logged by the view.
-		 */
-		void onImageLoadError(Exception e);
-		
-		/**
-		 * Called when an image tile could not be loaded. This method cannot be relied upon; certain
-		 * encoding types of supported image formats can result in corrupt or blank images being loaded
-		 * and displayed with no detectable error. Most cases where an unsupported file is used will
-		 * result in an error caught by {@link #onImageLoadError(Exception)}.
-		 * @param e The exception thrown. This error is logged by the view.
-		 */
-		void onTileLoadError(Exception e);
-		
-		/**
-		 * Called when a bitmap set using ImageSource.cachedBitmap is no longer being used by the View.
-		 * This is useful if you wish to manage the bitmap after the preview is shown
-		 */
-		void onPreviewReleased();
-	}
-	
-	/**
-	 * Default implementation of {@link OnImageEventListener} for extension. This does nothing in any method.
-	 */
-	public static class DefaultOnImageEventListener implements OnImageEventListener {
-		@Override public void onReady() { }
-		@Override public void onImageLoaded() { }
-		@Override public void onPreviewLoadError(Exception e) { }
-		@Override public void onImageLoadError(Exception e) { }
-		@Override public void onTileLoadError(Exception e) { }
-		@Override public void onPreviewReleased() { }
-	}
-	
-	/**
-	 * An event listener, allowing activities to be notified of pan and zoom events. Initialisation
-	 * and calls made by your code do not trigger events; touch events and animations do. Methods in
-	 * this listener will be called on the UI thread and may be called very frequently - your
-	 * implementation should return quickly.
-	 */
-	public interface OnStateChangedListener {
-		void onScaleChanged(float newScale, int origin);
-		
-		/**
-		 * The source center has been changed. This can be a result of panning or zooming.
-		 * @param newCenter The new source center point.
-		 * @param origin Where the event originated from - one of {@link #ORIGIN_ANIM}, {@link #ORIGIN_TOUCH}.
-		 */
-		void onCenterChanged(PointF newCenter, int origin);
-		
-		/**
-		 * The rotation has changed.
-		 * @param newRotation The new rotation.
-		 * @param origin Where the event originated from - one of {@link #ORIGIN_ANIM}, {@link #ORIGIN_TOUCH}.
-		 */
-		void onRotationChanged(float newRotation, int origin);
-	}
-	
-	/**
-	 * Default implementation of {@link OnStateChangedListener}. This does nothing in any method.
-	 */
-	public static class DefaultOnStateChangedListener implements OnStateChangedListener {
-		@Override public void onCenterChanged(PointF newCenter, int origin) { }
-		@Override public void onScaleChanged(float newScale, int origin) { }
-		@Override public void onRotationChanged(float newRotation, int origin) { }
 	}
 }
