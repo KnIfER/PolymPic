@@ -4002,20 +4002,6 @@ public class SubsamplingScaleImageView extends View {
 		this.onLongClickListener = onLongClickListener;
 	}
 	
-	private void sendStateChanged(float oldScale, PointF oldVTranslate, float oldRotation, int origin) {
-		if (onStateChangedListener != null) {
-			if (scale != oldScale) {
-				onStateChangedListener.onScaleChanged(scale, origin);
-			}
-			if (!vTranslate.equals(oldVTranslate)) {
-				onStateChangedListener.onCenterChanged(getCenter(), origin);
-			}
-			if (rotation != oldRotation) {
-				onStateChangedListener.onRotationChanged(rotation, origin);
-			}
-		}
-	}
-	
 	/**
 	 * Creates a panning animation builder, that when started will animate the image to place the given coordinates of
 	 * the image in the center of the screen. If doing this would move the image beyond the edges of the screen, the
