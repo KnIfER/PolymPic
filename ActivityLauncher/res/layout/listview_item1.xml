@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout  
+    xmlns:android="http://schemas.android.com/apk/res/android"  
+    
+	 xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"  
+    android:layout_height="wrap_content"  
+    android:clickable="true"  
+    android:gravity="center_vertical"
+    android:foreground="@drawable/listviewselector0">  
+	
+    <ScrollView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginRight="100dp">
+        
+	    <EditText
+	        android:id="@+id/et"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_alignParentLeft="true"
+	        android:text="Url:http://asdasdasdasdasd"
+	        android:singleLine="true"
+	        android:textColor="#dddddd" 
+	        android:textCursorDrawable="@drawable/text_cursor"/>
+	</ScrollView>
+    <TextView
+        android:id="@+id/tv1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical|right"
+        android:text="00:00:00" 
+        android:textColor="#dddddd"/>
+
+
+</FrameLayout>
+

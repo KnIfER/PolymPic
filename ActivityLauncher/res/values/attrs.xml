@@ -4,16 +4,6 @@
         <attr name="contentInsetStartWithNavigation" format="dimension|reference"/>
     </declare-styleable>
 
-	<declare-styleable name="SubsamplingScaleImageView">
-		<attr name="src" format="reference"/>
-		<attr name="assetName" format="string"/>
-		<attr name="panEnabled" format="boolean"/>
-		<attr name="zoomEnabled" format="boolean"/>
-		<attr name="quickScaleEnabled" format="boolean"/>
-		<attr name="rotationEnabled" format="boolean"/>
-		<attr name="tileBackgroundColor" format="color"/>
-	</declare-styleable>
-
     <declare-styleable name="MaterialScrollBar">
         <attr name="msb_recyclerView" format="reference"/>
         <attr name="msb_lightOnTouch" format="boolean|reference"/>
@@ -33,10 +23,17 @@
         <attr name="msb_hideDelayInMilliseconds" format="integer|reference"/>
         <attr name="msb_autoHide" format="boolean|reference"/>
     </declare-styleable>
-    
-    
-    
-    <declare-styleable name="SplitView">
+
+	<!-- Defines the custom XML attributes supported for a HorizontalListView -->
+	<declare-styleable name="HorizontalListView">
+		<attr name="dividerWidth" format="dimension" />
+		<attr name="android:divider" />
+		<attr name="android:requiresFadingEdge" />
+		<attr name="android:fadingEdgeLength" />
+	</declare-styleable>
+
+
+	<declare-styleable name="SplitView">
         <attr name="handle" format="reference" />
         <attr name="primaryContent" format="reference"/>
         <attr name="secondaryContent" format="reference"/>
@@ -84,4 +81,17 @@
         <attr name="t2" format="integer" />
         <attr name="t3" format="integer" />
     </declare-styleable>
+	<declare-styleable name="ListView">
+		<attr name="android:divider" format="reference" />
+		<attr name="android:overScrollHeader" format="reference" />
+		<attr name="android:overScrollFooter" format="reference" />
+		<attr name="android:dividerHeight" format="dimension" />
+		<attr name="android:headerDividersEnabled" format="boolean" />
+		<attr name="android:footerDividersEnabled" format="boolean" />
+	</declare-styleable>
+
+	<declare-styleable name="RecyclerViewPager">
+		<attr name="triggerOffset" format="float" />
+		<attr name="flingFactor" format="float" />
+	</declare-styleable><!-- end recyclerViewpater -->
 </resources>

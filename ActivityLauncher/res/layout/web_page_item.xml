@@ -4,13 +4,15 @@
 	android:orientation="vertical"
 	android:layout_width="match_parent"
 	android:layout_height="match_parent"
+	android:elevation="6dp"
+	android:background="#fff"
 	>
 
 	<LinearLayout
 		android:layout_width="match_parent"
 		android:layout_height="@dimen/_35_"
 		android:orientation="horizontal"
-		android:background="@drawable/sky_background_rounded"
+		android:background="#eee"
 		>
 		<TextView
 			android:id="@+id/title"
@@ -18,7 +20,7 @@
 			android:layout_weight="1"
 			android:layout_height="match_parent"
 			android:gravity="center_vertical"
-			android:textColor="#eef"
+			android:textColor="#000"
 			android:textSize="15sp"
 			android:paddingStart="5dp"
 			tools:text="Title…"
@@ -29,15 +31,23 @@
 			android:layout_width="@dimen/_35_"
 			android:layout_height="match_parent"
 			android:src="@drawable/close_toobar"
+			android:tint="#000"
 			android:padding="10dp"
 			/>
 	</LinearLayout>
 
-	<ImageView
+	<View
+		android:layout_width="match_parent"
+		android:layout_height="2px"
+		android:background="#ccc"
+		/>
+
+	<com.KnaIvER.polymer.webslideshow.ImageViewFucker
 		android:id="@+id/iv"
 		android:layout_width="match_parent"
 		android:layout_height="match_parent"
-		tools:src="@drawable/sky_background"
+		android:scaleType="fitStart"
+		tools:src="#fff"
 		android:layout_marginTop="1dp"
 		/>
 </LinearLayout>

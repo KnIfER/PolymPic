@@ -46,7 +46,7 @@ public class GlideCacheModule extends AppGlideModule {
         builder.setDiskCache(bUseLruDiskCache?
                 new GoodDiskCacheFactory(path, defaultReader.getInt("cache_s", 256) * 1024 * 1024)://300*1024 DiskCache.Factory.DEFAULT_DISK_CACHE_SIZE
                 new GoodDiskCacheFactoryForever(path));
-        builder.setLogLevel(Log.ERROR);
+        builder.setLogLevel(Log.VERBOSE);
     }
 
     class GoodDiskCacheFactory extends DiskLruCacheFactory {

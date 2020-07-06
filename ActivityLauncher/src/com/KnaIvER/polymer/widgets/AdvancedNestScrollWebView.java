@@ -19,16 +19,22 @@ package com.KnaIvER.polymer.widgets;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
+import android.view.View;
+import android.widget.FrameLayout;
 
 import androidx.core.view.MotionEventCompat;
 import androidx.core.view.NestedScrollingChild;
 import androidx.core.view.NestedScrollingChildHelper;
 import androidx.core.view.ViewCompat;
+import androidx.preference.Preference;
+
+import com.KnaIvER.polymer.BrowserActivity;
 
 /**
  * https://github.com/tobiasrohloff/NestedScrollWebView/edit/master/lib/src/main/java/com/tobiasrohloff/view/NestedScrollWebView.java
  */
 public class AdvancedNestScrollWebView extends WebViewmy implements NestedScrollingChild {
+	public View layout;
 	private int mLastMotionY;
 
 	private final int[] mScrollOffset = new int[2];

@@ -1,8 +1,7 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion ver_compileSdkVersion as int
-    buildToolsVersion ver_buildToolsVersion
+    compileSdkVersion ver_compileSdkVersion
 
     sourceSets {
         main {
@@ -22,6 +21,8 @@ android {
         applicationId "com.knaiver.polymer"
         minSdkVersion ver_minsdk
         targetSdkVersion ver_aimsdk
+        versionCode 1
+        versionName "1.0"
         vectorDrawables.generatedDensities = ['hdpi']
     }
     compileOptions {
@@ -59,7 +60,6 @@ android {
 dependencies {
     api 'com.alibaba:fastjson:1.2.62'
     api project(':glide')
-    //api libs_glide
     //annotationProcessor libs_glide
     compileOnly project(':multiline')
     annotationProcessor project(':multiline')

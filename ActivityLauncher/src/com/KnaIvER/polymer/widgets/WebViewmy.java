@@ -9,6 +9,8 @@ import android.graphics.Paint;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.os.Build;
+import android.os.Bundle;
+import android.os.Parcel;
 import android.text.Html;
 import android.text.Spanned;
 import android.util.AttributeSet;
@@ -20,6 +22,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.ValueCallback;
+import android.webkit.WebBackForwardList;
 import android.webkit.WebSettings;
 import android.webkit.WebSettings.LayoutAlgorithm;
 import android.webkit.WebView;
@@ -28,33 +31,65 @@ import android.widget.PopupWindow;
 
 import androidx.annotation.RequiresApi;
 
+import com.KnaIvER.polymer.BrowserActivity;
 import com.KnaIvER.polymer.R;
 import com.KnaIvER.polymer.Utils.CMN;
 import com.KnaIvER.polymer.Utils.Options;
+import com.KnaIvER.polymer.toolkits.Utils.BU;
 
 import org.adrianwalker.multilinestring.Multiline;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 
+import java.io.File;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class WebViewmy extends WebView {
+	public static float minW;
+	public BrowserActivity.TabHolder holder;
 	public Context context;
 	public int currentPos;
 	public int frameAt;
 	public String toTag;
-	public int SelfIdx;
-	public boolean fromCombined;
-	public String url;
 	public long time;
+	public boolean fromCombined;
 	public int lastScroll;
-	public String title;
 	int ContentHeight=0;
 	public int HistoryVagranter=-1;
 	public int expectedPos=-1;
 	public int expectedPosX=-1;
 	//public ArrayList<myCpr<String, ScrollerRecord>> History = new ArrayList<>();
 	public float lastY;
-
+	public File stackpath;
+	public boolean loaded;
+	
+	/*public ArrayList<String> backstack;
+	public int postRestoreI;
+	public boolean restoringstack;
+	class PostRestoreBackstack implements Runnable {
+		@Override
+		public void run() {
+			CMN.Log("PostRestoreBackstack run...", postRestoreI, copyBackForwardList().getSize());
+			int i=postRestoreI;
+			int size = backstack.size();
+			if(i<size) {
+				loadUrl(backstack.get(i));
+				postRestoreI=i+1;
+				if(i>=size-1) {
+					restoringstack=false;
+					CMN.Log("restoringstack!", copyBackForwardList().getSize());
+				} else {
+					postDelayed(new PostRestoreBackstack(), 35);
+				}
+			}
+		}
+	}*/
+	
 	public WebViewmy(Context context) {
 		this(context, null);
 	}
@@ -191,7 +226,8 @@ public class WebViewmy extends WebView {
 	@Override
 	public void loadUrl(String url) {
 		super.loadUrl(url);
-		//CMN.show(""+url.equals("about:blank"));
+		loaded = true;
+		CMN.Log("loadUrl: "+url.equals("about:blank"));
 		//if(!url.equals("about:blank"))
 		isloading=true;
 	}
@@ -217,26 +253,91 @@ public class WebViewmy extends WebView {
 		if(wvclient!=null)
 			wvclient.onPageFinished(this, "file:///");
 	}
-
+	
+	
 	public Bitmap getBitmap() {
-		CMN.Log("getting bitmap from webview...");
-		Bitmap b = Bitmap.createBitmap(getWidth(), getHeight(), Bitmap.Config.RGB_565);
-		Canvas c = new Canvas(b);
-		c.translate(0, -getScrollY());
-		draw(c);
-		return b;
+		long id = Thread.currentThread().getId();
+		CMN.Log("getting bitmap from webview...", id);
+		
+		int w = getWidth();
+		
+		int h = getHeight();
+		
+		if(w>0) {
+			float factor = 1;
+			if(w>minW) {
+				factor = minW/w;
+			}
+			//CMN.Log("getting scale factor", factor);
+			int targetW = (int)(w*factor);
+			int targetH = (int)(h*factor);
+			Bitmap b = Bitmap.createBitmap(targetW, targetH, Bitmap.Config.RGB_565);
+			Canvas c = new Canvas(b);
+			c.scale(factor, factor);
+			c.translate(0, -getScrollY());
+			draw(c);
+			return b;
+		}
+		return null;
 	}
 
 	public boolean loadIfNeeded() {
-		if(url!=null && !url.equals(getTag())){
-			CMN.Log("再生……", url);
-			loadUrl(url);
+		if(holder.url!=null && !holder.url.equals(getTag())){
+			if(stackpath==null) {
+				stackpath = new File(getContext().getExternalCacheDir(), "webstack"+holder.id);
+				CMN.Log("stackpath", stackpath);
+				if(stackpath.exists()) {
+					Parcel parcel = Parcel.obtain();
+					byte[] data = BU.fileToByteArr(stackpath);
+					parcel.unmarshall(data, 0, data.length);
+					parcel.setDataPosition(0);
+					Bundle bundle = new Bundle();
+					bundle.readFromParcel(parcel);
+					parcel.recycle();
+					WebBackForwardList stacks = restoreState(bundle);
+					if(stacks!=null && stacks.getSize()>0) {
+						CMN.Log("复活……", stacks.getSize());
+						return true;
+					}
+				}
+			}
+			CMN.Log("再生……", holder.url);
+			loadUrl(holder.url);
 			return true;
 		}
 		return false;
 	}
-
-
+	
+	public void saveIfNeeded() {
+		if((true||loaded) && stackpath!=null) {
+			Bundle bundle = new Bundle();
+			WebBackForwardList stacks = saveState(bundle);
+			if(stacks!=null && stacks.getSize()>0) {
+				Parcel parcel = Parcel.obtain();
+				parcel.setDataPosition(0);
+				bundle.writeToParcel(parcel, 0);
+				byte[] bytes = parcel.marshall();
+				parcel.recycle();
+				BU.printFile(bytes, stackpath.getPath());
+				CMN.Log("飞升……");
+			} else {
+				stackpath.delete();
+			}
+		}
+	}
+	
+	@Override
+	public void goBack() {
+		super.goBack();
+		loaded=true;
+	}
+	
+	@Override
+	public void goForward() {
+		super.goForward();
+		loaded=true;
+	}
+	
 	@RequiresApi(api = Build.VERSION_CODES.M)
 	private class callbackme extends ActionMode.Callback2{
 		ActionMode.Callback callback;
@@ -255,9 +356,11 @@ public class WebViewmy extends WebView {
 		public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
 			switch(item.getItemId()) {
 				case R.id.toolbar_action0:
-					evaluateJavascript(getHighLightIncantation()+"if(window.getSelection)sel.removeAllRanges();",new ValueCallback<String>() {
+					evaluateJavascript(getHighLightIncantation(),new ValueCallback<String>() {
 						@Override
 						public void onReceiveValue(String value) {
+							CMN.Log(value);
+							
 							invalidate();
 						}});
 
@@ -355,6 +458,83 @@ public class WebViewmy extends WebView {
 
 
    /**
+	//Rangy serialize/deserialize functions
+	var UNDEF = "undefined";
+	function getNodeIndex(node) {
+        var i = 0;
+        while( (node = node.previousSibling) ) {
+            ++i;
+        }
+        return i;
+    }
+
+	function serializePosition(node, offset, rootNode) {
+		var pathParts = [], n = node;
+		while (n && n != rootNode) {
+			pathParts.push(getNodeIndex(n, true));
+			n = n.parentNode;
+		}
+		return pathParts.join("/") + ":" + offset;
+	}
+
+    function getDocumentRangy(node) {
+        if (node.nodeType == 9) {
+            return node;
+        } else if (typeof node.ownerDocument != UNDEF) {
+            return node.ownerDocument;
+        } else if (typeof node.document != UNDEF) {
+            return node.document;
+        } else if (node.parentNode) {
+            return getDocumentRangy(node.parentNode);
+        } else {
+            throw module.createError("getDocument: no document found for node");
+        }
+    }
+
+	function serializeRange(range) {
+		var rootNode = getDocumentRangy(range.startContainer).documentElement;
+		var serialized = serializePosition(range.startContainer, range.startOffset, rootNode) + "," +
+			serializePosition(range.endContainer, range.endOffset, rootNode);
+		return serialized;
+	}
+
+	function RangyDomPosition(node, offset) {
+        this.node = node;
+        this.offset = offset;
+    }
+
+	function deserializePosition(serialized, rootNode, doc) {
+        var parts = serialized.split(":");
+        var node = rootNode;
+        var nodeIndices = parts[0] ? parts[0].split("/") : [], i = nodeIndices.length, nodeIndex;
+
+        while (i--) {
+            nodeIndex = parseInt(nodeIndices[i], 10);
+            if (nodeIndex < node.childNodes.length) {
+                node = node.childNodes[nodeIndex];
+            } else {
+				console.log( " has no child with index " + nodeIndex + ", " + i);
+				return;
+            }
+        }
+
+        return new RangyDomPosition(node, parseInt(parts[1], 10));
+    }
+
+	function deserializeRange(serialized) {
+		var doc = document;
+		var rootNode = doc.documentElement;
+		const deserializeRegex = /^([^,]+),([^,\{]+)(\{([^}]+)\})?$/;
+        var result = deserializeRegex.exec(serialized);
+        //todo checksum
+        var start = deserializePosition(result[1], rootNode, doc), end = deserializePosition(result[2], rootNode, doc);
+        var range = new Range();
+		range.setStart(start.node, start.offset);
+		range.setEnd(end.node, end.offset);
+        return range;
+    }
+	
+	//highlight functionality
 	function getNextNode(b) {
 		var a = b.firstChild;
 		if (a) {
@@ -467,33 +647,24 @@ public class WebViewmy extends WebView {
 		var a = f[f.length - 1];
 		b.setEnd(a, a.length);
 	}
-	*/
-   @Multiline(trim=true)
-	private final static String commonIcan="COMMONJS";
-	private static int commonIcanBaseLen=0;
-	private static StringBuilder HighlightBuilder;
-
-	/**
-	 if (window.getSelection) {
-		 var spanner = document.createElement("span");
-		 spanner.className = "PLOD_HL";
-		 spanner.style = "background:#ffaaaa;";
-		 var sel = window.getSelection();
-		 var ranges = [];
-		 var range;
-		 for (var i = 0, len = sel.rangeCount; i < len; ++i) {
-			ranges.push(sel.getRangeAt(i))
-		 } //sel.removeAllRanges();
-		 i = ranges.length;
-		 while (i--) {
-			range = ranges[i];
-			surroundRangeContents(range, spanner)
-		 }
-	 };
-	 */
-	@Multiline(trim=true)
-	private final static  String HighLightIncantation="HI";
-	/**
+ 
+	function HighlightSelection() {
+		console.log('HighlightSelection called');
+		if (window.getSelection) {
+			 var spanner = document.createElement("span");
+			 spanner.className = "PLOD_HL";
+			 spanner.style = "background:#ffaaaa;";
+			 var sel = window.getSelection();
+			 if(sel.rangeCount) {
+				var range = sel.getRangeAt(0);
+				window._docAnnots+=serializeRange(range)+('|0'+'\n');
+				surroundRangeContents(range, spanner)
+			 }
+			 //sel.removeAllRanges();
+		}
+		return window._docAnnots;
+	}
+	
 	function recurseDeWrap(b) {
 		if (b) {
 			for (var e = b.length - 1, d; e >= 0; e--) {
@@ -513,25 +684,75 @@ public class WebViewmy extends WebView {
 			}
 		}
 	}
-	if (window.getSelection) {
-		var spanner = document.createElement("span");
-		spanner.className = "highlight";
-		var sel = window.getSelection();
-		var ranges = [];
-		var range;
-		for (var i = 0, len = sel.rangeCount; i < len; ++i) {
-			ranges.push(sel.getRangeAt(i))
-		} //sel.removeAllRanges();
-		i = ranges.length;
-		while (i--) {
-			range = ranges[i];
-			var nodes = getNodesInRange(range);
-			recurseDeWrap(nodes)
-		}
-	};
+	
+	function DeHighlightSelection() {
+		if (window.getSelection) {
+			var spanner = document.createElement("span");
+			spanner.className = "highlight";
+			var sel = window.getSelection();
+			var ranges = [];
+			var range;
+			for (var i = 0, len = sel.rangeCount; i < len; ++i) {
+				ranges.push(sel.getRangeAt(i))
+			} //sel.removeAllRanges();
+			i = ranges.length;
+			while (i--) {
+				range = ranges[i];
+				var nodes = getNodesInRange(range);
+				recurseDeWrap(nodes)
+			}
+		};
+	}
+	*/
+   @Multiline(trim=true)
+	public final static byte[] commonIcanBytes = ArrayUtils.EMPTY_BYTE_ARRAY;
+ 
+	/**
+	 var script=undefined;
+	 if(!window.PPOLKit) {
+	 	 window._docAnnots = '';
+		 script = document.createElement('script');
+		 script.type = 'text/javascript';
+		 script.src = 'mdbr://HIGHLIGHTS.js';
+		 window.PPOLKit=1;
+	 }
+	 */
+   @Multiline(trim=true)
+	private final static String commonIcan = StringUtils.EMPTY;
+	private static int commonIcanBaseLen;
+ 
+ 
+	private static StringBuilder HighlightBuilder;
+
+	/**
+	 if(script) {
+		 script.onload=function(){
+	 		HighlightSelection();
+			delete script.onload;
+	 	};
+	 	document.head.appendChild(script);
+	 	'delay'
+	 } else {
+	 	HighlightSelection();
+	 }
+	 */
+	@Multiline(trim=true)
+	private final static String HighLightIncantation="HI";
+	
+	/**
+	 if(script) {
+		 script.onload=function(){
+	 		DeHighlightSelection();
+			//delete script.onload;
+	 	};
+	 	document.head.appendChild(script);
+	 } else {
+	 	DeHighlightSelection();
+	 }
 	 */
 	@Multiline(trim=true)
 	private final static  String DeHighLightIncantation="DEHI";
+	
 	public float webScale=0;
 	public String getHighLightIncantation() {
 		if(commonIcanBaseLen==0){

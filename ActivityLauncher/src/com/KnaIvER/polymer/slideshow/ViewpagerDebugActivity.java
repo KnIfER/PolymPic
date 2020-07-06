@@ -214,7 +214,7 @@ public class ViewpagerDebugActivity extends Toastable_Activity {
 		}
 		//vh.subview.orientation = rotation;
 		vh.subview.setProxy(dimension, -1, resource, vh.path);
-		vh.subview.imgsrc=vh.path;
+		vh.subview.ImgSrc =vh.path;
 		//vh.pv.setVisibility(View.VISIBLE);
 		//if(false)
 		if(dimension[0]*dimension[1]>2096*2096){

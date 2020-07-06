@@ -33,4 +33,9 @@ public class WebPicSignature implements Key, TimeAffordable {
 	public long AffordTime() {
 		return time;
 	}
+	
+	@Override
+	public String AffordPath() {
+		return file;
+	}
 }

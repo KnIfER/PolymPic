@@ -36,7 +36,7 @@ public class SimpleDiskCache implements DiskCache {
 				if(sk instanceof TimeAffordable){
 					long time = ((TimeAffordable) sk).AffordTime();
 					//CMN.Log("calibrating time : ", time, cf.lastModified(), time>cf.lastModified(), cf.getAbsolutePath());
-					if(time!=-1 && (time==0||time>cf.lastModified())) {
+					if(time!=-1 && (/*time==0||*/time>cf.lastModified())) {
 						//ASK: will the disk storage be reoccupied after the path being deleted and recreated?
 						//TODO 看下删除并建立同名文件是否会复用原先的物理存储。
 						cf.delete();

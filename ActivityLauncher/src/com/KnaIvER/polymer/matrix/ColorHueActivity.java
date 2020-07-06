@@ -36,15 +36,9 @@ public class ColorHueActivity extends AppCompatActivity implements SeekBar.OnSee
     @Override
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
 
-        float mHueValue = (seekBarHue.getProgress() - 128f) * 1.0f / 128f * 180;
         float mSaturationValue = seekBarSaturation.getProgress() / 128f;
         float mLightnessValue = seekBarLightness.getProgress() / 128f;
 
-        //设置色相
-        mHueMatrix.reset();
-        mHueMatrix.setRotate(0, mHueValue);
-        mHueMatrix.setRotate(1, mHueValue);
-        mHueMatrix.setRotate(2, mHueValue);
 
         //设置饱和度
         mSaturationMatrix.reset();
@@ -55,9 +49,37 @@ public class ColorHueActivity extends AppCompatActivity implements SeekBar.OnSee
         mLightnessMatrix.setScale(mLightnessValue, mLightnessValue, mLightnessValue, 1);
 
         colorMatrix.reset();// 效果叠加
+		//colorMatrix.setScale(1,.15f,1,1);
         colorMatrix.postConcat(mLightnessMatrix);
         colorMatrix.postConcat(mSaturationMatrix);
-        colorMatrix.postConcat(mHueMatrix);
+	
+	
+		float mHueValue = (seekBarHue.getProgress() - 128f) * 1.0f / 128f * 180;
+		//设置色相
+		
+		if(true){
+			mHueMatrix.setRotate(1, mHueValue);
+			colorMatrix.postConcat(mHueMatrix);
+			
+			mHueMatrix.setRotate(2, mHueValue);
+			colorMatrix.postConcat(mHueMatrix);
+			
+			
+			mHueMatrix.setRotate(0, mHueValue);
+			colorMatrix.postConcat(mHueMatrix);
+			
+			
+		} else {
+			mHueMatrix.reset();
+			mHueMatrix.setRotate(0, mHueValue);
+			mHueMatrix.setRotate(1, mHueValue);
+			mHueMatrix.setRotate(2, mHueValue);
+			colorMatrix.postConcat(mHueMatrix);
+		}
+	
+	
+		//colorMatrix.postConcat(mHueMatrix);
+	
 
         imageView.setColorFilter(new ColorMatrixColorFilter(colorMatrix));
     }

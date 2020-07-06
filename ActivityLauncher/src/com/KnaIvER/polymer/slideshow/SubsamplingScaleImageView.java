@@ -69,9 +69,7 @@ import com.KnaIvER.polymer.slideshow.decoder.SkiaImageRegionDecoder;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -110,17 +108,6 @@ public class SubsamplingScaleImageView extends View {
 	public static final int EASE_OUT_QUAD = 1;
 	/** Quadratic ease in and out. */
 	public static final int EASE_IN_OUT_QUAD = 2;
-	
-	/** Scale the image so that both dimensions of the image will be equal to or less than the corresponding dimension of the view. The image is then centered in the view. This is the default behaviour and best for galleries. */
-	public static final int SCALE_TYPE_CENTER_INSIDE = 1;
-	/** Scale the image uniformly so that both dimensions of the image will be equal to or larger than the corresponding dimension of the view. The image is then centered in the view. */
-	public static final int SCALE_TYPE_CENTER_CROP = 2;
-	/** Scale the image so that both dimensions of the image will be equal to or less than the maxScale and equal to or larger than minScale. The image is then centered in the view. */
-	public static final int SCALE_TYPE_CUSTOM = 3;
-	/** Scale the image so that both dimensions of the image will be equal to or larger than the corresponding dimension of the view. The top left is shown. */
-	public static final int SCALE_TYPE_START = 4;
-	
-	private static final List<Integer> VALID_SCALE_TYPES = Arrays.asList(SCALE_TYPE_CENTER_CROP, SCALE_TYPE_CENTER_INSIDE, SCALE_TYPE_CUSTOM, SCALE_TYPE_START);
 	
 	/** State change originated from animation. */
 	public static final int ORIGIN_ANIM = 1;
@@ -188,8 +175,8 @@ public class SubsamplingScaleImageView extends View {
 	// Rotation parameters
 	private float rotation = 0;
 	// Stored to avoid unnecessary calculation
-	private double cos = Math.cos(0);
-	private double sin = Math.sin(0);
+	private double cos = 1;//Math.cos(0);
+	private double sin = 0;//Math.sin(0);
 	
 	// Screen coordinate of top-left corner of source image
 	public PointF vTranslate = new PointF();
@@ -202,7 +189,7 @@ public class SubsamplingScaleImageView extends View {
 	private PointF sPendingCenter;
 	private PointF sRequestedCenter;
 	
-	private AnimationBuilder pendingAnimation = null;
+	private AnimationBuilder pendingAnimation;
 	
 	// Source image dimensions and orientation - dimensions relate to the unrotated image
 	private int sWidth;
@@ -233,7 +220,7 @@ public class SubsamplingScaleImageView extends View {
 	private boolean doubleTapDetected;
 	private PointF doubleTapFocus = new PointF();
 	// Debug values
-	private final PointF vCenterStart = new PointF(0, 0);
+	private final PointF vCenterStart = new PointF();
 	private PointF sCenterStart = new PointF();
 	private PointF vCenterStartNow = new PointF();
 	private float vDistStart;
@@ -264,7 +251,7 @@ public class SubsamplingScaleImageView extends View {
 	private final Handler handler;
 	private static final int MESSAGE_LONG_CLICK = 1;
 	
-	// Paint objects created once and reused for efficiency
+	// Paint objects
 	private Paint bitmapPaint;
 	private Paint debugTextPaint;
 	private Paint debugLinePaint;
@@ -284,7 +271,7 @@ public class SubsamplingScaleImageView extends View {
 	private static Bitmap.Config preferredBitmapConfig;
 	public DisplayMetrics dm;
 	public boolean isProxy;
-	public String imgsrc=null;
+	public String ImgSrc =null;
 	private Runnable mAnimationRunnable = this::handle_animation;
 	
 	private Runnable flingRunnable = new Runnable() {
@@ -294,12 +281,10 @@ public class SubsamplingScaleImageView extends View {
 			if(flingScroller.computeScrollOffset()){
 				int cfx = flingScroller.getCurrX();
 				int cfy = flingScroller.getCurrY();
-				
 				//CMN.Log("fling...", cfx - mLastFlingX, cfy - mLastFlingY, flingScroller.getCurrVelocity());
 				
 				float x = cfx - mLastFlingX;
 				float y = cfy - mLastFlingY;
-				
 				
 				mLastFlingX = cfx;
 				mLastFlingY = cfy;
@@ -373,6 +358,7 @@ public class SubsamplingScaleImageView extends View {
 		createPaints();
 		this.handler = new Handler(new Handler.Callback() {
 			public boolean handleMessage(Message message) {
+				CMN.Log("长按了");
 				if (message.what == MESSAGE_LONG_CLICK && onLongClickListener != null) {
 					//maxTouchCount = 0;
 					SubsamplingScaleImageView.super.setOnLongClickListener(onLongClickListener);
@@ -382,39 +368,6 @@ public class SubsamplingScaleImageView extends View {
 				return true;
 			}
 		});
-		// Handle XML attributes
-		if (attr != null) {
-			TypedArray typedAttr = getContext().obtainStyledAttributes(attr, R.styleable.SubsamplingScaleImageView);
-			if (typedAttr.hasValue(R.styleable.SubsamplingScaleImageView_assetName)) {
-				String assetName = typedAttr.getString(R.styleable.SubsamplingScaleImageView_assetName);
-				if (assetName != null && assetName.length() > 0) {
-					setImage(ImageSource.asset(assetName).tilingEnabled());
-				}
-			}
-			if (typedAttr.hasValue(R.styleable.SubsamplingScaleImageView_src)) {
-				int resId = typedAttr.getResourceId(R.styleable.SubsamplingScaleImageView_src, 0);
-				if (resId > 0) {
-					setImage(ImageSource.resource(resId).tilingEnabled());
-				}
-			}
-			if (typedAttr.hasValue(R.styleable.SubsamplingScaleImageView_panEnabled)) {
-				setPanEnabled(typedAttr.getBoolean(R.styleable.SubsamplingScaleImageView_panEnabled, true));
-			}
-			if (typedAttr.hasValue(R.styleable.SubsamplingScaleImageView_zoomEnabled)) {
-				setZoomEnabled(typedAttr.getBoolean(R.styleable.SubsamplingScaleImageView_zoomEnabled, true));
-			}
-			if (typedAttr.hasValue(R.styleable.SubsamplingScaleImageView_quickScaleEnabled)) {
-				setQuickScaleEnabled(typedAttr.getBoolean(R.styleable.SubsamplingScaleImageView_quickScaleEnabled, true));
-			}
-			if (typedAttr.hasValue(R.styleable.SubsamplingScaleImageView_rotationEnabled)) {
-				setRotationEnabled(typedAttr.getBoolean(R.styleable.SubsamplingScaleImageView_rotationEnabled, true));
-			}
-			if (typedAttr.hasValue(R.styleable.SubsamplingScaleImageView_tileBackgroundColor)) {
-				//setTileBackgroundColor(typedAttr.getColor(R.styleable.SubsamplingScaleImageView_tileBackgroundColor, Color.argb(0, 0, 0, 0)));
-			}
-			typedAttr.recycle();
-		}
-		
 		quickScaleThreshold = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 20, context.getResources().getDisplayMetrics());
 	}
 	
@@ -510,7 +463,7 @@ public class SubsamplingScaleImageView extends View {
 //				onTilesInited();
 				TilesInitTask task = new TilesInitTask(this);
 				execute(task);
-				CMN.Log("setImage getExifOrientation", sOrientation, sOrientation, rotation, imgsrc);
+				CMN.Log("setImage getExifOrientation", sOrientation, sOrientation, rotation, ImgSrc);
 			} catch (Exception e) { CMN.Log(e);  }
 		}
 		//imgsrc = imageSource.toString();
@@ -1314,7 +1267,8 @@ public class SubsamplingScaleImageView extends View {
 							CMN.Log("endFakeDrag111 v_w", viewToSourceFrameX(getScreenWidth()-mold*vtParms_dragDir, getScreenHeight()/2, preXCoord, preYCoord, vtParms_b3));
 							
 						}
-					} else if(touchCount==1){
+					}
+					else if(touchCount==1){
 						float dragDirRef = vtParms_b3?compensationR:compensationL;
 						dragOnRight = vtParms_dragDir==1?compensationR>0:compensationL>0;
 						startDrag=(compensationL>0||compensationR>0)
@@ -2563,7 +2517,7 @@ public class SubsamplingScaleImageView extends View {
 		sWidth = dimension[0];
 		sHeight = dimension[1];
 		//sOrientation = 0;
-		imgsrc = path;
+		ImgSrc = path;
 		sOrientation = getExifOrientation(getContext(), path);
 		rotation = (float) Math.toRadians(sOrientation);
 		CMN.Log("setProxy getExifOrientation", sOrientation, rotation, path);

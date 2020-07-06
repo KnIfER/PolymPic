@@ -17,7 +17,9 @@
 package com.KnaIvER.polymer.widgets;
 
 import android.content.Context;
+import android.graphics.Rect;
 import android.os.Build;
+import android.util.DisplayMetrics;
 import android.util.LayoutDirection;
 import android.util.TypedValue;
 import android.view.View;
@@ -25,7 +27,8 @@ import android.view.View;
 import java.lang.reflect.ParameterizedType;
 
 public class Utils {
-
+	
+	static Rect rect = new Rect();
     /**
      * @param dp Desired size in dp (density-independent pixels)
      * @param v View
@@ -63,5 +66,13 @@ public class Utils {
 		public void onClick(View v) {
 
 		}
+	}
+	
+	public static boolean isKeyboardShown(View rootView) {
+		final int softKeyboardHeight = 100;
+		rootView.getWindowVisibleDisplayFrame(rect);
+		DisplayMetrics dm = rootView.getResources().getDisplayMetrics();
+		int heightDiff = rootView.getBottom() - rect.bottom;
+		return heightDiff > softKeyboardHeight * dm.density;
 	}
 }

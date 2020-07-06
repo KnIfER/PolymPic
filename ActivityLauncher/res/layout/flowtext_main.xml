@@ -1,0 +1,59 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:paddingBottom="@dimen/activity_vertical_margin">
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dip"
+        android:layout_weight="1" >
+
+		<com.KnaIvER.polymer.flowtextview.FlowTextView
+			android:id="@+id/ftv"
+			android:layout_width="fill_parent"
+			android:layout_height="wrap_content"
+			android:background="#fff"
+			/>
+    </ScrollView>
+
+
+	<FrameLayout
+		android:layout_width="match_parent"
+		android:layout_height="0dip"
+		android:layout_weight="1"
+		android:background="#fff"
+		>
+		<View
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:background="@drawable/message_left"
+			/>
+
+	</FrameLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <Button
+            android:id="@+id/btn_increase_font_size"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Font size +"/>
+
+        <Button
+            android:id="@+id/btn_decrease_font_size"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=" Font size -"/>
+
+        <Button
+            android:id="@+id/btn_reset"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Reset"/>
+        </LinearLayout>
+</LinearLayout>

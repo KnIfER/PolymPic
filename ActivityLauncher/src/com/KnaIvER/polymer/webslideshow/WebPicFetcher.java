@@ -31,7 +31,7 @@ public class WebPicFetcher implements DataFetcher<Bitmap> {
 				callback.onDataReady(res);
 				return;
 			}
-		} catch (Exception e){
+		} catch (Exception e) {
 			err=e.toString();
 		}
 		//CMN.Log(err, err==null);

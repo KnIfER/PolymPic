@@ -18,6 +18,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.util.DisplayMetrics;
+import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -39,6 +40,8 @@ import com.KnaIvER.polymer.Utils.CMN;
 import com.KnaIvER.polymer.Utils.Options;
 import com.KnaIvER.polymer.widgets.SimpleTextNotifier;
 import com.bumptech.glide.load.engine.cache.DiskCache;
+
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -121,6 +124,13 @@ public class Toastable_Activity extends AppCompatActivity {
 	protected void onCreate(Bundle savedInstanceState) {
 		opt = new Options(this);
 		opt.dm = dm = new DisplayMetrics();
+		Display display = getWindowManager().getDefaultDisplay();
+		if (GlobalOptions.realWidth <= 0) {
+			display.getRealMetrics(dm);
+			GlobalOptions.realWidth = Math.min(dm.widthPixels, dm.heightPixels);
+			GlobalOptions.density = dm.density;
+			GlobalOptions.densityDpi = dm.densityDpi;
+		}
 		getWindowManager().getDefaultDisplay().getMetrics(dm);
 		super.onCreate(savedInstanceState);
 		FFStamp=opt.getFirstFlag();
@@ -357,20 +367,22 @@ public class Toastable_Activity extends AppCompatActivity {
 	TextView toastTv;
 	View toastV;
 	public void showX(int ResId,int len, Object...args) {
-		showT(getResources().getString(ResId,args),len);
+		String text = StringUtils.EMPTY;
+		try {
+			text = getResources().getString(ResId, args);
+		} catch (Exception ignored) {  }
+		showT(text,len);
 	}
 	public void show(int ResId,Object...args) {
-		showT(getResources().getString(ResId,args),Toast.LENGTH_SHORT);
+		showX(ResId,Toast.LENGTH_SHORT, args);
 	}
 	public void showT(Object text)
 	{
-		showT(String.valueOf(text),Toast.LENGTH_LONG);
+		showT(text,Toast.LENGTH_LONG);
 	}
-	public void showT(String text,int len)
+	public void showT(Object obj,int len)
 	{
-		Toast m_currentToast = this.m_currentToast;
-		View toastV=this.toastV;
-		TextView toastTv=this.toastTv;
+		CharSequence text = obj instanceof Integer? getResources().getText((Integer) obj):String.valueOf(obj);
 		if(m_currentToast == null || Options.getRebuildToast()){
 			if(m_currentToast!=null)
 				m_currentToast.cancel();
@@ -380,11 +392,10 @@ public class Toastable_Activity extends AppCompatActivity {
 			}else if(toastV.getParent() instanceof ViewGroup){
 				((ViewGroup)toastV.getParent()).removeView(toastV);
 			}
-
 			m_currentToast = new Toast(this);
-			m_currentToast.setGravity(Gravity.BOTTOM, 0, 135);
 			m_currentToast.setView(toastV);
 		}
+		m_currentToast.setGravity(Gravity.BOTTOM, 0, 135);
 		if(toastV.getBackground() instanceof GradientDrawable){
 			GradientDrawable drawable = (GradientDrawable) toastV.getBackground();
 			drawable.setCornerRadius(Options.getToastRoundedCorner()?dm.density*15:0);
@@ -394,6 +405,10 @@ public class Toastable_Activity extends AppCompatActivity {
 		toastTv.setText(text);
 		toastTv.setTextColor(opt.getToastColor());
 		m_currentToast.show();
+	}
+	public void showMT(Object text){
+		showT(text);
+		m_currentToast.setGravity(Gravity.CENTER, 0, 0);
 	}
 	public void cancleToast(){
 		if(m_currentToast!=null)
