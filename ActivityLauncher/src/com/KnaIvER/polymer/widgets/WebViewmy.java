@@ -1,11 +1,16 @@
 package com.KnaIvER.polymer.widgets;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.DrawFilter;
+import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.PaintFlagsDrawFilter;
+import android.graphics.Picture;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.os.Build;
@@ -30,11 +35,13 @@ import android.webkit.WebViewClient;
 import android.widget.PopupWindow;
 
 import androidx.annotation.RequiresApi;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.KnaIvER.polymer.BrowserActivity;
 import com.KnaIvER.polymer.R;
 import com.KnaIvER.polymer.Utils.CMN;
 import com.KnaIvER.polymer.Utils.Options;
+import com.KnaIvER.polymer.matrix.BitmapUtils;
 import com.KnaIvER.polymer.toolkits.Utils.BU;
 
 import org.adrianwalker.multilinestring.Multiline;
@@ -67,6 +74,8 @@ public class WebViewmy extends WebView {
 	public float lastY;
 	public File stackpath;
 	public boolean loaded;
+	private boolean invalidable = true;
+	private Picture p;
 	
 	/*public ArrayList<String> backstack;
 	public int postRestoreI;
@@ -255,7 +264,47 @@ public class WebViewmy extends WebView {
 	}
 	
 	
+	public void recaptureBitmap() {
+		int w = getWidth();
+		int h = getHeight();
+		if(w>0) {
+			float factor = 1;
+			if(w>minW) {
+				factor = minW/w;
+			}
+			int targetW = (int)(w*factor);
+			int targetH = (int)(h*factor);
+			boolean reset = bitmap==null || bitmap.getWidth()!=targetW||bitmap.getHeight()!=targetH;
+			if(reset) {
+				if(bitmap!=null) {
+					bitmap.recycle();
+				}
+				bitmap = Bitmap.createBitmap(targetW, targetH, Bitmap.Config.RGB_565);
+			}
+			if(canvas==null) {
+				canvas = new Canvas(bitmap);
+			} else if(reset) {
+				canvas.setBitmap(bitmap);
+			}
+			canvas.setMatrix(Utils.IDENTITYXIRTAM);
+			canvas.scale(factor, factor);
+			canvas.translate(-getScrollX(), -getScrollY());
+			long st = System.currentTimeMillis();
+			draw(canvas);
+			CMN.Log("绘制时间：", System.currentTimeMillis()-st);
+		}
+	}
+	
+	public Bitmap bitmap;
+	public Canvas canvas;
+	static Bitmap b = Bitmap.createBitmap(1,1,Bitmap.Config.RGB_565);
+	static long bindId;
+	static Canvas c = new Canvas(b);
+	@SuppressLint("WrongCall")
 	public Bitmap getBitmap() {
+//		if(bindId==holder.id) {
+//			return b;
+//		}
 		long id = Thread.currentThread().getId();
 		CMN.Log("getting bitmap from webview...", id);
 		
@@ -269,18 +318,62 @@ public class WebViewmy extends WebView {
 				factor = minW/w;
 			}
 			//CMN.Log("getting scale factor", factor);
+			Bitmap.Config config = Bitmap.Config.RGB_565;
 			int targetW = (int)(w*factor);
 			int targetH = (int)(h*factor);
-			Bitmap b = Bitmap.createBitmap(targetW, targetH, Bitmap.Config.RGB_565);
-			Canvas c = new Canvas(b);
+			if(bindId!=holder.id) {
+				CMN.Log("new bitmap");
+				b = Bitmap.createBitmap(targetW, targetH, config);
+				c.setBitmap(b);
+				bindId=holder.id;
+			}
+			if(b.getWidth()!=targetW||b.getHeight()!=targetH) {
+				//b.recycle();
+				b = Bitmap.createBitmap(targetW, targetH, config);
+				c.setBitmap(b);
+			}
+			c.setMatrix(Utils.IDENTITYXIRTAM);
 			c.scale(factor, factor);
-			c.translate(0, -getScrollY());
-			draw(c);
+			//c.translate(-getScrollX(), -getScrollY());
+			
+			//c.setDensity(10000);
+			//PaintFlagsDrawFilter df = new PaintFlagsDrawFilter(0, 0);
+			//c.setDrawFilter(df);
+			long st = System.currentTimeMillis();
+//			Picture p = capturePicture();
+			//CMN.Log("capture时间：", System.currentTimeMillis()-st);
+			p.draw(c);
+			//drawBitmap(c);
+			//onDraw(c);
+			CMN.Log("绘制时间：", System.currentTimeMillis()-st);
+//			try {
+//				Thread.sleep(5000);
+//			} catch (InterruptedException e) {
+//			}
 			return b;
 		}
 		return null;
 	}
-
+	
+	private void drawBitmap(Canvas c) {
+		//CMN.Log("getDensity", c.getDensity());
+		//c.setDensity(1);
+		for (int i = 0; i < 500; i++) {
+			//CMN.Log("绘画");
+			//onDraw(c);
+			if(p!=null) {
+				//Picture p = capturePicture();
+				p.draw(c);
+			}
+		}
+	}
+	
+	public void captureImg() {
+		long st = System.currentTimeMillis();
+		p = capturePicture();
+		CMN.Log("captureImg 时间：", System.currentTimeMillis()-st);
+	}
+	
 	public boolean loadIfNeeded() {
 		if(holder.url!=null && !holder.url.equals(getTag())){
 			if(stackpath==null) {

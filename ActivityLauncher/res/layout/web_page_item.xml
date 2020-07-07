@@ -38,16 +38,17 @@
 
 	<View
 		android:layout_width="match_parent"
-		android:layout_height="2px"
+		android:layout_height="0px"
 		android:background="#ccc"
 		/>
 
-	<com.KnaIvER.polymer.webslideshow.ImageViewFucker
+	<ImageView
 		android:id="@+id/iv"
 		android:layout_width="match_parent"
 		android:layout_height="match_parent"
-		android:scaleType="fitStart"
+		android:scaleType="centerCrop"
 		tools:src="#fff"
-		android:layout_marginTop="1dp"
+		android:layout_marginTop="0dp"
 		/>
+
 </LinearLayout>

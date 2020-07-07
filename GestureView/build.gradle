@@ -13,7 +13,8 @@ dependencies {
     implementation (libs_anno)
     //api (libs_viewpager)
     api project(':viewpager')
-    api (libs_recycler)
+    //api (libs_recycler)
+    api project(':AwtRecyclerView')
 }
 
 // New version can be uploaded with './gradlew clean :library:uploadArchives'

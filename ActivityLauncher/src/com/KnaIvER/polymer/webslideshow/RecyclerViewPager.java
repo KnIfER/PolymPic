@@ -370,4 +370,8 @@ public class RecyclerViewPager extends RecyclerView {
 		void OnPageChanged(int oldPosition, int newPosition);
 	}
 	
+	@Override
+	public int getPaddingTop() {
+		return super.getPaddingTop();
+	}
 }

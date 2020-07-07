@@ -3,6 +3,7 @@ include ':ActivityLauncher'
 include ':AxtAppCompat'
 include ':AweDesigner'
 include ':AppPreference'
+include ':AwtRecyclerView'
 
 include ':viewpager'
 

@@ -17,17 +17,24 @@
 package com.KnaIvER.polymer.widgets;
 
 import android.content.Context;
+import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.os.Build;
 import android.util.DisplayMetrics;
 import android.util.LayoutDirection;
+import android.util.SparseArray;
 import android.util.TypedValue;
 import android.view.View;
+import android.view.ViewConfiguration;
 
+import com.KnaIvER.polymer.Utils.CMN;
+import com.KnaIvER.polymer.Utils.Options;
+
+import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 
 public class Utils {
-	
+	public static final Matrix IDENTITYXIRTAM = new Matrix();
 	static Rect rect = new Rect();
     /**
      * @param dp Desired size in dp (density-independent pixels)
@@ -74,5 +81,39 @@ public class Utils {
 		DisplayMetrics dm = rootView.getResources().getDisplayMetrics();
 		int heightDiff = rootView.getBottom() - rect.bottom;
 		return heightDiff > softKeyboardHeight * dm.density;
+	}
+	
+	static class ViewConfigurationDog extends ViewConfiguration{
+		@Override
+		public int getScaledTouchSlop() {
+			CMN.Log("ScaledTouchSlop return 0");
+			return 0;
+		}
+	}
+	
+	static SparseArray<ViewConfiguration> sConfigurations;
+	
+	public static void fetConfigList() {
+		try {
+			Field fConfigurations = ViewConfiguration.class.getDeclaredField("sConfigurations");
+			fConfigurations.setAccessible(true);
+			sConfigurations = (SparseArray<ViewConfiguration>) fConfigurations.get(null);
+		} catch (Exception e) {
+			CMN.Log(e);
+		}
+	}
+	
+	public static void sendog(Options opt) {
+		if(sConfigurations!=null) {
+			final int density = (int) (100.0f * opt.dm.density);
+			sConfigurations.put(density, new ViewConfigurationDog());
+		}
+	}
+	
+	public static void sencat(Options opt, ViewConfiguration cat) {
+		if(sConfigurations!=null) {
+			final int density = (int) (100.0f * opt.dm.density);
+			sConfigurations.put(density, cat);
+		}
 	}
 }

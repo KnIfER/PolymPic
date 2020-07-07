@@ -22,6 +22,7 @@ import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
@@ -39,6 +40,7 @@ import androidx.appcompat.widget.Toolbar;
 import com.KnaIvER.polymer.Utils.CMN;
 import com.KnaIvER.polymer.Utils.Options;
 import com.KnaIvER.polymer.widgets.SimpleTextNotifier;
+import com.KnaIvER.polymer.widgets.Utils;
 import com.bumptech.glide.load.engine.cache.DiskCache;
 
 import org.apache.commons.lang3.StringUtils;
@@ -100,7 +102,8 @@ public class Toastable_Activity extends AppCompatActivity {
 	public View dv;
 	Configuration mConfiguration;
 	boolean isDarkStamp;
-
+	ViewConfiguration ViewConfigDefault;
+	
 	static class BaseHandler extends Handler {
 		float animator = 0.1f;
 		float animatorD = 0.15f;
@@ -159,7 +162,6 @@ public class Toastable_Activity extends AppCompatActivity {
 
 		opt.mConfiguration = mConfiguration = new Configuration(getResources().getConfiguration());
 		Options.isLarge = (getResources().getConfiguration().screenLayout & Configuration.SCREENLAYOUT_SIZE_MASK) >=3 ;
-
 		checkLanguage();
 	}
 
@@ -277,6 +279,9 @@ public class Toastable_Activity extends AppCompatActivity {
 			if(locale!=null)
 				forceLocale(this, locale);
 		}
+		Utils.fetConfigList();
+		ViewConfigDefault = ViewConfiguration.get(this);
+		//Utils.sendog(opt);
 	}
 
 	protected void forceLocale(Context context, Locale locale) {

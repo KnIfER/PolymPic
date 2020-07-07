@@ -8,6 +8,7 @@
 	android:layout_height="match_parent"
 	android:background="#8f8f8f"
 	android:fitsSystemWindows="true"
+	android:padding="0dp"
 	>
 
 	<FrameLayout
@@ -57,23 +58,22 @@
 		android:orientation="vertical"
 		android:fitsSystemWindows="false"
 		>
-
 		<com.google.android.material.appbar.AppBarLayout
 			android:id="@+id/appbar"
 			android:layout_width="match_parent"
 			android:layout_height="@dimen/_45_"
-			android:background="#8f8f8f"
 			app:elevation="5dp"
 			>
 			<androidx.appcompat.widget.Toolbar
 				android:id="@+id/toolbar"
 				android:layout_width="match_parent"
-				android:layout_height="match_parent"
-				android:minHeight="?attr/actionBarSize"
+				android:layout_height="@dimen/_45_"
 				android:theme="@style/toolbarBaseTheme"
 				app:contentInsetLeft="0dp"
 				app:contentInsetStart="0dp"
 				app:contentInsetStartWithNavigation="0dp"
+				android:background="#8f8f8f"
+				app:elevation="5dp"
 				app:layout_scrollFlags="scroll|enterAlways|snap"
 				>
 				<LinearLayout android:id="@+id/rlSearchFrameDelete"
@@ -85,7 +85,7 @@
 						android:layout_width="@dimen/_45_"
 						android:layout_height="match_parent"
 						android:src="@drawable/search_toolbar"
-						android:background="@drawable/surrtrip1"
+						android:background="?actionBarItemBackground"
 						android:padding="15dp"
 						/>
 					<FrameLayout
@@ -114,12 +114,13 @@
 						android:id="@+id/ivDeleteText"
 						android:layout_width="@dimen/_45_"
 						android:layout_height="match_parent"
-						android:src="@drawable/close_toobar"
-						android:background="@drawable/surrtrip1"
-						android:padding="15dp"/>
+						android:src="@drawable/abc_ic_menu_overflow_material"
+						android:background="?actionBarItemBackground"
+						android:padding="10dp"/>
 				</LinearLayout>
 			</androidx.appcompat.widget.Toolbar>
 		</com.google.android.material.appbar.AppBarLayout>
+
 
 <!--		<com.KnaIvER.polymer.widgets.AdvancedNestScrollWebView-->
 <!--			android:id="@+id/webviewmy"-->
@@ -133,10 +134,11 @@
 			android:layout_width="match_parent"
 			android:layout_height="@dimen/_45_"
 			android:orientation="horizontal"
-			android:background="#0a8f8f8f"
+			android:background="#af8f8f8f"
 			android:theme="@style/AppTheme"
 			android:layout_gravity="bottom"
 			android:gravity="bottom|center_vertical|fill_horizontal"
+			app:layout_behavior="com.KnaIvER.polymer.widgets.BottomNavigationBehavior"
 			android:elevation="5dp"
 			>
 			<android.widget.ImageView
@@ -160,12 +162,10 @@
 				android:layout_width="0dp"
 				android:layout_height="match_parent"
 				android:layout_weight="1"
-				android:background="@drawable/surrtrip1"
 				android:clickable="true"
+				android:background="@drawable/surrtrip1"
 				android:src="@drawable/ic_home_black_24dp" />
 			<FrameLayout
-				android:id="@+id/browser_widget10"
-				android:background="@drawable/surrtrip2"
 				android:clickable="true"
 				android:layout_width="0dp"
 				android:layout_height="match_parent"
@@ -181,9 +181,12 @@
 					android:layout_gravity="center"
 					/>
 				<android.widget.ImageView
+					android:id="@+id/browser_widget10"
 					android:layout_width="match_parent"
 					android:layout_height="match_parent"
-					android:src="@drawable/ic_window_black_24dp" />
+					android:src="@drawable/ic_window_black_24dp"
+					android:background="@drawable/surrtrip1"
+					/>
 			</FrameLayout>
 			<android.widget.ImageView
 				android:id="@+id/browser_widget11"

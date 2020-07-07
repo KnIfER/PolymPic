@@ -44,7 +44,8 @@ dependencies {
         api (project(':AppPreference'))
     }
 
-    api (libs_recycler)
+    //api libs_recycler
+    api project(':AwtRecyclerView')
     api (libs_docfile)
 
     if(false){

@@ -1,5 +1,8 @@
 package com.KnaIvER.polymer.webslideshow;
 
+import android.view.View;
+import android.webkit.WebView;
+
 import androidx.annotation.NonNull;
 
 import com.bumptech.glide.load.Key;
@@ -10,11 +13,15 @@ import java.security.MessageDigest;
 
 public class WebPicSignature implements Key, TimeAffordable {
 	private final String file;
-	private final long time;
+	private long time;
 
 	public WebPicSignature(WebPic pic) {
 		this.file = pic.path;
-		time = pic.time;
+		if(pic.webView instanceof WebView /*&& ((View)pic.webView).getParent()!=null*/) {
+			time = pic.time;
+		} else {
+			time = 0;
+		}
 	}
 
 	@NonNull

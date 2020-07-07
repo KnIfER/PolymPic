@@ -33,6 +33,7 @@ public class WebPicFetcher implements DataFetcher<Bitmap> {
 			}
 		} catch (Exception e) {
 			err=e.toString();
+			CMN.Log(e);
 		}
 		//CMN.Log(err, err==null);
 		callback.onLoadFailed(new Exception("load mdd picture fail"+err));
