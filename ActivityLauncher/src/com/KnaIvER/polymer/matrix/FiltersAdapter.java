@@ -1,4 +1,4 @@
-package com.KnaIvER.polymer.matrix;
+package com.knaiver.polymer.matrix;
 
 import android.view.LayoutInflater;
 import android.view.View;
@@ -7,7 +7,7 @@ import android.widget.ImageView;
 
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.KnaIvER.polymer.R;
+import com.knaiver.polymer.R;
 import com.bumptech.glide.RequestManager;
 
 import java.util.List;

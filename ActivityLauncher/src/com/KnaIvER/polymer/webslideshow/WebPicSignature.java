@@ -1,13 +1,11 @@
-package com.KnaIvER.polymer.webslideshow;
+package com.knaiver.polymer.webslideshow;
 
-import android.view.View;
 import android.webkit.WebView;
 
 import androidx.annotation.NonNull;
 
 import com.bumptech.glide.load.Key;
 import com.knziha.filepicker.model.TimeAffordable;
-import com.knziha.filepicker.utils.CMNF;
 
 import java.security.MessageDigest;
 

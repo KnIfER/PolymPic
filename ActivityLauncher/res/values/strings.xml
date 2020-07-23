@@ -3,7 +3,7 @@
     <string name="app_name">PolymPic</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
-	<string name="tools" />
+    <string name="tools">工具</string>
 
 
 	<string name="stg_require">Please grant storage permission.</string>
@@ -21,6 +21,11 @@ Fusce sit amet tempus libero. Nunc feugiat dignissim purus vitae tempus. Nam adi
 Nullam imperdiet quam in dolor venenatis, sit amet venenatis nisi <b>eleifend</b>. Maecenas ligula lorem, egestas ut adipiscing in, gravida a est. Nam luctus massa in quam viverra, et suscipit nulla cursus. Ut ut vulputate enim. Mauris vulputate felis a quam varius sodales sit amet et augue. Proin sagittis mollis tempor. Curabitur nec quam in risus volutpat sagittis quis placerat sapien. Proin vulputate, ante vitae commodo auctor, quam nisi convallis lectus, eget sodales ligula arcu ac nulla. Praesent vulputate nec libero vel pulvinar.
 
 Donec feugiat ac nunc vel laoreet. In laoreet pretium fringilla. Suspendisse potenti. Praesent nec justo sagittis, scelerisque sem in, <b>egestas</b> massa. Vestibulum sed massa quis velit vehicula hendrerit vitae eget dui. Ut fringilla, lectus eget tristique tristique, orci urna consequat ligula, vitae hendrerit ipsum dui non sem. Duis lacinia arcu at libero dignissim facilisis. Quisque in ullamcorper dui.</html>]]></string>
+	<string name="ak_no_inst">未安装Anki笔记！</string>
+	<string name="pd_no_inst">未安装平典！</string>
+	<string name="gt_no_inst">未安装谷歌翻译！</string>
+	<string name="share_link">分享链接：</string>
+	<string name="highlight">高亮</string>
 
 
 </resources>

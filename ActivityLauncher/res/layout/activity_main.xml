@@ -1,208 +1,267 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout
-	xmlns:android="http://schemas.android.com/apk/res/android"
-	xmlns:tools="http://schemas.android.com/tools"
-	xmlns:app="http://schemas.android.com/apk/res-auto"
-	android:id="@+id/root"
-	android:layout_width="match_parent"
-	android:layout_height="match_parent"
-	android:background="#8f8f8f"
-	android:fitsSystemWindows="true"
-	android:padding="0dp"
-	>
-
+<layout>
 	<FrameLayout
-		android:id="@+id/viewpager_holder"
+		xmlns:android="http://schemas.android.com/apk/res/android"
+		xmlns:tools="http://schemas.android.com/tools"
+		xmlns:app="http://schemas.android.com/apk/res-auto"
+		android:id="@+id/root"
 		android:layout_width="match_parent"
 		android:layout_height="match_parent"
-		android:orientation="vertical"
-		android:paddingBottom="@dimen/_45_"
-		android:background="#D3EDFF"
-		android:clickable="true"
-		android:visibility="gone"
+		android:background="#8f8f8f"
+		android:fitsSystemWindows="true"
+		android:padding="0dp"
 		>
-		<com.KnaIvER.polymer.webslideshow.RecyclerViewPager
-			xmlns:widget="http://schemas.android.com/apk/res-auto"
-			android:id="@+id/viewpager"
-			android:layout_width="fill_parent"
-			android:layout_height="match_parent"
-			android:divider="#878787"
-			widget:dividerWidth="2dp"
-			android:padding="0dp"
-			android:layout_gravity="center_vertical"
-			android:clipToPadding="false"
-			/>
-		<TextView
-			android:layout_width="match_parent"
-			android:layout_height="85dp"
-			tools:text="标签模式"
-			android:gravity="center"
-			android:textSize="20dp"
-			/>
-		<LinearLayout
-			android:layout_width="match_parent"
-			android:layout_height="@dimen/_50_"
-			android:background="#00000000"
-			/>
-		<LinearLayout
-			android:layout_width="match_parent"
-			android:layout_height="@dimen/_50_"
-			android:background="#00000000"
-			/>
-	</FrameLayout>
 
-	<androidx.coordinatorlayout.widget.CoordinatorLayout
-		android:id="@+id/webcoord"
-		android:layout_width="match_parent"
-		android:layout_height="match_parent"
-		android:orientation="vertical"
-		android:fitsSystemWindows="false"
-		>
-		<com.google.android.material.appbar.AppBarLayout
-			android:id="@+id/appbar"
+		<ViewStub
+			android:id="@+id/viewpager_holder"
+			layout="@layout/viewpager_holder"
+			android:layout="@layout/viewpager_holder"
 			android:layout_width="match_parent"
-			android:layout_height="@dimen/_45_"
-			app:elevation="5dp"
+			android:layout_height="match_parent"/>
+
+		<androidx.coordinatorlayout.widget.CoordinatorLayout
+			android:id="@+id/webcoord"
+			android:layout_width="match_parent"
+			android:layout_height="match_parent"
+			android:orientation="vertical"
+			android:fitsSystemWindows="false"
 			>
-			<androidx.appcompat.widget.Toolbar
-				android:id="@+id/toolbar"
+			<com.google.android.material.appbar.AppBarLayout
+				android:id="@+id/appbar"
 				android:layout_width="match_parent"
 				android:layout_height="@dimen/_45_"
-				android:theme="@style/toolbarBaseTheme"
-				app:contentInsetLeft="0dp"
-				app:contentInsetStart="0dp"
-				app:contentInsetStartWithNavigation="0dp"
-				android:background="#8f8f8f"
 				app:elevation="5dp"
-				app:layout_scrollFlags="scroll|enterAlways|snap"
 				>
-				<LinearLayout android:id="@+id/rlSearchFrameDelete"
+				<androidx.appcompat.widget.Toolbar
+					android:id="@+id/toolbar"
 					android:layout_width="match_parent"
-					android:layout_height="match_parent"
-					android:orientation="horizontal">
-					<ImageView
-						android:id="@+id/ivBack"
-						android:layout_width="@dimen/_45_"
+					android:layout_height="@dimen/_45_"
+					android:theme="@style/toolbarBaseTheme"
+					app:contentInsetLeft="0dp"
+					app:contentInsetStart="0dp"
+					app:contentInsetStartWithNavigation="0dp"
+					android:background="#8f8f8f"
+					app:elevation="5dp"
+					app:layout_scrollFlags="scroll|enterAlways|snap"
+					>
+					<com.knaiver.polymer.widgets.LineaSlidog
+						android:id="@+id/rlSearchFrameDelete"
+						android:layout_width="match_parent"
 						android:layout_height="match_parent"
-						android:src="@drawable/search_toolbar"
-						android:background="?actionBarItemBackground"
-						android:padding="15dp"
-						/>
-					<FrameLayout
-						android:layout_width="0dp"
-						android:layout_height="match_parent"
-						android:layout_weight="1"
-						>
-						<View
-							android:id="@+id/popline"
-							android:layout_width="match_parent"
-							android:layout_height="1px"/>
-						<EditText
-							android:id="@+id/etSearch"
+						android:orientation="horizontal">
+						<ImageView
+							android:id="@+id/ivBack"
+							android:layout_width="45dp"
 							android:layout_height="match_parent"
-							android:layout_width="match_parent"
-							android:textColor="#ffffff"
-							android:paddingStart="4dp"
-							android:textColorHint="#ffffff"
-							android:singleLine="true"
-							android:imeOptions="actionSearch"
-							android:background="@null"
-							tools:hint="主页"
+							android:src="@drawable/ic_baseline_search_24"
+							android:background="?actionBarItemBackground"
+							android:padding="10dp"
 							/>
-					</FrameLayout>
-					<ImageView
-						android:id="@+id/ivDeleteText"
-						android:layout_width="@dimen/_45_"
-						android:layout_height="match_parent"
-						android:src="@drawable/abc_ic_menu_overflow_material"
-						android:background="?actionBarItemBackground"
-						android:padding="10dp"/>
-				</LinearLayout>
-			</androidx.appcompat.widget.Toolbar>
-		</com.google.android.material.appbar.AppBarLayout>
+						<FrameLayout
+							android:id="@+id/etSearchp"
+							android:layout_width="0dp"
+							android:layout_height="match_parent"
+							android:layout_weight="1"
+							>
+							<View
+								android:id="@+id/popline"
+								android:layout_width="match_parent"
+								android:layout_height="1px"/>
+							<FrameLayout
+								android:layout_width="match_parent"
+								android:layout_height="match_parent">
+								<com.knaiver.polymer.widgets.EditTextmy
+									android:id="@+id/etSearch"
+									android:layout_height="match_parent"
+									android:layout_width="match_parent"
+									android:textColor="#ffffff"
+									android:paddingStart="4dp"
+									android:textColorHint="#ffffff"
+									android:singleLine="true"
+									android:imeOptions="flagNoExtractUi|actionSearch"
+									android:background="#008f8f8f"
+									tools:hint="www.baidu.com"
+									/>
+								<TextView
+									android:id="@+id/webtitle"
+									android:layout_width="match_parent"
+									android:layout_height="match_parent"
+									android:paddingStart="4dp"
+									android:textColor="#ffffff"
+									android:singleLine="true"
+									android:gravity="center_vertical"
+									android:textSize="18sp"
+									android:text="主页"
+									android:background="#ee8f8f8f"
+									/>
+							</FrameLayout>
+						</FrameLayout>
+						<ImageView
+							android:id="@+id/ivRefresh"
+							android:layout_width="@dimen/_45_"
+							android:layout_height="match_parent"
+							android:src="@drawable/ic_refresh_black_24dp"
+							android:background="?actionBarItemBackground"
+							android:padding="10dp"/>
+						<ImageView
+							android:id="@+id/ivOverflow"
+							android:layout_width="@dimen/_45_"
+							android:layout_height="match_parent"
+							android:src="@drawable/abc_ic_menu_overflow_material"
+							android:background="?actionBarItemBackground"
+							android:padding="10dp"/>
+					</com.knaiver.polymer.widgets.LineaSlidog>
+				</androidx.appcompat.widget.Toolbar>
+			</com.google.android.material.appbar.AppBarLayout>
 
-
-<!--		<com.KnaIvER.polymer.widgets.AdvancedNestScrollWebView-->
-<!--			android:id="@+id/webviewmy"-->
-<!--			android:layout_width="match_parent"-->
-<!--			android:layout_height="match_parent"-->
-<!--			app:layout_behavior="@string/appbar_scrolling_view_behavior"-->
-<!--			/>-->
-
-		<LinearLayout
-			android:id="@+id/bottombar2"
-			android:layout_width="match_parent"
-			android:layout_height="@dimen/_45_"
-			android:orientation="horizontal"
-			android:background="#af8f8f8f"
-			android:theme="@style/AppTheme"
-			android:layout_gravity="bottom"
-			android:gravity="bottom|center_vertical|fill_horizontal"
-			app:layout_behavior="com.KnaIvER.polymer.widgets.BottomNavigationBehavior"
-			android:elevation="5dp"
-			>
-			<android.widget.ImageView
-				android:id="@+id/browser_widget7"
-				android:layout_width="0dp"
+			<LinearLayout
+				android:id="@+id/searchbar"
+				android:layout_width="match_parent"
 				android:layout_height="match_parent"
-				android:layout_weight="1"
-				android:background="@drawable/surrtrip1"
-				android:clickable="true"
-				android:src="@drawable/chevron_recess" />
-			<android.widget.ImageView
-				android:id="@+id/browser_widget8"
-				android:layout_width="0dp"
-				android:layout_height="match_parent"
-				android:layout_weight="1"
-				android:background="@drawable/surrtrip1"
-				android:clickable="true"
-				android:src="@drawable/chevron_forward" />
-			<android.widget.ImageView
-				android:id="@+id/browser_widget9"
-				android:layout_width="0dp"
-				android:layout_height="match_parent"
-				android:layout_weight="1"
-				android:clickable="true"
-				android:background="@drawable/surrtrip1"
-				android:src="@drawable/ic_home_black_24dp" />
-			<FrameLayout
-				android:clickable="true"
-				android:layout_width="0dp"
-				android:layout_height="match_parent"
-				android:layout_weight="1"
+				app:layout_behavior="@string/appbar_scrolling_view_behavior"
+				android:orientation="vertical"
+				android:visibility="invisible"
 				>
-				<TextView
-					android:id="@+id/indicator"
-					android:layout_width="wrap_content"
-					android:layout_height="wrap_content"
-					tools:text="99"
-					android:textSize="12sp"
-					android:textColor="#eee"
-					android:layout_gravity="center"
+				<View
+					android:layout_width="match_parent"
+					android:layout_height="2px"
+					android:background="#f0afafaf"
 					/>
-				<android.widget.ImageView
-					android:id="@+id/browser_widget10"
+				<com.knaiver.polymer.widgets.LineaSlidog
+					android:layout_width="match_parent"
+					android:layout_height="@dimen/_35_"
+					android:background="#8f8f8f"
+					>
+					<TextView
+						android:id="@+id/browser_widget1"
+						android:text="返回"
+						android:drawableLeft="@drawable/ic_baseline_arrow_back_24"
+						style="@style/SearchbarMenuTextStyle"
+						/>
+					<TextView
+						android:id="@+id/browser_widget2"
+						android:text="复制"
+						android:drawableLeft="@drawable/ic_baseline_copy_24"
+						style="@style/SearchbarMenuTextStyle"
+						/>
+					<TextView
+						android:id="@+id/browser_widget3"
+						android:text="粘贴"
+						android:drawableLeft="@drawable/ic_baseline_paste_24"
+						style="@style/SearchbarMenuTextStyle"
+						/>
+					<TextView
+						android:id="@+id/browser_widget4"
+						android:text="清空"
+						android:drawableLeft="@drawable/ic_baseline_clear_24"
+						style="@style/SearchbarMenuTextStyle"
+						/>
+					<TextView
+						android:id="@+id/browser_widget5"
+						android:text="前往"
+						android:drawableLeft="@drawable/abc_ic_go_search_api_material"
+						style="@style/SearchbarMenuTextStyle"
+						/>
+				</com.knaiver.polymer.widgets.LineaSlidog>
+				<View
+					android:layout_width="match_parent"
+					android:layout_height="2px"
+					android:background="#f0afafaf"
+					/>
+				<androidx.recyclerview.widget.RecyclerView
+					android:id="@+id/search_hints"
 					android:layout_width="match_parent"
 					android:layout_height="match_parent"
-					android:src="@drawable/ic_window_black_24dp"
-					android:background="@drawable/surrtrip1"
+					tools:listitem="@layout/search_hints_item"
 					/>
-			</FrameLayout>
-			<android.widget.ImageView
-				android:id="@+id/browser_widget11"
-				android:layout_width="0dp"
-				android:layout_weight="1"
-				android:layout_height="match_parent"
-				android:background="@drawable/surrtrip1"
-				android:clickable="true"
-				android:src="@drawable/ic_menu_black_24dp" />
-		</LinearLayout>
-	</androidx.coordinatorlayout.widget.CoordinatorLayout>
+			</LinearLayout>
 
-	<com.KnaIvER.polymer.widgets.PopupBackground
-		android:id="@+id/layoutListener"
-		android:layout_width="match_parent"
-		android:layout_height="match_parent"
-		android:visibility="gone"
-		/>
-</FrameLayout>
+			<!--		<com.KnaIvER.polymer.AdvancedNestScrollWebView-->
+			<!--			android:id="@+id/webviewmy"-->
+			<!--			android:layout_width="match_parent"-->
+			<!--			android:layout_height="match_parent"-->
+			<!--			app:layout_behavior="@string/appbar_scrolling_view_behavior"-->
+			<!--			/>-->
+
+			<com.knaiver.polymer.widgets.LineaSlidog
+				android:id="@+id/bottombar2"
+				android:layout_width="match_parent"
+				android:layout_height="@dimen/_45_"
+				android:orientation="horizontal"
+				android:background="#ff8f8f8f"
+				android:theme="@style/AppTheme"
+				android:layout_gravity="bottom"
+				android:gravity="bottom|center_vertical|fill_horizontal"
+				app:layout_behavior="com.knaiver.polymer.widgets.BottomNavigationBehavior"
+				android:elevation="5dp"
+				>
+				<android.widget.ImageView
+					android:id="@+id/browser_widget7"
+					android:layout_width="0dp"
+					android:layout_height="match_parent"
+					android:layout_weight="1"
+					android:background="@drawable/surrtrip1"
+					android:clickable="true"
+					android:src="@drawable/chevron_recess" />
+				<android.widget.ImageView
+					android:id="@+id/browser_widget8"
+					android:layout_width="0dp"
+					android:layout_height="match_parent"
+					android:layout_weight="1"
+					android:background="@drawable/surrtrip1"
+					android:clickable="true"
+					android:src="@drawable/chevron_forward" />
+				<android.widget.ImageView
+					android:id="@+id/browser_widget9"
+					android:layout_width="0dp"
+					android:layout_height="match_parent"
+					android:layout_weight="1"
+					android:clickable="true"
+					android:background="@drawable/surrtrip1"
+					android:src="@drawable/ic_home_black_24dp" />
+				<com.knaiver.polymer.widgets.DescriptiveImageView
+					android:id="@+id/browser_widget10"
+					android:layout_width="0dp"
+					android:layout_height="match_parent"
+					android:layout_weight="1"
+					android:background="@drawable/surrtrip1"
+					android:clickable="true"
+					android:layout_y="-1px"
+					android:src="@drawable/ic_window_black_24dp" />
+				<android.widget.ImageView
+					android:id="@+id/browser_widget11"
+					android:layout_width="0dp"
+					android:layout_weight="1"
+					android:layout_height="match_parent"
+					android:background="@drawable/surrtrip1"
+					android:clickable="true"
+					android:src="@drawable/ic_menu_black_24dp" />
+			</com.knaiver.polymer.widgets.LineaSlidog>
+
+			<View
+				android:id="@+id/progessbar"
+				android:layout_width="match_parent"
+				android:layout_height="3dp"
+				android:background="@drawable/progressbar"
+				app:layout_behavior="@string/appbar_scrolling_view_behavior"
+				android:elevation="10dp"
+				/>
+		</androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+		<com.knaiver.polymer.widgets.PopupBackground
+			android:id="@+id/layoutListener"
+			android:layout_width="match_parent"
+			android:layout_height="match_parent"
+			android:visibility="gone"
+			/>
+
+		<ViewStub
+			android:id="@+id/menu_grid"
+			android:layout="@layout/menu_grid"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:layout_gravity="bottom"
+			android:layout_marginBottom="@dimen/_45_"
+			/>
+	</FrameLayout>
+</layout>

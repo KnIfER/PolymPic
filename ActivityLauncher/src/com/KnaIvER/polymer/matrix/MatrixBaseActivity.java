@@ -1,6 +1,6 @@
-package com.KnaIvER.polymer.matrix;
+package com.knaiver.polymer.matrix;
 
-import com.KnaIvER.polymer.R;
+import com.knaiver.polymer.R;
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 

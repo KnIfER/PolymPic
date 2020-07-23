@@ -12,7 +12,7 @@
         android:layout_height="0dip"
         android:layout_weight="1" >
 
-		<com.KnaIvER.polymer.flowtextview.FlowTextView
+		<com.knaiver.polymer.flowtextview.FlowTextView
 			android:id="@+id/ftv"
 			android:layout_width="fill_parent"
 			android:layout_height="wrap_content"

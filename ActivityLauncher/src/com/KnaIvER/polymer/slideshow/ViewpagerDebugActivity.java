@@ -1,4 +1,4 @@
-package com.KnaIvER.polymer.slideshow;
+package com.knaiver.polymer.slideshow;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -18,9 +18,9 @@ import androidx.fragment.app.FragmentPagerAdapter;
 import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 
-import com.KnaIvER.polymer.R;
-import com.KnaIvER.polymer.Toastable_Activity;
-import com.KnaIvER.polymer.Utils.CMN;
+import com.knaiver.polymer.R;
+import com.knaiver.polymer.Toastable_Activity;
+import com.knaiver.polymer.Utils.CMN;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.RequestBuilder;
 import com.bumptech.glide.load.DataSource;

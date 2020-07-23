@@ -1,10 +1,10 @@
-package com.KnaIvER.polymer.webslideshow;
+package com.knaiver.polymer.webslideshow;
 
 import android.graphics.Bitmap;
 
 import androidx.annotation.NonNull;
 
-import com.KnaIvER.polymer.Utils.CMN;
+import com.knaiver.polymer.Utils.CMN;
 import com.bumptech.glide.Priority;
 import com.bumptech.glide.load.DataSource;
 import com.bumptech.glide.load.data.DataFetcher;

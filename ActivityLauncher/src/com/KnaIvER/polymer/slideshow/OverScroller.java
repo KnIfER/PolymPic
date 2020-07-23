@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.KnaIvER.polymer.slideshow;
+package com.knaiver.polymer.slideshow;
 
 import android.content.Context;
 import android.hardware.SensorManager;

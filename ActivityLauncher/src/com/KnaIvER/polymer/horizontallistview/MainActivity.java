@@ -1,4 +1,4 @@
-package com.KnaIvER.polymer.horizontallistview;
+package com.knaiver.polymer.horizontallistview;
 
 import android.app.Activity;
 import android.graphics.Color;
@@ -6,7 +6,7 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.widget.ArrayAdapter;
 
-import com.KnaIvER.polymer.R;
+import com.knaiver.polymer.R;
 
 public class MainActivity extends Activity {
 

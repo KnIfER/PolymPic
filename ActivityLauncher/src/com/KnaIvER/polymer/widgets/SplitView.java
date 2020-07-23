@@ -1,4 +1,4 @@
-package com.KnaIvER.polymer.widgets;
+package com.knaiver.polymer.widgets;
 
 import android.content.Context;
 import android.content.res.TypedArray;
@@ -9,8 +9,7 @@ import android.view.View.OnTouchListener;
 import android.widget.LinearLayout;
 
 
-import com.KnaIvER.polymer.R;
-import com.KnaIvER.polymer.Utils.CMN;
+import com.knaiver.polymer.R;
 
 import java.util.ArrayList;
 

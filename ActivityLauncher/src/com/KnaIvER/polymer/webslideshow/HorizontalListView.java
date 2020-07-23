@@ -1,4 +1,4 @@
-package com.KnaIvER.polymer.webslideshow;
+package com.knaiver.polymer.webslideshow;
 
 /*
  * The MIT License Copyright (c) 2011 Paul Soucy (paul@dev-smart.com)
@@ -51,8 +51,8 @@ import android.widget.Scroller;
 import androidx.core.view.ViewCompat;
 import androidx.core.widget.EdgeEffectCompat;
 
-import com.KnaIvER.polymer.R;
-import com.KnaIvER.polymer.Utils.CMN;
+import com.knaiver.polymer.R;
+import com.knaiver.polymer.Utils.CMN;
 
 import java.util.ArrayList;
 import java.util.LinkedList;

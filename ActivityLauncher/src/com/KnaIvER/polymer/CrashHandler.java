@@ -1,4 +1,4 @@
-package com.KnaIvER.polymer;
+package com.knaiver.polymer;
 
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
@@ -10,8 +10,8 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.GlobalOptions;
 
-import com.KnaIvER.polymer.Utils.CMN;
-import com.KnaIvER.polymer.Utils.Options;
+import com.knaiver.polymer.Utils.CMN;
+import com.knaiver.polymer.Utils.Options;
 
 import java.io.File;
 import java.io.FileOutputStream;

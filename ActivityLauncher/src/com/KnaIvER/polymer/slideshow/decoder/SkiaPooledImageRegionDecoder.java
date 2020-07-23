@@ -1,4 +1,4 @@
-package com.KnaIvER.polymer.slideshow.decoder;
+package com.knaiver.polymer.slideshow.decoder;
 
 import android.app.ActivityManager;
 import android.content.ContentResolver;
@@ -21,7 +21,7 @@ import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.KnaIvER.polymer.slideshow.SubsamplingScaleImageView;
+import com.knaiver.polymer.slideshow.SubsamplingScaleImageView;
 
 import java.io.File;
 import java.io.FileFilter;

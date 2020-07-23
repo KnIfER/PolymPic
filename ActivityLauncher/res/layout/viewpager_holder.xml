@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout>
+	<FrameLayout
+		android:id="@+id/viewpager_holder"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:orientation="vertical"
+		android:paddingBottom="@dimen/_45_"
+		android:background="#D3EDFF"
+		android:clickable="true"
+		android:visibility="gone"
+		xmlns:android="http://schemas.android.com/apk/res/android">
+		<com.knaiver.polymer.webslideshow.RecyclerViewPager
+			xmlns:widget="http://schemas.android.com/apk/res-auto"
+			android:id="@+id/viewpager"
+			android:layout_width="fill_parent"
+			android:layout_height="match_parent"
+			android:divider="#878787"
+			widget:dividerWidth="2dp"
+			android:padding="0dp"
+			android:layout_gravity="center_vertical"
+			android:clipToPadding="false"
+			/>
+	</FrameLayout>
+</layout>

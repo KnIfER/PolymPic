@@ -1,4 +1,4 @@
-package com.KnaIvER.polymer.slideshow.decoder;
+package com.knaiver.polymer.slideshow.decoder;
 
 import android.content.ContentResolver;
 import android.content.Context;
@@ -15,12 +15,10 @@ import androidx.annotation.Nullable;;
 import android.text.TextUtils;
 
 
-import com.KnaIvER.polymer.Utils.CMN;
-import com.KnaIvER.polymer.slideshow.SubsamplingScaleImageView;
+import com.knaiver.polymer.Utils.CMN;
+import com.knaiver.polymer.slideshow.SubsamplingScaleImageView;
 
 import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.List;

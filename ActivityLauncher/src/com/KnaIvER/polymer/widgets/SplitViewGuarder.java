@@ -1,4 +1,4 @@
-package com.KnaIvER.polymer.widgets;
+package com.knaiver.polymer.widgets;
 
 import android.content.Context;
 import android.graphics.Canvas;

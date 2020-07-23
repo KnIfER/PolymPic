@@ -1,4 +1,4 @@
-package com.KnaIvER.polymer.matrix;
+package com.knaiver.polymer.matrix;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -6,7 +6,7 @@ import android.view.View;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.KnaIvER.polymer.R;
+import com.knaiver.polymer.R;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 

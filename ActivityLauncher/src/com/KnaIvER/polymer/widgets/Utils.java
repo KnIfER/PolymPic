@@ -14,11 +14,15 @@
  *  limitations under the License.
  */
 
-package com.KnaIvER.polymer.widgets;
+package com.knaiver.polymer.widgets;
 
+import android.app.Dialog;
 import android.content.Context;
+import android.database.AbstractWindowedCursor;
+import android.database.Cursor;
 import android.graphics.Matrix;
 import android.graphics.Rect;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.util.DisplayMetrics;
 import android.util.LayoutDirection;
@@ -26,15 +30,34 @@ import android.util.SparseArray;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewConfiguration;
+import android.view.Window;
 
-import com.KnaIvER.polymer.Utils.CMN;
-import com.KnaIvER.polymer.Utils.Options;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.knaiver.polymer.Utils.CMN;
+import com.knaiver.polymer.Utils.Options;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class Utils {
-	public static final Matrix IDENTITYXIRTAM = new Matrix();
+	public final static Matrix IDENTITYXIRTAM = new Matrix();
+	public final static Object DummyTransX = new Object(){
+		public void setTranslationX(float val) { }
+	};
+	public final static Cursor EmptyCursor=new AbstractWindowedCursor() {
+		@Override
+		public int getCount() {
+			return 0;
+		}
+		public String[] getColumnNames() {
+			return new String[0];
+		}
+	};
 	static Rect rect = new Rect();
     /**
      * @param dp Desired size in dp (density-independent pixels)
@@ -67,8 +90,24 @@ public class Utils {
     static <T> String getGenericName(T object){
         return ((Class<T>) ((ParameterizedType) object.getClass().getGenericSuperclass()).getActualTypeArguments()[0]).getSimpleName();
     }
-
-    public static class DummyOnClick implements View.OnClickListener {
+	
+	public static RecyclerView.RecycledViewPool MaxRecyclerPool(int i) {
+		RecyclerView.RecycledViewPool pool = new RecyclerView.RecycledViewPool();
+		pool.setMaxRecycledViews(0, i);
+		return pool;
+	}
+	
+	public static boolean strEquals(CharSequence cs1, CharSequence cs2) {
+		final int length = cs1.length();
+		for (int i = 0; i < length; i++) {
+			if (cs1.charAt(i) != cs2.charAt(i)) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	public static class DummyOnClick implements View.OnClickListener {
 		@Override
 		public void onClick(View v) {
 
@@ -89,6 +128,10 @@ public class Utils {
 			CMN.Log("ScaledTouchSlop return 0");
 			return 0;
 		}
+	}
+	
+	public static boolean isWindowDetached(Window window) {
+		return window==null || window.getDecorView().getParent()==null;
 	}
 	
 	static SparseArray<ViewConfiguration> sConfigurations;
@@ -115,5 +158,51 @@ public class Utils {
 			final int density = (int) (100.0f * opt.dm.density);
 			sConfigurations.put(density, cat);
 		}
+	}
+	
+	public static ColorDrawable GrayBG = new ColorDrawable(0xff8f8f8f);
+	
+	public static boolean DGShowing(Dialog dTmp) {
+		Window win = dTmp==null?null:dTmp.getWindow();
+		return win!=null&&win.getDecorView().getParent()!=null;
+	}
+	
+	static Object instance_WindowManagerGlobal;
+	static Class class_WindowManagerGlobal;
+	static Field field_mViews;
+	
+	public static void logAllViews(){
+		List<View> views = getWindowManagerViews();
+		for(View vI:views){
+			CMN.Log("\n\n\n\n\n::  "+vI);
+			CMN.recurseLog(vI);
+		}
+	}
+	
+	/* get the list from WindowManagerGlobal.mViews */
+	public static List<View> getWindowManagerViews() {
+		if(instance_WindowManagerGlobal instanceof Exception) {
+			return new ArrayList<>();
+		}
+		try {
+			if(instance_WindowManagerGlobal==null) {
+				class_WindowManagerGlobal = Class.forName("android.view.WindowManagerGlobal");
+				field_mViews = class_WindowManagerGlobal.getDeclaredField("mViews");
+				field_mViews.setAccessible(true);
+				Method method_getInstance = class_WindowManagerGlobal.getMethod("getInstance");
+				instance_WindowManagerGlobal = method_getInstance.invoke(null);
+			}
+			Object views = field_mViews.get(instance_WindowManagerGlobal);
+			if (views instanceof List) {
+				return (List<View>) views;
+			} else if (views instanceof View[]) {
+				return Arrays.asList((View[])views);
+			}
+		} catch (Exception e) {
+			CMN.Log(e);
+			instance_WindowManagerGlobal = new Exception();
+		}
+		
+		return new ArrayList<>();
 	}
 }

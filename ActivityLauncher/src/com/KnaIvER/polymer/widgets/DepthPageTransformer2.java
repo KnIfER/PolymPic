@@ -1,4 +1,4 @@
-package com.KnaIvER.polymer.widgets;
+package com.knaiver.polymer.widgets;
 
 import android.view.View;
 

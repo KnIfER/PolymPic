@@ -1,4 +1,4 @@
-package com.KnaIvER.polymer.matrix;
+package com.knaiver.polymer.matrix;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;

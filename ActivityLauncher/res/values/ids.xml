@@ -3,4 +3,5 @@
 	<item name="toolbar_action0" type="id" />
 	<item name="toolbar_action1" type="id" />
 	<item name="cover" type="id" />
+	<item name="toolbar_action3" type="id" />
 </resources>

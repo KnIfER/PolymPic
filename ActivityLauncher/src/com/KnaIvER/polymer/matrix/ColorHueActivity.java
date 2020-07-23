@@ -1,4 +1,4 @@
-package com.KnaIvER.polymer.matrix;
+package com.knaiver.polymer.matrix;
 
 import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
@@ -6,7 +6,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.widget.ImageView;
 import android.widget.SeekBar;
-import com.KnaIvER.polymer.R;
+import com.knaiver.polymer.R;
 
 public class ColorHueActivity extends AppCompatActivity implements SeekBar.OnSeekBarChangeListener {
     ImageView imageView;

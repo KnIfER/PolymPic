@@ -1,4 +1,4 @@
-package com.KnaIvER.polymer.horizontallistview;
+package com.knaiver.polymer.horizontallistview;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -7,7 +7,7 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
-import com.KnaIvER.polymer.R;
+import com.knaiver.polymer.R;
 
 /** An array adapter that knows how to render views when given CustomData classes */
 public class CustomArrayAdapter extends ArrayAdapter<CustomData> {

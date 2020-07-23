@@ -37,4 +37,5 @@
     <color name="zumulv">#009688</color>
     
     <color name="whitehalf">#a0ffffff</color>
+	<color name="progressbar_color">#FFB450</color>
 </resources>

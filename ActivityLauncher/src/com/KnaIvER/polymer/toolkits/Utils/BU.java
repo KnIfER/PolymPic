@@ -15,7 +15,7 @@
 	Mdict-Java Query Library
 */
 
-package com.KnaIvER.polymer.toolkits.Utils;
+package com.knaiver.polymer.toolkits.Utils;
 
 import java.io.*;
 import java.nio.charset.Charset;

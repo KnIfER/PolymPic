@@ -1,4 +1,4 @@
-package com.KnaIvER.polymer.Utils;
+package com.knaiver.polymer.Utils;
 
 import android.view.View;
 import android.view.ViewGroup;
@@ -29,11 +29,30 @@ public class CMN {
 	//public static dictionary_App_Options opt;
 	//public static LayoutInflater inflater;
 	//protected static ViewPager viewPager;
-	public static int dbVersionCode = 1;
+	public static int dbVersionCode = 2;
 	public static long FloatLastInvokerTime=-1;
 	public static int ShallowHeaderBlue;
 	
+	public static long stst;
+	public static long ststrt;
+	public static long stst_add;
+	public static boolean testing;
 	
+	public static void rt(Object... o) {
+		ststrt = System.currentTimeMillis();
+		Log(o);
+	}
+	public static void pt(Object...args) {
+		CMN.Log(listToStr(args)+" "+(System.currentTimeMillis()-ststrt));
+	}
+	
+	public static String listToStr(Object...args) {
+		String ret="";
+		for (int i = 0; i < args.length; i++) {
+			ret+=args[i];
+		}
+		return ret;
+	}
 	
 
 	///*[!0] Start debug flags and methods
@@ -86,7 +105,11 @@ public class CMN {
 			if(msg.length()>0) msg.append(", ");
 			msg.append(o1);
 		}
-		android.util.Log.d("fatal poison",msg.toString());
+		if(testing) {
+			System.out.println(msg.toString());
+		} else {
+			android.util.Log.d("fatal poison",msg.toString());
+		}
 	}
 	public static void recurseLog(View v,String... depths) {
 		String depth = depths!=null && depths.length>0?depths[0]:"- ";
@@ -112,6 +135,10 @@ public class CMN {
 		Log("Cascade Start Is : "+now+" == "+Integer.toHexString(now.getId())+"/"+now.getBackground());
 		recurseLog(now);
 		//now.setBackgroundResource(R.drawable.popup_shadow);
+	}
+	
+	public static int id(Object obj) {
+		return System.identityHashCode(obj);
 	}
 	//[!1] End debug flags and methods*/
 	

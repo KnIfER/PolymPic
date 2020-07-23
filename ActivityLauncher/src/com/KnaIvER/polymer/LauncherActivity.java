@@ -1,12 +1,11 @@
-package com.KnaIvER.polymer;
+package com.knaiver.polymer;
 
 
 import android.app.Activity;
-import android.content.Intent;
 import android.os.Bundle;
 
-import com.KnaIvER.polymer.Utils.CMN;
-import com.KnaIvER.polymer.Utils.Options;
+import com.knaiver.polymer.Utils.CMN;
+import com.knaiver.polymer.Utils.Options;
 
 
 public class LauncherActivity extends Activity {
@@ -19,11 +18,11 @@ public class LauncherActivity extends Activity {
 			CMN.opt = new Options(getApplicationContext());
 			CMN.opt.dm = getResources().getDisplayMetrics();
 		}
-		if(false && CMN.opt.getLaunchServiceLauncher()){
-			startService(new Intent(getApplicationContext(), SimpleService.class));
-			finish();
-			return;
-		}
+//		if(false && CMN.opt.getLaunchServiceLauncher()){
+//			startService(new Intent(getApplicationContext(), SimpleService.class));
+//			finish();
+//			return;
+//		}
 		setContentView(R.layout.service_main);
 
 

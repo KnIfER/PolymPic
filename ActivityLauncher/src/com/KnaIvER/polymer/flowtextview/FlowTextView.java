@@ -1,4 +1,4 @@
-package com.KnaIvER.polymer.flowtextview;
+package com.knaiver.polymer.flowtextview;
 
 import android.content.Context;
 import android.content.res.Configuration;

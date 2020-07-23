@@ -16,7 +16,7 @@
  * https://github.com/lsjwzh/RecyclerViewPager/commits/master/lib/src/main/java/com/lsjwzh/widget/recyclerviewpager/RecyclerViewPager.java
  */
 
-package com.KnaIvER.polymer.webslideshow;
+package com.knaiver.polymer.webslideshow;
 
 import android.content.Context;
 import android.content.res.TypedArray;
@@ -30,9 +30,9 @@ import android.view.View;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.KnaIvER.polymer.BuildConfig;
-import com.KnaIvER.polymer.R;
-import com.KnaIvER.polymer.Utils.CMN;
+import com.knaiver.polymer.BuildConfig;
+import com.knaiver.polymer.R;
+import com.knaiver.polymer.Utils.CMN;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;

@@ -1,4 +1,4 @@
-package com.KnaIvER.polymer.widgets;
+package com.knaiver.polymer.widgets;
 
 import android.content.Context;
 import android.content.res.TypedArray;
@@ -10,8 +10,7 @@ import android.view.WindowManager;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 
-import com.KnaIvER.polymer.R;
-import com.KnaIvER.polymer.Utils.CMN;
+import com.knaiver.polymer.R;
 
 public class WindowHacker extends RelativeLayout {
 	private final WindowManager wm;

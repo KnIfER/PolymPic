@@ -9,18 +9,18 @@
 		android:layout_width="match_parent"
 		android:layout_height="match_parent"/>
 
-    <com.KnaIvER.polymer.slideshow.SubsamplingScaleImageView
+    <com.knaiver.polymer.slideshow.SubsamplingScaleImageView
 		android:id="@+id/subView"
 		android:layout_height="match_parent"
 		android:layout_width="match_parent"
 		/>
 
-	<com.KnaIvER.polymer.slideshow.TilesGridLayout
+	<com.knaiver.polymer.slideshow.TilesGridLayout
 		android:id="@+id/grid"
 		android:layout_width="match_parent"
 		android:layout_height="match_parent"
 		android:layout_gravity="center"
 		>
-	</com.KnaIvER.polymer.slideshow.TilesGridLayout>
+	</com.knaiver.polymer.slideshow.TilesGridLayout>
 
 </FrameLayout>

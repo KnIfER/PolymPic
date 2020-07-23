@@ -1,4 +1,4 @@
-package com.KnaIvER.polymer.matrix;
+package com.knaiver.polymer.matrix;
 
 import android.graphics.Bitmap;
 import android.graphics.ColorMatrix;
@@ -10,7 +10,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.widget.ImageView;
 
-import com.KnaIvER.polymer.R;
+import com.knaiver.polymer.R;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.target.SimpleTarget;
 import com.bumptech.glide.request.transition.Transition;

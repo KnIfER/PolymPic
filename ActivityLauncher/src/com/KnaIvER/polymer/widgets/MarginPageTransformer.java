@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.KnaIvER.polymer.widgets;
+package com.knaiver.polymer.widgets;
 
 import android.view.View;
 import android.view.ViewParent;

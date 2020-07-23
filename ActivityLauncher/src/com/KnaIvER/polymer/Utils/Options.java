@@ -1,4 +1,4 @@
-package com.KnaIvER.polymer.Utils;
+package com.knaiver.polymer.Utils;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -7,14 +7,17 @@ import android.preference.PreferenceManager;
 import android.util.DisplayMetrics;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.GlobalOptions;
 
 import com.knziha.filepicker.model.GlideCacheModule;
 import com.knziha.filepicker.settings.FilePickerOptions;
 import com.knziha.filepicker.utils.CMNF;
 
+import org.adrianwalker.multilinestring.Multiline;
+
+@SuppressWarnings("ALL")
 public class Options
 {
+	
 	private final SharedPreferences defaultReader;
 	public DisplayMetrics dm;
 	public static boolean isLarge;
@@ -38,6 +41,9 @@ public class Options
 	}
 	public int getToastColor() {
 		return defaultReader.getInt("TTT",0xFF0D2F4B);
+	}
+	public int getHintsLimitation() {
+		return defaultReader.getInt("hints",16);
 	}
 
 	public String pathToGlide(@NonNull Context context) {
@@ -72,50 +78,19 @@ public class Options
 	private void putFirstFlag(long val) {
 		defaultReader.edit().putLong("MFF",FirstFlag=val).apply();
 	}
-
-	private static void updateFFAt(long o, boolean val) {
-		FirstFlag &= (~o);
-		if(val) FirstFlag |= o;
-		//defaultReader.edit().putInt("MFF",FirstFlag).commit();
-	}
-
-	public static boolean getAlwaysRefreshThumbnail() {
-		return (FirstFlag & 0x1) != 0x1;
-	}
-	public static boolean setAlwaysRefreshThumbnail(boolean val) {
-		updateFFAt(0x1,!val);
-		return val;
-	}
-
-	public boolean getLaunchServiceLauncher() {
-		return (FirstFlag & 1) != 1;
-	}
-	public boolean setLaunchServiceLauncher(boolean val) {
-		updateFFAt(1,!val);
-		return val;
-	}
-
-	public boolean getUseLruDiskCache() {
-		return (SecondFlag & 0x100) != 0x100;
-	}
-
-	public boolean getInDarkMode() {
-		boolean ret = (FirstFlag & 0x80000) == 0x80000;
-		GlobalOptions.isDark |= ret;
-		return ret;
-	}
-
-	public static boolean isFullScreen() {
-		return (FirstFlag & 0x10000) == 0x10000;
-	}
-	public boolean setFullScreen(boolean val) {
-		updateFFAt(0x10000,val);
-		return val;
-	}
-
-
-
-
+	
+	@Multiline(flagPos=0, shift=1) public static boolean getAlwaysRefreshThumbnail(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=0, shift=1) public static boolean setAlwaysRefreshThumbnail(boolean val){ FirstFlag=FirstFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=15) public static boolean getInDarkMode(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=15) public static boolean setInDarkMode(boolean val){ FirstFlag=FirstFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=16) public static boolean isFullScreen(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=16) public static boolean setFullScreen(boolean val){ FirstFlag=FirstFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=17, shift=1) public static boolean getTransitSplashScreen(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=18, shift=1) public static boolean getTransitSearchHints(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=19, shift=0) public static boolean getLimitHints(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=20) public boolean getTextPanel(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=20) public void setTextPanel(boolean val){ FirstFlag=FirstFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=22, shift=1) public boolean getUseBackKeyClearWebViewFocus(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
 
 
 
@@ -140,90 +115,22 @@ public class Options
 	public static void SecondFlag(long _SecondFlag) {
 		SecondFlag=_SecondFlag;
 	}
-	private static void updateSFAt(int o, boolean val) {
-		SecondFlag &= (~o);
-		if(val) SecondFlag |= o;
-		//defaultReader.edit().putInt("MFF",FirstFlag).commit();
-	}
-	private static void updateSFAt(long o, boolean val) {
-		SecondFlag &= (~o);
-		if(val) SecondFlag |= o;
-		//defaultReader.edit().putInt("MFF",FirstFlag).commit();
-	}
 
-
-	public static boolean getKeepScreen() {
-		return (SecondFlag & 0x10000000L) != 0x10000000L;
-	}
-	public static boolean getKeepScreen(long SecondFlag) {
-		return (SecondFlag & 0x10000000L) != 0x10000000L;
-	}
-	public static boolean setKeepScreen(boolean val) {
-		updateSFAt(0x10000000L,!val);
-		return val;
-	}
-
-	//start crash handler settings
-	public boolean getUseCustomCrashCatcher() {
-		return true;//(SecondFlag & 0x80000L) == 0x80000L;
-	}
-
-	public boolean setUseCustomCrashCatcher(boolean val) {
-		updateSFAt(0x80000L,val);
-		return val;
-	}
-
-	public boolean getSilentExitBypassingSystem() {
-		return (SecondFlag & 0x100000L) != 0x100000L;
-	}
-
-	public boolean setSilentExitBypassingSystem(boolean val) {
-		updateSFAt(0x100000L,!val);
-		return val;
-	}
-
+	@Multiline(flagPos=19, shift=1) public static boolean getUseCustomCrashCatcher(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=20, shift=1) public static boolean getSilentExitBypassingSystem(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
 	/** ffmr */
-	public boolean getFFmpegThumbsGeneration(){
-		return (SecondFlag & 0x200000)!=0;
+	@Multiline(flagPos=21) public static boolean getFFmpegThumbsGeneration(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=22, shift=1) public static boolean getLogToFile(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
+	
+	public boolean getUseLruDiskCache() {
+		return (SecondFlag & 0x100) != 0x100;
 	}
-
-	public boolean getLogToFile() {
-		return (SecondFlag & 0x400000L) != 0x400000L;
-	}
-
-	public boolean setLogToFile(boolean val) {
-		updateSFAt(0x400000L,!val);
-		return val;
-	}
-
-	public static boolean getRebuildToast() {
-		return true;//(SecondFlag & 0x20000000000000L) == 0x20000000000000L;
-	}
-	public static boolean setRebuildToast(boolean val) {
-		updateSFAt(0x20000000000000L,val);
-		return val;
-	}
-
-
-	public static boolean getToastRoundedCorner() {
-		return (SecondFlag & 0x80000000000000L) != 0x80000000000000L;
-	}
-	public static boolean setToastRoundedCorner(boolean val) {
-		updateSFAt(0x80000000000000L,!val);
-		return val;
-	}
-
-
-	/** 32~64 */
-	public int getHeight(){
-		return 33+((int) ((FirstFlag >> 1) & 31)+29)%31;
-	}
-	public int getHeight(long FirstFlag){
-		return 33+((int) ((FirstFlag >> 1) & 31)+29)%31;
-	}
-	public int SetHeight(int val){
-		FirstFlag &= ~(0x2|0x4|0x8|0x10|0x20);
-		FirstFlag |= ((long)(((val-33)+2)%31) & 31) << 1;
-		return val;
-	}
+	@Multiline(flagPos=28, shift=1) public static boolean getKeepScreen(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=28, shift=1) public static boolean getKeepScreen(long SecondFlag){ SecondFlag=SecondFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=28, shift=1) public static boolean setKeepScreen(boolean val){ SecondFlag=SecondFlag; throw new RuntimeException(); }
+	
+	@Multiline(flagPos=53, debug=1) public static boolean getRebuildToast(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=55, shift=1) public static boolean getToastRoundedCorner(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
+	
+	
 }

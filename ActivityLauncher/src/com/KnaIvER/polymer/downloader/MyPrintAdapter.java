@@ -1,4 +1,4 @@
-package com.KnaIvER.polymer.downloader;
+package com.knaiver.polymer.downloader;
 
 import android.content.Context;
 import android.graphics.Bitmap;

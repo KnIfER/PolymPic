@@ -24,7 +24,7 @@
  * It has been substantially rewritten and added to from the original version.
  */
 // @formatter:on
-package com.KnaIvER.polymer.horizontallistview;
+package com.knaiver.polymer.horizontallistview;
 
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
@@ -52,7 +52,7 @@ import android.widget.Scroller;
 import androidx.core.view.ViewCompat;
 import androidx.core.widget.EdgeEffectCompat;
 
-import com.KnaIvER.polymer.R;
+import com.knaiver.polymer.R;
 
 import java.util.ArrayList;
 import java.util.LinkedList;

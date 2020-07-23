@@ -24,7 +24,7 @@
  * questions.
  */
 
-package com.KnaIvER.polymer.Utils;
+package com.knaiver.polymer.Utils;
 
 
 import org.apache.commons.lang3.NotImplementedException;

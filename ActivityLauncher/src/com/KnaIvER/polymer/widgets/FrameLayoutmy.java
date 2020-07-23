@@ -1,12 +1,10 @@
-package com.KnaIvER.polymer.widgets;
+package com.knaiver.polymer.widgets;
 
 import android.content.Context;
 import android.util.AttributeSet;
-import android.view.View;
 import android.widget.FrameLayout;
-import android.widget.ListView;
 
-import com.KnaIvER.polymer.Utils.CMN;
+import com.knaiver.polymer.Utils.CMN;
 
 public class FrameLayoutmy extends FrameLayout {
 	public FrameLayoutmy(Context context) {

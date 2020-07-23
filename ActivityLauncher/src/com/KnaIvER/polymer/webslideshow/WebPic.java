@@ -1,10 +1,9 @@
-package com.KnaIvER.polymer.webslideshow;
+package com.knaiver.polymer.webslideshow;
 
 import android.graphics.Bitmap;
 
-import com.KnaIvER.polymer.BrowserActivity;
-import com.KnaIvER.polymer.Utils.CMN;
-import com.KnaIvER.polymer.widgets.WebViewmy;
+import com.knaiver.polymer.BrowserActivity;
+import com.knaiver.polymer.widgets.WebViewmy;
 
 public class WebPic {
 	final String path;

@@ -3,7 +3,7 @@
 // (powered by Fernflower decompiler)
 //
 
-package com.KnaIvER.polymer.toolkits.Utils;
+package com.knaiver.polymer.toolkits.Utils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

@@ -18,6 +18,11 @@
     <declare-styleable name="CheckableImageview">
         <attr name="CheckedTint" format="color|reference"/>
     </declare-styleable>
+
+    <declare-styleable name="DescriptiveImageView">
+        <attr name="android:text" format="string|reference"/>
+        <attr name="android:layout_y" format="dimension"/>
+    </declare-styleable>
     
     <declare-styleable name="TouchScrollBar">
         <attr name="msb_hideDelayInMilliseconds" format="integer|reference"/>
@@ -56,8 +61,9 @@
         <attr name="dim0" format="dimension"/>
         <attr name="dim1" format="dimension"/>
     </declare-styleable>
-    
-    
+
+
+	<attr format="reference" name="ic_launch"/>
     
     
     
@@ -94,4 +100,18 @@
 		<attr name="triggerOffset" format="float" />
 		<attr name="flingFactor" format="float" />
 	</declare-styleable><!-- end recyclerViewpater -->
+
+	<declare-styleable name="FlowTextView">
+		<attr name="android:src" format="reference" />
+		<attr name="android:textSize" format="dimension" />
+		<attr name="android:textColor" format="dimension" />
+		<attr name="android:lineSpacingExtra" format="dimension" />
+		<attr name="android:lineSpacingMultiplier" format="float" />
+		<attr name="starWidth" format="dimension" />
+		<attr name="android:text" format="string" />
+		<attr name="android:maxLines" format="integer" />
+		<attr name="android:gravity" format="enum"/>
+		<attr name="margin" format="dimension" />
+		<attr name="rating" format="boolean" />
+	</declare-styleable>
 </resources>

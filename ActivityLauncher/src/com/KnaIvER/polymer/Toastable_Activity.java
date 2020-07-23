@@ -1,4 +1,4 @@
-package com.KnaIvER.polymer;
+package com.knaiver.polymer;
 
 import android.Manifest;
 import android.animation.Animator;
@@ -8,7 +8,6 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Color;
@@ -26,7 +25,6 @@ import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -37,10 +35,11 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.GlobalOptions;
 import androidx.appcompat.widget.Toolbar;
 
-import com.KnaIvER.polymer.Utils.CMN;
-import com.KnaIvER.polymer.Utils.Options;
-import com.KnaIvER.polymer.widgets.SimpleTextNotifier;
-import com.KnaIvER.polymer.widgets.Utils;
+import com.knaiver.polymer.Utils.CMN;
+import com.knaiver.polymer.Utils.Options;
+import com.knaiver.polymer.widgets.EditTextmy;
+import com.knaiver.polymer.widgets.SimpleTextNotifier;
+import com.knaiver.polymer.widgets.Utils;
 import com.bumptech.glide.load.engine.cache.DiskCache;
 
 import org.apache.commons.lang3.StringUtils;
@@ -92,7 +91,7 @@ public class Toastable_Activity extends AppCompatActivity {
 	protected ViewGroup dialogHolder;
 	protected ViewGroup dialog_;
 	protected Toolbar toolbar;
-	protected EditText etSearch;
+	protected EditTextmy etSearch;
 	protected ImageView ivDeleteText;
 	protected ImageView ivBack;
 
@@ -100,7 +99,7 @@ public class Toastable_Activity extends AppCompatActivity {
 
 	public Dialog d;
 	public View dv;
-	Configuration mConfiguration;
+	public Configuration mConfiguration;
 	boolean isDarkStamp;
 	ViewConfiguration ViewConfigDefault;
 	

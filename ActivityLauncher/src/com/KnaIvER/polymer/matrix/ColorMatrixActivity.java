@@ -1,7 +1,7 @@
-package com.KnaIvER.polymer.matrix;
+package com.knaiver.polymer.matrix;
 
 import android.graphics.Color;
-import com.KnaIvER.polymer.R;
+import com.knaiver.polymer.R;
 import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
 import android.os.Bundle;

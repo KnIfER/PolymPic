@@ -1,4 +1,4 @@
-package com.KnaIvER.polymer.slideshow.decoder;
+package com.knaiver.polymer.slideshow.decoder;
 
 import android.content.Context;
 import android.graphics.Bitmap;

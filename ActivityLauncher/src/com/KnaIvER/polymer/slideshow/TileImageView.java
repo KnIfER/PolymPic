@@ -1,4 +1,4 @@
-package com.KnaIvER.polymer.slideshow;
+package com.knaiver.polymer.slideshow;
 
 import android.content.Context;
 import android.util.AttributeSet;

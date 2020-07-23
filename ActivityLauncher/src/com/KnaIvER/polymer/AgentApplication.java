@@ -1,10 +1,10 @@
-package com.KnaIvER.polymer;
+package com.knaiver.polymer;
 
 import android.app.Application;
 import android.graphics.Bitmap;
 
-import com.KnaIvER.polymer.webslideshow.WebPic;
-import com.KnaIvER.polymer.webslideshow.WebPicLoaderFactory;
+import com.knaiver.polymer.webslideshow.WebPic;
+import com.knaiver.polymer.webslideshow.WebPicLoaderFactory;
 import com.knziha.filepicker.model.GlideCacheModule;
 
 public class AgentApplication extends Application {

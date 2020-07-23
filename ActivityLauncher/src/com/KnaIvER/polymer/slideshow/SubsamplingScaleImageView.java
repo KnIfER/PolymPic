@@ -14,12 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package com.KnaIvER.polymer.slideshow;
+package com.knaiver.polymer.slideshow;
 
 import android.annotation.SuppressLint;
 import android.content.ContentResolver;
 import android.content.Context;
-import android.content.res.TypedArray;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -58,14 +57,13 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.viewpager.widget.ViewPager;
 
-import com.KnaIvER.polymer.R;
-import com.KnaIvER.polymer.Utils.CMN;
-import com.KnaIvER.polymer.slideshow.decoder.CompatDecoderFactory;
-import com.KnaIvER.polymer.slideshow.decoder.DecoderFactory;
-import com.KnaIvER.polymer.slideshow.decoder.ImageDecoder;
-import com.KnaIvER.polymer.slideshow.decoder.ImageRegionDecoder;
-import com.KnaIvER.polymer.slideshow.decoder.SkiaImageDecoder;
-import com.KnaIvER.polymer.slideshow.decoder.SkiaImageRegionDecoder;
+import com.knaiver.polymer.Utils.CMN;
+import com.knaiver.polymer.slideshow.decoder.CompatDecoderFactory;
+import com.knaiver.polymer.slideshow.decoder.DecoderFactory;
+import com.knaiver.polymer.slideshow.decoder.ImageDecoder;
+import com.knaiver.polymer.slideshow.decoder.ImageRegionDecoder;
+import com.knaiver.polymer.slideshow.decoder.SkiaImageDecoder;
+import com.knaiver.polymer.slideshow.decoder.SkiaImageRegionDecoder;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;

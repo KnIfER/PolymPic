@@ -1,18 +1,13 @@
-package com.KnaIvER.polymer.browser;
+package com.knaiver.polymer.browser;
 
 
 import android.app.Activity;
-import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
-import com.KnaIvER.polymer.R;
-import com.KnaIvER.polymer.SimpleService;
-import com.KnaIvER.polymer.Utils.CMN;
-import com.KnaIvER.polymer.Utils.Options;
+import com.knaiver.polymer.R;
 
 
 public class BrowseActivity extends Activity {

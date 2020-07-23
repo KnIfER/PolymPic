@@ -19,6 +19,7 @@ ODPlayer/src/main/assets
 ODPlayer/src/main/jniLibs/arm64-v8a/*.so
 ODPlayer/src/main/jniLibs/armeabi-v7a/*.so
 ODPlayer/src/main/jniLibs/x86/*.so
+*.jar
 
 #git remote add origin https://github.com/KnIfER/vlc-android-1000y.git
 #git push -u origin +master

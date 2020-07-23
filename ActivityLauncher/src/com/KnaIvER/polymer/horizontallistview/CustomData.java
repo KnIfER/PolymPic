@@ -1,4 +1,4 @@
-package com.KnaIvER.polymer.horizontallistview;
+package com.knaiver.polymer.horizontallistview;
 
 /** This is just a simple class for holding data that is used to render our custom view */
 public class CustomData {

@@ -1,4 +1,4 @@
-package com.KnaIvER.polymer.flowtextview.sample;
+package com.knaiver.polymer.flowtextview.sample;
 
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
@@ -7,8 +7,8 @@ import android.text.Html;
 import android.view.View;
 import android.widget.Button;
 
-import com.KnaIvER.polymer.R;
-import com.KnaIvER.polymer.flowtextview.FlowTextView;
+import com.knaiver.polymer.R;
+import com.knaiver.polymer.flowtextview.FlowTextView;
 
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {

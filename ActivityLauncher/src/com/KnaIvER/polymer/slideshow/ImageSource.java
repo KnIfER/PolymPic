@@ -1,4 +1,4 @@
-package com.KnaIvER.polymer.slideshow;
+package com.knaiver.polymer.slideshow;
 
 import android.graphics.Bitmap;
 import android.graphics.Rect;

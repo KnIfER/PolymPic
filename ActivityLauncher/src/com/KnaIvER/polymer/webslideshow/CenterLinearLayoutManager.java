@@ -1,4 +1,4 @@
-package com.KnaIvER.polymer.webslideshow;
+package com.knaiver.polymer.webslideshow;
 import android.content.Context;
 import android.graphics.PointF;
 import android.util.DisplayMetrics;
@@ -11,7 +11,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.LinearSmoothScroller;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.KnaIvER.polymer.Utils.CMN;
+import com.knaiver.polymer.Utils.CMN;
 import com.google.android.material.math.MathUtils;
 
 /** Recyclerview smooth scroll to position in the center.

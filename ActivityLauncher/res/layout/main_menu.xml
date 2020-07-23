@@ -25,7 +25,7 @@
 			>
 			<TextView
 				android:id="@+id/fresh"
-				android:text="崭新"
+				android:text="重开"
 				style="@style/MenuTextStyleInListHeader"
 				/>
 			<TextView
@@ -57,23 +57,6 @@
 			android:orientation="horizontal"
 			>
 			<TextView
-				android:id="@+id/reinit"
-				android:text="重开"
-				style="@style/MenuTextStyleInListHeader"
-				/>
-			<TextView
-				android:id="@+id/refresh"
-				android:text="刷新页面"
-				style="@style/MenuTextStyleInList"
-				/>
-		</LinearLayout>
-
-		<LinearLayout
-			android:layout_width="match_parent"
-			android:layout_height="wrap_content"
-			android:orientation="horizontal"
-			>
-			<TextView
 				android:id="@+id/print"
 				android:text="打印"
 				style="@style/MenuTextStyleInListHeader"
@@ -85,7 +68,25 @@
 				/>
 		</LinearLayout>
 
+		<LinearLayout
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:orientation="horizontal"
+			>
+			<TextView
+				android:id="@+id/reinit"
+				android:text="崭新"
+				style="@style/MenuTextStyleInListHeader"
+				/>
+			<TextView
+				android:id="@+id/refresh"
+				android:text="刷新页面"
+				style="@style/MenuTextStyleInList"
+				/>
+		</LinearLayout>
+
 		<TextView
+			android:id="@+id/menu_icon6"
 			android:text="分享链接"
 			android:drawableLeft="@drawable/abc_ic_menu_share_mtrl_alpha"
 			style="@style/MenuTextStyle"
@@ -93,13 +94,13 @@
 
 		<TextView
 			android:text="页内查找…"
-			android:drawableLeft="@drawable/ic_baseline_desktop_mac_24"
+			android:drawableLeft="@drawable/ic_baseline_find_in_page_24"
 			style="@style/MenuTextStyle"
 			/>
 
 		<TextView
 			android:text="电脑模式"
-			android:drawableLeft="@drawable/ic_baseline_desktop_mac_24"
+			android:drawableLeft="@drawable/ic_baseline_desktop_24"
 			style="@style/MenuTextStyle"
 			/>
 

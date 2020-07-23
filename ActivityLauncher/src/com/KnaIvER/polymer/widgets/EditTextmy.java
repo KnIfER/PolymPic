@@ -1,13 +1,16 @@
-package com.KnaIvER.polymer.widgets;
+package com.knaiver.polymer.widgets;
 
 import android.content.Context;
-import android.graphics.Rect;
+import android.text.TextPaint;
 import android.util.AttributeSet;
+import android.view.textclassifier.TextClassifier;
 import android.widget.EditText;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
+import androidx.recyclerview.widget.RecyclerView.OnScrollChangedListener;
 
-import com.KnaIvER.polymer.Utils.CMN;
+import static androidx.appcompat.widget.AppCompatEditText.TextFucker;
 
 public class EditTextmy extends EditText {
 	public EditTextmy(Context context) {
@@ -38,9 +41,53 @@ public class EditTextmy extends EditText {
 //	}
 	
 	
+//	@Override
+//	public int getLineBounds(int line, Rect bounds) {
+//		CMN.Log("getLineBounds");
+//		return super.getLineBounds(line, bounds);
+//	}
+	
+	
+	public static TextPaint hackTp;
 	@Override
-	public int getLineBounds(int line, Rect bounds) {
-		CMN.Log("getLineBounds");
-		return super.getLineBounds(line, bounds);
+	public TextPaint getPaint() {
+		if(true){ //PDICMainAppOptions.getHackDisableMagnifier()
+			if(EditTextmy.hackTp==null){
+				EditTextmy.hackTp = new TextPaint();
+				EditTextmy.hackTp.setTextSize(1000);
+			};
+			return EditTextmy.hackTp;
+		}
+		return super.getPaint();
 	}
+	
+	
+	/**
+	 * Returns the {@link TextClassifier} used by this TextView.
+	 * If no TextClassifier has been set, this TextView uses the default set by the
+	 * {@link android.view.textclassifier.TextClassificationManager}.
+	 */
+	@Override
+	@NonNull
+	@RequiresApi(api = 26)
+	public TextClassifier getTextClassifier() {
+		// The null check is necessary because getTextClassifier is called when we are invoking
+		// the super class's constructor.
+		if(true && TextFucker!=null) {
+			return TextFucker;
+		}
+		return super.getTextClassifier();
+	}
+	
+	@Override
+	protected void onScrollChanged(int l, int t, int oldl, int oldt) {
+		super.onScrollChanged(l, t, oldl, oldt);
+		if(mOnScrollChangeListener !=null)
+			mOnScrollChangeListener.onScrollChange(this,l,t,oldl,oldt);
+	}
+	
+	public void setOnScrollChangedListener(OnScrollChangedListener onSrollChangedListener) {
+		mOnScrollChangeListener=onSrollChangedListener;
+	}
+	OnScrollChangedListener mOnScrollChangeListener;
 }

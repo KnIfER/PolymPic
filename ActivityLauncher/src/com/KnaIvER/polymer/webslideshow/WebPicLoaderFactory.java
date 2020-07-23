@@ -1,4 +1,4 @@
-package com.KnaIvER.polymer.webslideshow;
+package com.knaiver.polymer.webslideshow;
 
 import android.graphics.Bitmap;
 
