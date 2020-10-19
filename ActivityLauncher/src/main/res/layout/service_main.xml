@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.knaiver.polymer.widgets.SplitView
+<com.knziha.polymer.widgets.SplitView
 	android:id="@+id/toptopP"
 	xmlns:android="http://schemas.android.com/apk/res/android"
 	xmlns:splitview="http://schemas.android.com/apk/res-auto"
@@ -14,7 +14,7 @@
 	splitview:CompensationTop="80dp"
 	android:fitsSystemWindows="true"
 	>
-	<com.knaiver.polymer.widgets.WindowHacker
+	<com.knziha.polymer.widgets.WindowHacker
 		android:id="@+id/toptop"
 		android:layout_width="match_parent"
 		android:layout_height="0dp"
@@ -59,7 +59,7 @@
 			android:layout_marginHorizontal="25dp"
 			android:paddingStart="20dp"
 			/>
-	</com.knaiver.polymer.widgets.WindowHacker>
+	</com.knziha.polymer.widgets.WindowHacker>
 
 	<Toolbar
 		android:id="@+id/bottombar"
@@ -70,4 +70,4 @@
 		>
 
 	</Toolbar>
-</com.knaiver.polymer.widgets.SplitView>
+</com.knziha.polymer.widgets.SplitView>

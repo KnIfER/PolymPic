@@ -4,12 +4,12 @@
 * Copyright (c) 2014–2018, Julian Kühnel
 * Released under the MIT license https://git.io/vwTVl
 *****************************************************/
-
+var Maya;
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
   typeof define === 'function' && define.amd ? define(factory) :
-  (global.Mark = factory());
-}(this, (function () { 'use strict';
+  (global.Wαrk = factory());
+}(this, (Maya=function () { 'use strict';
 
   function _typeof(obj) {
     if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") {
@@ -1427,8 +1427,8 @@
               w._docAnnots+=this_.serializeRange(range)+('|0'+'…');
               w._docAnnott+=range+('…');
               this_.surroundRangeContents(range, spanner)
+              chrome.SaveAnnots(chrmtd.get(), w._docAnnots, w._docAnnott);
            }
-           chrome.SaveAnnots(chrmtd.get(), w._docAnnots, w._docAnnott);
            //sel.removeAllRanges();
         }
         return window._docAnnots;
@@ -1598,8 +1598,10 @@
   return Mark$1;
 
 })));
-
-window._PPMInst = new Mark(document);
+if(window.Wαrk==undefined) {
+    window.Wαrk=Maya()
+}
+window._PPMInst = new window.Wαrk(document);
 var igNoreNextClick=0;
 window.addEventListener('click',function(e){
   if(e.target.className=='PLOD_HL') {

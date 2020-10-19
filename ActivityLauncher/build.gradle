@@ -3,30 +3,16 @@ apply plugin: 'com.android.application'
 android {
     compileSdkVersion ver_compileSdkVersion
 
-//    sourceSets {
-//        main {
-//            manifest.srcFile 'AndroidManifest.xml'
-//            java.srcDirs = ['src']
-//            resources.srcDirs = ['src']
-//            aidl.srcDirs = ['src']
-//            renderscript.srcDirs = ['src']
-//            res.srcDirs = ['res']
-//            assets.srcDirs = ['assets']
-//            jniLibs.srcDirs = ['libs']
-//        }
-//        test{
-//            java.srcDirs = ['test']
-//        }
-//        androidTest.setRoot('tests')
-//    }
-
     defaultConfig {
-        applicationId "com.knaiver.polymer"
+        applicationId "com.knziha.polymer"
         minSdkVersion ver_minsdk
         targetSdkVersion ver_aimsdk
         versionCode 1
         versionName "1.0"
         vectorDrawables.generatedDensities = ['hdpi']
+        ndk {
+            abiFilters 'armeabi-v7a'
+        }
     }
 
     buildFeatures {
@@ -39,15 +25,6 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-
-    //signingConfigs {
-    //  release {
-    //    keyAlias 'xxx'
-    //    keyPassword 'xxx'
-    //    storeFile file('/Users/xxx/work/keystore/xxx.key')
-    //    storePassword 'xxx'
-    //  }
-    //}
 
     lintOptions {
         abortOnError false
@@ -73,11 +50,14 @@ dependencies {
     api project(':glide')
     testImplementation 'junit:junit:4.13'
     //annotationProcessor libs_glide
+    api project(':LibPdfium')
 
     compileOnly project(':multiline')
     annotationProcessor project(':multiline')
     testCompileOnly project(':multiline')
     testAnnotationProcessor project(':multiline')
+
+    testImplementation 'com.google.code.gson:gson:2.8.6'
 
     api(project(':filepicker'))
 
@@ -109,5 +89,5 @@ dependencies {
         api(project(':AppPreference'))
     }
 
-    //api fileTree(dir: 'libs', include: ['*.jar'])
+    api fileTree(dir: 'libs', include: ['*.jar'])
 }

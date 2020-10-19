@@ -10,7 +10,7 @@
 		android:clickable="true"
 		android:visibility="gone"
 		xmlns:android="http://schemas.android.com/apk/res/android">
-		<com.knaiver.polymer.webslideshow.RecyclerViewPager
+		<com.knziha.polymer.webslideshow.RecyclerViewPager
 			xmlns:widget="http://schemas.android.com/apk/res-auto"
 			android:id="@+id/viewpager"
 			android:layout_width="fill_parent"

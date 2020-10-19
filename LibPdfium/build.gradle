@@ -1,0 +1,31 @@
+apply plugin: 'com.android.library'
+
+android {
+    compileSdkVersion 29
+
+    defaultConfig {
+        minSdkVersion 16
+        targetSdkVersion 29
+        versionCode 1
+        versionName "3.2.0-beta.1"
+    }
+
+    sourceSets{
+        main {
+            jni.srcDirs = []
+            jniLibs.srcDir 'src/main/libs'
+        }
+    }
+}
+
+dependencies {
+    if (use_compat_official == '1') {
+        api(libs_compat)
+    } else {
+        implementation (project(':AxtAppCompat'))
+        implementation(libs_appres)
+        configurations {
+            //all*.exclude group: 'androidx.appcompat'
+        }
+    }
+}

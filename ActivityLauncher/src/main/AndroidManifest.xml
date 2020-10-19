@@ -2,7 +2,7 @@
 <manifest
 	xmlns:tools="http://schemas.android.com/tools"
 	xmlns:android="http://schemas.android.com/apk/res/android"
-	package="com.knaiver.polymer">
+	package="com.knziha.polymer">
 	<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 	<uses-permission android:name="android.permission.SYSTEM_OVERLAY_WINDOW" />
 	<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
@@ -21,6 +21,9 @@
 	<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
 	<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
+	<uses-permission android:name="android.permission.CAMERA" />
+
+	<uses-permission android:name="android.permission.FLASHLIGHT" />
 
 	<application
 		android:allowBackup="true"
@@ -29,9 +32,8 @@
 		android:theme="@style/AppTheme"
 		android:hardwareAccelerated="true"
 		tools:ignore="GoogleAppIndexingWarning"
-		android:name="com.knaiver.polymer.AgentApplication"
+		android:name="com.knziha.polymer.AgentApplication"
 		android:usesCleartextTraffic="true"
-		android:debuggable="true"
 		android:requestLegacyExternalStorage="true">
 		<uses-library android:name="com.sec.android.app.multiwindow" android:required="false" />
 		<meta-data android:name="com.sec.android.support.multiwindow" android:value="true" />
@@ -40,7 +42,7 @@
 		<meta-data android:name="com.sec.android.multiwindow.MINIMUM_SIZE_W" android:value="632.0dip" />
 		<meta-data android:name="com.sec.android.multiwindow.MINIMUM_SIZE_H" android:value="598.0dip" />
 
-		<activity android:name="com.knaiver.polymer.horizontallistview.MainActivity"
+		<activity android:name="com.knziha.polymer.horizontallistview.MainActivity"
 			android:label="@string/app_name"
 			android:launchMode="singleInstance"
 			android:configChanges="orientation|keyboardHidden|screenSize|uiMode|locale|layoutDirection"
@@ -48,29 +50,55 @@
 			>
 		</activity>
 		<activity
-			android:name="com.knaiver.polymer.BrowserActivity"
+			android:name="com.knziha.polymer.BrowserActivity"
 			android:label="@string/app_name"
-			android:launchMode="standard"
-			android:configChanges="keyboardHidden|orientation|screenSize"
+			android:configChanges="orientation|keyboardHidden|screenSize|smallestScreenSize|screenLayout|uiMode|locale|layoutDirection"
 			android:theme="@style/ActivityTheme"
 			>
-			<intent-filter>
-				<action android:name="android.intent.action.MAIN" />
-				<category android:name="android.intent.category.LAUNCHER" />
-			</intent-filter>
+<!--			<intent-filter>-->
+<!--				<action android:name="android.intent.action.MAIN" />-->
+<!--				<category android:name="android.intent.category.LAUNCHER" />-->
+<!--			</intent-filter>-->
 		</activity>
 
 		<activity
-			android:name="com.knaiver.polymer.slideshow.ViewpagerDebugActivity"
+			android:name="com.knziha.polymer.widgets.PrintPdfAgentActivity"
+			android:label="@string/app_name"
+			android:configChanges="orientation|keyboardHidden|screenSize|smallestScreenSize|screenLayout|uiMode|locale|layoutDirection"
+			android:theme="@style/AppThemeTranslucent"
+			android:taskAffinity=""
+			android:exported="false"
+			>
+		</activity>
+
+
+		<activity
+			android:name=".pdviewer.PDocViewerActivity"
+			android:label="@string/app_name"
+			android:configChanges="orientation|keyboardHidden|screenSize|smallestScreenSize|screenLayout|uiMode|locale|layoutDirection"
+			android:theme="@style/ActivityTheme"
+			>
+			<!--				<intent-filter>-->
+			<!--					<action android:name="android.intent.action.MAIN" />-->
+			<!--					<category android:name="android.intent.category.LAUNCHER" />-->
+			<!--				</intent-filter>-->
+		</activity>
+
+		<activity
+			android:name="com.knziha.polymer.slideshow.ViewpagerDebugActivity"
 			android:label="@string/app_name"
 			android:launchMode="singleInstance"
 			android:configChanges="orientation|keyboardHidden|screenSize|uiMode|locale|layoutDirection"
 			android:theme="@style/ActivityTheme"
 			>
+						<intent-filter>
+							<action android:name="android.intent.action.MAIN" />
+							<category android:name="android.intent.category.LAUNCHER" />
+						</intent-filter>
 		</activity>
 
 		<activity
-			android:name="com.knaiver.polymer.matrix.MainActivity"
+			android:name="com.knziha.polymer.matrix.MainActivity"
 			android:label="@string/app_name"
 			android:launchMode="singleInstance"
 			android:configChanges="orientation|keyboardHidden|screenSize|uiMode|locale|layoutDirection"
@@ -83,14 +111,14 @@
 
 		</activity>
 
-		<activity android:name="com.knaiver.polymer.matrix.MatrixBaseActivity" android:theme="@style/ActivityTheme"/>
-		<activity android:name="com.knaiver.polymer.matrix.MatrixDistortionActivity" android:theme="@style/ActivityTheme"/>
-		<activity android:name="com.knaiver.polymer.matrix.ColorMatrixActivity" android:theme="@style/ActivityTheme"/>
-		<activity android:name="com.knaiver.polymer.matrix.ColorFilterActivity" android:theme="@style/ActivityTheme"/>
-		<activity android:name="com.knaiver.polymer.matrix.ColorHueActivity" android:theme="@style/ActivityTheme"/>
+		<activity android:name="com.knziha.polymer.matrix.MatrixBaseActivity" android:theme="@style/ActivityTheme"/>
+		<activity android:name="com.knziha.polymer.matrix.MatrixDistortionActivity" android:theme="@style/ActivityTheme"/>
+		<activity android:name="com.knziha.polymer.matrix.ColorMatrixActivity" android:theme="@style/ActivityTheme"/>
+		<activity android:name="com.knziha.polymer.matrix.ColorFilterActivity" android:theme="@style/ActivityTheme"/>
+		<activity android:name="com.knziha.polymer.matrix.ColorHueActivity" android:theme="@style/ActivityTheme"/>
 
 		<activity
-			android:name="com.knaiver.polymer.browser.BrowseActivity"
+			android:name="com.knziha.polymer.browser.BrowseActivity"
 			android:label="@string/app_name"
 			android:launchMode="singleInstance"
 			android:configChanges="orientation|keyboardHidden|screenSize|uiMode|locale|layoutDirection"
@@ -100,7 +128,7 @@
 			>
 		</activity>
 
-		<activity android:name="com.knaiver.polymer.flowtextview.sample.MainActivity"
+		<activity android:name="com.knziha.polymer.flowtextview.sample.MainActivity"
 			android:label="@string/app_name"
 			android:launchMode="singleInstance"
 			android:configChanges="orientation|keyboardHidden|screenSize|uiMode|locale|layoutDirection"
@@ -108,7 +136,7 @@
 			>
 		</activity>
 
-		<activity android:name="com.knaiver.polymer.widgets.ShareActivity"
+		<activity android:name="com.knziha.polymer.widgets.ShareActivity"
 			android:label="@string/app_name"
 			android:launchMode="standard"
 			android:configChanges="keyboardHidden|orientation|screenSize"
@@ -120,8 +148,15 @@
 <!--			</intent-filter>-->
 		</activity>
 
+		<activity
+			android:name=".qrcode.QRActivity"
+			android:theme="@style/AppThemeTranslucent"
+			android:configChanges="orientation|keyboardHidden|screenSize|smallestScreenSize|screenLayout|uiMode|locale|layoutDirection"
+			/>
+
+
 		<service
-			android:name="com.knaiver.polymer.SimpleService">
+			android:name="com.knziha.polymer.SimpleService">
 		</service>
 	</application>
 

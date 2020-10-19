@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<layout>
+
+
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:tools="http://schemas.android.com/tools"
+	>
+	<FrameLayout
+		android:id="@+id/video_surface_frame"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		>
+		<TextureView
+			android:id="@+id/preview_view"
+			android:layout_width="match_parent"
+			android:layout_height="match_parent" />
+	</FrameLayout>
+
+	<com.knziha.polymer.qrcode.QRFrameView
+		android:id="@+id/qr_frame"
+		android:layout_width="fill_parent"
+		android:layout_height="fill_parent" />
+
+	<LinearLayout
+		android:id="@+id/toolbar_content"
+		android:layout_width="match_parent"
+		android:layout_height="60dp"
+		android:background="#00000000"
+		android:fitsSystemWindows="true"
+		android:gravity="center_vertical"
+		android:padding="10dp"
+		>
+		<ImageView
+			android:id="@+id/ivBack"
+			android:src="@drawable/ic_baseline_arrow_back_24"
+			style="@style/QRActionBarItem"
+			/>
+		<TextView
+			android:layout_width="0dp"
+			android:layout_height="match_parent"
+			android:layout_weight="1"
+			android:textColor="#ffffffff"
+			android:textSize="20sp"
+			tools:text="扫一扫"
+			android:gravity="center_vertical"
+			android:paddingStart="10dp"
+			/>
+
+		<ImageView
+			android:id="@+id/camera"
+			android:src="@drawable/ic_baseline_camera_alt_24"
+			style="@style/QRActionBarItem"
+			android:visibility="gone"
+			/>
+
+		<ImageView
+			android:id="@+id/torch"
+			android:src="@drawable/ic_baseline_torch"
+			style="@style/QRActionBarItem"
+			/>
+
+		<ImageView
+			android:id="@+id/tools"
+			android:src="@drawable/tools_toolbar"
+			style="@style/QRActionBarItem"
+			android:padding="6dp"
+			/>
+
+		<ImageView
+			android:id="@+id/folder"
+			android:src="@drawable/ic_baseline_folder_open_solid"
+			style="@style/QRActionBarItem"
+			/>
+
+	</LinearLayout>
+
+	<View
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:background="#000"
+		android:visibility="gone"
+		/>
+
+	<Button
+		android:id="@+id/tv1"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:text="打开相机"
+		android:layout_gravity="center_horizontal"
+		android:padding="10dp"
+		android:textColor="#FF1FB3E2"
+		android:background="?attr/listChoiceBackgroundIndicator"
+		android:visibility="gone"
+		/>
+
+	<ViewStub
+		android:id="@+id/toast"
+		android:layout_width="match_parent"
+		android:layout_height="75dp"
+		android:layout_gravity="bottom"
+		android:layout_marginBottom="78dp"
+		android:layout_marginLeft="25dp"
+		android:layout_marginRight="25dp"
+		android:layout="@layout/activity_qr_toast"
+		/>
+
+</merge>
+
+
+</layout>

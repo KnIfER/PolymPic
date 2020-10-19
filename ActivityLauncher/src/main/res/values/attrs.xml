@@ -64,12 +64,9 @@
 
 
 	<attr format="reference" name="ic_launch"/>
-    
-    
-    
-    
-    
-    <declare-styleable name="constances">
+
+
+	<declare-styleable name="constances">
         <attr name="_0" format="integer" />
     </declare-styleable>
     

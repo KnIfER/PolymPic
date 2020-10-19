@@ -2,14 +2,13 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
 	android:layout_width="match_parent"
 	android:layout_height="match_parent"
-	>
+	xmlns:tools="http://schemas.android.com/tools">
 	<View
 		android:id="@+id/dismiss"
 		android:layout_width="match_parent"
 		android:layout_height="match_parent"/>
 
-	<LinearLayout
-		android:orientation="vertical"
+	<ScrollView
 		android:layout_width="250dp"
 		android:layout_height="wrap_content"
 		android:layout_gravity="right"
@@ -19,137 +18,174 @@
 		android:elevation="12dp"
 		>
 		<LinearLayout
-			android:layout_width="match_parent"
-			android:layout_height="match_parent"
-			android:orientation="horizontal"
-			>
-			<TextView
-				android:id="@+id/fresh"
-				android:text="重开"
-				style="@style/MenuTextStyleInListHeader"
-				/>
-			<TextView
-				android:id="@+id/new_folder"
-				android:text="新建标签页"
-				style="@style/MenuTextStyleInList"
-				/>
-		</LinearLayout>
-
-		<LinearLayout
-			android:layout_width="match_parent"
+			android:orientation="vertical"
+			android:layout_width="250dp"
 			android:layout_height="wrap_content"
-			android:orientation="horizontal"
 			>
+			<LinearLayout
+				android:layout_width="match_parent"
+				android:layout_height="match_parent"
+				android:orientation="horizontal"
+				>
+				<TextView
+					android:id="@+id/fresh"
+					android:text="恢复"
+					style="@style/MenuTextStyleInListHeader"
+					android:longClickable="true"
+					/>
+				<TextView
+					android:id="@+id/new_folder"
+					android:text="新建标签页"
+					style="@style/MenuTextStyleInList"
+					/>
+			</LinearLayout>
+
+			<LinearLayout
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:orientation="horizontal"
+				>
+				<TextView
+					android:text="关闭"
+					style="@style/MenuTextStyleInListHeader"
+					android:longClickable="true"
+					/>
+				<TextView
+					android:id="@+id/copy"
+					android:text="复制标签页"
+					style="@style/MenuTextStyleInList"
+					/>
+			</LinearLayout>
+
+			<LinearLayout
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:orientation="horizontal"
+				>
+				<TextView
+					android:id="@+id/print"
+					android:text="打印"
+					style="@style/MenuTextStyleInListHeader"
+					/>
+				<TextView
+					android:id="@+id/offline"
+					android:text="离线页面"
+					style="@style/MenuTextStyleInList"
+					android:longClickable="true"
+					/>
+			</LinearLayout>
+
+			<LinearLayout
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:orientation="horizontal"
+				>
+				<TextView
+					android:id="@+id/reinit"
+					android:text="崭新"
+					style="@style/MenuTextStyleInListHeader"
+					android:longClickable="true"
+					/>
+				<TextView
+					android:id="@+id/refresh"
+					android:text="刷新页面"
+					style="@style/MenuTextStyleInList"
+					/>
+			</LinearLayout>
+
+			<FrameLayout
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				>
+				<TextView
+					android:id="@+id/menu_icon6"
+					android:text="分享链接"
+					android:drawableLeft="@drawable/abc_ic_menu_share_mtrl_alpha"
+					style="@style/MenuTextStyle"
+					/>
+				<ImageView
+					android:id="@+id/icon_share"
+					android:layout_width="60dp"
+					android:layout_height="@dimen/_35_"
+					android:layout_gravity="end|center_vertical"
+					android:paddingEnd="15dp"
+					android:paddingStart="15dp"
+					android:paddingTop="5dp"
+					android:paddingBottom="5dp"
+					tools:src="@drawable/polymer"
+					android:background="@drawable/surrtrip0"
+					android:focusable="true"
+					android:clickable="true"
+					/>
+			</FrameLayout>
+
 			<TextView
-				android:text="关闭"
-				style="@style/MenuTextStyleInListHeader"
+				android:id="@+id/menu_icon8"
+				android:text="页内查找…"
+				android:drawableLeft="@drawable/ic_baseline_find_in_page_24"
+				style="@style/MenuTextStyle"
+				android:longClickable="true"
 				/>
+
 			<TextView
-				android:id="@+id/copy"
-				android:text="复制标签页"
-				style="@style/MenuTextStyleInList"
+				android:id="@+id/menu_icon9"
+				android:text="电脑模式"
+				android:drawableLeft="@drawable/ic_baseline_desktop_mode"
+				style="@style/MenuTextStyle"
+				android:longClickable="true"
 				/>
+
+			<TextView
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:text="添加到："
+				android:paddingStart="16dp"
+				android:textColor="#3446AA"
+				android:textAppearance="@style/Base.TextAppearance.AppCompat.Small"
+				/>
+
+			<LinearLayout
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:orientation="horizontal"
+				>
+				<TextView
+					android:id="@+id/bookmark"
+					android:text="书签"
+					style="@style/MenuTextStyleSmall"
+					/>
+				<TextView
+					android:id="@+id/mainpage"
+					android:text="主页"
+					style="@style/MenuTextStyleSmall"
+					/>
+				<TextView
+					android:id="@+id/searchengine"
+					android:text="搜索引擎"
+					style="@style/MenuTextStyleSmall"
+					/>
+			</LinearLayout>
 		</LinearLayout>
-
-		<LinearLayout
-			android:layout_width="match_parent"
-			android:layout_height="wrap_content"
-			android:orientation="horizontal"
-			>
-			<TextView
-				android:id="@+id/print"
-				android:text="打印"
-				style="@style/MenuTextStyleInListHeader"
-				/>
-			<TextView
-				android:id="@+id/offline"
-				android:text="离线页面"
-				style="@style/MenuTextStyleInList"
-				/>
-		</LinearLayout>
-
-		<LinearLayout
-			android:layout_width="match_parent"
-			android:layout_height="wrap_content"
-			android:orientation="horizontal"
-			>
-			<TextView
-				android:id="@+id/reinit"
-				android:text="崭新"
-				style="@style/MenuTextStyleInListHeader"
-				/>
-			<TextView
-				android:id="@+id/refresh"
-				android:text="刷新页面"
-				style="@style/MenuTextStyleInList"
-				/>
-		</LinearLayout>
-
-		<TextView
-			android:id="@+id/menu_icon6"
-			android:text="分享链接"
-			android:drawableLeft="@drawable/abc_ic_menu_share_mtrl_alpha"
-			style="@style/MenuTextStyle"
-			/>
-
-		<TextView
-			android:text="页内查找…"
-			android:drawableLeft="@drawable/ic_baseline_find_in_page_24"
-			style="@style/MenuTextStyle"
-			/>
-
-		<TextView
-			android:text="电脑模式"
-			android:drawableLeft="@drawable/ic_baseline_desktop_24"
-			style="@style/MenuTextStyle"
-			/>
-
-		<TextView
-			android:layout_width="match_parent"
-			android:layout_height="wrap_content"
-			android:text="添加到："
-			android:paddingStart="16dp"
-			android:textColor="#3446AA"
-			android:textAppearance="@style/Base.TextAppearance.AppCompat.Small"
-			/>
-
-		<LinearLayout
-			android:layout_width="match_parent"
-			android:layout_height="wrap_content"
-			android:orientation="horizontal"
-			>
-			<TextView
-				android:text="书签"
-				style="@style/MenuTextStyleSmall"
-				/>
-			<TextView
-				android:text="主页"
-				style="@style/MenuTextStyleSmall"
-				/>
-			<TextView
-				android:text="搜索引擎"
-				style="@style/MenuTextStyleSmall"
-				/>
-		</LinearLayout>
-	</LinearLayout>
+	</ScrollView>
 
 	<FrameLayout
 		android:layout_width="match_parent"
 		android:layout_height="match_parent"
 		android:elevation="100dp"
 		android:background="#6a333333"
-		android:paddingBottom="100dp"
 		android:visibility="gone"
 		>
 		<TextView
+			android:id="@+id/pause"
 			android:layout_width="match_parent"
 			android:layout_height="match_parent"
 			android:textColor="#fff"
 			android:textSize="20sp"
-			android:paddingTop="10dp"
+			android:paddingTop="12dp"
 			android:paddingStart="8dp"
 			android:paddingEnd="8dp"
 			android:layout_gravity="center"
+			android:enabled="false"
 			android:text="\n\t\t即将新建标签页并开启崭新模式，崭新模式下站点无法使用本地存储。\n\n（长按按钮以关闭此延时提示）"
 			/>
 		<TextView
@@ -163,11 +199,16 @@
 			android:textColor="#fff"
 			android:textSize="30dp"
 			android:outlineAmbientShadowColor="#f00"
+			android:layout_marginBottom="50dp"
 			/>
 		<TextView
+			android:id="@+id/title"
 			android:layout_width="match_parent"
-			android:layout_height="match_parent"
-			android:text="标签页"
+			android:layout_height="wrap_content"
+			android:textColor="#fff"
+			android:textAppearance="@style/Base.TextAppearance.AppCompat.Large"
+			android:background="@drawable/surrtrip0"
+			android:text="标签页-崭新模式"
 			/>
 	</FrameLayout>
 </FrameLayout>

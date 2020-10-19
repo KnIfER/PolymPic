@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
 	<string-array name="dict_tweak_arr2">
 		<item>全选</item>
 		<item>选择标注颜色</item>
@@ -35,5 +35,71 @@
 		<item>@string/highlight</item>
 		<item>@string/tools</item>
 		<item>TTS</item>
+	</string-array>
+
+	<string-array name="BenDiCunChu">
+		<item>崭新模式总开关</item>
+		<item>禁用Cookie</item>
+		<item>禁用数据库</item>
+		<item>禁用Dom存储</item>
+		<item>覆盖全局设置</item>
+	</string-array>
+
+	<string-array name="KeHuDuan">
+		<item>PC 模式</item>
+		<item>无图模式</item>
+		<item>拦截弹窗</item>
+		<item>拦截下载</item>
+		<item>提前完成</item>
+		<item>启用JS</item>
+		<item>覆盖全局设置</item>
+	</string-array>
+
+	<string-array name="GroupName">
+		<item>组#1：存储设置</item>
+		<item>组#2：客户端</item>
+	</string-array>
+
+	<string-array name="GroupApply">
+		<item>覆盖全局</item>
+		<item>显示更多</item>
+		<item>显示更少</item>
+	</string-array>
+
+	<string-array name="ErWeiMa">
+		<item>界面设置</item>
+
+		<item>绘制扫描线</item>
+		<item>绘制特征点</item>
+
+		<item>启动时打开相机</item>
+		<item>启动时选择文件</item>
+
+		<item>成功后立即退出</item>
+		<item>记忆闪光灯状态</item>
+
+		<item>相机设置</item>
+
+		<item>连续对焦</item>
+		<item>循环对焦</item>
+		<item>传感器对焦</item>
+
+		<item>锁定屏幕方向总开关</item>
+		<item>锁定屏幕方向</item>
+		<item>锁定初始状态</item>
+		<item>锁定模式</item>
+
+		<item>解码器设置</item>
+
+		<item>尝试旋转图像</item>
+		<item>尝试反相图像</item>
+		<item>激进地尝试</item>
+
+		<item>解一维码</item>
+		<item>解二维码</item>
+		<item>解二维矩阵码</item>
+		<item>解码UPC/EAN格式</item>
+		<item>解码AZTEC格式</item>
+		<item>解码PDF417格式</item>
 	</string-array>
 </resources>

@@ -6,7 +6,7 @@
         android:layout_height="match_parent"
         android:orientation="vertical"
 	>
-        <com.knaiver.polymer.widgets.FlowTextView
+        <com.knziha.polymer.widgets.FlowTextView
 			android:id="@+id/indicator"
             android:paddingStart="12dp"
             android:paddingTop="3dp"

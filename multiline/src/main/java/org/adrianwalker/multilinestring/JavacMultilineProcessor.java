@@ -6,10 +6,12 @@ import com.google.javascript.jscomp.CompilerOptions;
 import com.google.javascript.jscomp.Result;
 import com.google.javascript.jscomp.SourceFile;
 import com.squareup.javapoet.TypeName;
+import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.TypeTag;
 import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.JCTree.JCAssign;
 import com.sun.tools.javac.tree.JCTree.JCBinary;
 import com.sun.tools.javac.tree.JCTree.JCExpression;
@@ -27,6 +29,7 @@ import com.sun.tools.javac.tree.JCTree.Tag;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
+import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
 
 import org.apache.commons.lang3.StringUtils;
@@ -212,6 +215,12 @@ public final class JavacMultilineProcessor extends AbstractProcessor {
 							int elevation = annotation.elevation();
 							List<JCVariableDecl> parms = metDcl.getParameters();
 							
+							boolean TogglePosFlag=false;
+							try {
+								TogglePosFlag=((JCIdent)((JCNewClass)((JCThrow)statements.get(1)).expr).clazz).name.toString().equals("IllegalArgumentException");
+							} catch (Exception ignored) { }
+							//CMN.Log("TogglePosFlag", TogglePosFlag);
+							
 							if(RETType.typetag==TypeTag.INT) {
 								//CMN.Log("mask", mask);
 								JCBinary core = maker.Binary(Tag.SR, flag, maker.Literal(flagPos));
@@ -230,7 +239,7 @@ public final class JavacMultilineProcessor extends AbstractProcessor {
 								CMN.Log(121,finalExpr);
 								metDcl.body = maker.Block(0, List.from(new JCStatement[]{maker.Return(finalExpr)}));
 							}
-							else if(RETType.typetag==TypeTag.BOOLEAN) {
+							else if(RETType.typetag==TypeTag.BOOLEAN) {//get boolean
 								int debugVal = annotation.debug();
 								int size = parms.size();
 								if(size==1) {
@@ -240,12 +249,42 @@ public final class JavacMultilineProcessor extends AbstractProcessor {
 										flag = maker.Ident(val);
 									}
 								}
-								JCBinary core = maker.Binary(Tag.BITAND, flag, maker.Literal(maskVal));
-								JCExpression finalExpr = maker.Binary(shift==0?Tag.NE:Tag.EQ, maker.Parens(core), maker.Literal(0));
-								if(debugVal>=0) {
-									finalExpr = maker.Literal(debugVal==1);
+								if(TogglePosFlag) {//toggle boolean
+									CMN.Log("TogglePosFlag");
+									JCExpression fetVal = maker.Binary(Tag.EQ, maker.Binary(Tag.BITAND, flag, maker.Literal(maskVal)), maker.Literal(0));
+									
+									Names names = Names.instance(context);
+									Name valName = names.fromString("b");
+									
+									JCVariableDecl bEmptyVal = maker.VarDef(maker.Modifiers(0), valName, maker.TypeIdent(TypeTag.BOOLEAN), fetVal);
+									JCExpression bEmptyEval = maker.Ident(valName);
+									
+									JCExpression core = maker.Assignop(Tag.BITAND_ASG, flag, maker.Literal(~maskVal));
+									
+									JCExpression FlagMaskPosPutOne = maker.Binary(Tag.SL, maker.Literal(1), maker.Literal(flagPos));
+									
+									FlagMaskPosPutOne = maker.Assignop(Tag.BITOR_ASG, flag, FlagMaskPosPutOne);
+									
+									JCExpression finalExpr = bEmptyEval;
+									if(shift!=0) {//If defaul to zero, return inverted value.
+										finalExpr = maker.Unary(Tag.NOT, bEmptyEval);
+									}
+									
+									metDcl.body = maker.Block(0, List.from(new JCStatement[]{
+											bEmptyVal,
+											maker.Exec(core),
+											maker.If(maker.Parens(bEmptyEval), maker.Exec(FlagMaskPosPutOne), null), //如果原来为空，现在不为空
+											maker.Return(finalExpr)
+									}));
+									//CMN.Log("TogglePosFlag2", metDcl.body.toString());
+								} else {
+									JCBinary core = maker.Binary(Tag.BITAND, flag, maker.Literal(maskVal));
+									JCExpression finalExpr = maker.Binary(shift==0?Tag.NE:Tag.EQ, maker.Parens(core), maker.Literal(0));
+									if(debugVal>=0) {
+										finalExpr = maker.Literal(debugVal==1);
+									}
+									metDcl.body = maker.Block(0, List.from(new JCStatement[]{maker.Return(finalExpr)}));
 								}
-								metDcl.body = maker.Block(0, List.from(new JCStatement[]{maker.Return(finalExpr)}));
 							}
 							else if(RETType.typetag==TypeTag.VOID) {
 								int size = parms.size();
@@ -289,7 +328,15 @@ public final class JavacMultilineProcessor extends AbstractProcessor {
 						}
 						else {
 							if(_1st instanceof JCIf) {
-								CMN.Log(((JCParens )((JCIf)_1st).cond).expr);
+								//CMN.Log(((JCParens)((JCIf)_1st).cond).expr);
+								JCStatement thenExp = ((JCIf) _1st).thenpart;
+								if(thenExp instanceof JCExpressionStatement) {
+									CMN.Log(((JCExpressionStatement)thenExp).expr);
+								}
+								if(thenExp instanceof JCBlock) {
+									CMN.Log(((JCBlock)thenExp).stats.get(0));
+								}
+								
 							}
 						}
 					}

@@ -34,6 +34,7 @@
 			android:background="@drawable/abc_edit_text_material"
 			android:singleLine="false"
 			android:minHeight="50dp"
+			android:imeOptions="flagNoExtractUi"
 			android:textIsSelectable="true"
 			/>
 		<ImageView
@@ -116,9 +117,10 @@
 			android:textSize="17sp"
 			android:drawablePadding="38dp"
 			android:gravity="center_vertical"
+			android:background="?attr/listChoiceBackgroundIndicator"
 			/>
 		<TextView
-			android:id="@+id/cancel"
+			android:id="@+id/abort"
 			android:layout_width="match_parent"
 			android:layout_height="65dp"
 			android:text="取消"
@@ -129,6 +131,7 @@
 			android:textSize="17sp"
 			android:drawablePadding="38dp"
 			android:gravity="center_vertical"
+			android:background="?attr/listChoiceBackgroundIndicator"
 			/>
 	</LinearLayout>
 

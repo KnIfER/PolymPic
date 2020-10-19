@@ -10,7 +10,7 @@
 	android:background="#fff"
     tools:context=".MatrixBaseActivity">
 
-    <com.knaiver.polymer.matrix.CustomView
+    <com.knziha.polymer.matrix.CustomView
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 

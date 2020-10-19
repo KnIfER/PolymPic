@@ -429,13 +429,13 @@ public class FilePickerDialog extends AlertDialog implements
         title.setOnClickListener(this);
         dir_path = root.findViewById(R.id.dir_path);
         dir_path.setMovementMethod(LinkMovementMethod.getInstance());
-        Button cancel = root.findViewById(R.id.cancel);
+        Button abort = root.findViewById(R.id.abort);
         if (negativeBtnNameStr != null) {
-            cancel.setText(negativeBtnNameStr);
+			abort.setText(negativeBtnNameStr);
         }
         select.setOnClickListener(this);
         favorite.setOnClickListener(this);
-        cancel.setOnClickListener(this);
+		abort.setOnClickListener(this);
 
         mFileListAdapter.setNotifyItemCheckedListener((item, isChecked) -> {
             if(!item.isDirectory() && !isChecked)
@@ -1613,7 +1613,7 @@ public class FilePickerDialog extends AlertDialog implements
             }
 
         }
-        else if(id == R.id.cancel) {
+        else if(id == R.id.abort) {
         	cancel();
         }
         else if(id== R.id.title){

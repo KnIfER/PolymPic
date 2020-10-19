@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LinearLayout
+	android:layout_width="match_parent"
+	android:layout_height="75dp"
+	android:background="@drawable/frame_toast"
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:tools="http://schemas.android.com/tools"
+	>
+	<ImageView
+		android:id="@+id/copy"
+		android:src="@drawable/ic_baseline_copy_24"
+		style="@style/SearchbarMenuTextStyle"
+		android:layout_weight="0"
+		android:layout_width="wrap_content"
+		android:padding="12dp"
+		android:tint="#333"
+		/>
+	<TextView
+		android:id="@+id/toast_tv"
+		android:layout_width="wrap_content"
+		android:layout_height="match_parent"
+		android:layout_gravity="center_horizontal"
+		style="@style/SearchbarMenuTextStyle"
+		android:textSize="17sp"
+		android:gravity="left|center_vertical"
+		android:text="asdsaasd\nsdasdada"
+		android:singleLine="false"
+		android:textColor="#000"
+		/>
+	<ImageView
+		android:id="@+id/icon_share"
+		android:src="@drawable/ic_baseline_share_24"
+		android:layout_width="wrap_content"
+		android:layout_weight="0"
+		style="@style/SearchbarMenuTextStyle"
+		android:padding="15dp"
+		android:tint="#333"
+		/>
+</LinearLayout>

@@ -12,6 +12,9 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     //api files('libs/ecj-4.4.jar')
     //compileOnly 'com.google.javascript:closure-compiler:v20200628'
+
+    api 'com.google.code.gson:gson:2.8.6'
+
     api files('libs/closure-compiler-v20200628.jar')
 
     api files(Jvm.current().getToolsJar())

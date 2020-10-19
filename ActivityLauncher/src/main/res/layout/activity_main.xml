@@ -44,8 +44,8 @@
 					app:elevation="5dp"
 					app:layout_scrollFlags="scroll|enterAlways|snap"
 					>
-					<com.knaiver.polymer.widgets.LineaSlidog
-						android:id="@+id/rlSearchFrameDelete"
+					<com.knziha.polymer.widgets.LineaSlidog
+						android:id="@+id/toolbar_content"
 						android:layout_width="match_parent"
 						android:layout_height="match_parent"
 						android:orientation="horizontal">
@@ -70,7 +70,7 @@
 							<FrameLayout
 								android:layout_width="match_parent"
 								android:layout_height="match_parent">
-								<com.knaiver.polymer.widgets.EditTextmy
+								<com.knziha.polymer.widgets.EditTextmy
 									android:id="@+id/etSearch"
 									android:layout_height="match_parent"
 									android:layout_width="match_parent"
@@ -110,7 +110,7 @@
 							android:src="@drawable/abc_ic_menu_overflow_material"
 							android:background="?actionBarItemBackground"
 							android:padding="10dp"/>
-					</com.knaiver.polymer.widgets.LineaSlidog>
+					</com.knziha.polymer.widgets.LineaSlidog>
 				</androidx.appcompat.widget.Toolbar>
 			</com.google.android.material.appbar.AppBarLayout>
 
@@ -127,7 +127,7 @@
 					android:layout_height="2px"
 					android:background="#f0afafaf"
 					/>
-				<com.knaiver.polymer.widgets.LineaSlidog
+				<com.knziha.polymer.widgets.LineaSlidog
 					android:layout_width="match_parent"
 					android:layout_height="@dimen/_35_"
 					android:background="#8f8f8f"
@@ -162,7 +162,7 @@
 						android:drawableLeft="@drawable/abc_ic_go_search_api_material"
 						style="@style/SearchbarMenuTextStyle"
 						/>
-				</com.knaiver.polymer.widgets.LineaSlidog>
+				</com.knziha.polymer.widgets.LineaSlidog>
 				<View
 					android:layout_width="match_parent"
 					android:layout_height="2px"
@@ -183,7 +183,7 @@
 			<!--			app:layout_behavior="@string/appbar_scrolling_view_behavior"-->
 			<!--			/>-->
 
-			<com.knaiver.polymer.widgets.LineaSlidog
+			<com.knziha.polymer.widgets.LineaSlidog
 				android:id="@+id/bottombar2"
 				android:layout_width="match_parent"
 				android:layout_height="@dimen/_45_"
@@ -192,7 +192,7 @@
 				android:theme="@style/AppTheme"
 				android:layout_gravity="bottom"
 				android:gravity="bottom|center_vertical|fill_horizontal"
-				app:layout_behavior="com.knaiver.polymer.widgets.BottomNavigationBehavior"
+				app:layout_behavior="com.knziha.polymer.widgets.BottomNavigationBehavior"
 				android:elevation="5dp"
 				>
 				<android.widget.ImageView
@@ -219,7 +219,7 @@
 					android:clickable="true"
 					android:background="@drawable/surrtrip1"
 					android:src="@drawable/ic_home_black_24dp" />
-				<com.knaiver.polymer.widgets.DescriptiveImageView
+				<com.knziha.polymer.widgets.DescriptiveImageView
 					android:id="@+id/browser_widget10"
 					android:layout_width="0dp"
 					android:layout_height="match_parent"
@@ -236,10 +236,10 @@
 					android:background="@drawable/surrtrip1"
 					android:clickable="true"
 					android:src="@drawable/ic_menu_black_24dp" />
-			</com.knaiver.polymer.widgets.LineaSlidog>
+			</com.knziha.polymer.widgets.LineaSlidog>
 
 			<View
-				android:id="@+id/progessbar"
+				android:id="@+id/progressbar"
 				android:layout_width="match_parent"
 				android:layout_height="3dp"
 				android:background="@drawable/progressbar"
@@ -248,7 +248,7 @@
 				/>
 		</androidx.coordinatorlayout.widget.CoordinatorLayout>
 
-		<com.knaiver.polymer.widgets.PopupBackground
+		<com.knziha.polymer.widgets.PopupBackground
 			android:id="@+id/layoutListener"
 			android:layout_width="match_parent"
 			android:layout_height="match_parent"

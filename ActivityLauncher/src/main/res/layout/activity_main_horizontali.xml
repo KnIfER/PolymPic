@@ -17,7 +17,7 @@
             android:text="213"
             android:textSize="18sp" />
 
-        <com.knaiver.polymer.horizontallistview.HorizontalListView
+        <com.knziha.polymer.horizontallistview.HorizontalListView
             android:id="@+id/hlvSimpleList"
             android:layout_width="match_parent"
             android:layout_height="50dp" />
@@ -30,7 +30,7 @@
             android:text="string/custom_adapter_list"
             android:textSize="18sp" />
 
-        <com.knaiver.polymer.horizontallistview.HorizontalListView
+        <com.knziha.polymer.horizontallistview.HorizontalListView
             android:id="@+id/hlvCustomList"
             android:layout_width="match_parent"
             android:layout_height="50dp" />
@@ -43,7 +43,7 @@
             android:text="string/custom_adapter_list_with_dividers"
             android:textSize="18sp" />
 
-        <com.knaiver.polymer.horizontallistview.HorizontalListView
+        <com.knziha.polymer.horizontallistview.HorizontalListView
             android:id="@+id/hlvCustomListWithDividerAndFadingEdge"
             android:layout_width="match_parent"
             android:layout_height="50dp"
