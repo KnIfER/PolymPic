@@ -159,7 +159,7 @@ public class PDocView extends View {
 	// Gesture detection settings
 	private boolean panEnabled = true;
 	private boolean zoomEnabled = true;
-	private boolean rotationEnabled = true;
+	private boolean rotationEnabled = false;
 	private boolean quickScaleEnabled = true;
 	
 	// Double tap zoom behaviour
@@ -277,7 +277,7 @@ public class PDocView extends View {
 	private float lastY;
 	private float view_pager_toguard_lastX;
 	private float view_pager_toguard_lastY;
-
+	boolean freefling=true;
 	private Runnable flingRunnable = new Runnable() {
 		@Override
 		public void run() {
@@ -295,13 +295,15 @@ public class PDocView extends View {
 				
 				int flag;
 				
-				vTranslate.x = vTranslate.x+(flingVx>0?x:-x);// fingStartX + cfx-flingScroller.getStartX();
+				if(freefling)
+					vTranslate.x = vTranslate.x+(flingVx>0?x:-x);// fingStartX + cfx-flingScroller.getStartX();
 				vTranslate.y = vTranslate.y+(flingVy>0?y:-y);// fingStartY + cfy-flingScroller.getStartY();
 				
 				//if(isProxy)
+				if(freefling)
 					handle_proxy_simul(scale, null, rotation);
 				
-				if(!isProxy){
+				if(!isProxy && freefling){
 					refreshRequiredTiles(true); // flingScroller.getCurrVelocity()<2500
 					invalidate();
 				}
@@ -519,7 +521,7 @@ public class PDocView extends View {
 			@Override
 			public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
 				onFlingDetected =true;
-				if(isQuickScaling||scale <= minScale()){
+				if(isQuickScaling||scale < minScale()){
 					return true;
 				}
 				if (panEnabled && (readySent||isProxy)
@@ -582,7 +584,7 @@ public class PDocView extends View {
 					} else {
 						distanceY = Math.abs((int) (vY>0?(maxY-vyDelta):(vyDelta-minY)));
 					}
-					if(vX!=0 || vY!=0) {
+					if(vY!=0) {
 						// Account for rotation
 						boolean SameDir = Math.signum(vX) == Math.signum(flingVx) && Math.signum(vY) == Math.signum(flingVy);
 
@@ -768,8 +770,8 @@ public class PDocView extends View {
 		int touchCount = event.getPointerCount();
 		int touch_type = event.getAction() & MotionEvent.ACTION_MASK;
 		int touch_id = event.getPointerId(event.getActionIndex());
-		lastX = event.getRawX();
-		lastY = event.getRawY();
+		lastX = event.getX();
+		lastY = event.getY();
 		switch (touch_type) {
 			case MotionEvent.ACTION_DOWN:{
 				isDown = true;
@@ -1116,7 +1118,23 @@ public class PDocView extends View {
 			} break;
 			case MotionEvent.ACTION_UP:
 				isDown = false;
+				isZooming=false;
 			case MotionEvent.ACTION_POINTER_UP:{
+				if(isZooming) {
+					if(touch_partisheet.remove(touch_id)) {
+						// convert double finger zoom to single finger move
+						//vCenterStart.set(event.getX(), event.getY());
+						if(touch_partisheet.size()>0) {
+							int pid = touch_partisheet.iterator().next().intValue();
+							//vTranslateStart.set(vTranslate.x, vTranslate.y);
+							view_pager_toguard_lastX=event.getX(pid);
+							view_pager_toguard_lastY=event.getY(pid);
+							isPanning=true;
+						}
+						isZooming=false;
+					}
+					return true;
+				}
 				//final float vX = (float) (velocityX * cos - velocityY * -sin);
 				//final float vY = (float) (velocityX * -sin + velocityY * cos);
 				//touch_partisheet.remove(touch_id);
@@ -1130,6 +1148,7 @@ public class PDocView extends View {
 				touch_partisheet.clear();
 				waitingNextTouchResume = true;
 				
+				//if(flingScroller.isFinished())
 				if(!(doubleTapDetected && !quickScaleMoved)){
 					float toRotation = SnapRotation(rotation);
 					boolean shouldAnimate = toRotation!=rotation;
@@ -1146,8 +1165,8 @@ public class PDocView extends View {
 						}
 					} else if(scale<toScale){
 						resetScale = shouldAnimate = true;
-						//tmpCenter.set(getSWidth() / 2, getSHeight() / 2);
-						tmpCenter.set(getCenter());
+						tmpCenter.set(getSWidth() / 2, getCenter().y);
+						//tmpCenter.set(getCenter());
 					}
 					CMN.Log("toScale", toScale, shouldAnimate);
 					strTemp.scale = scale;
@@ -1165,6 +1184,10 @@ public class PDocView extends View {
 					}
 					//if(false)
 					if(shouldAnimate) {
+						if(scale<toScale){
+							tmpCenter.y = Math.max(tmpCenter.y, getScreenHeight()/2/toScale);
+							//tmpCenter.set(getCenter());
+						}
 						//Take after everything.
 						new AnimationBuilder(toScale, tmpCenter, toRotation)
 								.withEasing(EASE_OUT_QUAD).withPanLimited(false)
@@ -1377,8 +1400,9 @@ public class PDocView extends View {
 	protected void onDraw(Canvas canvas) {
 		super.onDraw(canvas);
 		if(pdoc!=null) {
-			if (anim != null)
+			if (anim != null) {
 				handle_animation();
+			}
 			
 			canvas.drawColor(Color.BLUE);
 			//canvas.drawBitmap(bitmap, null, new RectF(0,vTranslate.y,100,100), bitmapPaint);
@@ -1442,6 +1466,10 @@ public class PDocView extends View {
 		//CMN.Log("handle_animation");
 		//if(true) return;
 		if (anim != null && anim.vFocusStart != null) {
+			if(!flingScroller.isFinished()) {
+				freefling=false;
+				flingRunnable.run();
+			}
 			// Store current values so we can send an event if they change
 			float scaleBefore = scale;
 			float rotationBefore = rotation;
@@ -1469,13 +1497,16 @@ public class PDocView extends View {
 			final float dX = animVCenterEnd.x - vFocusNowX;
 			final float dY = animVCenterEnd.y - vFocusNowY;
 			vTranslate.x -= (dX * cos + dY * sin);
-			vTranslate.y -= (-dX * sin + dY * cos);
+			if(freefling)
+				vTranslate.y -= (-dX * sin + dY * cos);
+			else
+				freefling=true;
 			//vTranslate.x -= sourceToViewX(anim.sCenterEnd.x) - vFocusNowX;
 			//vTranslate.y -= sourceToViewY(anim.sCenterEnd.y) - vFocusNowY;
 			
 			// For translate anims, showing the image non-centered is never allowed, for scaling anims it is during the animation.
 			//nono fitToBounds(finished || (anim.scaleStart == anim.scaleEnd),false);
-			fitToBounds(false,false);
+			//fitToBounds(false,false);
 			
 			//sendStateChanged(scaleBefore, vTranslateBefore, rotationBefore, anim.origin);
 			refreshRequiredTiles(finished);
@@ -1872,10 +1903,10 @@ public class PDocView extends View {
 		if (center) {
 			//CMN.Log("minHeight=", getScreenExifWidth() - scaleWidth, se_delta);
 			vTranslate.x = Math.max(vTranslate.x, sew + se_delta - scaleWidth);
-			//vTranslate.y = Math.max(vTranslate.y, seh - se_delta - scaleHeight);
+			vTranslate.y = Math.max(vTranslate.y, seh - se_delta - scaleHeight);
 		} else {
 			vTranslate.x = Math.max(vTranslate.x, -scaleWidth);
-			//vTranslate.y = Math.max(vTranslate.y, -scaleHeight);
+			vTranslate.y = Math.max(vTranslate.y, -scaleHeight);
 		}
 		
 		// Asymmetric padding adjustments
@@ -1893,7 +1924,7 @@ public class PDocView extends View {
 		}
 		
 		vTranslate.x = Math.min(vTranslate.x, maxTx);
-		//vTranslate.y = Math.min(vTranslate.y, maxTy);
+		vTranslate.y = Math.min(vTranslate.y, maxTy);
 		
 		sat.scale = scale;
 	}
