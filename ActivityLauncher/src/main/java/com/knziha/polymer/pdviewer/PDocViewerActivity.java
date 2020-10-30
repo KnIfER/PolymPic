@@ -31,7 +31,8 @@ public class PDocViewerActivity extends Toastable_Activity {
 		PdfiumCore pdfiumCore = new PdfiumCore(this);
 		UIData.image.setImageResource(R.drawable.ic_launcher);
 		try {
-			PDocument pdoc = new PDocument(this, "/sdcard/myFolder/sample.pdf");
+			//PDocument pdoc = new PDocument(this, "/sdcard/myFolder/sample_hetero_dimension.pdf");
+			PDocument pdoc = new PDocument(this, "/sdcard/myFolder/Gpu Pro 1.pdf");
 			
 			//UIData.image.setImageBitmap(pdoc.renderBitmap(0, 1));
 			

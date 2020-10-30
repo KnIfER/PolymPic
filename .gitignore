@@ -15,6 +15,7 @@ AxtAppCompat/build/
 **/release/
 **/gen/
 **/test/
+**/LibPdfium/
 ODPlayer/src/main/assets
 ODPlayer/src/main/jniLibs/arm64-v8a/*.so
 ODPlayer/src/main/jniLibs/armeabi-v7a/*.so
@@ -31,3 +32,6 @@ ODPlayer/src/main/jniLibs/x86/*.so
 #./gradlew ODPlayer：dependencies
 
 #git checkout -b dev origin/dev
+*.so
+*.so
+*.o
