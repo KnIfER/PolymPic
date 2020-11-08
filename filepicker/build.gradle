@@ -54,9 +54,9 @@ dependencies {
     }else{
         compileOnly "com.google.auto.service:auto-service:1.0-rc6"
         compileOnly "com.squareup:javapoet:1.10.0"
-        compileOnly project(path: ':annotation:compiler')
-        annotationProcessor project(path: ':annotation:compiler')
-        implementation project(path: ':glide')
+        compileOnly project(path: ':GlideModule:annotation:compiler')
+        annotationProcessor project(path: ':GlideModule:annotation:compiler')
+        implementation project(path: ':GlideModule:glide')
     }
 
     annotationProcessor "com.google.auto.service:auto-service:1.0-rc6"
