@@ -162,9 +162,9 @@
 			/>
 
 
-		<service
-			android:name="com.knziha.polymer.SimpleService">
-		</service>
+<!--		<service-->
+<!--			android:name="com.knziha.polymer.SimpleService">-->
+<!--		</service>-->
 	</application>
 
 </manifest>

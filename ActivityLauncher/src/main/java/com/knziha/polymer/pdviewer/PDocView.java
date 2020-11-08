@@ -271,20 +271,21 @@ public class PDocView extends View {
 	private float view_pager_toguard_lastY;
 	boolean freefling=true;
 	boolean freeAnimation=true;
-	public View viewPoster;
+	private boolean isFlinging;
 	
 	
 	@Override
 	public void computeScroll() {
 		super.computeScroll();
 		//CMN.Log("computeScroll");
-		flingRunnable.run();
+		if(isFlinging) {
+			flingRunnable.run();
+		}
 	}
 	
 	private Runnable flingRunnable = new Runnable() {
 		@Override
 		public void run() {
-			viewPoster.removeCallbacks(this);
 			if(flingScroller.computeScrollOffset()) {
 				int cfx = flingScroller.getCurrX();
 				int cfy = flingScroller.getCurrY();
@@ -312,6 +313,8 @@ public class PDocView extends View {
 					//postInvalidate();
 				}
 				//viewPoster.post(this);
+			} else {
+				isFlinging = false;
 			}
 			//else scroll ended
 		}
@@ -624,6 +627,7 @@ public class PDocView extends View {
 						flingScroller.fling(mLastFlingX, mLastFlingY, (int) vX, (int) vY,
 								0, distanceX, 0, distanceY, overX, overY, SameDir);
 						
+						isFlinging = true;
 						//viewPoster.post(flingRunnable);
 						return true;
 					}
@@ -633,7 +637,7 @@ public class PDocView extends View {
 			
 			@Override
 			public boolean onSingleTapConfirmed(MotionEvent e) {
-				performClick();
+				//performClick();
 				return true;
 			}
 			
@@ -1939,7 +1943,7 @@ public class PDocView extends View {
 		//CMN.Log("handle_animation");
 		//if(true) return;
 		if (anim != null && anim.vFocusStart != null) {
-			if(!flingScroller.isFinished()) {
+			if(isFlinging) {
 				freeAnimation=false;
 				freefling=false;
 				flingRunnable.run();

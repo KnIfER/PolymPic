@@ -39,8 +39,6 @@ public class PDocViewerActivity extends Toastable_Activity {
 			
 			UIData.wdv.dm=dm;
 			
-			UIData.wdv.viewPoster = UIData.viewPoster;
-			
 			UIData.wdv.setDocument(pdoc);
 			
 		} catch (IOException e) {
