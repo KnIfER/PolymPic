@@ -2,6 +2,7 @@ package com.knziha.polymer.pdviewer;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.os.ParcelFileDescriptor;
 import android.util.SparseArray;
 
@@ -26,6 +27,10 @@ public class PDocument {
 	public int _num_entries;
 	private int _anchor_page;
 	private HashMap<Integer, Bitmap> bTMP = new HashMap<>();
+	
+	public void prepare() {
+	
+	}
 	
 	class PDocPage {
 		final int pageIdx;
@@ -120,15 +125,17 @@ public class PDocument {
 		Size size = page.size;
 		int w = (int) (size.getWidth()*scale);
 		int h = (int) (size.getHeight()*scale);
-		CMN.Log("renderBitmap", w, h, bitmap.getWidth(), bitmap.getHeight());
+		//CMN.Log("renderBitmap", w, h, bitmap.getWidth(), bitmap.getHeight());
+		bitmap.eraseColor(Color.WHITE);
 		page.open();
-		pdfiumCore.renderPageBitmap(pdfDocument, bitmap, page.pageIdx, 0, 0, w, h ,false);
+		pdfiumCore.renderPageBitmap(pdfDocument, bitmap, page.pageIdx, 0, 0, w, h , true);
 		return bitmap;
 	}
 	
 	public Bitmap renderRegionBitmap(PDocPage page, Bitmap bitmap, int startX, int startY, int srcW, int srcH) {
 		int w = bitmap.getWidth();
 		int h = bitmap.getHeight();
+		bitmap.eraseColor(Color.WHITE);
 		page.open();
 		//CMN.Log("renderRegion", w, h, startX, startY, srcW, srcH);
 		pdfiumCore.renderPageBitmap(pdfDocument, bitmap, page.pageIdx, startX, startY, srcW, srcH ,false);
@@ -136,15 +143,25 @@ public class PDocument {
 	}
 	
 	public Bitmap drawTumbnail(Bitmap bitmap, int pageIdx, float scale) {
-		if(bTMP.get(pageIdx)!=null) return bTMP.get(pageIdx);
 		PDocPage page = mPDocPages[pageIdx];
 		Size size = page.size;
 		int w = (int) (size.getWidth()*scale);
 		int h = (int) (size.getHeight()*scale);
 		page.open();
-		pdfiumCore.renderPageBitmap(pdfDocument, bitmap, pageIdx, 0, 0, w, h ,false);
-		//pdfiumCore.renderPageBitmap(pdfDocument, bitmap, pageIdx, 0, 256 , 256, 256 ,false);
-		bTMP.put(pageIdx, bitmap);
+		CMN.Log("PageOpened::", CMN.now()-CMN.ststrt, w, h);
+		Bitmap OneSmallStep = bitmap;
+		boolean recreate=OneSmallStep.isRecycled();
+		if(!recreate && (w!=OneSmallStep.getWidth()||h!=OneSmallStep.getHeight())) {
+			if(OneSmallStep.getAllocationByteCount()>=w*h*4) {
+				OneSmallStep.reconfigure(w, h, Bitmap.Config.ARGB_8888);
+			} else recreate=true;
+		}
+		if(recreate) {
+			OneSmallStep.recycle();
+			OneSmallStep = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+		}
+		renderBitmap(page, OneSmallStep, scale);
+		//pdfiumCore.renderPageBitmap(pdfDocument, bitmap, pageIdx, 0, 0, w, h ,false);
 		return bitmap;
 	}
 	

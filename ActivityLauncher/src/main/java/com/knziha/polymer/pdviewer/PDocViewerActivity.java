@@ -4,6 +4,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.ParcelFileDescriptor;
+import android.view.View;
 
 import androidx.databinding.DataBindingUtil;
 
@@ -38,11 +39,22 @@ public class PDocViewerActivity extends Toastable_Activity {
 			
 			UIData.wdv.dm=dm;
 			
+			UIData.wdv.viewPoster = UIData.viewPoster;
+			
 			UIData.wdv.setDocument(pdoc);
 			
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		
+		UIData.wdv.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				
+				showT("onClick");
+				
+			}
+		});
 		
 		
 	}

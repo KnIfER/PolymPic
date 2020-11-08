@@ -78,10 +78,17 @@
 			android:configChanges="orientation|keyboardHidden|screenSize|smallestScreenSize|screenLayout|uiMode|locale|layoutDirection"
 			android:theme="@style/ActivityTheme"
 			>
-							<intent-filter>
-								<action android:name="android.intent.action.MAIN" />
-								<category android:name="android.intent.category.LAUNCHER" />
-							</intent-filter>
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+			</intent-filter>
+		</activity>
+
+		<activity android:name=".pdviewer.PDocBenchMarkctivity"
+			android:label="@string/app_name"
+			android:configChanges="orientation|keyboardHidden|screenSize|smallestScreenSize|screenLayout|uiMode|locale|layoutDirection"
+			android:theme="@style/ActivityTheme"
+			>
 		</activity>
 
 		<activity

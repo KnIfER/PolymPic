@@ -35,3 +35,4 @@ ODPlayer/src/main/jniLibs/x86/*.so
 *.so
 *.so
 *.o
+*.d

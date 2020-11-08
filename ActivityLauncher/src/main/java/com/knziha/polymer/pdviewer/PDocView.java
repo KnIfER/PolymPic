@@ -72,15 +72,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-/**
- * Displays an image subsampled as necessary to avoid loading too much image data into memory. After a pinch to zoom in,
- * a set of image tiles subsampled at higher resolution are loaded and displayed over the base layer. During pinch and
- * zoom, tiles off screen or higher/lower resolution than required are discarded from memory.
+/** Pro-level utilization of the PDFium project.
+ * Inspired by https://github.com/davemorrissey/subsampling-scale-image-view
  *
- * Tiles are no larger than the max supported bitmap size, so with large images tiling may be used even when zoomed out.
+ * 特性：v1.0 连续渲染页面，双击、缩放动画，单指双击缩放，平滑惯性滑动，弹性滚动限制
  *
- * v prefixes - coordinates, translations and distances measured in screen (view) pixels
- * s prefixes - coordinates, translations and distances measured in source image pixels (scaled)
  */
 @SuppressWarnings({"unused", "IntegerDivisionInFloatingPointContext"})
 public class PDocView extends View {
@@ -275,11 +271,21 @@ public class PDocView extends View {
 	private float view_pager_toguard_lastY;
 	boolean freefling=true;
 	boolean freeAnimation=true;
+	public View viewPoster;
+	
+	
+	@Override
+	public void computeScroll() {
+		super.computeScroll();
+		//CMN.Log("computeScroll");
+		flingRunnable.run();
+	}
+	
 	private Runnable flingRunnable = new Runnable() {
 		@Override
 		public void run() {
-			removeCallbacks(this);
-			if(flingScroller.computeScrollOffset()){
+			viewPoster.removeCallbacks(this);
+			if(flingScroller.computeScrollOffset()) {
 				int cfx = flingScroller.getCurrX();
 				int cfy = flingScroller.getCurrY();
 				//CMN.Log("fling...", cfx - mLastFlingX, cfy - mLastFlingY, flingScroller.getCurrVelocity());
@@ -303,9 +309,9 @@ public class PDocView extends View {
 				if(!isProxy && freefling){
 					refreshRequiredTiles(true); // flingScroller.getCurrVelocity()<2500
 					invalidate();
+					//postInvalidate();
 				}
-				
-				post(this);
+				//viewPoster.post(this);
 			}
 			//else scroll ended
 		}
@@ -340,6 +346,7 @@ public class PDocView extends View {
 	private float edoff;
 	private long stoffX;
 	private float edoffX;
+	private RectF hrcTmp=new RectF();
 	
 	//构造
 	public PDocView(Context context) {
@@ -616,8 +623,8 @@ public class PDocView extends View {
 
 						flingScroller.fling(mLastFlingX, mLastFlingY, (int) vX, (int) vY,
 								0, distanceX, 0, distanceY, overX, overY, SameDir);
-
-						post(flingRunnable);
+						
+						//viewPoster.post(flingRunnable);
 						return true;
 					}
 				}
@@ -1421,7 +1428,7 @@ public class PDocView extends View {
 	int tickCheckHIRThumbsIter;
 	int tickCheckHiResRgnsIter, tickCheckHiResRgnsItSt;
 	Tile[] LowThumbs = new Tile[1024];
-	int RTLIMIT=48*12;
+	int RTLIMIT=48*2;
 	RegionTile[] regionTiles = new RegionTile[RTLIMIT];
 	private Tile tickCheckLoRThumbnails() {
 		for (; tickCheckLoRThumbsIter < 1024; tickCheckLoRThumbsIter++) {
@@ -1507,9 +1514,10 @@ public class PDocView extends View {
 				if(logiLayoutSt + i<0||logiLayoutSt + i>=pdoc._num_entries)
 					continue ;
 				page = pdoc.mPDocPages[logiLayoutSt + i];
-				HiRes = false && i>=0 && i<=toHeavenSteps &&  (i>0 || logiLayoutSz<=2
+				HiRes = i>=0 && i<=toHeavenSteps &&  (i>0 || logiLayoutSz<=2
 						|| vTranslate.y+(page.OffsetAlongScrollAxis+page.size.getHeight()/2)*scale>0 /*半入法眼*/
 						);
+				//HiRes = false;
 				NoTile=page.tile==null;
 				if(NoTile || HiRes && !page.tile.HiRes) {
 					if(HiRes) {
@@ -1537,7 +1545,7 @@ public class PDocView extends View {
 			//if(!((flingScroller.isFinished()||isDown) && !isZooming))
 			//CMN.Log("refreshRequiredTiles", flingScroller.isFinished()||isDown, !isZooming);
 			/* add regions */
-			if(scale>=minScale() && (flingScroller.isFinished()||isDown||flingScroller.getCurrVelocity()<12000) && !isZooming) {
+			if(scale>=minScale() /*&& (flingScroller.isFinished()||isDown||flingScroller.getCurrVelocity()<112000)*/ && !isZooming) {
 				tickCheckHiResRgnsIter=0;
 				int stride = (int) (256 / scale);
 				for (int i = 0; i < logiLayoutSz; i++) {
@@ -1559,7 +1567,7 @@ public class PDocView extends View {
 					page.startY=startY;
 					page.maxX = Math.min((int) Math.ceil(page.size.getWidth()*1.0f/stride), (int) Math.ceil(edoffX*1.0f/stride))-1;
 					page.maxY = Math.min((int) Math.ceil(page.size.getHeight()*1.0f/stride), (int) Math.ceil((edoff-top)*1.0f/stride))-1;
-					CMN.Log(page, "maxX, maxY", page.maxX, page.maxY, "ST::X, Y", page.startX, page.startY);
+					//CMN.Log(page, "maxX, maxY", page.maxX, page.maxY, "ST::X, Y", page.startX, page.startY);
 				}
 				
 				for (int i = 0; i < logiLayoutSz; i++) {
@@ -1574,7 +1582,7 @@ public class PDocView extends View {
 							RegionTile rgnTile = page.getRegionTileAt(sX, sY);
 							if(rgnTile==null)
 							{
-								CMN.Log("attempting to place tile at::", sX, sY, "pageidx=", logiLayoutSt + i);
+								//CMN.Log("attempting to place tile at::", sX, sY, "pageidx=", logiLayoutSt + i);
 								RegionTile tile = tickCheckHiResRegions(stride);
 								if(tile!=null) {
 									tickCheckHiResRgnsIter++;
@@ -1585,7 +1593,7 @@ public class PDocView extends View {
 								}
 							}
 							else if(rgnTile.scale!=scale) {
-								CMN.Log("attempting to restart tile at::", sX, sY, "pageidx=", logiLayoutSt + i);
+								//CMN.Log("attempting to restart tile at::", sX, sY, "pageidx=", logiLayoutSt + i);
 								if(task==null)task = acquireFreeTask();
 								rgnTile.restart(task, page, sX, sY, scale, srcRgnTop, srcRgnLeft, stride);
 							}
@@ -1602,7 +1610,7 @@ public class PDocView extends View {
 			
 			tickCheckHiResRgnsItSt = (tickCheckHiResRgnsItSt+tickCheckHiResRgnsIter)%RTLIMIT;
 			tastSize = task==null?0:task.list.size()-tastSize;
-			if(tastSize>0) CMN.Log("region_bitmap_assignment::", tastSize);
+			//if(tastSize>0) CMN.Log("region_bitmap_assignment::", tastSize);
 		}
 		if(task!=null) {
 			task.dequire();
@@ -1703,7 +1711,6 @@ public class PDocView extends View {
 			return;
 		}
 		page.open();
-		float addScale=0.5f;
 		int w = 256; // the drawSize, in view space
 		int h = 256; // the drawSize, in view space
 		int x=tile.x*w, y=tile.y*h;
@@ -1753,6 +1760,7 @@ public class PDocView extends View {
 			//canvas.drawBitmap(bitmap, 0, vTranslate.y, bitmapPaint);
 			
 			// 绘制缩略图
+			//if(false)
 			for (int i = 0; i < logiLayoutSz; i++) {
 				PDocument.PDocPage page = pdoc.mPDocPages[logiLayoutSt+i];
 				Tile tile = page.tile;
@@ -1795,17 +1803,16 @@ public class PDocView extends View {
 			// 绘制高清
 			//if(false)
 			for (RegionTile rgnTile:regionTiles) {
-				if(rgnTile!=null && !rgnTile.isOutSide(this)) {
+				if(rgnTile!=null && !rgnTile.isOutSide(this)/* && rgnTile.isInSide(this)*/) {
 					if(!rgnTile.taskToken.loading) {
 						if(!isZooming && rgnTile.scale!=scale && rgnTile.scale!=1) {
 							continue;
 						}
-						drawCount++;
 						Bitmap bm = rgnTile.bitmap;
 						Rect VR = rgnTile.vRect;
 						sourceToViewRect(rgnTile.sRect, VR);
 						matrix.reset();
-						int d=-1;
+						int d=0;
 						int bmWidth = bm.getWidth()+d;
 						int bmHeight = bm.getHeight()+d;
 						
@@ -1814,12 +1821,31 @@ public class PDocView extends View {
 						
 						matrix.setPolyToPoly(srcArray, 0, dstArray, 0, 4);
 						
-						canvas.drawBitmap(bm, matrix, bitmapPaint);
+//						if(!flingScroller.isFinished()) {
+//							hrcTmp.set(0,0,256,256);
+//							matrix.mapRect(hrcTmp);
+//							CMN.Log("hrcTmp", bmWidth, bmHeight);
+//							//CMN.Log("hrcTmp", hrcTmp.width(), hrcTmp.height());
+////							float dt = flingScroller.getCurrVelocity() / 10;
+////							if(hrcTmp.top+dt>=getScreenHeight()||hrcTmp.top-dt<=0) {
+////								continue;
+////							}
+//
+//						}
 						
-						RectF rc=new RectF();
-						matrix.mapRect(rc);
+						//if(false)
+						if(rgnTile.scale==scale) {
+							hrcTmp.set(0,0,256,256);
+							matrix.mapRect(hrcTmp);
+							canvas.drawBitmap(bm, hrcTmp.left, hrcTmp.top, bitmapPaint);
+						} else {
+							canvas.drawBitmap(bm, matrix, bitmapPaint);
+						}
+						
+						drawCount++;
 						if(SSVDF) {
-							canvas.drawText(String.format("%d,%d-[%d,%d]-%d", rgnTile.x, rgnTile.y, rgnTile.currentOwner.maxX,rgnTile.currentOwner.maxY, (rgnTile.currentOwner.maxX-rgnTile.currentOwner.startX+1)*(rgnTile.currentOwner.maxY-rgnTile.currentOwner.startY+1)), rc.left, rc.top+20, debugTextPaint);
+							matrix.mapRect(hrcTmp);
+							canvas.drawText(String.format("%d,%d-[%d,%d]-%d", rgnTile.x, rgnTile.y, rgnTile.currentOwner.maxX,rgnTile.currentOwner.maxY, (rgnTile.currentOwner.maxX-rgnTile.currentOwner.startX+1)*(rgnTile.currentOwner.maxY-rgnTile.currentOwner.startY+1)), hrcTmp.left, hrcTmp.top+20, debugTextPaint);
 						}
 					} else if(false && rgnTile.bkRc!=null) {
 						Bitmap bm = rgnTile.bitmap;
@@ -1892,7 +1918,7 @@ public class PDocView extends View {
 			int y=15;
 			int x=px(5);
 			canvas.drawText(String.format("Scale: %.4f (%.4f-%.4f) drawCount:%d", scale, minScale(), maxScale, drawCount), px(5), px(y), debugTextPaint);y+=15;
-			canvas.drawText(String.format("Translate: [%.2f:%.2f]", vTranslate.x, vTranslate.y), x, px(y), debugTextPaint);y+=15;
+			canvas.drawText(String.format("Translate: [%.2f:%.2f] Speed: %d", vTranslate.x, vTranslate.y, (int)flingScroller.getCurrVelocity()), x, px(y), debugTextPaint);y+=15;
 			
 			PointF center = getCenter();
 			canvas.drawText(String.format("Source center: %.2f:%.2f", center.x, center.y), px(5), px(y), debugTextPaint);y+=15;
@@ -2716,7 +2742,7 @@ public class PDocView extends View {
 					tI.dequire();
 					threadPool[i]=null;
 				} else {
-					CMN.Log("reusing…………");
+					//CMN.Log("reusing…………");
 					break;
 				}
 			}
@@ -2725,7 +2751,7 @@ public class PDocView extends View {
 			if(threadPool[i]==null) {
 				threadPool[i] = tI = new TileLoadingTask(this);
 				tI.acquire();
-				CMN.Log("New Thread!!!…………", i);
+				//CMN.Log("New Thread!!!…………", i);
 				break;
 			}
 		}
@@ -2859,6 +2885,13 @@ public class PDocView extends View {
 			int left=0+srcRgnLeft+currentOwner.getHorizontalOffset();
 			return (top>=pDocView.edoff || top+stride<pDocView.stoff
 					|| left>=pDocView.edoffX || left+stride<pDocView.stoffX);
+		}
+		
+		public boolean isInSide(PDocView pDocView) {
+			long top=OffsetAlongScrollAxis+srcRgnTop;
+			int left=0+srcRgnLeft+currentOwner.getHorizontalOffset();
+			return (top>=pDocView.stoff && top+stride<=pDocView.edoff
+					&& left>=pDocView.stoffX && left+stride<pDocView.edoffX);
 		}
 		
 		@Override

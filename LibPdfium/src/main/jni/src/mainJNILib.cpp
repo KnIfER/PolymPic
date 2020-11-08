@@ -499,12 +499,14 @@ JNI_FUNC(void, PdfiumCore, nativeRenderPageBitmap)(JNI_ARGS, jlong pagePtr, jobj
         return;
     }
 
+    //LOGE("Locking bitmap: %d : %d", addr, info.format == ANDROID_BITMAP_FORMAT_RGB_565);
+
     void *tmp;
     int format;
     int sourceStride;
     if (info.format == ANDROID_BITMAP_FORMAT_RGB_565) {
         tmp = malloc(canvasVerSize * canvasHorSize * sizeof(rgb));
-        sourceStride = canvasHorSize * sizeof(rgb);
+        sourceStride = can nvasHorSize * sizeof(rgb);
         format = FPDFBitmap_BGR;
     } else {
         tmp = addr;
@@ -512,9 +514,9 @@ JNI_FUNC(void, PdfiumCore, nativeRenderPageBitmap)(JNI_ARGS, jlong pagePtr, jobj
         format = FPDFBitmap_BGRA;
     }
 
-    FPDF_BITMAP pdfBitmap = FPDFBitmap_CreateEx( canvasHorSize, canvasVerSize,
-                                                     format, tmp, sourceStride);
+    FPDF_BITMAP pdfBitmap = FPDFBitmap_CreateEx( canvasHorSize, canvasVerSize, format, tmp, sourceStride);
 
+    if(!pdfBitmap) return;
     /*LOGD("Start X: %d", startX);
     LOGD("Start Y: %d", startY);
     LOGD("Canvas Hor: %d", canvasHorSize);
@@ -522,10 +524,10 @@ JNI_FUNC(void, PdfiumCore, nativeRenderPageBitmap)(JNI_ARGS, jlong pagePtr, jobj
     LOGD("Draw Hor: %d", drawSizeHor);
     LOGD("Draw Ver: %d", drawSizeVer);*/
 
-    if(drawSizeHor < canvasHorSize || drawSizeVer < canvasVerSize){
-        FPDFBitmap_FillRect( pdfBitmap, 0, 0, canvasHorSize, canvasVerSize,
-                             0x848484FF); //Gray
-    }
+    //if(drawSizeHor < canvasHorSize || drawSizeVer < canvasVerSize)
+    //{
+    //    FPDFBitmap_FillRect( pdfBitmap, 0, 0, canvasHorSize, canvasVerSize, 0x848484FF); //Gray
+    //}
 
     int baseHorSize = (canvasHorSize < drawSizeHor)? canvasHorSize : (int)drawSizeHor;
     int baseVerSize = (canvasVerSize < drawSizeVer)? canvasVerSize : (int)drawSizeVer;
@@ -537,8 +539,7 @@ JNI_FUNC(void, PdfiumCore, nativeRenderPageBitmap)(JNI_ARGS, jlong pagePtr, jobj
     	flags |= FPDF_ANNOT;
     }
 
-    FPDFBitmap_FillRect( pdfBitmap, baseX, baseY, baseHorSize, baseVerSize,
-                         0xFFFFFFFF); //White
+    //FPDFBitmap_FillRect( pdfBitmap, baseX, baseY, baseHorSize, baseVerSize, 0xFFFFFFFF); //White
 
     FPDF_RenderPageBitmap( pdfBitmap, page,
                            startX, startY,
@@ -618,7 +619,7 @@ JNI_FUNC(jlong, PdfiumCore, nativeGetBookmarkDestIndex)(JNI_ARGS, jlong docPtr, 
     if (dest == NULL) {
         return -1;
     }
-    return (jlong) FPDFDest_GetPageIndex(doc->pdfDocument, dest);
+    return (jlong) FPDFDest_GetDestPageIndex(doc->pdfDocument, dest);
 }
 
 JNI_FUNC(jlongArray, PdfiumCore, nativeGetPageLinks)(JNI_ARGS, jlong pagePtr) {
@@ -642,7 +643,7 @@ JNI_FUNC(jobject, PdfiumCore, nativeGetDestPageIndex)(JNI_ARGS, jlong docPtr, jl
     if (dest == NULL) {
         return NULL;
     }
-    unsigned long index = FPDFDest_GetPageIndex(doc->pdfDocument, dest);
+    unsigned long index = FPDFDest_GetDestPageIndex(doc->pdfDocument, dest);
     return NewInteger(env, (jint) index);
 }
 
