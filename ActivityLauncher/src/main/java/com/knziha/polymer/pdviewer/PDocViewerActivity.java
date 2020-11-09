@@ -26,6 +26,8 @@ public class PDocViewerActivity extends Toastable_Activity {
 			//PDocument pdoc = new PDocument(this, "/sdcard/myFolder/Gpu Pro 1.pdf", dm, null);
 			//UIData.wdv.setDocument(pdoc);
 			
+			UIData.wdv.a=this;
+			
 			UIData.wdv.setDocumentPath("/sdcard/myFolder/Gpu Pro 1.pdf");
 			
 		} catch (Exception e) {

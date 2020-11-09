@@ -102,12 +102,13 @@ public class PDocView extends View {
 	public static final int ORIGIN_FLING = 3;
 	/** State change originated from a double tap zoom anim. */
 	public static final int ORIGIN_DOUBLE_TAP_ZOOM = 4;
+	public PDocViewerActivity a;
 	
 	// Uri of full size image
 	private Uri uri;
 	
 	// Overlay tile boundaries and other info
-	private boolean SSVD=true;//debug
+	private boolean SSVD=false;//debug
 	
 	private boolean SSVDF=false;//debug
 	
@@ -610,14 +611,15 @@ public class PDocView extends View {
 				float posX = (lastX - vTranslate.x)/scale;
 				float posY = (lastY - vTranslate.y)/scale;
 				
+				if(false)
 				for (int i = 0; i < logiLayoutSz; i++) {
 					PDocument.PDocPage pageI = pdoc.mPDocPages[logiLayoutSt + i];
 					if(pageI.OffsetAlongScrollAxis+pageI.size.getHeight()+pdoc.gap>posY) {
 						posY -= pageI.OffsetAlongScrollAxis;
 						//posY = pageI.size.getHeight()-posY;
 						posX -= pageI.getHorizontalOffset();
-						CMN.Log("click_at_page", logiLayoutSt + i, posX, posY, pageI.getWordAtPos(posX, posY));
-						
+						//CMN.Log("click_at_page", logiLayoutSt + i, posX, posY, pageI.getWordAtPos(posX, posY));
+						a.showT(""+pageI.getWordAtPos(posX, posY));
 						break;
 					}
 				}
@@ -1314,23 +1316,16 @@ public class PDocView extends View {
 			sh = sWidth;
 		}
 		float scaleMin1 = (getScreenWidth() - hPadding) / (float) sw;
-		float scaleMin2 = (getScreenHeight() - vPadding) / (float) sh;
 		float zoomInLevel = 2.5f;
-		float level2;
-		if(scaleMin1<scaleMin2){
-			quickZoomLevels[0] = scaleMin1;
-			level2 = scaleMin2;
-		} else {
-			quickZoomLevels[0] = scaleMin2;
-			level2 = scaleMin1;
-		}
-		if(level2<zoomInLevel*quickZoomLevels[0]){
-			quickZoomLevels[1] = level2*zoomInLevel;//1.2f*zoomInLevel*quickZoomLevels[0];
-			quickZoomLevelCount = 2;
-		} else {
-			quickZoomLevels[1] = level2;
-			quickZoomLevels[2] = level2*zoomInLevel;
+		
+		quickZoomLevels[0] = scaleMin1;
+		scaleMin1 = Math.min(scaleMin1*zoomInLevel, maxScale);
+		quickZoomLevels[1] = scaleMin1;
+		quickZoomLevelCount = 2;
+		if(scaleMin1<maxScale) {
 			quickZoomLevelCount = 3;
+			scaleMin1 = Math.min(scaleMin1*zoomInLevel, maxScale);
+			quickZoomLevels[2] = scaleMin1;
 		}
 	}
 	
@@ -1695,7 +1690,7 @@ public class PDocView extends View {
 			//canvas.drawBitmap(bitmap, 0, vTranslate.y, bitmapPaint);
 			
 			// 绘制缩略图
-			if(false)
+			//if(false)
 			for (int i = 0; i < logiLayoutSz; i++) {
 				PDocument.PDocPage page = pdoc.mPDocPages[logiLayoutSt+i];
 				Tile tile = page.tile;

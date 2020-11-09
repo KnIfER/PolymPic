@@ -8,13 +8,13 @@ import android.util.DisplayMetrics;
 import android.util.SparseArray;
 
 import com.knziha.polymer.Utils.CMN;
+import com.knziha.polymer.text.BreakIteratorHelper;
 import com.shockwave.pdfium.PdfDocument;
 import com.shockwave.pdfium.PdfiumCore;
 import com.shockwave.pdfium.util.Size;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -46,8 +46,11 @@ public class PDocument {
 		long OffsetAlongScrollAxis;
 		final AtomicLong pid=new AtomicLong();
 		long tid;
+		BreakIteratorHelper pageBreakIterator;
+		String allText;
 		
 		SparseArray<PDocView.RegionTile> regionRecords = new SparseArray<>();
+		
 		PDocPage(int pageIdx, Size size) {
 			this.pageIdx = pageIdx;
 			this.size = size;
@@ -67,6 +70,11 @@ public class PDocument {
 			open();
 			if(tid==0) {
 				tid = pdfiumCore.openText(pid.get());
+				allText = pdfiumCore.nativeGetText(tid);
+				if(pageBreakIterator==null) {
+					pageBreakIterator = new BreakIteratorHelper();
+				}
+				pageBreakIterator.setText(allText);
 			}
 		}
 		
@@ -104,26 +112,27 @@ public class PDocument {
 			return 0;
 		}
 		
+		/** get A Word At Src Pos  */
 		public String getWordAtPos(float posX, float posY) {
 			prepareText();
 			
 			if(tid!=0) {
 				//int charIdx = pdfiumCore.nativeGetCharIndexAtPos(tid, posX, posY, 10.0, 10.0);
-				int charIdx = pdfiumCore.nativeGetCharIndexAtCoord(pid.get(), size.getWidth(), size.getHeight(), tid, posX, posY, 10.0, 10.0);
+				int charIdx = pdfiumCore.nativeGetCharIndexAtCoord(pid.get(), size.getWidth(), size.getHeight(), tid
+						, posX, posY, 10.0, 10.0);
+				String ret=null;
 				
-				String ret = "" + charIdx;
-				
-				String allText = pdfiumCore.nativeGetText(tid);
-				
-				try {
-					ret += allText.substring(charIdx, charIdx+1);
-				} catch (Exception e) {
-					e.printStackTrace();
+				if(charIdx>=0) {
+					int ed=pageBreakIterator.following(charIdx);
+					int st=pageBreakIterator.previous();
+					try {
+						ret = allText.substring(st, ed);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
 				}
-				
 				return ret;
 			}
-			
 			return "";
 		}
 	}
