@@ -16,6 +16,7 @@ using namespace android;
 
 #include <fpdfview.h>
 #include <fpdf_doc.h>
+#include <fpdf_text.h>
 #include <string>
 #include <vector>
 
@@ -308,12 +309,32 @@ static jlong loadPageInternal(JNIEnv *env, DocumentFile *doc, int pageIndex){
     }
 }
 
-static void closePageInternal(jlong pagePtr) { FPDF_ClosePage(reinterpret_cast<FPDF_PAGE>(pagePtr)); }
+static jlong loadTextPageInternal(JNIEnv *env, FPDF_PAGE page){
+    try{
+        FPDF_TEXTPAGE text = FPDFText_LoadPage(page);
+        if (page == NULL) {
+            throw "Loaded page is null";
+        }
+        return reinterpret_cast<jlong>(text);
+    } catch(const char *msg) {
+        LOGE("%s", msg);
+
+        jniThrowException(env, "java/lang/IllegalStateException",
+                                "cannot load text");
+
+        return -1;
+    }
+}
+
+static void closePageInternal(jlong pagePtr) {
+    FPDF_ClosePage(reinterpret_cast<FPDF_PAGE>(pagePtr));
+}
 
 JNI_FUNC(jlong, PdfiumCore, nativeLoadPage)(JNI_ARGS, jlong docPtr, jint pageIndex){
     DocumentFile *doc = reinterpret_cast<DocumentFile*>(docPtr);
     return loadPageInternal(env, doc, (int)pageIndex);
 }
+
 JNI_FUNC(jlongArray, PdfiumCore, nativeLoadPages)(JNI_ARGS, jlong docPtr, jint fromIndex, jint toIndex){
     DocumentFile *doc = reinterpret_cast<DocumentFile*>(docPtr);
 
@@ -329,6 +350,38 @@ JNI_FUNC(jlongArray, PdfiumCore, nativeLoadPages)(JNI_ARGS, jlong docPtr, jint f
     env -> SetLongArrayRegion(javaPages, 0, (jsize)(toIndex - fromIndex + 1), (const jlong*)pages);
 
     return javaPages;
+}
+
+JNI_FUNC(jlong, PdfiumCore, nativeLoadTextPage)(JNI_ARGS, jlong pagePtr){
+    return loadTextPageInternal(env, (FPDF_PAGE)pagePtr);
+}
+
+JNI_FUNC(jint, PdfiumCore, nativeGetCharIndexAtPos)(JNI_ARGS, jlong textPtr, jdouble posX, jdouble posY, jdouble tolX, jdouble tolY){
+    return FPDFText_GetCharIndexAtPos((FPDF_TEXTPAGE)textPtr, posX, posY, tolX, tolY);
+}
+
+JNI_FUNC(jint, PdfiumCore, nativeGetCharIndexAtCoord)(JNI_ARGS, jlong pagePtr, jdouble width, jdouble height, jlong textPtr, jdouble posX, jdouble posY, jdouble tolX, jdouble tolY){
+    double px, py;
+    FPDF_DeviceToPage((FPDF_PAGE)pagePtr, 0, 0, width, height, 0, posX, posY, &px, &py);
+    return FPDFText_GetCharIndexAtPos((FPDF_TEXTPAGE)textPtr, px, py, tolX, tolY);
+}
+
+JNI_FUNC(jint, PdfiumCore, nativeGetTexts)(JNI_ARGS, jlong textPtr, jdouble posX, jdouble posY, jdouble tolX, jdouble tolY){
+    return FPDFText_GetCharIndexAtPos((FPDF_TEXTPAGE)textPtr, posX, posY, tolX, tolY);
+}
+
+JNI_FUNC(jint, PdfiumCore, nativeGetTextLength)(JNI_ARGS, jlong textPtr){
+    return FPDFText_CountChars((FPDF_TEXTPAGE)textPtr);
+}
+
+JNI_FUNC(jstring, PdfiumCore, nativeGetText)(JNI_ARGS, jlong textPtr) {
+    int len = FPDFText_CountChars((FPDF_TEXTPAGE)textPtr);
+    //unsigned short* buffer = malloc(len*sizeof(unsigned short));
+    unsigned short* buffer = new unsigned short[len+1];
+    FPDFText_GetText((FPDF_TEXTPAGE)textPtr, 0, len, buffer);
+    jstring ret = env->NewString(buffer, len);
+    delete []buffer;
+    return ret;
 }
 
 JNI_FUNC(void, PdfiumCore, nativeClosePage)(JNI_ARGS, jlong pagePtr){ closePageInternal(pagePtr); }
@@ -375,8 +428,8 @@ JNI_FUNC(jobject, PdfiumCore, nativeGetPageSizeByIndex)(JNI_ARGS, jlong docPtr, 
         height = 0;
     }
 
-    jint widthInt = (jint) (width * dpi / 72);
-    jint heightInt = (jint) (height * dpi / 72);
+    jint widthInt = (jint) width;
+    jint heightInt = (jint) height;
 
     jclass clazz = env->FindClass("com/shockwave/pdfium/util/Size");
     jmethodID constructorID = env->GetMethodID(clazz, "<init>", "(II)V");
@@ -506,7 +559,7 @@ JNI_FUNC(void, PdfiumCore, nativeRenderPageBitmap)(JNI_ARGS, jlong pagePtr, jobj
     int sourceStride;
     if (info.format == ANDROID_BITMAP_FORMAT_RGB_565) {
         tmp = malloc(canvasVerSize * canvasHorSize * sizeof(rgb));
-        sourceStride = can nvasHorSize * sizeof(rgb);
+        sourceStride = canvasHorSize * sizeof(rgb);
         format = FPDFBitmap_BGR;
     } else {
         tmp = addr;

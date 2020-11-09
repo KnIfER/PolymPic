@@ -1312,13 +1312,14 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	@Override
 	public void onTrimMemory(int level) {
 		super.onTrimMemory(level);
-		Glide glide = Glide.glide;
-		if(glide!=null) {
-			glide.trimMemory(level);
-			if(focused) {
-				glide.clearMemory();
-			}
-		}
+		//todo fix glide trim memo
+//		Glide glide = Glide.glide;
+//		if(glide!=null) {
+//			glide.trimMemory(level);
+//			if(focused) {
+//				glide.clearMemory();
+//			}
+//		}
 		if(level>TRIM_MEMORY_MODERATE || level<TRIM_MEMORY_UI_HIDDEN) {
 			CMN.Log("trimMemory", level, TRIM_MEMORY_MODERATE, TRIM_MEMORY_UI_HIDDEN);
 			clearReferences(false);

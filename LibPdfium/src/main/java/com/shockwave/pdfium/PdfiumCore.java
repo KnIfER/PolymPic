@@ -38,7 +38,15 @@ public class PdfiumCore {
     private native int nativeGetPageCount(long docPtr);
 
     private native long nativeLoadPage(long docPtr, int pageIndex);
-
+    
+    private native long nativeLoadTextPage(long pagePtr);
+    
+    public native int nativeGetCharIndexAtPos(long textPtr, double posX, double posY, double tolX, double tolY);
+    
+    public native int nativeGetCharIndexAtCoord(long pagePtr, double width, double height, long textPtr, double posX, double posY, double tolX, double tolY);
+    
+    public native String nativeGetText(long textPtr);
+		
     private native long[] nativeLoadPages(long docPtr, int fromIndex, int toIndex);
 
     private native void nativeClosePage(long pagePtr);
@@ -163,9 +171,14 @@ public class PdfiumCore {
             doc.mNativePagesPtr.put(pageIndex, pagePtr);
             return pagePtr;
         }
-
     }
-
+    
+    public long openText(long pagePtr) {
+        synchronized (lock) {
+            return nativeLoadTextPage(pagePtr);
+        }
+    }
+    
     /** Open range of pages and store native pointers in {@link PdfDocument} */
     public long[] openPage(PdfDocument doc, int fromIndex, int toIndex) {
         long[] pagesPtr;

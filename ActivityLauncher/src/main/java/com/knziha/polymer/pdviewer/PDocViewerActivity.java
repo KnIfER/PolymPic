@@ -1,23 +1,14 @@
 package com.knziha.polymer.pdviewer;
 
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.Bundle;
-import android.os.ParcelFileDescriptor;
-import android.view.View;
 
 import androidx.databinding.DataBindingUtil;
 
 import com.knziha.polymer.R;
 import com.knziha.polymer.Toastable_Activity;
-import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.databinding.ImageviewDebugBinding;
-import com.shockwave.pdfium.PdfDocument;
 import com.shockwave.pdfium.PdfiumCore;
-import com.shockwave.pdfium.util.Size;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 
 public class PDocViewerActivity extends Toastable_Activity {
@@ -33,7 +24,7 @@ public class PDocViewerActivity extends Toastable_Activity {
 		UIData.image.setImageResource(R.drawable.ic_launcher);
 		try {
 			//PDocument pdoc = new PDocument(this, "/sdcard/myFolder/sample_hetero_dimension.pdf");
-			PDocument pdoc = new PDocument(this, "/sdcard/myFolder/Gpu Pro 1.pdf");
+			PDocument pdoc = new PDocument(this, "/sdcard/myFolder/Gpu Pro 1.pdf", dm);
 			
 			//UIData.image.setImageBitmap(pdoc.renderBitmap(0, 1));
 			
@@ -45,14 +36,6 @@ public class PDocViewerActivity extends Toastable_Activity {
 			e.printStackTrace();
 		}
 		
-		UIData.wdv.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				
-				showT("onClick");
-				
-			}
-		});
 		
 		
 	}

@@ -642,6 +642,28 @@ public class PDocView extends View {
 			}
 			
 			@Override
+			public boolean onSingleTapUp(MotionEvent e) {
+				//performClick();
+				float posX = (lastX - vTranslate.x)/scale;
+				float posY = (lastY - vTranslate.y)/scale;
+				
+				for (int i = 0; i < logiLayoutSz; i++) {
+					PDocument.PDocPage pageI = pdoc.mPDocPages[logiLayoutSt + i];
+					if(pageI.OffsetAlongScrollAxis+pageI.size.getHeight()+pdoc.gap>posY) {
+						posY -= pageI.OffsetAlongScrollAxis;
+						//posY = pageI.size.getHeight()-posY;
+						posX -= pageI.getHorizontalOffset();
+						CMN.Log("click_at_page", logiLayoutSt + i, posX, posY, pageI.getWordAtPos(posX, posY));
+						
+						break;
+					}
+				}
+				
+				
+				return super.onSingleTapUp(e);
+			}
+			
+			@Override
 			public boolean onDoubleTapEvent(MotionEvent e) {
 				if (zoomEnabled && (readySent||isProxy) && e.getActionMasked()==MotionEvent.ACTION_DOWN) {
 					CMN.Log("kiam 双击");
@@ -1465,7 +1487,7 @@ public class PDocView extends View {
 		return null;
 	}
 	
-	private RegionTile tickCheckHiResRegions(int stride) {
+	private RegionTile tickCheckHiResRegions(float stride) {
 		for (; tickCheckHiResRgnsIter < RTLIMIT; tickCheckHiResRgnsIter++) {
 			int iter = (tickCheckHiResRgnsItSt+tickCheckHiResRgnsIter)%RTLIMIT;
 			RegionTile ltI = regionTiles[iter];
@@ -1529,7 +1551,7 @@ public class PDocView extends View {
 						if(tile!=null) {
 							if(task==null)task = acquireFreeTask();
 							if(!NoTile) page.sendTileToBackup();
-							tile.assignToAsThumail(task, page, 0.4f);
+							tile.assignToAsThumail(task, page, pdoc.ThumbsHiResFactor);
 							continue ThumbnailsAssignment;
 						}
 					}
@@ -1540,7 +1562,7 @@ public class PDocView extends View {
 						if(tile!=null) {
 							tickCheckLoRThumbsIter++;
 							if(task==null)task = acquireFreeTask();
-							tile.assignToAsThumail(task, page, 0.1f);
+							tile.assignToAsThumail(task, page, pdoc.ThumbsLoResFactor);
 						}
 					}
 				}
@@ -1551,7 +1573,7 @@ public class PDocView extends View {
 			/* add regions */
 			if(scale>=minScale() /*&& (flingScroller.isFinished()||isDown||flingScroller.getCurrVelocity()<112000)*/ && !isZooming) {
 				tickCheckHiResRgnsIter=0;
-				int stride = (int) (256 / scale);
+				float stride = (256 / scale);
 				for (int i = 0; i < logiLayoutSz; i++) {
 					page = pdoc.mPDocPages[logiLayoutSt + i];
 					int HO=page.getHorizontalOffset();
@@ -1559,8 +1581,8 @@ public class PDocView extends View {
 					float edoffX=this.edoffX-HO;
 					long top = page.OffsetAlongScrollAxis;
 					int top_delta = (int) (stoff - top);
-					int startY = 0;
-					int startX = 0;
+					float startY = 0;
+					float startX = 0;
 					if (top_delta > 0) {
 						startY = top_delta / stride;
 					}
@@ -1576,12 +1598,12 @@ public class PDocView extends View {
 				
 				for (int i = 0; i < logiLayoutSz; i++) {
 					page = pdoc.mPDocPages[logiLayoutSt + i];
-					int sY=page.startY;
+					int sY= (int) page.startY;
 					long top = page.OffsetAlongScrollAxis;
-					int srcRgnTop=sY*stride;
+					float srcRgnTop=sY*stride;
 					while(top+srcRgnTop<edoff && sY<=page.maxY) { // 子块顶边不超出
-						int sX = page.startX;
-						int srcRgnLeft=page.startX*stride;
+						int sX = (int) page.startX;
+						float srcRgnLeft=page.startX*stride;
 						while(srcRgnLeft<edoffX && sX<=page.maxX) {
 							RegionTile rgnTile = page.getRegionTileAt(sX, sY);
 							if(rgnTile==null)
@@ -1715,9 +1737,9 @@ public class PDocView extends View {
 			return;
 		}
 		page.open();
-		int w = 256; // the drawSize, in view space
-		int h = 256; // the drawSize, in view space
-		int x=tile.x*w, y=tile.y*h;
+		float w = 256; // the drawSize, in view space
+		float h = 256; // the drawSize, in view space
+		float x=tile.x*w, y=tile.y*h;
 		int vPageW = (int) (page.size.getWidth()*scale);
 		int vPageH = (int) (page.size.getHeight()*scale);
 		if(x+w>vPageW) {
@@ -1728,18 +1750,18 @@ public class PDocView extends View {
 		}
 		if(w!=OneSmallStep.getWidth()||h!=OneSmallStep.getHeight()) {
 			if(w<=0||h<=0) return;
-			OneSmallStep.reconfigure(w, h, Bitmap.Config.ARGB_8888);
+			OneSmallStep.reconfigure((int)Math.ceil(w), (int)Math.ceil(h), Bitmap.Config.ARGB_8888);
 		}
 //		int src_top = (int) (tile.OffsetAlongScrollAxis+y/scale);
 //		int src_left = (int) (x/scale);
-		int src_top = (int) (tile.OffsetAlongScrollAxis+tile.srcRgnTop);
-		int src_left = tile.srcRgnLeft+page.getHorizontalOffset();
+		float src_top = (tile.OffsetAlongScrollAxis+tile.srcRgnTop);
+		float src_left = (tile.srcRgnLeft+page.getHorizontalOffset());
 		w/=scale; // the drawSize, in src space
 		h/=scale; // the drawSize, in src space
 		tile.sRect.set(src_left, src_top, src_left+w, src_top+h);
 		new Canvas(OneSmallStep).drawColor(Color.WHITE);
-		int srcW=(int) ((page.size.getWidth())*scale);
-		int srcH=(int) ((page.size.getHeight())*scale);
+		int srcW=(int) (page.size.getWidth()*scale);
+		int srcH=(int) (page.size.getHeight()*scale);
 		pdoc.renderRegionBitmap(page, OneSmallStep, (int) (-tile.srcRgnLeft*scale), (int) (-tile.srcRgnTop*scale), srcW, srcH);
 //		pdoc.renderRegionBitmap(page, OneSmallStep, 0, 0, srcW, srcH);
 		//CMN.Log("loaded rgn!!!", page.pageIdx, "lt:", src_left, src_top, "wh:", w, h, tile.srcRgnLeft, tile.srcRgnTop);
@@ -1764,7 +1786,7 @@ public class PDocView extends View {
 			//canvas.drawBitmap(bitmap, 0, vTranslate.y, bitmapPaint);
 			
 			// 绘制缩略图
-			//if(false)
+			if(false)
 			for (int i = 0; i < logiLayoutSz; i++) {
 				PDocument.PDocPage page = pdoc.mPDocPages[logiLayoutSt+i];
 				Tile tile = page.tile;
@@ -1785,7 +1807,7 @@ public class PDocView extends View {
 					}
 					
 					Rect VR = tile.vRect;
-					sourceToViewRect(tile.sRect, VR);
+					sourceToViewRectF(tile.sRect, VR);
 					if (tileBgPaint != null) {
 						canvas.drawRect(VR, tileBgPaint);
 					}
@@ -1814,7 +1836,7 @@ public class PDocView extends View {
 						}
 						Bitmap bm = rgnTile.bitmap;
 						Rect VR = rgnTile.vRect;
-						sourceToViewRect(rgnTile.sRect, VR);
+						sourceToViewRectF(rgnTile.sRect, VR);
 						matrix.reset();
 						int d=0;
 						int bmWidth = bm.getWidth()+d;
@@ -1838,13 +1860,13 @@ public class PDocView extends View {
 //						}
 						
 						//if(false)
-						if(rgnTile.scale==scale) {
-							hrcTmp.set(0,0,256,256);
-							matrix.mapRect(hrcTmp);
-							canvas.drawBitmap(bm, hrcTmp.left, hrcTmp.top, bitmapPaint);
-						} else {
+//						if(rgnTile.scale==scale) {
+//							hrcTmp.set(0,0,256,256);
+//							matrix.mapRect(hrcTmp);
+//							canvas.drawBitmap(bm, hrcTmp.left, hrcTmp.top, bitmapPaint);
+//						} else {
 							canvas.drawBitmap(bm, matrix, bitmapPaint);
-						}
+//						}
 						
 						drawCount++;
 						if(SSVDF) {
@@ -1881,7 +1903,7 @@ public class PDocView extends View {
 						Bitmap bm = rgnTile.bitmap;
 						
 						Rect VR = rgnTile.vRect;
-						sourceToViewRect(rgnTile.sRect, VR);
+						sourceToViewRectF(rgnTile.sRect, VR);
 						matrix.reset();
 						int bmWidth = bm.getWidth();
 						int bmHeight = bm.getHeight();
@@ -2497,14 +2519,14 @@ public class PDocView extends View {
 					Tile tile = new Tile();
 					tile.sampleSize = sampleSize;
 					tile.visible = false;
-					tile.sRect = new Rect(
+					tile.sRect = new RectF(
 							x * sTileWidth,
 							y * sTileHeight,
 							x == xTiles - 1 ? sWidth() : (x + 1) * sTileWidth,
 							y == yTiles - 1 ? sHeight() : (y + 1) * sTileHeight
 					);
 					tile.vRect = new Rect(0, 0, 0, 0);
-					tile.fileSRect = new Rect(tile.sRect);
+					//tile.fileSRect = new Rect(tile.sRect);
 					tileGrid[cc] = tile;
 					cc++;
 				}
@@ -2531,7 +2553,7 @@ public class PDocView extends View {
 		scale = currentMinScale();
 		CMN.Log("proxy set min scale = "+scale);
 		//minScale = getMinScale();
-		maxScale = Math.max(scale*2,10.0f);
+		maxScale = scale*10;
 		
 		preDraw2(new PointF(pdoc.maxPageWidth *1.0f/2, pdoc.height*1.0f/2),scale);
 		
@@ -2612,7 +2634,7 @@ public class PDocView extends View {
 						try {
 							//if (decoder.isReady()) {
 								// Update tile's file sRect according to rotation
-								view.fileSRect(tile.sRect, tile.fileSRect);
+								//view.fileSRect(tile.sRect, tile.fileSRect);
 								if (view.sRegion != null) {
 									tile.fileSRect.offset(view.sRegion.left, view.sRegion.top);
 								}
@@ -2836,9 +2858,9 @@ public class PDocView extends View {
 	public static class RegionTile extends Tile{
 		long OffsetAlongScrollAxis;
 		float scale;
-		int srcRgnTop;
-		int srcRgnLeft;
-		int stride;
+		float srcRgnTop;
+		float srcRgnLeft;
+		float stride;
 		/*0 1 2 3 4 5*/
 		int x;
 		/*0 1 2 3 4 5 6 7 8*/
@@ -2871,9 +2893,9 @@ public class PDocView extends View {
 //			return false;
 //		}
 		
-		public boolean resetIfOutside(PDocView pDocView, int stride) {
-			long top=OffsetAlongScrollAxis+y*stride;
-			int left=0+x*stride;
+		public boolean resetIfOutside(PDocView pDocView, float stride) {
+			long top= (long) (OffsetAlongScrollAxis+y*stride);
+			int left= (int) (0+x*stride);
 //			if(currentOwner!=null && (currentOwner.pageIdx<pDocView.logiLayoutSt||currentOwner.pageIdx>pDocView.logiLayoutSt+pDocView.logiLayoutSz
 //					||top>=pDocView.edoff||left>=pDocView.edoffX||top+stride<=pDocView.stoff||left+stride<=pDocView.stoffX)) {
 			if(currentOwner!=null && (currentOwner.pageIdx<pDocView.logiLayoutSt||currentOwner.pageIdx>=pDocView.logiLayoutSt+pDocView.logiLayoutSz
@@ -2885,15 +2907,15 @@ public class PDocView extends View {
 		}
 		
 		public boolean isOutSide(PDocView pDocView) {
-			long top=OffsetAlongScrollAxis+srcRgnTop;
-			int left=0+srcRgnLeft+currentOwner.getHorizontalOffset();
+			long top= (long) (OffsetAlongScrollAxis+srcRgnTop);
+			int left= (int) (0+srcRgnLeft+currentOwner.getHorizontalOffset());
 			return (top>=pDocView.edoff || top+stride<pDocView.stoff
 					|| left>=pDocView.edoffX || left+stride<pDocView.stoffX);
 		}
 		
 		public boolean isInSide(PDocView pDocView) {
-			long top=OffsetAlongScrollAxis+srcRgnTop;
-			int left=0+srcRgnLeft+currentOwner.getHorizontalOffset();
+			long top= (long) (OffsetAlongScrollAxis+srcRgnTop);
+			int left= (int) (0+srcRgnLeft+currentOwner.getHorizontalOffset());
 			return (top>=pDocView.stoff && top+stride<=pDocView.edoff
 					&& left>=pDocView.stoffX && left+stride<pDocView.edoffX);
 		}
@@ -2917,7 +2939,7 @@ public class PDocView extends View {
 			throw new IllegalArgumentException();
 		}
 		
-		public void assignToAsRegion(TileLoadingTask taskThread, PDocument.PDocPage page, int sX, int sY, float scale, int srcRgnTop, int srcRgnLeft, int stride) {
+		public void assignToAsRegion(TileLoadingTask taskThread, PDocument.PDocPage page, int sX, int sY, float scale, float srcRgnTop, float srcRgnLeft, float stride) {
 			reset();
 			taskToken.abort.set(true);
 			currentOwner=page;
@@ -2931,8 +2953,8 @@ public class PDocView extends View {
 			page.recordLoading(x, y, this);
 		}
 		
-		public void restart(TileLoadingTask taskThread, PDocument.PDocPage page, int sX, int startY, float scale, int srcRgnTop, int srcRgnLeft, int stride) {
-			bkRc=taskToken.loading?null:new Rect(sRect);
+		public void restart(TileLoadingTask taskThread, PDocument.PDocPage page, int sX, int startY, float scale, float srcRgnTop, float srcRgnLeft, float stride) {
+			//bkRc=taskToken.loading?null:new Rect(sRect);
 			taskToken.abort.set(true);
 			currentOwner=page;
 			taskThread.addTask(taskToken=new TaskToken(this, scale));
@@ -2947,7 +2969,7 @@ public class PDocView extends View {
 		public ImageView iv;
 		public int patchId;
 		public boolean HiRes;
-		protected Rect sRect = new Rect(0, 0, 0, 0);
+		protected RectF sRect = new RectF(0, 0, 0, 0);
 		protected int sampleSize;
 		public Bitmap bitmap;
 		//private WeakReference<Bitmap> bitmapStore;
@@ -3458,6 +3480,24 @@ public class PDocView extends View {
 	 * Convert source rect to screen rect, integer values.
 	 */
 	private void sourceToViewRect(@NonNull Rect sRect, @NonNull Rect vTarget) {
+		// NOTE: Arbitrary rotation makes this impossible to implement literally, due to how Rect
+		// is represented, but as this is used before rotation is applied, it doesn't matter
+//		vTarget.set(
+//				(int)sourceToViewX(sRect.left),
+//				(int)sourceToViewY(sRect.top),
+//				(int)sourceToViewX(sRect.right),
+//				(int)sourceToViewY(sRect.bottom)
+//		);
+		vTarget.set(
+				(int) (sRect.left * scale + vTranslate.x),
+				(int) (sRect.top * scale + vTranslate.y),
+				(int) (sRect.right * scale + vTranslate.x),
+				(int) (sRect.bottom * scale + vTranslate.y)
+		);
+		
+	}
+	
+	private void sourceToViewRectF(@NonNull RectF sRect, @NonNull Rect vTarget) {
 		// NOTE: Arbitrary rotation makes this impossible to implement literally, due to how Rect
 		// is represented, but as this is used before rotation is applied, it doesn't matter
 //		vTarget.set(

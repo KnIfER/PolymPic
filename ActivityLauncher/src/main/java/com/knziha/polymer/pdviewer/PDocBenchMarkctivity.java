@@ -3,13 +3,8 @@ package com.knziha.polymer.pdviewer;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 
-import androidx.databinding.DataBindingUtil;
-
-import com.knziha.polymer.R;
 import com.knziha.polymer.Toastable_Activity;
 import com.knziha.polymer.Utils.CMN;
-import com.knziha.polymer.databinding.ImageviewDebugBinding;
-import com.shockwave.pdfium.PdfiumCore;
 
 import java.io.IOException;
 
@@ -25,7 +20,7 @@ public class PDocBenchMarkctivity extends Toastable_Activity {
 		
 		try {
 			//PDocument pdoc = new PDocument(this, "/sdcard/myFolder/sample_hetero_dimension.pdf");
-			PDocument pdoc = new PDocument(this, "/sdcard/myFolder/Gpu Pro 1.pdf");
+			PDocument pdoc = new PDocument(this, "/sdcard/myFolder/Gpu Pro 1.pdf", dm);
 //			PDocument pdoc = new PDocument(this, "/sdcard/myFolder/YotaSpec2.pdf");
 			Bitmap bm = Bitmap.createBitmap(16, 16, Bitmap.Config.ARGB_8888);
 //			bm = pdoc.drawTumbnail(bm, 0, 1);

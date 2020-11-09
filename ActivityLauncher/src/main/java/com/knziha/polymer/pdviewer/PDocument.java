@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.ParcelFileDescriptor;
+import android.util.DisplayMetrics;
 import android.util.SparseArray;
 
 import com.knziha.polymer.Utils.CMN;
@@ -18,15 +19,20 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class PDocument {
 	public final String path;
+	final DisplayMetrics dm;
 	public /*final*/ PDocPage[] mPDocPages;
 	public static PdfiumCore pdfiumCore;
 	public PdfDocument pdfDocument;
 	public int maxPageWidth;
 	public int maxPageHeight;
+	public int gap=15;
 	public long height;
 	public int _num_entries;
 	private int _anchor_page;
 	private HashMap<Integer, Bitmap> bTMP = new HashMap<>();
+	
+	public float ThumbsHiResFactor=0.4f;
+	public float ThumbsLoResFactor=0.1f;
 	
 	public void prepare() {
 	
@@ -37,12 +43,14 @@ public class PDocument {
 		final Size size;
 		public PDocView.Tile tile;
 		public PDocView.Tile tileBk;
-		public int startY = 0;
-		public int startX = 0;
+		public float startY = 0;
+		public float startX = 0;
 		public int maxX;
 		public int maxY;
 		long OffsetAlongScrollAxis;
 		final AtomicLong pid=new AtomicLong();
+		long tid;
+		
 		SparseArray<PDocView.RegionTile> regionRecords = new SparseArray<>();
 		PDocPage(int pageIdx, Size size) {
 			this.pageIdx = pageIdx;
@@ -56,6 +64,13 @@ public class PDocument {
 						pid.set(pdfiumCore.openPage(pdfDocument, pageIdx));
 					}
 				}
+			}
+		}
+		
+		public void prepareText() {
+			open();
+			if(tid==0) {
+				tid = pdfiumCore.openText(pid.get());
 			}
 		}
 		
@@ -92,10 +107,35 @@ public class PDocument {
 			}
 			return 0;
 		}
+		
+		public String getWordAtPos(float posX, float posY) {
+			prepareText();
+			
+			if(tid!=0) {
+				//int charIdx = pdfiumCore.nativeGetCharIndexAtPos(tid, posX, posY, 10.0, 10.0);
+				int charIdx = pdfiumCore.nativeGetCharIndexAtCoord(pid.get(), size.getWidth(), size.getHeight(), tid, posX, posY, 10.0, 10.0);
+				
+				String ret = "" + charIdx;
+				
+				
+				String allText = pdfiumCore.nativeGetText(tid);
+				
+				try {
+					ret += allText.substring(charIdx, charIdx+1);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				
+				return ret;
+			}
+			
+			return "";
+		}
 	}
 	
-	public PDocument(Context c, String path) throws IOException {
+	public PDocument(Context c, String path, DisplayMetrics dm) throws IOException {
 		this.path = path;
+		this.dm = dm;
 		if(pdfiumCore==null) {
 			pdfiumCore = new PdfiumCore(c);
 		}
@@ -110,7 +150,7 @@ public class PDocument {
 			PDocPage page = new PDocPage(i, size);
 			mPDocPages[i]=page;
 			page.OffsetAlongScrollAxis=height;
-			height+=size.getHeight()+60;
+			height+=size.getHeight()+gap;
 			//if(i<10) CMN.Log("mPDocPages", i, size.getWidth(), size.getHeight());
 			maxPageWidth = Math.max(maxPageWidth, size.getWidth());
 			maxPageHeight = Math.max(maxPageHeight, size.getHeight());
@@ -119,6 +159,25 @@ public class PDocument {
 			PDocPage page = mPDocPages[_num_entries-1];
 			height = page.OffsetAlongScrollAxis+page.size.getHeight();
 		}
+		float w=dm.widthPixels, h=dm.heightPixels;
+		float v1=maxPageWidth*maxPageHeight, v2=w*h;
+		if(v1<=v2) {
+			ThumbsHiResFactor=1f;
+			ThumbsLoResFactor=0.35f;
+		} else {
+			if(w>100) {
+				w-=100;
+			}
+			if(h>100) {
+				h-=100;
+			}
+			ThumbsHiResFactor=Math.min(Math.min(w/maxPageWidth, h/maxPageHeight), v2/v1);
+			if(ThumbsHiResFactor<=0) {
+				ThumbsHiResFactor=0.004f;
+			}
+			ThumbsLoResFactor=ThumbsHiResFactor/4;
+		}
+		CMN.Log("缩放比", ThumbsHiResFactor, ThumbsLoResFactor);
 	}
 	
 	public Bitmap renderBitmap(PDocPage page, Bitmap bitmap, float scale) {
