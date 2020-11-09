@@ -15,6 +15,7 @@ import com.shockwave.pdfium.util.Size;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class PDocument {
@@ -29,14 +30,9 @@ public class PDocument {
 	public long height;
 	public int _num_entries;
 	private int _anchor_page;
-	private HashMap<Integer, Bitmap> bTMP = new HashMap<>();
 	
 	public float ThumbsHiResFactor=0.4f;
 	public float ThumbsLoResFactor=0.1f;
-	
-	public void prepare() {
-	
-	}
 	
 	class PDocPage {
 		final int pageIdx;
@@ -117,7 +113,6 @@ public class PDocument {
 				
 				String ret = "" + charIdx;
 				
-				
 				String allText = pdfiumCore.nativeGetText(tid);
 				
 				try {
@@ -133,7 +128,7 @@ public class PDocument {
 		}
 	}
 	
-	public PDocument(Context c, String path, DisplayMetrics dm) throws IOException {
+	public PDocument(Context c, String path, DisplayMetrics dm, AtomicBoolean abort) throws IOException {
 		this.path = path;
 		this.dm = dm;
 		if(pdfiumCore==null) {
@@ -154,6 +149,9 @@ public class PDocument {
 			//if(i<10) CMN.Log("mPDocPages", i, size.getWidth(), size.getHeight());
 			maxPageWidth = Math.max(maxPageWidth, size.getWidth());
 			maxPageHeight = Math.max(maxPageHeight, size.getHeight());
+			if(abort!=null&&abort.get()) {
+				return;
+			}
 		}
 		if(_num_entries>0) {
 			PDocPage page = mPDocPages[_num_entries-1];

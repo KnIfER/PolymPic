@@ -33,6 +33,7 @@ import android.graphics.RectF;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
@@ -52,16 +53,12 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.knziha.polymer.Utils.CMN;
-import com.knziha.polymer.slideshow.ArrayListGood;
 import com.knziha.polymer.slideshow.ImageViewState;
 import com.knziha.polymer.slideshow.OverScroller;
-import com.knziha.polymer.slideshow.decoder.CompatDecoderFactory;
-import com.knziha.polymer.slideshow.decoder.DecoderFactory;
 import com.knziha.polymer.slideshow.decoder.ImageDecoder;
 import com.knziha.polymer.slideshow.decoder.ImageRegionDecoder;
-import com.knziha.polymer.slideshow.decoder.SkiaImageDecoder;
-import com.knziha.polymer.slideshow.decoder.SkiaImageRegionDecoder;
 
+import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -69,8 +66,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /** Pro-level utilization of the PDFium project.
  * Inspired by https://github.com/davemorrissey/subsampling-scale-image-view
@@ -111,13 +106,6 @@ public class PDocView extends View {
 	// Uri of full size image
 	private Uri uri;
 	
-	// Sample size used to display the whole image when fully zoomed out
-	private int fullImageSampleSize;
-	
-	// Map of zoom level to tile grid
-	//private LinkedHashMap<Integer, List<Tile>> tileMap;
-	private TileMap[] tileMipMaps;
-	
 	// Overlay tile boundaries and other info
 	private boolean SSVD=true;//debug
 	
@@ -133,9 +121,6 @@ public class PDocView extends View {
 	
 	// Min scale allowed (prevent infinite zoom)
 	private float minScale = minScale();
-	
-	// Density to reach before loading higher resolution tiles
-	public int minimumTileDpi = -1;
 	
 	// overrides for the dimensions of the generated tiles
 	public static final int TILE_SIZE_AUTO = Integer.MAX_VALUE;
@@ -200,12 +185,6 @@ public class PDocView extends View {
 	
 	// Fling detector
 	private GestureDetector flingdetector;
-	
-	// Tile and image decoding
-	private ImageRegionDecoder decoder;
-	private final ReadWriteLock decoderLock = new ReentrantReadWriteLock(true);
-	public DecoderFactory<? extends ImageDecoder> bitmapDecoderFactory = new CompatDecoderFactory<ImageDecoder>(SkiaImageDecoder.class);
-	public DecoderFactory<? extends ImageRegionDecoder> regionDecoderFactory = new CompatDecoderFactory<ImageRegionDecoder>(SkiaImageRegionDecoder.class);
 	
 	private boolean doubleTapDetected;
 	private PointF doubleTapFocus = new PointF();
@@ -272,6 +251,7 @@ public class PDocView extends View {
 	boolean freefling=true;
 	boolean freeAnimation=true;
 	private boolean isFlinging;
+	private TilesInitTask loadingTask;
 	
 	
 	@Override
@@ -324,7 +304,6 @@ public class PDocView extends View {
 	private float flingVx;
 	private float flingVy;
 	private boolean waitingNextTouchResume;
-	private int maxImageSampleSize;
 	private PointF quickScalesStart;
 	private long lastDrawTime;
 	public static ColorFilter sample_fileter = new ColorMatrixColorFilter(new float[]{
@@ -359,8 +338,6 @@ public class PDocView extends View {
 	public PDocView(Context context, AttributeSet attr) {
 		super(context, attr);
 		density = getResources().getDisplayMetrics().density;
-		//setMinimumDpi(160);
-		setMinimumTileDpi(320);
 		setGestureDetector(context);
 		createPaints();
 		this.handler = new Handler(new Handler.Callback() {
@@ -407,7 +384,7 @@ public class PDocView extends View {
 	public final void setOrientation(int orientation) {
 		if(orientation>=0&&orientation<=270 && orientation%90==0){
 			this.orientation = orientation;
-			reset(false);
+			//reset(false);
 			invalidate();
 			//requestLayout();
 		}
@@ -417,44 +394,53 @@ public class PDocView extends View {
 	/**
 	 * Async task used to get image details without blocking the UI thread.
 	 */
-	private static class TilesInitTask extends AsyncTask<Void, Void, Void> {
+	
+	private static class TilesInitTask implements Runnable {
+		private final String url;
+		private final AtomicBoolean abort = new AtomicBoolean();
+		private final AtomicBoolean finished = new AtomicBoolean();
 		private final WeakReference<PDocView> viewRef;
+		private Thread t;
 		
-		TilesInitTask(PDocView view) {
+		TilesInitTask(PDocView view, String url) {
+			this.url = url;
 			viewRef = new WeakReference<>(view);
 		}
 		
 		@Override
-		protected Void doInBackground(Void... params) {
-			try {
-				PDocView view = viewRef.get();
-				if (view != null) {
-					view.debug("TilesInitTask.doInBackground");
-					ImageRegionDecoder decoder = view.regionDecoderFactory.make();
-					Point dimensions = decoder.init(view.getContext(), view.uri);
-					view.decoder = decoder;
-//					int sWidth = dimensions.x;
-//					int sHeight = dimensions.y;
-//					if (sRegion != null) {
-//						if(sRegion.left<0) sRegion.left = 0;
-//						if(sRegion.top<0) sRegion.top = 0;
-//						if(sRegion.right>sWidth) sRegion.right = sWidth;
-//						if(sRegion.right>sHeight) sRegion.bottom = sHeight;
-//						sWidth = sRegion.width();
-//						sHeight = sRegion.height();
-//					}
-				}
-			} catch (Exception e) {
-				//CMN.Log(TAG, "Failed to initialise bitmap decoder", e);
-			}
-			return null;
-		}
-		
-		@Override
-		protected void onPostExecute(Void xyo) {
+		public void run() {
 			final PDocView view = viewRef.get();
 			if (view != null) {
-				view.onTileInited();
+				if(finished.get()) {
+					if(!abort.get() && view.loadingTask==this) {
+						view.onTileInited();
+						view.loadingTask=null;
+					}
+				} else {
+					try {
+						PDocument doc = new PDocument(view.getContext(), url, view.dm, Looper.myLooper() == Looper.getMainLooper() ? null : abort);
+						if(!abort.get()) {
+							finished.set(true);
+							view.setDocument(doc);
+							view.post(this);
+						}
+					} catch (IOException e) {
+						CMN.Log(e);
+					}
+				}
+			}
+		}
+		
+		public void start() {
+			if(t==null) {
+				t=new Thread(this);
+				t.start();
+			}
+		}
+		
+		public void abort() {
+			if(!finished.get()) {
+				abort.set(true);
 			}
 		}
 	}
@@ -469,41 +455,19 @@ public class PDocView extends View {
 		isPanning = false;
 		isQuickScaling = false;
 		maxTouchCount = 0;
-		fullImageSampleSize = 0;
 		vDistStart = 0;
 		quickScaleLastDistance = 0f;
 		quickScaleMoved = false;
 		if (newImage) {
 			uri = null;
-			decoderLock.writeLock().lock();
-			try {
-				if (decoder != null) {
-					decoder.recycle();
-					decoder = null;
-				}
-			} finally {
-				decoderLock.writeLock().unlock();
-			}
 			sWidth = 0;
 			sHeight = 0;
 			sOrientation = 0;
 			readySent = false;
 			imageLoadedSent = false;
 		}
-		if (tileMipMaps != null) {
-			for (TileMap tmI : tileMipMaps) {
-				for (Tile tile : tmI.tiles) {
-					tile.visible = false;
-					if (tile.bitmap != null) {
-						tile.bitmap.recycle();
-						tile.bitmap = null;
-					}
-				}
-			}
-			tileMipMaps = null;
-		}
 	}
-	
+
 	public void refresh() {
 		pendingScale = 0f;
 		sPendingCenter = null;
@@ -512,7 +476,6 @@ public class PDocView extends View {
 		isPanning = false;
 		isQuickScaling = false;
 		maxTouchCount = 0;
-		fullImageSampleSize = 0;
 		vDistStart = 0;
 		quickScaleLastDistance = 0f;
 		quickScaleMoved = false;
@@ -1646,60 +1609,6 @@ public class PDocView extends View {
 		}
 		//CMN.Log("logicalLayout:: ", logiLayoutSt, logiLayoutSz, Arrays.toString(Arrays.copyOfRange(logicLayout, 0, logiLayoutSz)));
 		
-		int sampleSize = Math.min(fullImageSampleSize, calcSampleSize(scale));
-		// Load tiles of the correct sample size that are on screen. Discard tiles off screen, and those that are higher
-		// resolution than required, or lower res than required but not the base layer, so the base layer is always present.
-		//CMN.Log("refreshRequiredTiles\n\nrefreshRequiredTiles");int i=0;
-		if(false)
-		for (TileMap layerI : tileMipMaps) {
-			//CMN.Log("refreshRequiredTiles::", "("+i+")"+"/"+tileMap.entrySet().size(), "sampleSize_0", tileMapEntry.getKey(), "sampleSize", sampleSize, "fullImageSampleSize", fullImageSampleSize);i++;int j=0;
-			for (Tile tile : layerI.tiles) {
-				//CMN.Log("-->", j+"/"+tileMapEntry.getValue().size(), "sampleSize_"+j, tile.sampleSize
-				//		, "tileVisible："+tileVisible(tile), "loading："+tile.loading, "bitmap："+tile.bitmap);j++;
-				boolean unload=false;
-				if(tile.sampleSize == fullImageSampleSize){
-					continue;
-				}
-				if (tile.sampleSize < sampleSize || (tile.sampleSize > sampleSize && tile.sampleSize != fullImageSampleSize)) {
-					//if (tile.sampleSize != sampleSize) {
-					tile.visible = false;
-					unload = true;
-				}
-				if (tile.sampleSize == sampleSize) {
-					if (tileVisible(tile, 0)) {
-//						tile.visible = true;
-//
-//						if (!tile.loading && tile.bitmap == null && load
-//							// && tile.sampleSize==1
-//						) {
-//							TileLoadTask task = new TileLoadTask(this, decoder, tile);
-//							execute(task);
-//						}
-					} else if (tile.sampleSize != fullImageSampleSize) {
-						tile.visible = false;
-						unload = true;
-					}
-				}
-				else if (tile.sampleSize == fullImageSampleSize) {
-					tile.visible = true;
-				}
-				
-				if (unload && tile.bitmap != null) {
-					if(
-						//tile.sampleSize != sampleSize
-						//||
-							!tileVisible(tile, 350)
-					){
-						//!tileVisible(tile, 1200)
-						tile.clean();
-						//tile.bitmap.recycle();
-						//tile.bitmap = null;
-					}
-				}
-				
-				tile.visible = tileVisible(tile, 0);
-			}
-		}
 		
 	}
 	
@@ -1949,7 +1858,7 @@ public class PDocView extends View {
 			PointF center = getCenter();
 			canvas.drawText(String.format("Source center: %.2f:%.2f", center.x, center.y), px(5), px(y), debugTextPaint);y+=15;
 			
-			canvas.drawText(String.format("[SampleSize:%d] [cc:%d] [scale:%.2f] [preview:%d]",0, 0, scale, maxImageSampleSize), x, px(y), debugTextPaint);y+=15;
+			//canvas.drawText(String.format("[SampleSize:%d] [cc:%d] [scale:%.2f] [preview:%d]",0, 0, scale, maxImageSampleSize), x, px(y), debugTextPaint);y+=15;
 			
 			//if(imgsrc!=null)canvas.drawText("path = " + imgsrc.substring(imgsrc.lastIndexOf("/")+1), x, px(y), debugTextPaint);y+=15;
 			
@@ -2120,45 +2029,6 @@ public class PDocView extends View {
 	}
 	
 	/**
-	 * Called on first draw when the view has dimensions. Calculates the initial sample size and starts async loading of
-	 * the base layer image - the whole source subsampled as necessary.
-	 */
-	private synchronized void initialiseBaseLayer(@NonNull Point maxTileDimensions) {
-		//fitToBounds_internal(true, strTemp);
-		
-		// Load double resolution - next level will be split into four tiles and at the center all four are required,
-		// so don't bother with tiling until the next level 16 tiles are needed.
-		fullImageSampleSize = maxImageSampleSize;//calcSampleSize(strTemp.scale);
-//		if (fullImageSampleSize > 1) {
-//			fullImageSampleSize /= 2;
-//		}
-		
-		CMN.Log("initialiseBaseLayer", maxTileDimensions, fullImageSampleSize);
-		
-		if (fullImageSampleSize == 1 && sRegion == null && sWidth() < maxTileDimensions.x && sHeight() < maxTileDimensions.y) {
-			
-			// Whole image is required at native resolution, and is smaller than the canvas max bitmap size.
-			// Use BitmapDecoder for better image support.
-			decoder.recycle();
-			decoder = null;
-			//BitmapLoadTask task = new BitmapLoadTask(this, getContext(), bitmapDecoderFactory, uri, false);
-			//execute(task);
-			
-		} else {
-			
-			initialiseTileMap(maxTileDimensions);
-			
-			TileMap baseGrid = tileMipMaps[tileMipMaps.length-1];
-			for (Tile baseTile : baseGrid.tiles) {
-				TileLoadTask task = new TileLoadTask(this, decoder, baseTile);
-				execute(task);
-				break;
-			}
-			refreshRequiredTiles(true);
-		}
-	}
-	
-	/**
 	 * Loads the optimum tiles for display at the current scale and translate, so the screen can be filled with tiles
 	 * that are at least as high resolution as the screen. Frees up bitmaps that are now off the screen.
 	 * @param load Whether to load the new tiles needed. Use false while scrolling/panning for performance.
@@ -2260,55 +2130,6 @@ public class PDocView extends View {
 		
 		// On first display of base image set up position, and in other cases make sure scale is correct.
 		fitToBounds(false,true);
-	}
-	
-	/**
-	 * Calculates sample size to fit the source image in given bounds.
-	 */
-	private int calcSampleSize(float scale) {
-		if (minimumTileDpi > 0) {
-			DisplayMetrics metrics = getResources().getDisplayMetrics();
-			float averageDpi = (metrics.xdpi + metrics.ydpi)/2;
-			float preScale = scale;
-			scale = (minimumTileDpi/averageDpi) * scale;
-			if(preScale>0.5){
-				scale = (220/averageDpi) * preScale;
-			}
-		}
-		
-//		float sWidth = sWidth();
-//		float sHeight = sHeight();
-//		int reqWidth = (int)(sWidth * scale);
-//		int reqHeight = (int)(sHeight * scale);
-//		if (reqWidth == 0 || reqHeight == 0) return 8;
-		
-		int inSampleSize = 1;
-		
-		if (scale<1) {
-		
-//			// Calculate ratios of height and width to requested height and width
-//			final int heightRatio = Math.round(sHeight / (float) reqHeight);
-//			final int widthRatio = Math.round(sWidth / (float) reqWidth);
-//
-//			// Choose the smallest ratio as inSampleSize value, this will guarantee
-//			// a final image with both dimensions larger than or equal to the
-//			// requested height and width.
-//			inSampleSize = Math.min(heightRatio, widthRatio);
-//
-//			//if(inSampleSize!=Math.round(1/scale)) CMN.Log("真的假的", inSampleSize, Math.round(1/scale), scale);
-			
-			inSampleSize = (int) (1/scale);
-			inSampleSize=Math.round(1/scale);
-		}
-		
-//		// We want the actual sample size that will be used, so round down to nearest power of 2.
-//		int power = 1;
-//		while (power * 2 < inSampleSize) {
-//			power = power * 2;
-//		}
-//		//if(power>1) power = power / 2;
-//		//CMN.Log(inSampleSize, RoundDown_pow2(inSampleSize), power);
-		return RoundDown_pow2(inSampleSize);
 	}
 	
 	static int RoundDown_pow2(int cap) {
@@ -2452,93 +2273,20 @@ public class PDocView extends View {
 		fitToBounds_internal(center, strTemp);
 	}
 	
-	
 	private void fitCenter() {
 	
 	}
 	
-	/**
-	 * Once source image and view dimensions are known, creates a map of sample size to tile grid.
-	 */
-	private void initialiseTileMap(Point maxTileDimensions) {
-		//CMN.Log("initialiseTileMap maxTileDimensions=%dx%d", maxTileDimensions.x, maxTileDimensions.y);
-		int sampleSize = fullImageSampleSize;
-		int xTiles = 1;
-		int yTiles = 1;
-		boolean bUseSmallTiles=false;
-		ArrayList<TileMap> tileMipMapsArr = new ArrayList<>(10);
-		while (sampleSize >= 1) {
-			int sTileWidth = sWidth()/xTiles;
-			int sTileHeight = sHeight()/yTiles;
-			int subTileWidth = sTileWidth/sampleSize;
-			int subTileHeight = sTileHeight/sampleSize;
-			while (subTileWidth + xTiles + 1 > maxTileDimensions.x || (subTileWidth > getScreenWidth() * 1.25 && sampleSize < fullImageSampleSize)) {
-				xTiles += 1;
-				sTileWidth = sWidth()/xTiles;
-				subTileWidth = sTileWidth/sampleSize;
-			}
-			while (subTileHeight + yTiles + 1 > maxTileDimensions.y || (subTileHeight > getScreenHeight() * 1.25 && sampleSize < fullImageSampleSize)) {
-				yTiles += 1;
-				sTileHeight = sHeight()/yTiles;
-				subTileHeight = sTileHeight/sampleSize;
-			}
-			if(!bUseSmallTiles){
-				tileMipMapsArr.add(MakeTilesGrid(sampleSize, xTiles, yTiles, sTileWidth, sTileHeight));
-			}
-			sampleSize >>= 1;
+	public void setDocumentPath(String path) {
+		if(loadingTask!=null) {
+			loadingTask.abort();
 		}
-		if(bUseSmallTiles){
-			sampleSize = fullImageSampleSize;
-			while (sampleSize >= 1) {
-				tileMipMapsArr.add(MakeTilesGrid(sampleSize, xTiles, yTiles, sWidth()/xTiles, sHeight()/yTiles));
-				sampleSize >>= 1;
-			}
-		}
-		tileMipMaps = new TileMap[tileMipMapsArr.size()];
-		for (int i = 0; i < tileMipMaps.length; i++) {
-			tileMipMaps[i] = tileMipMapsArr.get(tileMipMaps.length-i-1);
-		}
-	}
-	
-	
-	private TileMap MakeTilesGrid(int sampleSize, int xTiles, int yTiles, int sTileWidth, int sTileHeight) {
-		CMN.Log("MakeTilesGrid", sampleSize, xTiles, yTiles);
-		if(maxImageSampleSize<=0 || sampleSize<maxImageSampleSize) {
-			Tile[] tileGrid = new Tile[xTiles * yTiles];
-			//boolean visible = sampleSize == fullImageSampleSize;
-//			if(sampleSize<=0){
-//				int factor = 2;
-//				xTiles*=factor;
-//				yTiles*=factor;
-//				sTileWidth/=factor;
-//				sTileHeight/=factor;
-//			}
-			int cc=0;
-			for (int x = 0; x < xTiles; x++) {
-				for (int y = 0; y < yTiles; y++) {
-					Tile tile = new Tile();
-					tile.sampleSize = sampleSize;
-					tile.visible = false;
-					tile.sRect = new RectF(
-							x * sTileWidth,
-							y * sTileHeight,
-							x == xTiles - 1 ? sWidth() : (x + 1) * sTileWidth,
-							y == yTiles - 1 ? sHeight() : (y + 1) * sTileHeight
-					);
-					tile.vRect = new Rect(0, 0, 0, 0);
-					//tile.fileSRect = new Rect(tile.sRect);
-					tileGrid[cc] = tile;
-					cc++;
-				}
-			}
-			return new TileMap(tileGrid, sampleSize, xTiles, yTiles, sTileWidth, sTileHeight);
-		}
-		return new TileMap(new Tile[0], sampleSize, xTiles, yTiles, sTileWidth, sTileHeight);
+		loadingTask = new TilesInitTask(this, path);
+		loadingTask.start();
 	}
 	
 	public void setDocument(PDocument _pdoc) {
 		pdoc = _pdoc;
-		
 		removeCallbacks(mAnimationRunnable);
 		long time = System.currentTimeMillis();
 		sWidth = pdoc.maxPageWidth;
@@ -2561,143 +2309,18 @@ public class PDocView extends View {
 //		lp.width=(int) (sWidth*scale);
 //		lp.height=(int) (sHeight*scale);
 	}
+	
 	/**
 	 * Called by worker task when decoder is ready and image size and EXIF orientation is known.
 	 */
-	private void onTileInited(/*int sWidth, int sHeight, int sOrientation*/) {
+	private void onTileInited() {
 		// If actual dimensions don't match the declared size, reset everything.
-		if (this.sWidth > 0 && this.sHeight > 0 && (this.sWidth != sWidth || this.sHeight != sHeight)) {
-			reset(false);
-		}
-		this.sWidth = sWidth;
-		this.sHeight = sHeight;
-		//this.sOrientation = sOrientation;
 		CMN.Log("onTilesInited sWidth, sHeight, sOrientation", sWidth, sHeight, orientation, scale);
 		checkReady();
-		if (!checkImageLoaded() && maxTileWidth > 0 && maxTileWidth != TILE_SIZE_AUTO && maxTileHeight > 0 && maxTileHeight != TILE_SIZE_AUTO && getScreenWidth() > 0 && getScreenHeight() > 0) {
-			initialiseBaseLayer(new Point(maxTileWidth, maxTileHeight));
-		}
+		refreshRequiredTiles(true);
 		invalidate();
 		requestLayout();
 		isProxy = false;
-	}
-	
-	private void postTileInited(/*int sWidth, int sHeight, int sOrientation*/) {
-		post(this::onTileInited);
-	}
-	
-	
-	private void postGetMinScale() {
-		post(() -> scale = currentMinScale());
-	}
-	
-	/**
-	 * Async task used to load images without blocking the UI thread.
-	 */
-	private static class TileLoadTask extends AsyncTask<Void, Void, Void> {
-		private final WeakReference<PDocView> viewRef;
-		private final WeakReference<ImageRegionDecoder> decoderRef;
-		private final WeakReference<Tile> tileRef;
-		private Exception exception;
-		
-		TileLoadTask(PDocView view, ImageRegionDecoder decoder, Tile tile) {
-			this.viewRef = new WeakReference<>(view);
-			this.decoderRef = new WeakReference<>(decoder);
-			this.tileRef = new WeakReference<>(tile);
-			tile.loading = true;
-		}
-		
-		@Override
-		protected Void doInBackground(Void... params) {
-			PDocView view = viewRef.get();
-			ImageRegionDecoder decoder = decoderRef.get();
-			Tile tile = tileRef.get();
-			if (tile != null) {
-				if (decoder != null && view != null && decoder.isReady() && tile.visible) {
-					try {
-						if(tile.sampleSize==view.fullImageSampleSize && tile.sampleSize>1){
-							return null;
-						}
-	//					if(tile.bitmapStore!=null && tile.bitmapStore.get()!=null){
-	//						Bitmap bm = tile.bitmapStore.get();
-	//						if(bm.isRecycled()){
-	//							tile.bitmapStore.clear();
-	//						} else {
-	//							tile.loading=false;
-	//							CMN.Log("原貌返回！");
-	//							return bm;
-	//						}
-	//					}
-						//CMN.Log("TileLoadTask.doInBackground, tile.sRect=%s, tile.sampleSize=%d", tile.sRect, tile.sampleSize);
-						//线程锁
-						//view.decoderLock.readLock().lock();
-						try {
-							//if (decoder.isReady()) {
-								// Update tile's file sRect according to rotation
-								//view.fileSRect(tile.sRect, tile.fileSRect);
-								if (view.sRegion != null) {
-									tile.fileSRect.offset(view.sRegion.left, view.sRegion.top);
-								}
-							Bitmap ret = decoder.decodeRegion(tile.fileSRect, tile.sampleSize);
-							tile.bitmap = ret;
-							//} else {
-							//	tile.loading = false;
-							//}
-						} finally {
-							//view.decoderLock.readLock().unlock();
-						}
-					} catch (Exception e) {
-						//CMN.Log("Failed to decode tile", e);
-						exception = e;
-					}
-				}
-				tile.loading = false;
-			}
-			return null;
-		}
-		
-		@Override
-		protected void onPostExecute(Void bitmap) {
-			final PDocView subsamplingScaleImageView = viewRef.get();
-			final Tile tile = tileRef.get();
-			if (subsamplingScaleImageView != null /*&& tile != null*/) {
-				//if (tile.bitmap == null && exception != null && subsamplingScaleImageView.onImageEventListener != null) {
-				//	subsamplingScaleImageView.onImageEventListener.onTileLoadError(exception);
-				//}
-				subsamplingScaleImageView.onTileLoaded(tile);
-			}
-		}
-	}
-	
-	/**
-	 * Called by worker task when a tile has loaded. Redraws the view.
-	 * @param tile
-	 */
-	private synchronized void onTileLoaded(Tile tile) {
-		//CMN.Log("onTileLoaded");
-		checkReady();
-		checkImageLoaded();
-		//if(tile.visible && tile.sampleSize==calculateInSampleSize(scale))
-			invalidate();
-	}
-	
-	/**
-	 * Called by worker task when full size image bitmap is ready (tiling is disabled).
-	 */
-	@Deprecated
-	private synchronized void onImageLoaded(int sOrientation, boolean bitmapIsCached) {
-		debug("onImageLoaded");
-		// If actual dimensions don't match the declared size, reset everything.
-		//if (this.sWidth > 0 && this.sHeight > 0 && (this.sWidth != bitmap.getWidth() || this.sHeight != bitmap.getHeight())) {
-		//	reset(false);
-		//}
-		this.sOrientation = sOrientation;
-		boolean ready = checkReady();
-		boolean imageLoaded = checkImageLoaded();
-		if (ready || imageLoaded) {
-			invalidate();
-			requestLayout();
-		}
 	}
 	
 	/**
@@ -2707,41 +2330,6 @@ public class PDocView extends View {
 	@AnyThread
 	private int getExifOrientation(Context context, String sourceUri) {
 		return ORIENTATION_0;
-	}
-	
-	private void execute(AsyncTask<Void, Void, ?> asyncTask) {
-		try {
-			//asyncTask.executeOnExecutor(executor);
-			asyncTask.execute();
-		} catch (Exception e) {
-			CMN.Log(e);
-		}
-	}
-	static ArrayListGood.ArrayCreator<Tile> TileArrayCreator_Instance = initialCapacity -> new Tile[initialCapacity];
-	
-	private static class TileMap {
-		Tile[] tiles;
-		ArrayListGood<Tile> patchTiles = new ArrayListGood<>(10, TileArrayCreator_Instance);
-		int sampleSize;
-		int xTiles;
-		int yTiles;
-		int sTileWidth;
-		int sTileHeight;
-		
-		public TileMap(Tile[] tileGrid, int sampleSize, int xTiles, int yTiles, int sTileWidth, int sTileHeight) {
-			tiles = tileGrid;
-			this.sampleSize = sampleSize;
-			this.xTiles = xTiles;
-			this.yTiles = yTiles;
-			this.sTileWidth = sTileWidth;
-			this.sTileHeight = sTileHeight;
-		}
-		
-		public boolean missing(int i) {
-			if(i>=tiles.length) return true;
-			int PI = tiles[i].patchId;
-			return PI>=patchTiles.size()||patchTiles.get(PI)!=tiles[i];
-		}
 	}
 	
 	public static class TaskToken {
@@ -3180,7 +2768,7 @@ public class PDocView extends View {
 	 * but state (scale and center) is forgotten. You can restore these yourself if required.
 	 */
 	public void recycle() {
-		reset(true);
+		// reset(true);
 	}
 	
 	/**
@@ -3695,47 +3283,13 @@ public class PDocView extends View {
 	private int px(int px) {
 		return (int)(density * px);
 	}
-	
-	public final void setRegionDecoderClass(@NonNull Class<? extends ImageRegionDecoder> regionDecoderClass) {
-		this.regionDecoderFactory = new CompatDecoderFactory<>(regionDecoderClass);
-	}
-	
-	public final void setRegionDecoderFactory(@NonNull DecoderFactory<? extends ImageRegionDecoder> regionDecoderFactory) {
-		this.regionDecoderFactory = regionDecoderFactory;
-	}
-	
-	public final void setBitmapDecoderClass(@NonNull Class<? extends ImageDecoder> bitmapDecoderClass) {
-		this.bitmapDecoderFactory = new CompatDecoderFactory<>(bitmapDecoderClass);
-	}
-	
-	public final void setBitmapDecoderFactory(@NonNull DecoderFactory<? extends ImageDecoder> bitmapDecoderFactory) {
-		this.bitmapDecoderFactory = bitmapDecoderFactory;
-	}
-	
+
 	/**
 	 * Returns the minimum allowed scale.
 	 * @return the minimum scale as a source/view pixels ratio.
 	 */
 	public final float getMinScale() {
 		return minScale();
-	}
-	
-	/**
-	 * By default, image tiles are at least as high resolution as the screen. For a retina screen this may not be
-	 * necessary, and may increase the likelihood of an OutOfMemoryError. This method sets a DPI at which higher
-	 * resolution tiles should be loaded. Using a lower number will on average use less memory but result in a lower
-	 * quality image. 160-240dpi will usually be enough. This should be called before setting the image source,
-	 * because it affects which tiles get loaded. When using an untiled source image this method has no effect.
-	 * @param minimumTileDpi Tile loading threshold.
-	 */
-	public void setMinimumTileDpi(int minimumTileDpi) {
-		DisplayMetrics metrics = getResources().getDisplayMetrics();
-		float averageDpi = (metrics.xdpi + metrics.ydpi)/2;
-		this.minimumTileDpi = (int)Math.min(averageDpi, minimumTileDpi);
-		if (isReady()) {
-			reset(false);
-			invalidate();
-		}
 	}
 	
 	/**

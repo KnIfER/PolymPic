@@ -20,7 +20,7 @@ public class PDocBenchMarkctivity extends Toastable_Activity {
 		
 		try {
 			//PDocument pdoc = new PDocument(this, "/sdcard/myFolder/sample_hetero_dimension.pdf");
-			PDocument pdoc = new PDocument(this, "/sdcard/myFolder/Gpu Pro 1.pdf", dm);
+			PDocument pdoc = new PDocument(this, "/sdcard/myFolder/Gpu Pro 1.pdf", dm, null);
 //			PDocument pdoc = new PDocument(this, "/sdcard/myFolder/YotaSpec2.pdf");
 			Bitmap bm = Bitmap.createBitmap(16, 16, Bitmap.Config.ARGB_8888);
 //			bm = pdoc.drawTumbnail(bm, 0, 1);
@@ -36,7 +36,7 @@ public class PDocBenchMarkctivity extends Toastable_Activity {
 			
 			
 			
-		} catch (IOException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		
