@@ -3,9 +3,12 @@ package com.knziha.polymer.pdviewer;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.PointF;
+import android.graphics.RectF;
 import android.os.ParcelFileDescriptor;
 import android.util.DisplayMetrics;
 import android.util.SparseArray;
+import android.view.GestureDetector;
 
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.text.BreakIteratorHelper;
@@ -15,6 +18,7 @@ import com.shockwave.pdfium.util.Size;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -34,13 +38,14 @@ public class PDocument {
 	public float ThumbsHiResFactor=0.4f;
 	public float ThumbsLoResFactor=0.1f;
 	
+	
 	class PDocPage {
 		final int pageIdx;
 		final Size size;
 		public PDocView.Tile tile;
 		public PDocView.Tile tileBk;
-		public float startY = 0;
-		public float startX = 0;
+		public int startY = 0;
+		public int startX = 0;
 		public int maxX;
 		public int maxY;
 		long OffsetAlongScrollAxis;
@@ -115,7 +120,6 @@ public class PDocument {
 		/** get A Word At Src Pos  */
 		public String getWordAtPos(float posX, float posY) {
 			prepareText();
-			
 			if(tid!=0) {
 				//int charIdx = pdfiumCore.nativeGetCharIndexAtPos(tid, posX, posY, 10.0, 10.0);
 				int charIdx = pdfiumCore.nativeGetCharIndexAtCoord(pid.get(), size.getWidth(), size.getHeight(), tid
@@ -134,6 +138,49 @@ public class PDocument {
 				return ret;
 			}
 			return "";
+		}
+		
+		public void selWordAtPos(PDocView view, float posX, float posY) {
+			prepareText();
+			if(tid!=0) {
+				int charIdx = pdfiumCore.nativeGetCharIndexAtCoord(pid.get(), size.getWidth(), size.getHeight(), tid
+						, posX, posY, 10.0, 10.0);
+				if(charIdx>=0) {
+					int ed=pageBreakIterator.following(charIdx);
+					int st=pageBreakIterator.previous();
+					view.setSelectionAtPage(pageIdx, st, ed);
+				}
+			}
+		}
+		
+		public long getLinkAtPos(float posX, float posY) {
+			return pdfiumCore.nativeGetLinkAtCoord(pid.get(), size.getWidth(), size.getHeight(), posX, posY);
+		}
+		
+		public String getLinkTarget(long lnkPtr) {
+			return pdfiumCore.nativeGetLinkTarget(pdfDocument.mNativeDocPtr, lnkPtr);
+		}
+		
+		public void getSelRects(ArrayList<RectF> rectPagePool, int selSt, int selEd) {
+			rectPagePool.clear();
+			prepareText();
+			if(tid!=0) {
+				if(selEd==-1) {
+					selEd=allText.length();
+				}
+				selEd -= selSt;
+				if(selEd>0) {
+					int rectCount = pdfiumCore.getTextRects(pid.get(), OffsetAlongScrollAxis, getHorizontalOffset(), size, rectPagePool, tid, selSt, selEd);
+					CMN.Log("getTextRects", rectCount, rectPagePool.toString());
+					if(rectPagePool.size()>rectCount) {
+						rectPagePool.subList(rectCount, rectPagePool.size()).clear();
+					}
+				}
+			}
+		}
+		
+		public void getCharPos(RectF pos, int index) {
+			pdfiumCore.nativeGetCharPos(pid.get(), (int)OffsetAlongScrollAxis, getHorizontalOffset(), size.getWidth(), size.getHeight(), pos, tid, index);
 		}
 	}
 	

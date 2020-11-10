@@ -103,7 +103,7 @@ public class PdfDocument {
     /*package*/ PdfDocument() {
     }
 
-    /*package*/ long mNativeDocPtr;
+    /*package*/ public long mNativeDocPtr;
     /*package*/ ParcelFileDescriptor parcelFileDescriptor;
 
     /*package*/ final Map<Integer, Long> mNativePagesPtr = new ArrayMap<>();

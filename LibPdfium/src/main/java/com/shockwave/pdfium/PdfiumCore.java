@@ -3,6 +3,7 @@ package com.shockwave.pdfium;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Point;
+import android.graphics.PointF;
 import android.graphics.RectF;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
@@ -44,10 +45,16 @@ public class PdfiumCore {
     public native int nativeGetCharIndexAtPos(long textPtr, double posX, double posY, double tolX, double tolY);
     
     public native int nativeGetCharIndexAtCoord(long pagePtr, double width, double height, long textPtr, double posX, double posY, double tolX, double tolY);
-    
+	
+	//private native int nativeCountRects(long tid, int selSt, int selEd);
+	
+	private native int nativeCountAndGetRects(long pagePtr, int offsetY, int offsetX, int width, int height, ArrayList<RectF> arr, long tid, int selSt, int selEd);
+	
     public native String nativeGetText(long textPtr);
-		
-    private native long[] nativeLoadPages(long docPtr, int fromIndex, int toIndex);
+	
+	public native int nativeGetCharPos(long pagePtr, int offsetY, int offsetX, int width, int height, RectF pt, long tid, int index);
+	
+	private native long[] nativeLoadPages(long docPtr, int fromIndex, int toIndex);
 
     private native void nativeClosePage(long pagePtr);
 
@@ -86,12 +93,12 @@ public class PdfiumCore {
     private native Size nativeGetPageSizeByIndex(long docPtr, int pageIndex, int dpi);
 
     private native long[] nativeGetPageLinks(long pagePtr);
-
-    private native Integer nativeGetDestPageIndex(long docPtr, long linkPtr);
-
-    private native String nativeGetLinkURI(long docPtr, long linkPtr);
-
-    private native RectF nativeGetLinkRect(long linkPtr);
+    
+	public native long nativeGetLinkAtCoord(long pagePtr, double width, double height, double posX, double posY);
+	
+	public native String nativeGetLinkTarget(long docPtr, long linkPtr);
+	
+	public native RectF nativeGetLinkRect(long linkPtr);
 
     private native Point nativePageCoordsToDevice(long pagePtr, int startX, int startY, int sizeX,
                                                   int sizeY, int rotate, double pageX, double pageY);
@@ -172,6 +179,12 @@ public class PdfiumCore {
             return pagePtr;
         }
     }
+	
+	public int getTextRects(long pagePtr, long offsetY, int offsetX, Size size, ArrayList<RectF> arr, long textPtr, int selSt, int selEd) {
+		synchronized (lock) {
+			return nativeCountAndGetRects(pagePtr, (int)offsetY, offsetX, size.getWidth(), size.getHeight(), arr, textPtr, selSt, selEd);
+		}
+	}
     
     public long openText(long pagePtr) {
         synchronized (lock) {
@@ -408,13 +421,13 @@ public class PdfiumCore {
             }
             long[] linkPtrs = nativeGetPageLinks(nativePagePtr);
             for (long linkPtr : linkPtrs) {
-                Integer index = nativeGetDestPageIndex(doc.mNativeDocPtr, linkPtr);
-                String uri = nativeGetLinkURI(doc.mNativeDocPtr, linkPtr);
-
-                RectF rect = nativeGetLinkRect(linkPtr);
-                if (rect != null && (index != null || uri != null)) {
-                    links.add(new PdfDocument.Link(rect, index, uri));
-                }
+//                Integer index = nativeGetDestPageIndex(doc.mNativeDocPtr, linkPtr);
+//                String uri = nativeGetLinkURI(doc.mNativeDocPtr, linkPtr);
+//
+//                RectF rect = nativeGetLinkRect(linkPtr);
+//                if (rect != null && (index != null || uri != null)) {
+//                    links.add(new PdfDocument.Link(rect, index, uri));
+//                }
 
             }
             return links;

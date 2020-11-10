@@ -28,7 +28,10 @@ public class PDocViewerActivity extends Toastable_Activity {
 			
 			UIData.wdv.a=this;
 			
-			UIData.wdv.setDocumentPath("/sdcard/myFolder/Gpu Pro 1.pdf");
+			UIData.wdv.setSelectionPaintView(UIData.sv);
+			
+			//UIData.wdv.setDocumentPath("/sdcard/myFolder/Gpu Pro 1.pdf");
+			UIData.wdv.setDocumentPath("/sdcard/myFolder/YotaSpec02.pdf");
 			
 		} catch (Exception e) {
 			e.printStackTrace();
