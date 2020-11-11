@@ -57,7 +57,7 @@ public class PDocSelection extends View {
 					rectPagePool = rectPool.get(i);
 				}
 				int selSt = i==0?pDocView.selStart:0;
-				int selEd = i==pageCount?pDocView.selEnd:0;
+				int selEd = i==pageCount?pDocView.selEnd:-1;
 				PDocument.PDocPage page = pDocView.pdoc.mPDocPages[pDocView.selPageSt + i];
 				page.getSelRects(rectPagePool, selSt, selEd);//+10
 			}

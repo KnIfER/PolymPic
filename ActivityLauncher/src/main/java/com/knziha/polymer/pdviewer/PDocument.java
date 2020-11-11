@@ -172,23 +172,22 @@ public class PDocument {
 		
 		public void getSelRects(ArrayList<RectF> rectPagePool, int selSt, int selEd) {
 			//CMN.Log("getTextRects", selSt, selEd);
-			if(selEd<selSt) {
-				
-				int tmp = selSt;
-				selSt=selEd;
-				selEd=tmp;
-			}
 			rectPagePool.clear();
 			prepareText();
 			if(tid!=0) {
 				if(selEd==-1) {
 					selEd=allText.length();
 				}
+				if(selEd<selSt) {
+					int tmp = selSt;
+					selSt=selEd;
+					selEd=tmp;
+				}
 				selEd -= selSt;
 				if(selEd>0) {
 					int rectCount = pdfiumCore.getTextRects(pid.get(), OffsetAlongScrollAxis, getHorizontalOffset(), size, rectPagePool, tid, selSt, selEd);
-					CMN.Log("getTextRects", rectCount, rectPagePool.toString());
-					if(rectPagePool.size()>rectCount) {
+					CMN.Log("getTextRects", selSt, selEd, rectCount, rectPagePool.toString());
+					if(rectCount>=0 && rectPagePool.size()>rectCount) {
 						rectPagePool.subList(rectCount, rectPagePool.size()).clear();
 					}
 				}
