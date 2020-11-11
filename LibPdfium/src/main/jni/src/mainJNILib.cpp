@@ -423,23 +423,36 @@ JNI_FUNC(jint, PdfiumCore, nativeCountAndGetRects)(JNI_ARGS, jlong pagePtr, jint
     return rectCount;
 }
 
-JNI_FUNC(void, PdfiumCore, nativeGetCharPos)(JNI_ARGS, jlong pagePtr, jint offsetY, jint offsetX, jint width, jint height, jobject pt, jlong textPtr, jint idx) {
+JNI_FUNC(void, PdfiumCore, nativeGetCharPos)(JNI_ARGS, jlong pagePtr, jint offsetY, jint offsetX, jint width, jint height, jobject pt, jlong textPtr, jint idx, jboolean loose) {
     //jclass point = env->FindClass("android/graphics/PointF");
     //jmethodID point_set = env->GetMethodID(point,"set","(FF)V");
     jclass rectF = env->FindClass("android/graphics/RectF");
     jmethodID rectF_ = env->GetMethodID(rectF, "<init>", "(FFFF)V");
     jmethodID rectF_set = env->GetMethodID(rectF, "set", "(FFFF)V");
 
+
     double left, top, right, bottom, userWidth, userHeight;
 
-    FPDFText_GetCharBox((FPDF_TEXTPAGE)textPtr, idx, &left, &right, &bottom, &top);
+    if(loose) {
+        FS_RECTF res={0};
+        if(!FPDFText_GetLooseCharBox((FPDF_TEXTPAGE)textPtr, idx, &res)) {
+            return;
+        }
+        left=res.left;
+        top=res.top;
+        right=res.right;
+        bottom=res.bottom;
+    } else {
+        if(!FPDFText_GetCharBox((FPDF_TEXTPAGE)textPtr, idx, &left, &right, &bottom, &top)) {
+            return;
+        }
+    }
 
     int deviceX, deviceY;
 
 
    FPDF_DeviceToPage((FPDF_PAGE)pagePtr, 0, 0, width, height, 0, width, 0, &userWidth, &userHeight);
    FPDF_PageToDevice((FPDF_PAGE)pagePtr, 0, 0, userWidth, userHeight, 0, left, top, &deviceX, &deviceY);
-
 
    //FPDF_PageToDevice((FPDF_PAGE)pagePtr, 0, 0, width, height, 0, left, top, &deviceX, &deviceY);
 

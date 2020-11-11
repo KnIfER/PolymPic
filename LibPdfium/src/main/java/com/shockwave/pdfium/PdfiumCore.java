@@ -52,7 +52,7 @@ public class PdfiumCore {
 	
     public native String nativeGetText(long textPtr);
 	
-	public native int nativeGetCharPos(long pagePtr, int offsetY, int offsetX, int width, int height, RectF pt, long tid, int index);
+	public native int nativeGetCharPos(long pagePtr, int offsetY, int offsetX, int width, int height, RectF pt, long tid, int index, boolean loose);
 	
 	private native long[] nativeLoadPages(long docPtr, int fromIndex, int toIndex);
 

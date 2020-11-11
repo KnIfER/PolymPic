@@ -157,7 +157,7 @@ public class PDocument {
 			prepareText();
 			if(tid!=0) {
 				return pdfiumCore.nativeGetCharIndexAtCoord(pid.get(), size.getWidth(), size.getHeight(), tid
-						, posX, posY, 10.0, 10.0);
+						, posX, posY, 100.0, 100.0);
 			}
 			return -1;
 		}
@@ -195,8 +195,12 @@ public class PDocument {
 		}
 		
 		public void getCharPos(RectF pos, int index) {
-			pdfiumCore.nativeGetCharPos(pid.get(), (int)OffsetAlongScrollAxis, getHorizontalOffset(), size.getWidth(), size.getHeight(), pos, tid, index);
+			pdfiumCore.nativeGetCharPos(pid.get(), (int)OffsetAlongScrollAxis, getHorizontalOffset(), size.getWidth(), size.getHeight(), pos, tid, index, true);
 		}
+		
+//		public void getCharPosLoose(RectF pos, int index) {
+//			pdfiumCore.nativeGetCharPos(pid.get(), (int)OffsetAlongScrollAxis, getHorizontalOffset(), size.getWidth(), size.getHeight(), pos, tid, index, true);
+//		}
 	}
 	
 	public PDocument(Context c, String path, DisplayMetrics dm, AtomicBoolean abort) throws IOException {
