@@ -253,6 +253,8 @@ public class PDocView extends View {
 	PDocument pdoc;
 	float lastX;
 	float lastY;
+	float orgX;
+	float orgY;
 	private float view_pager_toguard_lastX;
 	private float view_pager_toguard_lastY;
 	boolean freefling=true;
@@ -342,6 +344,45 @@ public class PDocView extends View {
 	final RectF handleRightPos=new RectF();
 	Drawable handleLeft;
 	Drawable handleRight;
+	Drawable draggingHandle;
+	private boolean startInDrag;
+	
+	public void dragHandle() {
+		if(draggingHandle!=null) {
+			float posX = (lastX - vTranslate.x)/scale;
+			float posY = (lastY - vTranslate.y)/scale;
+			boolean isLeft = draggingHandle==handleLeft;
+			int charIdx=-1; int pageIdx=-1;
+			//if(false)
+			for (int i = 0; i < logiLayoutSz; i++) {
+				PDocument.PDocPage pageI = pdoc.mPDocPages[logiLayoutSt + i];
+				if(pageI.OffsetAlongScrollAxis+pageI.size.getHeight()+pdoc.gap>posY) {
+					pageIdx = logiLayoutSt+i;
+					posY -= pageI.OffsetAlongScrollAxis;
+					posX -= pageI.getHorizontalOffset();
+					charIdx = pageI.getCharIdxAtPos(PDocView.this, posX, posY);
+					break;
+				}
+			}
+			
+			if(charIdx>=0) {
+				if(isLeft){
+					if(pageIdx!=selPageSt||charIdx!=selStart) {
+						selPageSt=pageIdx;
+						selStart=charIdx;
+						selectionPaintView.resetSel();
+					}
+				} else {
+					charIdx+=1;
+					if(pageIdx!=selPageEd||charIdx!=selEnd) {
+						selPageEd=pageIdx;
+						selEnd=charIdx;
+						selectionPaintView.resetSel();
+					}
+				}
+			}
+		}
+	}
 	
 	//构造
 	public PDocView(Context context) {
@@ -826,8 +867,17 @@ public class PDocView extends View {
 				isDown = true;
 				touch_partisheet.clear();
 				isRotating = false;
-				view_pager_toguard_lastX=lastX;
-				view_pager_toguard_lastY=lastY;
+				orgX=view_pager_toguard_lastX=lastX;
+				orgY=view_pager_toguard_lastY=lastY;
+				if(hasSelction) {
+					if (handleLeft.getBounds().contains((int) orgX, (int) orgY)) {
+						startInDrag = true;
+						draggingHandle = handleLeft;
+					} else if (handleRight.getBounds().contains((int) orgX, (int) orgY)) {
+						startInDrag = true;
+						draggingHandle = handleRight;
+					}
+				}
 			}
 			case MotionEvent.ACTION_POINTER_DOWN:{
 				CMN.Log("ACTION_DOWN", touchCount);
@@ -878,6 +928,10 @@ public class PDocView extends View {
 			} return true;
 			case MotionEvent.ACTION_MOVE:{
 				//CMN.Log("ACTION_MOVE", touchCount);
+				if(draggingHandle!=null) {
+					dragHandle();
+					return true;
+				}
 				if(!isDown){
 					MotionEvent ev = MotionEvent.obtain(event);
 					ev.setAction(MotionEvent.ACTION_DOWN);
@@ -1168,6 +1222,7 @@ public class PDocView extends View {
 			case MotionEvent.ACTION_UP:
 				isDown = false;
 				isZooming=false;
+				judgeClick();
 			case MotionEvent.ACTION_POINTER_UP:{
 				if(isZooming) {
 					if(touch_partisheet.remove(touch_id)) {
@@ -1292,6 +1347,14 @@ public class PDocView extends View {
 			} return true;
 		}
 		return false;
+	}
+	
+	public void judgeClick() {
+		//@hide
+		if(draggingHandle!=null){
+			draggingHandle=null;
+		}
+		//System.gc();
 	}
 	
 	double halfPI = Math.PI / 2;

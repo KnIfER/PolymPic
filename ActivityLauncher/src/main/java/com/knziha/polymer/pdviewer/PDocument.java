@@ -153,6 +153,15 @@ public class PDocument {
 			}
 		}
 		
+		public int getCharIdxAtPos(PDocView view, float posX, float posY) {
+			prepareText();
+			if(tid!=0) {
+				return pdfiumCore.nativeGetCharIndexAtCoord(pid.get(), size.getWidth(), size.getHeight(), tid
+						, posX, posY, 10.0, 10.0);
+			}
+			return -1;
+		}
+		
 		public long getLinkAtPos(float posX, float posY) {
 			return pdfiumCore.nativeGetLinkAtCoord(pid.get(), size.getWidth(), size.getHeight(), posX, posY);
 		}
@@ -162,6 +171,13 @@ public class PDocument {
 		}
 		
 		public void getSelRects(ArrayList<RectF> rectPagePool, int selSt, int selEd) {
+			//CMN.Log("getTextRects", selSt, selEd);
+			if(selEd<selSt) {
+				
+				int tmp = selSt;
+				selSt=selEd;
+				selEd=tmp;
+			}
 			rectPagePool.clear();
 			prepareText();
 			if(tid!=0) {
