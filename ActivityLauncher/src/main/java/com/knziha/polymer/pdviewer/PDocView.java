@@ -407,12 +407,26 @@ public class PDocView extends View {
 		createPaints();
 		this.handler = new Handler(new Handler.Callback() {
 			public boolean handleMessage(Message message) {
-				CMN.Log("长按了");
-				if (message.what == MESSAGE_LONG_CLICK && onLongClickListener != null) {
-					//maxTouchCount = 0;
-					PDocView.super.setOnLongClickListener(onLongClickListener);
-					performLongClick();
-					PDocView.super.setOnLongClickListener(null);
+				//CMN.Log("长按了");
+				if(message.what == MESSAGE_LONG_CLICK) {
+					float posX = (lastX - vTranslate.x)/scale;
+					float posY = (lastY - vTranslate.y)/scale;
+					PDocument.PDocPage pageI = getPageAtSrcPos(posX, posY);
+					if(pageI!=null) {
+						posY -= pageI.OffsetAlongScrollAxis;
+						posX -= pageI.getHorizontalOffset();
+						if(pageI.selWordAtPos(PDocView.this, posX, posY, 5)) {
+							draggingHandle = handleRight;
+							sCursorPosStart.set(handleRightPos.right, handleRightPos.bottom);
+						}
+					}
+					
+					if (onLongClickListener != null) {
+						//maxTouchCount = 0;
+						PDocView.super.setOnLongClickListener(onLongClickListener);
+						performLongClick();
+						PDocView.super.setOnLongClickListener(null);
+					}
 				}
 				return true;
 			}
@@ -484,6 +498,15 @@ public class PDocView extends View {
 		sv.drawableWidth = handleLeft.getIntrinsicWidth()*drawableScale;
 		sv.drawableHeight = handleLeft.getIntrinsicHeight()*drawableScale;
 		sv.drawableDeltaW = sv.drawableWidth / 4;
+	}
+	
+	public boolean hasSelection() {
+		return hasSelction;
+	}
+	
+	public void clearSelection() {
+		hasSelction=false;
+		selectionPaintView.invalidate();
 	}
 	
 	/**
@@ -709,28 +732,28 @@ public class PDocView extends View {
 				float posX = (lastX - vTranslate.x)/scale;
 				float posY = (lastY - vTranslate.y)/scale;
 				
-				//if(false)
-				for (int i = 0; i < logiLayoutSz; i++) {
-					PDocument.PDocPage pageI = pdoc.mPDocPages[logiLayoutSt + i];
-					if(pageI.OffsetAlongScrollAxis+pageI.size.getHeight()+pdoc.gap>posY) {
-						posY -= pageI.OffsetAlongScrollAxis;
-						//posY = pageI.size.getHeight()-posY;
-						posX -= pageI.getHorizontalOffset();
-						//CMN.Log("click_at_page", logiLayoutSt + i, posX, posY, pageI.getWordAtPos(posX, posY));
-						a.showT(""+pageI.getWordAtPos(posX, posY));
-						
-						pageI.selWordAtPos(PDocView.this, posX, posY);
-						
-						
+				PDocument.PDocPage pageI = getPageAtSrcPos(posX, posY);
+				
+				if(pageI!=null) {
+					posY -= pageI.OffsetAlongScrollAxis;
+					posX -= pageI.getHorizontalOffset();
+					
+					
+					if(false) {
 						long lnkPtr = pageI.getLinkAtPos(posX, posY);
 						if(lnkPtr!=0) {
 							String lnkTgt = pageI.getLinkTarget(lnkPtr);
-							a.showT("LINK::"+lnkTgt);
+							//a.showT("LINK::"+lnkTgt);
+							return true;
 						}
-						break;
+					}
+					
+					if(true) {
+						if(!pageI.selWordAtPos(PDocView.this, posX, posY, 1)) {
+							clearSelection();
+						}
 					}
 				}
-				
 				
 				return super.onSingleTapUp(e);
 			}
@@ -766,6 +789,16 @@ public class PDocView extends View {
 		});
 		
 		flingdetector.setIsLongpressEnabled(false);
+	}
+	
+	private PDocument.PDocPage getPageAtSrcPos(float posX, float posY) {
+		for (int i = 0; i < logiLayoutSz; i++) {
+			PDocument.PDocPage pageI = pdoc.mPDocPages[logiLayoutSt + i];
+			if(pageI.OffsetAlongScrollAxis+pageI.size.getHeight()+pdoc.gap>posY) {
+				return pageI;
+			}
+		}
+		return null;
 	}
 	
 	/**
@@ -902,6 +935,9 @@ public class PDocView extends View {
 				CMN.Log("ACTION_DOWN", touchCount);
 				doubleTapDetected=false;
 				flingScroller.abortAnimation();
+				if(draggingHandle!=null) {
+					return true;
+				}
 				if(touch_partisheet.size()==0 && touch_type==MotionEvent.ACTION_POINTER_DOWN) {
 					break;
 				}
@@ -1238,11 +1274,17 @@ public class PDocView extends View {
 					return true;
 				}
 			} break;
-			case MotionEvent.ACTION_UP:
+			case MotionEvent.ACTION_UP: {
 				isDown = false;
 				isZooming=false;
-				judgeClick();
+			}
 			case MotionEvent.ACTION_POINTER_UP:{
+				if(draggingHandle!=null) {
+					if(touchCount<=1) {
+						judgeClick();
+					}
+					break;
+				}
 				if(isZooming) {
 					if(touch_partisheet.remove(touch_id)) {
 						// convert double finger zoom to single finger move
@@ -1369,7 +1411,7 @@ public class PDocView extends View {
 	}
 	
 	public void judgeClick() {
-		//@hide
+		CMN.Log("judgeClick!!!");
 		if(draggingHandle!=null){
 			draggingHandle=null;
 		}

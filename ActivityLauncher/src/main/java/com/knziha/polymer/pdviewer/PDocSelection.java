@@ -291,6 +291,18 @@ public class PDocSelection extends View {
 					cc.restore();
 				}
 				
+				// 放大镜中的控点
+				sourceToMagViewRectFF(pDocView.handleLeftPos, VR);
+				left = VR.left+drawableDeltaW;
+				pDocView.handleLeft.setBounds((int)(left-drawableWidth), (int)VR.bottom, (int)left, (int)(VR.bottom+drawableHeight));
+				pDocView.handleLeft.draw(cc);
+				
+				sourceToMagViewRectFF(pDocView.handleRightPos, VR);
+				left = VR.right-drawableDeltaW;
+				pDocView.handleRight.setBounds((int)left, (int)VR.bottom, (int)(left+drawableWidth), (int)(VR.bottom+drawableHeight));
+				pDocView.handleRight.draw(cc);
+				
+				
 				int magX = (int) (pDocView.lastX-magW/2);
 				int magY = (int) (pDocView.lastY-magH-200-drawableHeight-pDocView.lineHeight);
 				

@@ -12,12 +12,21 @@ import com.shockwave.pdfium.PdfiumCore;
 import java.io.IOException;
 
 public class PDocViewerActivity extends Toastable_Activity {
+	ImageviewDebugBinding UIData;
 	
+	@Override
+	public void onBackPressed() {
+		if(UIData.wdv.draggingHandle==null && UIData.wdv.hasSelection()) {
+			UIData.wdv.clearSelection();
+		} else {
+			super.onBackPressed();
+		}
+	}
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		ImageviewDebugBinding UIData = DataBindingUtil.setContentView(this, R.layout.imageview_debug);
+		UIData = DataBindingUtil.setContentView(this, R.layout.imageview_debug);
 		
 		try {
 			UIData.wdv.dm=dm;

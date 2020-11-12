@@ -140,17 +140,19 @@ public class PDocument {
 			return "";
 		}
 		
-		public void selWordAtPos(PDocView view, float posX, float posY) {
+		public boolean selWordAtPos(PDocView view, float posX, float posY, float tolFactor) {
 			prepareText();
 			if(tid!=0) {
 				int charIdx = pdfiumCore.nativeGetCharIndexAtCoord(pid.get(), size.getWidth(), size.getHeight(), tid
-						, posX, posY, 10.0, 10.0);
+						, posX, posY, 10.0*tolFactor, 10.0*tolFactor);
 				if(charIdx>=0) {
 					int ed=pageBreakIterator.following(charIdx);
 					int st=pageBreakIterator.previous();
 					view.setSelectionAtPage(pageIdx, st, ed);
+					return true;
 				}
 			}
+			return false;
 		}
 		
 		public int getCharIdxAtPos(PDocView view, float posX, float posY) {
