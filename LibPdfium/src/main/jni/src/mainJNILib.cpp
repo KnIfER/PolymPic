@@ -450,14 +450,13 @@ JNI_FUNC(void, PdfiumCore, nativeGetCharPos)(JNI_ARGS, jlong pagePtr, jint offse
 
     int deviceX, deviceY;
 
-
-   FPDF_DeviceToPage((FPDF_PAGE)pagePtr, 0, 0, width, height, 0, width, 0, &userWidth, &userHeight);
-   FPDF_PageToDevice((FPDF_PAGE)pagePtr, 0, 0, userWidth, userHeight, 0, left, top, &deviceX, &deviceY);
+    width = right-left;
+    height = top-bottom;
+    FPDF_DeviceToPage((FPDF_PAGE)pagePtr, 0, 0, width, height, 0, width, 0, &userWidth, &userHeight);
+    FPDF_PageToDevice((FPDF_PAGE)pagePtr, 0, 0, userWidth, userHeight, 0, left, top, &deviceX, &deviceY);
 
    //FPDF_PageToDevice((FPDF_PAGE)pagePtr, 0, 0, width, height, 0, left, top, &deviceX, &deviceY);
 
-    width = right-left;
-    height = top-bottom;
 
     left=deviceX+offsetX;
     top=deviceY+offsetY;

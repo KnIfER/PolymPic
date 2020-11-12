@@ -178,6 +178,7 @@ public class PDocument {
 				if(selEd==-1) {
 					selEd=allText.length();
 				}
+				CMN.Log("getTextRects", selSt, selEd, allText.length());
 				if(selEd<selSt) {
 					int tmp = selSt;
 					selSt=selEd;
@@ -186,7 +187,7 @@ public class PDocument {
 				selEd -= selSt;
 				if(selEd>0) {
 					int rectCount = pdfiumCore.getTextRects(pid.get(), OffsetAlongScrollAxis, getHorizontalOffset(), size, rectPagePool, tid, selSt, selEd);
-					CMN.Log("getTextRects", selSt, selEd, rectCount, rectPagePool.toString());
+					//CMN.Log("getTextRects", selSt, selEd, rectCount, rectPagePool.toString());
 					if(rectCount>=0 && rectPagePool.size()>rectCount) {
 						rectPagePool.subList(rectCount, rectPagePool.size()).clear();
 					}
@@ -195,7 +196,8 @@ public class PDocument {
 		}
 		
 		public void getCharPos(RectF pos, int index) {
-			pdfiumCore.nativeGetCharPos(pid.get(), (int)OffsetAlongScrollAxis, getHorizontalOffset(), size.getWidth(), size.getHeight(), pos, tid, index, true);
+			pdfiumCore.nativeGetCharPos(pid.get(), (int)OffsetAlongScrollAxis, getHorizontalOffset()
+					, size.getWidth(), size.getHeight(), pos, tid, index, true);
 		}
 		
 //		public void getCharPosLoose(RectF pos, int index) {

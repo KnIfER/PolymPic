@@ -41,7 +41,6 @@ import android.os.Message;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.util.SparseArray;
 import android.util.TypedValue;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
@@ -66,7 +65,6 @@ import com.knziha.polymer.slideshow.decoder.ImageRegionDecoder;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -109,12 +107,13 @@ public class PDocView extends View {
 	/** State change originated from a double tap zoom anim. */
 	public static final int ORIGIN_DOUBLE_TAP_ZOOM = 4;
 	public PDocViewerActivity a;
+	public int BackGroundColor=Color.LTGRAY;
 	
 	// Uri of full size image
 	private Uri uri;
 	
 	// Overlay tile boundaries and other info
-	private boolean SSVD=false;//debug
+	private boolean SSVD=true;//debug
 	
 	private boolean SSVDF=false;//debug
 	
@@ -228,7 +227,7 @@ public class PDocView extends View {
 	private static final int MESSAGE_LONG_CLICK = 1;
 	
 	// Paint objects
-	private Paint bitmapPaint;
+	Paint bitmapPaint;
 	private Paint debugTextPaint;
 	private Paint debugLinePaint;
 	private Paint tileBgPaint;
@@ -328,10 +327,10 @@ public class PDocView extends View {
 	private long stoffX;
 	private float edoffX;
 	private RectF hrcTmp=new RectF();
-	private long draw_stoff;
-	private float draw_edoff;
-	private long draw_stoffX;
-	private float draw_edoffX;
+	long draw_stoff;
+	float draw_edoff;
+	long draw_stoffX;
+	float draw_edoffX;
 	final Rect vRect = new Rect();
 	int selPageSt;
 	int selPageEd;
@@ -346,11 +345,20 @@ public class PDocView extends View {
 	Drawable handleRight;
 	Drawable draggingHandle;
 	private boolean startInDrag;
+	float lineHeight;
+	float lineHeightLeft;
+	float lineHeightRight;
+	PointF sCursorPosStart = new PointF();
+	PointF sCursorPos = new PointF();
 	
 	public void dragHandle() {
 		if(draggingHandle!=null) {
-			float posX = (lastX - vTranslate.x)/scale;
-			float posY = (lastY - vTranslate.y)/scale;
+			lineHeight = draggingHandle==handleLeft?lineHeightLeft:lineHeightRight;
+			//float posX = (lastX - vTranslate.x)/scale;
+			//float posY = (lastY - vTranslate.y)/scale;
+			float posX = sCursorPosStart.x+(lastX - orgX)/scale;
+			float posY = sCursorPosStart.y+(lastY - orgY)/scale;
+			sCursorPos.set(posX, posY);
 			boolean isLeft = draggingHandle==handleLeft;
 			int charIdx=-1; int pageIdx=-1;
 			//if(false)
@@ -360,11 +368,12 @@ public class PDocView extends View {
 					pageIdx = logiLayoutSt+i;
 					posY -= pageI.OffsetAlongScrollAxis;
 					posX -= pageI.getHorizontalOffset();
-					charIdx = pageI.getCharIdxAtPos(PDocView.this, posX, posY);
+					charIdx = pageI.getCharIdxAtPos(PDocView.this, posX, posY-lineHeight);
 					break;
 				}
 			}
 			
+			selectionPaintView.supressRecalcInval=true;
 			if(charIdx>=0) {
 				if(isLeft){
 					if(pageIdx!=selPageSt||charIdx!=selStart) {
@@ -381,6 +390,8 @@ public class PDocView extends View {
 					}
 				}
 			}
+			selectionPaintView.invalidate();
+			selectionPaintView.supressRecalcInval=false;
 		}
 	}
 	
@@ -470,6 +481,9 @@ public class PDocView extends View {
 		selectionPaintView = sv;
 		sv.pDocView = this;
 		sv.resetSel();
+		sv.drawableWidth = handleLeft.getIntrinsicWidth()*drawableScale;
+		sv.drawableHeight = handleLeft.getIntrinsicHeight()*drawableScale;
+		sv.drawableDeltaW = sv.drawableWidth / 4;
 	}
 	
 	/**
@@ -688,6 +702,9 @@ public class PDocView extends View {
 			
 			@Override
 			public boolean onSingleTapUp(MotionEvent e) {
+				if(draggingHandle!=null) {
+					return true;
+				}
 				//performClick();
 				float posX = (lastX - vTranslate.x)/scale;
 				float posY = (lastY - vTranslate.y)/scale;
@@ -873,9 +890,11 @@ public class PDocView extends View {
 					if (handleLeft.getBounds().contains((int) orgX, (int) orgY)) {
 						startInDrag = true;
 						draggingHandle = handleLeft;
+						sCursorPosStart.set(handleLeftPos.left, handleLeftPos.bottom);
 					} else if (handleRight.getBounds().contains((int) orgX, (int) orgY)) {
 						startInDrag = true;
 						draggingHandle = handleRight;
+						sCursorPosStart.set(handleRightPos.right, handleRightPos.bottom);
 					}
 				}
 			}
@@ -1818,7 +1837,7 @@ public class PDocView extends View {
 				handle_animation();
 			}
 			
-			canvas.drawColor(Color.LTGRAY);
+			canvas.drawColor(BackGroundColor);
 			//canvas.drawBitmap(bitmap, null, new RectF(0,vTranslate.y,100,100), bitmapPaint);
 			//canvas.drawBitmap(bitmap, 0, vTranslate.y, bitmapPaint);
 			
