@@ -1,0 +1,21 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="com.knziha.polymer.LauncherActivity" >
+
+    <item android:id="@+id/ctx_copy" android:title="复制" android:showAsAction="never"/>
+
+    <item android:id="@+id/ctx_search" android:title="网页搜索" android:showAsAction="never"/>
+
+    <item android:id="@+id/ctx_share" android:title="分享" android:showAsAction="never"/>
+
+    <item android:id="@+id/ctx_dictionay" android:title="ColorDict" android:showAsAction="never"/>
+
+    <item android:id="@+id/ctx_translation" android:title="翻译" android:showAsAction="never"/>
+
+    <item android:id="@+id/ctx_hightlight" android:title="高亮" android:showAsAction="never"/>
+
+    <item android:id="@+id/ctx_underline" android:title="下划线" android:showAsAction="never"/>
+
+    <item android:id="@+id/ctx_enlarge" android:title="扩大选择" android:showAsAction="never"/>
+
+</menu>

@@ -52,7 +52,13 @@ public class CMN {
 	public static void pt(Object...args) {
 		CMN.Log(Arrays.toString(args)+" "+(System.currentTimeMillis()-ststrt));
 	}
-
+	
+	static XYTouchRecorder xyt;
+	public static XYTouchRecorder XYTouchRecorder() {
+		if(xyt==null) xyt = new XYTouchRecorder();
+		return xyt;
+	}
+	
 	///*[!0] Start debug flags and methods
 	public static boolean testFLoatSearch;
 	public static boolean editAll;

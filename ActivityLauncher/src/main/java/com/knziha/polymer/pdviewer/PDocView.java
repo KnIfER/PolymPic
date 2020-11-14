@@ -113,7 +113,7 @@ public class PDocView extends View {
 	private Uri uri;
 	
 	// Overlay tile boundaries and other info
-	private boolean SSVD=true;//debug
+	private boolean SSVD=false;//debug
 	
 	private boolean SSVDF=false;//debug
 	
@@ -261,6 +261,8 @@ public class PDocView extends View {
 	private boolean isFlinging;
 	private TilesInitTask loadingTask;
 	
+	ArrayList<PDocument.AnnotShape> mAnnotBucket = new ArrayList<>(8);
+	
 	private Runnable flingRunnable = new Runnable() {
 		@Override
 		public void run() {
@@ -293,6 +295,9 @@ public class PDocView extends View {
 				//viewPoster.post(this);
 			} else {
 				isFlinging = false;
+				if(freefling && shouldDrawSelection()) {
+					relocateContextMenuView();
+				}
 			}
 			//else scroll ended
 		}
@@ -337,6 +342,12 @@ public class PDocView extends View {
 	int selStart;
 	int selEnd;
 	boolean hasSelction;
+	boolean hasAnnotSelction;
+	
+	PDocument.PDocPage annotSelPage;
+	PDocument.AnnotShape annotSelection;
+	RectF annotSelRect = new RectF();
+	int annotSelIdx;
 	
 	float drawableScale=1.f;
 	final RectF handleLeftPos=new RectF();
@@ -350,6 +361,8 @@ public class PDocView extends View {
 	float lineHeightRight;
 	PointF sCursorPosStart = new PointF();
 	PointF sCursorPos = new PointF();
+	private View contextView;
+	private boolean bSupressingUpdatCtxMenu;
 	
 	public void dragHandle() {
 		if(draggingHandle!=null) {
@@ -390,7 +403,7 @@ public class PDocView extends View {
 					}
 				}
 			}
-			selectionPaintView.invalidate();
+			redrawSel();
 			selectionPaintView.supressRecalcInval=false;
 		}
 	}
@@ -504,9 +517,145 @@ public class PDocView extends View {
 		return hasSelction;
 	}
 	
+	public boolean shouldDrawSelection() {
+		return hasSelction||hasAnnotSelction;
+	}
+	
 	public void clearSelection() {
 		hasSelction=false;
-		selectionPaintView.invalidate();
+		hasAnnotSelction=false;
+		redrawSel();
+		hideContextMenuView();
+	}
+	
+	public void setAnnotSelection(PDocument.PDocPage page, PDocument.AnnotShape annot) {
+		if(hasSelction) {
+			clearSelection();
+		}
+		annotSelPage = page;
+		annotSelIdx = annot.index;
+		annotSelection = annot;
+		RectF rect = annotSelRect;
+		rect.set(annot.box);
+		rect.left+=page.getHorizontalOffset();
+		rect.right+=page.getHorizontalOffset();
+		rect.top+=page.OffsetAlongScrollAxis;
+		rect.bottom+=page.OffsetAlongScrollAxis;
+		hasAnnotSelction = true;
+		redrawSel();
+	}
+	
+	private void redrawSel() {
+		if(selectionPaintView!=null) {
+			selectionPaintView.invalidate();
+		}
+	}
+	
+	public void setContextMenuView(View contextView) {
+		this.contextView = contextView;
+	}
+	
+	public String getSelection() {
+		if(hasSelction && selectionPaintView!=null) {
+			try {
+				int pageStart = selectionPaintView.selPageSt;
+				int pageCount = selectionPaintView.selPageEd-pageStart;
+				if(pageCount==0) {
+					PDocument.PDocPage page = pdoc.mPDocPages[pageStart];
+					page.prepareText();
+					return page.allText.substring(selectionPaintView.selStart, selectionPaintView.selEnd);
+				}
+				StringBuilder sb = new StringBuilder();
+				int selCount=0;
+				for (int i = 0; i <= pageCount; i++) {
+					PDocument.PDocPage page = pdoc.mPDocPages[pageStart+i];
+					page.prepareText();
+					int len = page.allText.length();
+					selCount+=i==0?len-selStart:i==pageCount?selEnd:len;
+				}
+				sb.ensureCapacity(selCount+64);
+				for (int i = 0; i <= pageCount; i++) {
+					PDocument.PDocPage page = pdoc.mPDocPages[pageStart+i];
+					sb.append(page.allText.substring(i==0?selStart:0, i==pageCount?selEnd:page.allText.length()));
+				}
+				return sb.toString();
+			} catch (Exception e) {
+				CMN.Log(e);
+			}
+		}
+		return null;
+	}
+	
+	public void highlightSelection() {
+		if(hasSelction && selPageSt==selPageEd && selectionPaintView!=null) {
+			ArrayList<RectF> selRects = selectionPaintView.rectPool.get(0);
+			PDocument.PDocPage page = pdoc.mPDocPages[selPageSt];
+			if(selRects.size()>0) { //sanity check
+				ArrayList<RectF> selLineRects = new ArrayList<>(selRects);
+				RectF box = new RectF(selRects.get(0));
+				RectF currentLineRect=new RectF(box);
+				selLineRects.add(currentLineRect);
+				for(RectF rI:selRects) {
+					CMN.Log("RectF rI:selRects", rI);
+					box.left = Math.min(box.left, rI.left);
+					box.right = Math.max(box.right, rI.right);
+					box.top = Math.min(box.top, rI.top);
+					box.bottom = Math.max(box.bottom, rI.bottom);
+					if(Math.abs((currentLineRect.top+currentLineRect.bottom)-(rI.top+rI.bottom))<currentLineRect.bottom-currentLineRect.top) {
+						currentLineRect.left = Math.min(box.left, rI.left);
+						currentLineRect.right = Math.max(box.right, rI.right);
+						currentLineRect.top = Math.min(box.top, rI.top);
+						currentLineRect.bottom = Math.max(box.bottom, rI.bottom);
+					} else {
+						currentLineRect=new RectF();
+						currentLineRect.set(rI);
+						selLineRects.add(currentLineRect);
+					}
+				}
+				page.createHighlight(box, selLineRects);
+			}
+		}
+	}
+	
+	public void enlargeSelection() {
+		if(hasAnnotSelction) {
+			annotSelPage.fetchAnnotAttachPoints(annotSelection);
+			annotSelPage.prepareText();
+			int charSt=annotSelPage.allText.length(), charEd=0;
+			int len=annotSelection.attachPts.length;
+			if(len>0) {
+				PointF p = new PointF();
+				int charIdx;
+				for (int i = 0; i < len; i++) {
+					PDocument.QuadShape qI = annotSelection.attachPts[i];
+					setCenterPoint(p, qI.p1, qI.p3);
+					charIdx = annotSelPage.getCharIdxAtPos(this, p.x, p.y);
+					if(charIdx>=0) {
+						charSt = Math.min(charSt, charIdx);
+					}
+					setCenterPoint(p, qI.p2, qI.p4);
+					charIdx = annotSelPage.getCharIdxAtPos(this, p.x, p.y);
+					if(charIdx>=0) {
+						charEd = Math.max(charEd, charIdx+1);
+					}
+				}
+			} else {
+				RectF rect = annotSelection.box;
+				charSt = annotSelPage.getCharIdxAtPos(this, rect.left, rect.top);
+				charEd = annotSelPage.getCharIdxAtPos(this, rect.right, rect.bottom);
+			}
+			//CMN.Log("enlargeSelection", charSt, charEd);
+			if(charSt >= 0 && charSt < charEd) {
+				bSupressingUpdatCtxMenu=true;
+				clearSelection();
+				setSelectionAtPage(annotSelPage.pageIdx, charSt, charEd);
+				bSupressingUpdatCtxMenu=false;
+			}
+		}
+	}
+	
+	private void setCenterPoint(PointF p, PointF p1, PointF p2) {
+		p.set((p1.x+p2.x)/2, (p1.y+p2.y)/2);
 	}
 	
 	/**
@@ -749,6 +898,14 @@ public class PDocView extends View {
 					}
 					
 					if(true) {
+						PDocument.AnnotShape annot = pageI.selAnnotAtPos(PDocView.this, posX, posY);
+						if(annot!=null) {
+							//a.showT("annotIdx::"+annotIdx);
+							return true;
+						}
+					}
+					
+					if(true) {
 						if(!pageI.selWordAtPos(PDocView.this, posX, posY, 1)) {
 							clearSelection();
 						}
@@ -919,6 +1076,9 @@ public class PDocView extends View {
 				isRotating = false;
 				orgX=view_pager_toguard_lastX=lastX;
 				orgY=view_pager_toguard_lastY=lastY;
+				if(shouldDrawSelection()) {
+					hideContextMenuView();
+				}
 				if(hasSelction) {
 					if (handleLeft.getBounds().contains((int) orgX, (int) orgY)) {
 						startInDrag = true;
@@ -1277,6 +1437,9 @@ public class PDocView extends View {
 			case MotionEvent.ACTION_UP: {
 				isDown = false;
 				isZooming=false;
+				if(shouldDrawSelection() && anim==null && !isFlinging) {
+					relocateContextMenuView();
+				}
 			}
 			case MotionEvent.ACTION_POINTER_UP:{
 				if(draggingHandle!=null) {
@@ -1410,6 +1573,28 @@ public class PDocView extends View {
 		return false;
 	}
 	
+	
+	public void hideContextMenuView() {
+		if(contextView!=null&&!bSupressingUpdatCtxMenu) {
+			contextView.setVisibility(View.GONE);
+		}
+	}
+	
+	public void relocateContextMenuView() {
+		if(contextView!=null && !isDown && !bSupressingUpdatCtxMenu) {
+			if(hasSelction) {
+				float top = sourceToViewY(handleLeftPos.top);
+				contextView.setTranslationY(top-contextView.getMeasuredHeight()-100);
+				contextView.setVisibility(View.VISIBLE);
+			}
+			else if(hasAnnotSelction) {
+				float top = sourceToViewY(annotSelRect.top);
+				contextView.setTranslationY(top-contextView.getMeasuredHeight()-100);
+				contextView.setVisibility(View.VISIBLE);
+			}
+		}
+	}
+	
 	public void judgeClick() {
 		CMN.Log("judgeClick!!!");
 		if(draggingHandle!=null){
@@ -1433,8 +1618,8 @@ public class PDocView extends View {
 	}
 	
 	private void handle_proxy_simul(float scaleStamp, PointF translationStamp, float rotationStamp) {
-		if(hasSelction&&selectionPaintView!=null) {
-			selectionPaintView.invalidate();
+		if(shouldDrawSelection()) {
+			redrawSel();
 		}
 //		if (view_to_guard != null) {
 //			if(false) {
@@ -2114,6 +2299,9 @@ public class PDocView extends View {
 			if (finished) {
 				refreshRequiredTiles(finished);
 				//if (anim.listener != null) anim.listener.onComplete();
+				if(shouldDrawSelection()) {
+					relocateContextMenuView();
+				}
 				anim = null;
 			}
 			

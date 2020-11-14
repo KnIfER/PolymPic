@@ -22,5 +22,15 @@
 			android:layout_height="match_parent"
 			/>
 
+		<com.knziha.polymer.widgets.UnCrashableSpannedTextView
+			android:id="@+id/contextMenu"
+			tools:text="复制 复制 复制 复制 复制 复制 复制 复制 复制 复制 复制 复制 复制 复制 复制 复制 复制 复制 复制 复制  "
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:background="@drawable/context_menu_frame"
+			android:textColor="#fff"
+			android:elevation="6dp"
+			android:lineSpacingExtra="5dp"
+			/>
 	</FrameLayout>
 </layout>

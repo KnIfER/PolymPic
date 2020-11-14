@@ -102,8 +102,13 @@ public class PdfiumCore {
 
     private native Point nativePageCoordsToDevice(long pagePtr, int startX, int startY, int sizeX,
                                                   int sizeY, int rotate, double pageX, double pageY);
-
-
+	
+	public native int nativeCountAnnot(long pagePtr);
+	
+	public native RectF nativeGetAnnotRect(long pagePtr, int index);
+	
+	public native long nativeGetAnnot(long pagePtr, int index);
+	
     /* synchronize native methods */
     private static final Object lock = new Object();
     private static Field mFdField = null;
@@ -468,4 +473,18 @@ public class PdfiumCore {
                 coords.right, coords.bottom);
         return new RectF(leftTop.x, leftTop.y, rightBottom.x, rightBottom.y);
     }
+	
+	public native long nativeOpenAnnot(long page, int idx);
+	
+	public native int nativeCountAttachmentPoints(long annotPtr);
+	
+	public native boolean nativeGetAttachmentPoints(long pagePtr, long annotPtr, int idx, PointF p1, PointF p2, PointF p3, PointF p4);
+	
+	public native void nativeCloseAnnot(long annotPtr);
+	
+	public native long nativeCreateAnnot(long pagePtr, int type);
+	
+	public native void nativeSetAnnotRect(long pagePtr, long annotPtr, float left, float top, float right, float bottom, double width, double height);
+	
+	public native void nativeAppendAnnotPoints(long pagePtr, long annotPtr, double left, double top, double right, double bottom, double width, double height);
 }

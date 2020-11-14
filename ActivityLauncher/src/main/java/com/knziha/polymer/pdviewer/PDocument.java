@@ -8,7 +8,6 @@ import android.graphics.RectF;
 import android.os.ParcelFileDescriptor;
 import android.util.DisplayMetrics;
 import android.util.SparseArray;
-import android.view.GestureDetector;
 
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.text.BreakIteratorHelper;
@@ -202,9 +201,103 @@ public class PDocument {
 					, size.getWidth(), size.getHeight(), pos, tid, index, true);
 		}
 		
+		ArrayList<AnnotShape> mAnnotRects;
+		
+		public AnnotShape selAnnotAtPos(PDocView view, float posX, float posY) {
+			int annotCount;
+			AnnotShape ret = null;
+			ArrayList<AnnotShape> selBucket = view.mAnnotBucket;
+			selBucket.clear();
+			if(mAnnotRects==null) {
+				annotCount = pdfiumCore.nativeCountAnnot(pid.get());
+				mAnnotRects = new ArrayList<>((int)(annotCount*1.2));
+				for (int i = 0; i < annotCount; i++) {
+					mAnnotRects.add(new AnnotShape(pdfiumCore.nativeGetAnnotRect(pid.get(), i), i));
+				}
+			} else {
+				annotCount = mAnnotRects.size();
+			}
+			for (int i = 0; i < annotCount; i++) {
+				AnnotShape aI = mAnnotRects.get(i);
+				RectF rect = aI.box;
+				if(posX>=rect.left&&posX<rect.right&&posY>=rect.top&&posY<rect.bottom) {
+					selBucket.add(aI);
+				}
+			}
+			annotCount = selBucket.size();
+			
+			if(annotCount>1) {
+				PointF p = new PointF(posX, posY);
+				for (int i = annotCount-1; i >= 0; i--) {
+					AnnotShape aI = selBucket.get(i);
+					fetchAnnotAttachPoints(aI);
+					for (int j = 0; j < aI.attachPts.length; j++) {
+						QuadShape qI = aI.attachPts[j];
+						if(!IsPointInMatrix(p, qI.p1, qI.p2, qI.p3, qI.p4)) {
+							selBucket.remove(i);
+						}
+					}
+				}
+			}
+			
+			CMN.Log("selBucket", selBucket.size());
+			
+			annotCount = selBucket.size();
+			if(annotCount>0) {
+				ret = selBucket.get(annotCount-1);
+				view.setAnnotSelection(this, ret);
+			}
+			
+
+//			view.setAnnotSelection(this, i, rect);
+//			return i;
+			
+			return ret;
+		}
+		
+		void fetchAnnotAttachPoints(AnnotShape aI) {
+			if(aI.attachPts==null) {
+				long annotPtr = pdfiumCore.nativeOpenAnnot(pid.get(), aI.index);
+				int attachPtSz = pdfiumCore.nativeCountAttachmentPoints(annotPtr);
+				aI.attachPts = new QuadShape[attachPtSz];
+				for (int j = 0; j < attachPtSz; j++) {
+					QuadShape qI = aI.attachPts[j] = new QuadShape();
+					pdfiumCore.nativeGetAttachmentPoints(pid.get(), annotPtr, j, qI.p1, qI.p2, qI.p3, qI.p4);
+				}
+				pdfiumCore.nativeCloseAnnot(annotPtr);
+			}
+		}
+		
+		public void createHighlight(RectF box, ArrayList<RectF> selLineRects) {
+			open();
+			long antTmp = pdfiumCore.nativeCreateAnnot(pid.get(), 9);
+			if(antTmp!=0) {
+				CMN.Log("nativeCreateAnnot", antTmp);
+				long offset1 = OffsetAlongScrollAxis;
+				int offset2 = getHorizontalOffset();
+				double width = size.getWidth(), height = size.getHeight();
+				pdfiumCore.nativeSetAnnotRect(pid.get(), antTmp, box.left-offset2, box.top-offset1, box.right-offset2, box.bottom-offset1, width, height);
+				//pdfiumCore.nativeAppendAnnotPoints(pid.get(), antTmp, box.left-offset2, box.top-offset1, box.right-offset2, box.bottom-offset1, width, height);
+				for (RectF rI:selLineRects) {
+					pdfiumCore.nativeAppendAnnotPoints(pid.get(), antTmp, rI.left-offset2, rI.top-offset1, rI.right-offset2, rI.bottom-offset1, width, height);
+				}
+				pdfiumCore.nativeCloseAnnot(antTmp);
+			}
+		}
+
 //		public void getCharPosLoose(RectF pos, int index) {
 //			pdfiumCore.nativeGetCharPos(pid.get(), (int)OffsetAlongScrollAxis, getHorizontalOffset(), size.getWidth(), size.getHeight(), pos, tid, index, true);
 //		}
+	}
+	
+	// https://www.cnblogs.com/fangsmile/p/9306510.html
+	// 计算 |p1 p2| X |p1 p|
+	float GetCross(PointF p, PointF p1, PointF p2) {
+		return (p2.x - p1.x) * (p.y - p1.y) - (p.x - p1.x) * (p2.y - p1.y);
+	}
+	//判断点p是否在p1p2p3p4的正方形内
+	boolean IsPointInMatrix(PointF p, PointF p1, PointF p2, PointF p3, PointF p4) {
+		return GetCross(p1, p2, p) * GetCross(p3, p4, p) >= 0 && GetCross(p2, p3, p) * GetCross(p4, p1, p) >= 0;
 	}
 	
 	public PDocument(Context c, String path, DisplayMetrics dm, AtomicBoolean abort) throws IOException {
@@ -274,7 +367,7 @@ public class PDocument {
 		bitmap.eraseColor(Color.WHITE);
 		page.open();
 		//CMN.Log("renderRegion", w, h, startX, startY, srcW, srcH);
-		pdfiumCore.renderPageBitmap(pdfDocument, bitmap, page.pageIdx, startX, startY, srcW, srcH ,false);
+		pdfiumCore.renderPageBitmap(pdfDocument, bitmap, page.pageIdx, startX, startY, srcW, srcH, true);
 		return bitmap;
 	}
 	
@@ -301,4 +394,21 @@ public class PDocument {
 		return bitmap;
 	}
 	
+	static class AnnotShape {
+		int index;
+		RectF box;
+		QuadShape[] attachPts;
+		
+		public AnnotShape(RectF rect, int i) {
+			box = rect;
+			index=i;
+		}
+	}
+	
+	static class QuadShape {
+		PointF p1=new PointF();
+		PointF p2=new PointF();
+		PointF p3=new PointF();
+		PointF p4=new PointF();
+	}
 }

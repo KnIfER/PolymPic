@@ -3,6 +3,7 @@ package com.knziha.polymer.pdviewer;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
@@ -30,6 +31,7 @@ public class PDocSelection extends View {
 	float drawableHeight=128;
 	float drawableDeltaW = drawableWidth / 4;
 	Paint rectPaint;
+	Paint rectFramePaint;
 	/** Small Canvas for magnifier.
 	 * {@link Canvas#clipPath ClipPath} fails if the canvas it too high.
 	 * see <a href="https://issuetracker.google.com/issues/132402784">issuetracker</a>) */
@@ -75,6 +77,10 @@ public class PDocSelection extends View {
 	private void init() {
 		rectPaint = new Paint();
 		rectPaint.setColor(0x66109afe);
+		rectFramePaint = new Paint();
+		rectFramePaint.setColor(0xccc7ab21);
+		rectFramePaint.setStyle(Paint.Style.STROKE);
+		rectFramePaint.setStrokeWidth(0.5f);
 	}
 	
 	
@@ -175,7 +181,8 @@ public class PDocSelection extends View {
 	
 	@Override
 	protected void onDraw(Canvas canvas) {
-		if(pDocView!=null && pDocView.hasSelction) {
+		if(pDocView!=null)
+		if(pDocView.hasSelction) {
 			RectF VR = tmpPosRct;
 			Matrix matrix = pDocView.matrix;
 			
@@ -205,7 +212,7 @@ public class PDocSelection extends View {
 				magdraw_stoff = pDocView.sCursorPos.y-magdrawH;
 				magdraw_edoff = pDocView.sCursorPos.y+magdrawH;
 			}
-			// 绘制选区
+			// 绘制选区，是一页页分开存储的
 			for (int i = 0; i < rectPoolSize; i++) {
 				PDocument.PDocPage page = pDocView.pdoc.mPDocPages[selPageSt + i];
 				if(!(page.OffsetAlongScrollAxis>=pDocView.draw_edoff||page.OffsetAlongScrollAxis+page.size.getHeight()<=pDocView.draw_stoff)) {
@@ -315,6 +322,31 @@ public class PDocSelection extends View {
 				cc.restore();
 			}
 			
+		}
+		else if(pDocView.hasAnnotSelction) {
+			// 绘制高亮选择框
+			RectF rI=pDocView.annotSelRect;
+			RectF VR = tmpPosRct;
+			Matrix matrix = pDocView.matrix;
+			
+			pDocView.sourceToViewRectFF(rI, VR);
+			matrix.reset();
+			int bmWidth = (int) rI.width();
+			int bmHeight = (int) rI.height();
+			pDocView.setMatrixArray(pDocView.srcArray, 0, 0, bmWidth, 0, bmWidth, bmHeight, 0, bmHeight);
+			pDocView.setMatrixArray(pDocView.dstArray, VR.left, VR.top, VR.right, VR.top, VR.right, VR.bottom, VR.left, VR.bottom);
+			
+			matrix.setPolyToPoly(pDocView.srcArray, 0, pDocView.dstArray, 0, 4);
+			matrix.postRotate(0, pDocView.getScreenWidth(), pDocView.getSHeight());
+			
+			//matrix.mapR
+			canvas.save();
+			canvas.concat(matrix);
+			VR.set(0, 0, bmWidth, bmHeight);
+			canvas.drawRect(VR, rectFramePaint);
+			canvas.restore();
+			
+			CMN.Log("绘制了高亮");
 		}
 	}
 	

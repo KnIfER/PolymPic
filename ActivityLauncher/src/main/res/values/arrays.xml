@@ -31,6 +31,7 @@
 		<item>段落工具</item>
 		<item>切换↑↓</item>
 	</string-array>
+
 	<string-array name="DingGeZhuGeLiang">
 		<item>@string/highlight</item>
 		<item>@string/tools</item>
@@ -101,5 +102,16 @@
 		<item>解码UPC/EAN格式</item>
 		<item>解码AZTEC格式</item>
 		<item>解码PDF417格式</item>
+	</string-array>
+
+
+	<string-array name="text_optoins">
+		<item>复制</item>
+		<item></item>
+		<item></item>
+		<item></item>
+		<item></item>
+		<item></item>
+		<item></item>
 	</string-array>
 </resources>
