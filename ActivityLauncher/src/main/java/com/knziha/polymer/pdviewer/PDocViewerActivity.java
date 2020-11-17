@@ -23,6 +23,7 @@ import com.knziha.polymer.R;
 import com.knziha.polymer.Toastable_Activity;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.databinding.ImageviewDebugBinding;
+import com.knziha.polymer.text.BreakIteratorHelper;
 import com.shockwave.pdfium.PdfiumCore;
 
 import java.io.IOException;
@@ -46,7 +47,6 @@ public class PDocViewerActivity extends Toastable_Activity {
 		
 		try {
 			UIData.wdv.dm=dm;
-			
 			//PDocument pdoc = new PDocument(this, "/sdcard/myFolder/sample_hetero_dimension.pdf");
 			//PDocument pdoc = new PDocument(this, "/sdcard/myFolder/Gpu Pro 1.pdf", dm, null);
 			//UIData.wdv.setDocument(pdoc);
@@ -82,12 +82,27 @@ public class PDocViewerActivity extends Toastable_Activity {
 			
 			UIData.contextMenu.setOnTouchListener(CMN.XYTouchRecorder());
 			
-			//UIData.wdv.setDocumentPath("/sdcard/myFolder/Gpu Pro 1.pdf");
-			UIData.wdv.setDocumentPath("/sdcard/myFolder/YotaSpec02.pdf");
+			UIData.wdv.setDocumentPath("/sdcard/myFolder/Gpu Pro 1.pdf");
+			//UIData.wdv.setDocumentPath("/sdcard/myFolder/YotaSpec02.pdf"); // √
+			//UIData.wdv.setDocumentPath("/sdcard/myFolder/1.pdf");
+			//UIData.wdv.setDocumentPath("/sdcard/myFolder/sample.pdf");
+			//UIData.wdv.setDocumentPath("/sdcard/myFolder/sig-notes.pdf");
 			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+	
+	@Override
+	protected void onPause() {
+		super.onPause();
+		UIData.wdv.checkDoc();
+	}
+	
+	@Override
+	protected void onDestroy() {
+		super.onDestroy();
+		UIData.wdv.checkDoc();
 	}
 	
 	public void OnMenuClicked(MenuItem item) {

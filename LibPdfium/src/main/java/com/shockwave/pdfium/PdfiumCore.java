@@ -54,6 +54,8 @@ public class PdfiumCore {
 	
 	public native int nativeGetCharPos(long pagePtr, int offsetY, int offsetX, int width, int height, RectF pt, long tid, int index, boolean loose);
 	
+	public native int nativeGetMixedLooseCharPos(long pagePtr, int offsetY, int offsetX, int width, int height, RectF pt, long tid, int index, boolean loose);
+	
 	private native long[] nativeLoadPages(long docPtr, int fromIndex, int toIndex);
 
     private native void nativeClosePage(long pagePtr);
@@ -487,4 +489,14 @@ public class PdfiumCore {
 	public native void nativeSetAnnotRect(long pagePtr, long annotPtr, float left, float top, float right, float bottom, double width, double height);
 	
 	public native void nativeAppendAnnotPoints(long pagePtr, long annotPtr, double left, double top, double right, double bottom, double width, double height);
+	
+	public native void nativeSetAnnotColor(long annotPtr, int R, int G, int B, int A);
+	
+	public void SaveAsCopy(long docPtr, int fd) {
+		synchronized (lock) {
+			nativeSaveAsCopy(docPtr, fd);
+		}
+	}
+	
+	public native void nativeSaveAsCopy(long docPtr, int fd);
 }

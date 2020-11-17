@@ -174,6 +174,7 @@ public class PDocSelection extends View {
 					ed+=dir;
 				}
 			}
+			CMN.Log("getCharPos", page.allText.substring(ed+delta, ed+delta+1));
 			page.getCharPos(pDocView.handleRightPos, ed+delta);
 			pDocView.lineHeightRight = pDocView.handleRightPos.height()/2;
 		}

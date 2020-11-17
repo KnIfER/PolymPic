@@ -16,6 +16,7 @@ import com.shockwave.pdfium.PdfiumCore;
 import com.shockwave.pdfium.util.Size;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -32,10 +33,25 @@ public class PDocument {
 	public int gap=15;
 	public long height;
 	public int _num_entries;
+	public boolean isDirty;
 	private int _anchor_page;
 	
 	public float ThumbsHiResFactor=0.4f;
 	public float ThumbsLoResFactor=0.1f;
+	
+	public void saveDocAsCopy(String url) {
+		if(isDirty) {
+			if(url==null) {
+				url=path;
+			}
+			try (ParcelFileDescriptor fd = ParcelFileDescriptor.open(new File(url), ParcelFileDescriptor.MODE_READ_WRITE|ParcelFileDescriptor.MODE_CREATE)) {
+				pdfiumCore.SaveAsCopy(pdfDocument.mNativeDocPtr, fd.getFd());
+				isDirty=false;
+			} catch (IOException e) {
+				CMN.Log(e);
+			}
+		}
+	}
 	
 	
 	class PDocPage {
@@ -148,6 +164,7 @@ public class PDocument {
 					int ed=pageBreakIterator.following(charIdx);
 					int st=pageBreakIterator.previous();
 					view.setSelectionAtPage(pageIdx, st, ed);
+					CMN.Log("selWordAtPos", charIdx, allText.substring(st, ed+1)+"...");
 					return true;
 				}
 			}
@@ -197,7 +214,7 @@ public class PDocument {
 		}
 		
 		public void getCharPos(RectF pos, int index) {
-			pdfiumCore.nativeGetCharPos(pid.get(), (int)OffsetAlongScrollAxis, getHorizontalOffset()
+			pdfiumCore.nativeGetMixedLooseCharPos(pid.get(), (int)OffsetAlongScrollAxis, getHorizontalOffset()
 					, size.getWidth(), size.getHeight(), pos, tid, index, true);
 		}
 		
@@ -276,8 +293,10 @@ public class PDocument {
 				long offset1 = OffsetAlongScrollAxis;
 				int offset2 = getHorizontalOffset();
 				double width = size.getWidth(), height = size.getHeight();
+				pdfiumCore.nativeSetAnnotColor(antTmp, 0, 0, 25, 128);
 				pdfiumCore.nativeSetAnnotRect(pid.get(), antTmp, box.left-offset2, box.top-offset1, box.right-offset2, box.bottom-offset1, width, height);
 				//pdfiumCore.nativeAppendAnnotPoints(pid.get(), antTmp, box.left-offset2, box.top-offset1, box.right-offset2, box.bottom-offset1, width, height);
+				//pdfiumCore.nativeAppendAnnotPoints(pid.get(), antTmp, 0, size.getHeight()-100, 100, size.getHeight(), width, height);
 				for (RectF rI:selLineRects) {
 					pdfiumCore.nativeAppendAnnotPoints(pid.get(), antTmp, rI.left-offset2, rI.top-offset1, rI.right-offset2, rI.bottom-offset1, width, height);
 				}
@@ -308,6 +327,7 @@ public class PDocument {
 		}
 		File f = new File(path);
 		ParcelFileDescriptor pfd = ParcelFileDescriptor.open(f, ParcelFileDescriptor.MODE_READ_ONLY);
+		//ParcelFileDescriptor pfd = ParcelFileDescriptor.open(f, ParcelFileDescriptor.MODE_READ_WRITE);
 		pdfDocument = pdfiumCore.newDocument(pfd);
 		_num_entries = pdfiumCore.getPageCount(pdfDocument);
 		mPDocPages = new PDocPage[_num_entries];

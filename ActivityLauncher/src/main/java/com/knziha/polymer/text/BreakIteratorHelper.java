@@ -6,7 +6,7 @@ import android.os.Build;
 public class BreakIteratorHelper {
 	android.icu.text.BreakIterator BreakIteratorI;
 	java.text.BreakIterator BreakIteratorJ;
-	static boolean isAndroidBreakerAvailable= Build.VERSION.SDK_INT>=Build.VERSION_CODES.N;
+	final static boolean isAndroidBreakerAvailable=Build.VERSION.SDK_INT>=Build.VERSION_CODES.N;
 
 	public BreakIteratorHelper(){
 		if(isAndroidBreakerAvailable){

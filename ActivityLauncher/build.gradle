@@ -34,6 +34,7 @@ android {
         release {
             minifyEnabled false
             useProguard = false
+            jniDebuggable true
             //proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard.cfg'
             //signingConfig signingConfigs.release
         }

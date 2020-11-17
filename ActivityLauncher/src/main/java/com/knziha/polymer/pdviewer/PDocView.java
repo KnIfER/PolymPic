@@ -613,6 +613,7 @@ public class PDocView extends View {
 					}
 				}
 				page.createHighlight(box, selLineRects);
+				pdoc.isDirty=true;
 			}
 		}
 	}
@@ -4226,4 +4227,13 @@ public class PDocView extends View {
 		if(ret==0&&dm!=null) ret = dm.heightPixels;
 		return ret;
 	}
+	
+	
+	public void checkDoc() {
+		if(pdoc!=null && pdoc.isDirty)
+			pdoc.saveDocAsCopy(null);
+	}
+	
+	
+	
 }

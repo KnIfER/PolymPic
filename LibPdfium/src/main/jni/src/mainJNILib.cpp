@@ -18,6 +18,7 @@ using namespace android;
 #include <fpdf_doc.h>
 #include <fpdf_text.h>
 #include <fpdf_annot.h>
+#include <fpdf_save.h>
 #include <string>
 #include <vector>
 
@@ -50,22 +51,21 @@ struct rgb {
 };
 
 class DocumentFile {
-    private:
-    int fileFd;
-
     public:
+    int fileFd;
     FPDF_DOCUMENT pdfDocument = NULL;
     size_t fileSize;
 
     DocumentFile() { initLibraryIfNeed(); }
     ~DocumentFile();
 };
+
 DocumentFile::~DocumentFile(){
     if(pdfDocument != NULL){
         FPDF_CloseDocument(pdfDocument);
     }
 
-    destroyLibraryIfNeed();
+    //destroyLibraryIfNeed();
 }
 
 template <class string_type>
@@ -398,21 +398,20 @@ JNI_FUNC(jint, PdfiumCore, nativeCountAndGetRects)(JNI_ARGS, jlong pagePtr, jint
 
     int rectCount = FPDFText_CountRects((FPDF_TEXTPAGE)textPtr, (int)st, (int)ed);
     env->CallVoidMethod( arr, arrList_enssurecap, rectCount);
-    double left, top, right, bottom, userWidth, userHeight;
+    double left, top, right, bottom;
     int arraySize = env->CallIntMethod(arr, arrList_size);
+    int deviceX, deviceY;
     for(int i=0;i<rectCount;i++) {
         if(FPDFText_GetRect((FPDF_TEXTPAGE)textPtr, i, &left, &top, &right, &bottom)) {
-            int deviceX, deviceY;
+            FPDF_PageToDevice((FPDF_PAGE)pagePtr, 0, 0, width, height, 0, left, top, &deviceX, &deviceY);
             int width = right-left;
             int height = top-bottom;
-            FPDF_DeviceToPage((FPDF_PAGE)pagePtr, 0, 0, width, height, 0, width, 0, &userWidth, &userHeight);
-            FPDF_PageToDevice((FPDF_PAGE)pagePtr, 0, 0, userWidth, userHeight, 0, left, top, &deviceX, &deviceY);
             left=deviceX+offsetX;
             top=deviceY+offsetY;
             right=left+width;
             bottom=top+height;
             if(i>=arraySize) {
-                env->CallVoidMethod(arr
+                env->CallBooleanMethod(arr
                     , arrList_add
                     , env->NewObject(rectF, rectF_, left, top, right, bottom) );
             } else {
@@ -430,10 +429,7 @@ JNI_FUNC(void, PdfiumCore, nativeGetCharPos)(JNI_ARGS, jlong pagePtr, jint offse
     jclass rectF = env->FindClass("android/graphics/RectF");
     jmethodID rectF_ = env->GetMethodID(rectF, "<init>", "(FFFF)V");
     jmethodID rectF_set = env->GetMethodID(rectF, "set", "(FFFF)V");
-
-
-    double left, top, right, bottom, userWidth, userHeight;
-
+    double left, top, right, bottom;
     if(loose) {
         FS_RECTF res={0};
         if(!FPDFText_GetLooseCharBox((FPDF_TEXTPAGE)textPtr, idx, &res)) {
@@ -448,24 +444,44 @@ JNI_FUNC(void, PdfiumCore, nativeGetCharPos)(JNI_ARGS, jlong pagePtr, jint offse
             return;
         }
     }
-
     int deviceX, deviceY;
-
+    FPDF_PageToDevice((FPDF_PAGE)pagePtr, 0, 0, width, height, 0, left, top, &deviceX, &deviceY);
     width = right-left;
     height = top-bottom;
-    FPDF_DeviceToPage((FPDF_PAGE)pagePtr, 0, 0, width, height, 0, width, 0, &userWidth, &userHeight);
-    FPDF_PageToDevice((FPDF_PAGE)pagePtr, 0, 0, userWidth, userHeight, 0, left, top, &deviceX, &deviceY);
-
-   //FPDF_PageToDevice((FPDF_PAGE)pagePtr, 0, 0, width, height, 0, left, top, &deviceX, &deviceY);
-
-
     left=deviceX+offsetX;
     top=deviceY+offsetY;
     right=left+width;
     bottom=top+height;
-
     //env->CallVoidMethod(pt, point_set, left, top);
     env->CallVoidMethod(pt, rectF_set, left, top, right, bottom);
+}
+
+JNI_FUNC(jboolean, PdfiumCore, nativeGetMixedLooseCharPos)(JNI_ARGS, jlong pagePtr, jint offsetY, jint offsetX, jint width, jint height, jobject pt, jlong textPtr, jint idx, jboolean loose) {
+    jclass rectF = env->FindClass("android/graphics/RectF");
+    jmethodID rectF_ = env->GetMethodID(rectF, "<init>", "(FFFF)V");
+    jmethodID rectF_set = env->GetMethodID(rectF, "set", "(FFFF)V");
+    double left, top, right, bottom;
+    if(!FPDFText_GetCharBox((FPDF_TEXTPAGE)textPtr, idx, &left, &right, &bottom, &top)) {
+            return false;
+    }
+    FS_RECTF res={0};
+    if(!FPDFText_GetLooseCharBox((FPDF_TEXTPAGE)textPtr, idx, &res)) {
+        return false;
+    }
+    top=res.top;
+    bottom=res.bottom;
+    left=fmin(res.left, left);
+    right=fmax(res.right, right);
+    int deviceX, deviceY;
+    FPDF_PageToDevice((FPDF_PAGE)pagePtr, 0, 0, width, height, 0, left, top, &deviceX, &deviceY);
+    width = right-left;
+    height = top-bottom;
+    left=deviceX+offsetX;
+    top=deviceY+offsetY;
+    right=left+width;
+    bottom=top+height;
+    env->CallVoidMethod(pt, rectF_set, left, top, right, bottom);
+    return true;
 }
 
 JNI_FUNC(void, PdfiumCore, nativeClosePage)(JNI_ARGS, jlong pagePtr){ closePageInternal(pagePtr); }
@@ -866,6 +882,10 @@ JNI_FUNC(jobject, PdfiumCore, nativeGetAnnotRect)(JNI_ARGS, jlong pagePtr, jint 
     return env->NewObject(clazz, constructorID, rect.left, rect.top, rect.right, rect.bottom);
 }
 
+JNI_FUNC(void, PdfiumCore, nativeSetAnnotColor)(JNI_ARGS, jlong annotPtr, jint R, jint G, jint B, jint A) {
+    FPDFAnnot_SetColor((FPDF_ANNOTATION)annotPtr, FPDFANNOT_COLORTYPE_Color, R, G, B, A);
+}
+
 JNI_FUNC(jlong, PdfiumCore, nativeGetAnnot)(JNI_ARGS, jlong pagePtr, jint index) {
     FPDF_PAGE page = reinterpret_cast<FPDF_PAGE>(pagePtr);
     return (jlong)FPDFPage_GetAnnot(page, index);
@@ -939,6 +959,53 @@ JNI_FUNC(jobject, PdfiumCore, nativePageCoordsToDevice)(JNI_ARGS, jlong pagePtr,
     jclass clazz = env->FindClass("android/graphics/Point");
     jmethodID constructorID = env->GetMethodID(clazz, "<init>", "(II)V");
     return env->NewObject(clazz, constructorID, deviceX, deviceY);
+}
+
+// Start Save PDF
+struct PdfToFdWriter : FPDF_FILEWRITE {
+    int dstFd;
+};
+
+static bool writeAllBytes(const int fd, const void *buffer, const size_t byteCount) {
+    char *writeBuffer = static_cast<char *>(const_cast<void *>(buffer));
+    size_t remainingBytes = byteCount;
+     LOGE("fatal writeAllBytes: %d %d %d", buffer, byteCount, remainingBytes);
+    while (remainingBytes > 0) {
+        ssize_t writtenByteCount = write(fd, writeBuffer, remainingBytes);
+        if (writtenByteCount == -1) {
+            if (errno == EINTR) {
+                continue;
+            }
+            LOGE("Error writing to buffer: %d", errno);
+            return false;
+        }
+        remainingBytes -= writtenByteCount;
+        writeBuffer += writtenByteCount;
+    }
+    return true;
+}
+
+static int writeBlock(FPDF_FILEWRITE* owner, const void* buffer, unsigned long size) {
+    LOGE("fatal writeBlock: %d %d %d", buffer, size, owner);
+    const PdfToFdWriter* writer = reinterpret_cast<PdfToFdWriter*>(owner);
+    const bool success = writeAllBytes(writer->dstFd, buffer, size);
+    if (!success) {
+        LOGE("Cannot write to file descriptor. Error:%d", errno);
+        return 0;
+    }
+    return 1;
+}
+
+JNI_FUNC(void, PdfiumCore, nativeSaveAsCopy)(JNI_ARGS, jlong docPtr, jint fd) {
+    DocumentFile* docFile = (DocumentFile*)docPtr;
+    PdfToFdWriter writer;
+    writer.dstFd = fd;
+    //writer.dstFd = docFile->fileFd;
+    writer.WriteBlock = &writeBlock;
+    FPDF_BOOL success = FPDF_SaveAsCopy(docFile->pdfDocument, &writer, FPDF_INCREMENTAL); // FPDF_INCREMENTAL FPDF_NO_INCREMENTAL
+    if (!success) {
+        jniThrowExceptionFmt(env, "java/io/IOException", "cannot write to fd. Error: %d", errno);
+    }
 }
 
 }//extern C
