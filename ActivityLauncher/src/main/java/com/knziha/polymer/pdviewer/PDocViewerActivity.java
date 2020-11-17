@@ -82,6 +82,7 @@ public class PDocViewerActivity extends Toastable_Activity {
 			
 			UIData.contextMenu.setOnTouchListener(CMN.XYTouchRecorder());
 			
+			
 			UIData.wdv.setDocumentPath("/sdcard/myFolder/Gpu Pro 1.pdf");
 			//UIData.wdv.setDocumentPath("/sdcard/myFolder/YotaSpec02.pdf"); // √
 			//UIData.wdv.setDocumentPath("/sdcard/myFolder/1.pdf");

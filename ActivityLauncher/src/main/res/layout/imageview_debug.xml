@@ -31,7 +31,7 @@
 			android:textColor="#fff"
 			android:elevation="6dp"
 			android:lineSpacingExtra="5dp"
-			android:visibility="gone"
+			android:translationY="-200dp"
 			/>
 	</FrameLayout>
 </layout>
