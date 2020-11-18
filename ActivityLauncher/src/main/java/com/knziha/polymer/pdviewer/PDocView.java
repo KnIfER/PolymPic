@@ -629,6 +629,7 @@ public class PDocView extends View {
 			selStart = trimSelToMargin(pdoc.mPDocPages[selPageSt], selStart, reversed);
 			selEnd = trimSelToMargin(pdoc.mPDocPages[selPageEd], selEnd, !reversed);
 			selectionPaintView.resetSel();
+			relocateContextMenuView();
 		}
 		else if(hasAnnotSelction) {
 			annotSelPage.fetchAnnotAttachPoints(annotSelection);
@@ -1528,7 +1529,7 @@ public class PDocView extends View {
 				isDown = false;
 				isZooming=false;
 				if(shouldDrawSelection() && anim==null && !isFlinging) {
-					relocateContextMenuView();
+					postRelocateContextMenuView();
 				}
 			}
 			case MotionEvent.ACTION_POINTER_UP:{
@@ -1670,16 +1671,49 @@ public class PDocView extends View {
 		}
 	}
 	
+	Runnable relocateCMRunnable = this::relocateContextMenuView;
+	
+	public void postRelocateContextMenuView() {
+		removeCallbacks(relocateCMRunnable);
+		postDelayed(relocateCMRunnable, 280);
+	}
+	
 	public void relocateContextMenuView() {
 		if(contextView!=null && !isDown && !bSupressingUpdatCtxMenu) {
-			if(hasSelction) {
-				float top = sourceToViewY(handleLeftPos.top);
-				contextView.setTranslationY(top-contextView.getMeasuredHeight()-100);
-				contextView.setVisibility(View.VISIBLE);
-			}
-			else if(hasAnnotSelction) {
-				float top = sourceToViewY(annotSelRect.top);
-				contextView.setTranslationY(top-contextView.getMeasuredHeight()-100);
+			if(hasSelction||hasAnnotSelction) {
+				int height = contextView.getMeasuredHeight();
+				float top1, top2;
+				float lh=0;
+				if(hasSelction) {
+					lh = Math.max(handleLeftPos.height(), handleRightPos.height());
+					top1 = sourceToViewY(handleLeftPos.top);
+					top2 = sourceToViewY(handleRightPos.top);
+					if(top1>top2) {
+						float tmp = top2;
+						top2=top1;
+						top1=tmp;
+					}
+				}
+				else {
+					top1 = sourceToViewY(annotSelRect.top);
+					top2 = sourceToViewY(annotSelRect.bottom);
+				}
+				top1 += -height-lh*2*scale;
+				top2 += selectionPaintView.drawableHeight + lh*scale;
+				float top=top1;
+				if(top<0) { // 没入顶端
+					top = top2;
+					if(top+height>getHeight()) { // 溢出底部
+						float center = (top1 + top2) / 2;
+						if(center>0&&center<getHeight()) {
+							top = (getHeight()-height)/2;
+						}
+					}
+				}
+				if(true) {
+					top = Math.min(Math.max(0, top), getHeight()-height);
+				}
+				contextView.setTranslationY(top);
 				contextView.setVisibility(View.VISIBLE);
 			}
 		}

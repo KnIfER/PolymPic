@@ -214,6 +214,11 @@ public class PDocument {
 		}
 		
 		public void getCharPos(RectF pos, int index) {
+			pdfiumCore.nativeGetCharPos(pid.get(), (int)OffsetAlongScrollAxis, getHorizontalOffset()
+					, size.getWidth(), size.getHeight(), pos, tid, index, true);
+		}
+		
+		public void getCharLoosePos(RectF pos, int index) {
 			pdfiumCore.nativeGetMixedLooseCharPos(pid.get(), (int)OffsetAlongScrollAxis, getHorizontalOffset()
 					, size.getWidth(), size.getHeight(), pos, tid, index, true);
 		}

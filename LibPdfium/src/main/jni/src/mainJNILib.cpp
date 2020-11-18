@@ -468,16 +468,16 @@ JNI_FUNC(jboolean, PdfiumCore, nativeGetMixedLooseCharPos)(JNI_ARGS, jlong pageP
     if(!FPDFText_GetLooseCharBox((FPDF_TEXTPAGE)textPtr, idx, &res)) {
         return false;
     }
-    top=res.top;
-    bottom=res.bottom;
+    top=fmax(res.top, top);
+    bottom=fmin(res.bottom, bottom);
     left=fmin(res.left, left);
     right=fmax(res.right, right);
     int deviceX, deviceY;
     FPDF_PageToDevice((FPDF_PAGE)pagePtr, 0, 0, width, height, 0, left, top, &deviceX, &deviceY);
     width = right-left;
     height = top-bottom;
-    left=deviceX+offsetX;
     top=deviceY+offsetY;
+    left=deviceX+offsetX;
     right=left+width;
     bottom=top+height;
     env->CallVoidMethod(pt, rectF_set, left, top, right, bottom);

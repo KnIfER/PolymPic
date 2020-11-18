@@ -163,6 +163,7 @@ public class PDocSelection extends View {
 			}
 			page.getCharPos(pDocView.handleLeftPos, st);
 			pDocView.lineHeightLeft = pDocView.handleLeftPos.height()/2;
+			page.getCharLoosePos(pDocView.handleLeftPos, st);
 			
 			page = pDocView.pdoc.mPDocPages[pDocView.selPageEd];
 			page.prepareText();
@@ -176,9 +177,10 @@ public class PDocSelection extends View {
 					ed+=dir;
 				}
 			}
-			CMN.Log("getCharPos", page.allText.substring(ed+delta, ed+delta+1));
+			//CMN.Log("getCharPos", page.allText.substring(ed+delta, ed+delta+1));
 			page.getCharPos(pDocView.handleRightPos, ed+delta);
 			pDocView.lineHeightRight = pDocView.handleRightPos.height()/2;
+			page.getCharLoosePos(pDocView.handleRightPos, ed+delta);
 		}
 	}
 	
