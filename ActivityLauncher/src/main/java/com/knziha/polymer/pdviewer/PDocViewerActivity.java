@@ -32,6 +32,8 @@ import com.shockwave.pdfium.PdfiumCore;
 
 import java.io.IOException;
 
+import static com.knziha.polymer.BrowserActivity.GoogleTranslate;
+
 public class PDocViewerActivity extends Toastable_Activity {
 	ImageviewDebugBinding UIData;
 	private boolean hidingContextMenu;
@@ -150,6 +152,23 @@ public class PDocViewerActivity extends Toastable_Activity {
 					intent.putExtra("EXTRA_QUERY", UIData.wdv.getSelection());
 					hidingContextMenu=true;
 					startActivity(intent);
+				}
+			} break;
+			case R.id.ctx_translation:{
+				if(UIData.wdv.shouldDrawSelection()) {
+					boolean processText = true;
+					String Action=processText?Intent.ACTION_PROCESS_TEXT:Intent.ACTION_SEND;
+					String Extra=processText?Intent.EXTRA_PROCESS_TEXT:Intent.EXTRA_TEXT;
+					Intent intent = new Intent(Action);
+					intent.setType("text/plain");
+					try {
+						intent.setPackage(GoogleTranslate);
+						intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+						intent.putExtra(Extra, UIData.wdv.getSelection());
+						startActivity(intent);
+					} catch (Exception e) {
+						showT(R.string.gt_no_inst);
+					}
 				}
 			} break;
 		}
