@@ -856,7 +856,7 @@ JNI_FUNC(jboolean, PdfiumCore, nativeAppendAnnotPoints)(JNI_ARGS, jlong pagePtr,
     return (jboolean)FPDFAnnot_AppendAttachmentPoints((FPDF_ANNOTATION)annotPtr, &quadpoints);
 }
 
-JNI_FUNC(jobject, PdfiumCore, nativeGetAnnotRect)(JNI_ARGS, jlong pagePtr, jint index) {
+JNI_FUNC(jobject, PdfiumCore, nativeGetAnnotRect)(JNI_ARGS, jlong pagePtr, jint index, jint width, jint height) {
     FPDF_PAGE page = reinterpret_cast<FPDF_PAGE>(pagePtr);
     FPDF_ANNOTATION aI = FPDFPage_GetAnnot(page, index);
     FS_RECTF rect={0};
@@ -864,15 +864,11 @@ JNI_FUNC(jobject, PdfiumCore, nativeGetAnnotRect)(JNI_ARGS, jlong pagePtr, jint 
 
     double userWidth, userHeight;
     int deviceX, deviceY;
-    int width = rect.left, height = rect.top;
-    FPDF_DeviceToPage(page, 0, 0, width, height, 0, width, 0, &userWidth, &userHeight);
-    FPDF_PageToDevice(page, 0, 0, userWidth, userHeight, 0, width, height, &deviceX, &deviceY);
+    FPDF_PageToDevice(page, 0, 0, width, height, 0, width, height, &deviceX, &deviceY);
     rect.left = deviceX;
     rect.top = deviceY;
 
-    width = rect.right, height = rect.bottom;
-    FPDF_DeviceToPage(page, 0, 0, width, height, 0, width, 0, &userWidth, &userHeight);
-    FPDF_PageToDevice(page, 0, 0, userWidth, userHeight, 0, width, height, &deviceX, &deviceY);
+    FPDF_PageToDevice(page, 0, 0, height, height, 0, width, height, &deviceX, &deviceY);
     rect.right = deviceX;
     rect.bottom = deviceY;
 

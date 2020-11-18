@@ -229,7 +229,7 @@ public class PDocument {
 				annotCount = pdfiumCore.nativeCountAnnot(pid.get());
 				mAnnotRects = new ArrayList<>((int)(annotCount*1.2));
 				for (int i = 0; i < annotCount; i++) {
-					mAnnotRects.add(new AnnotShape(pdfiumCore.nativeGetAnnotRect(pid.get(), i), i));
+					mAnnotRects.add(new AnnotShape(pdfiumCore.nativeGetAnnotRect(pid.get(), i, size.getWidth(), size.getHeight()), i));
 				}
 			} else {
 				annotCount = mAnnotRects.size();
@@ -397,7 +397,7 @@ public class PDocument {
 		int w = (int) (size.getWidth()*scale);
 		int h = (int) (size.getHeight()*scale);
 		page.open();
-		CMN.Log("PageOpened::", CMN.now()-CMN.ststrt, w, h);
+		//CMN.Log("PageOpened::", CMN.now()-CMN.ststrt, w, h);
 		Bitmap OneSmallStep = bitmap;
 		boolean recreate=OneSmallStep.isRecycled();
 		if(!recreate && (w!=OneSmallStep.getWidth()||h!=OneSmallStep.getHeight())) {

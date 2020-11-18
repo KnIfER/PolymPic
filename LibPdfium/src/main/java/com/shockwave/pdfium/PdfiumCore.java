@@ -107,7 +107,7 @@ public class PdfiumCore {
 	
 	public native int nativeCountAnnot(long pagePtr);
 	
-	public native RectF nativeGetAnnotRect(long pagePtr, int index);
+	public native RectF nativeGetAnnotRect(long pagePtr, int index, int width, int height);
 	
 	public native long nativeGetAnnot(long pagePtr, int index);
 	

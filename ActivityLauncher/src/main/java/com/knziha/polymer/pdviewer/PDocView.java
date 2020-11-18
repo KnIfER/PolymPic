@@ -62,6 +62,8 @@ import com.knziha.polymer.slideshow.OverScroller;
 import com.knziha.polymer.slideshow.decoder.ImageDecoder;
 import com.knziha.polymer.slideshow.decoder.ImageRegionDecoder;
 
+import org.apache.commons.lang3.CharUtils;
+
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -563,7 +565,7 @@ public class PDocView extends View {
 				if(pageCount==0) {
 					PDocument.PDocPage page = pdoc.mPDocPages[pageStart];
 					page.prepareText();
-					return page.allText.substring(selectionPaintView.selStart, selectionPaintView.selEnd);
+					return page.allText.substring(selStart, selEnd);
 				}
 				StringBuilder sb = new StringBuilder();
 				int selCount=0;
@@ -618,8 +620,17 @@ public class PDocView extends View {
 		}
 	}
 	
+	/** Enlarge or expand text selection. <br/>
+	 *  If only a highlight annotation is selected, it will be converted to the corresponding text selection.  <br/>*/
 	public void enlargeSelection() {
-		if(hasAnnotSelction) {
+		if(hasSelction) {
+			int d=selPageEd-selPageSt;
+			boolean reversed=d<0||d==0&&selStart>selEnd;
+			selStart = trimSelToMargin(pdoc.mPDocPages[selPageSt], selStart, reversed);
+			selEnd = trimSelToMargin(pdoc.mPDocPages[selPageEd], selEnd, !reversed);
+			selectionPaintView.resetSel();
+		}
+		else if(hasAnnotSelction) {
 			annotSelPage.fetchAnnotAttachPoints(annotSelection);
 			annotSelPage.prepareText();
 			int charSt=annotSelPage.allText.length(), charEd=0;
@@ -653,6 +664,84 @@ public class PDocView extends View {
 				bSupressingUpdatCtxMenu=false;
 			}
 		}
+	}
+	
+	private int trimSelToMargin(PDocument.PDocPage page, int charIdx, boolean reversed) {
+		page.prepareText();
+		char charAt;
+		int cc=0;
+		boolean search_started=false;
+		String atext = page.allText;
+		if(reversed) {
+			while(cc<1024&&charIdx<atext.length()) {
+				charAt=atext.charAt(charIdx-1);
+				if(charAt=='\r'||charAt=='\n') {
+					if(!search_started) {
+						charIdx++;
+						continue;
+					}
+					int SST = charIdx + 1;
+					while(SST-1>0&&isEmptyChar(charAt=page.allText.charAt(SST-1))) {
+						SST--;
+					}
+					if(isParagraphSepChar(charAt)) {
+						break;
+					}
+					//charIdx=SST;
+					charIdx++;
+					//search_started=false;
+				} else {
+					if(!search_started) {
+						search_started=true;
+					}
+					charIdx++;
+				}
+				cc++;
+			}
+		} else {
+			while(cc<1024&&charIdx>0) {
+				charAt=page.allText.charAt(charIdx-1);
+				if(charAt=='\r'||charAt=='\n') {
+					if(!search_started) {
+						charIdx--;
+						continue;
+					}
+					int SST = charIdx - 1;
+					while(SST-1>0&&isEmptyChar(charAt=page.allText.charAt(SST-1))) {
+						SST--;
+					}
+					if(SST>=0&&isParagraphSepChar(charAt)) {
+						break;
+					}
+					charIdx=SST;
+					//charIdx--;
+					//search_started=false;
+				} else {
+					if(!search_started) {
+						search_started=true;
+					}
+					charIdx--;
+				}
+				cc++;
+			}
+		}
+		return charIdx;
+	}
+	
+	private boolean isEmptyChar(char charAt) {
+		return charAt<=' ';
+	}
+	
+	final static char[] paragraphSepChars = new char[]{'.', '。', '!', '！'/*, '\'', '”'*/, '?', '？'};
+	
+	private boolean isParagraphSepChar(char charAt) {
+		CMN.Log("isParagraphSepChar : "+charAt, charAt=='\r', charAt=='\n', charAt==' ');
+		for (char paragraphSepChar : paragraphSepChars) {
+			if (paragraphSepChar == charAt) {
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	private void setCenterPoint(PointF p, PointF p1, PointF p2) {

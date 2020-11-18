@@ -104,6 +104,7 @@ public class PDocSelection extends View {
 	ArrayList<RectF> magSelBucket = new ArrayList<>();
 	
 	public void resetSel() {
+		CMN.Log("resetSel", pDocView.selPageSt, pDocView.selPageEd, pDocView.selStart, pDocView.selEnd);
 		if(pDocView!=null&&pDocView.pdoc!=null&&pDocView.hasSelction) {
 			boolean b1=selPageEd<selPageSt;
 			if(b1) {
@@ -149,7 +150,8 @@ public class PDocSelection extends View {
 		page.prepareText();
 		int st=pDocView.selStart;
 		int ed=pDocView.selEnd;
-		int dir=(int) Math.signum(ed-st);
+		int dir=pDocView.selPageEd-pDocView.selPageSt;
+		dir=(int) Math.signum(dir==0?ed-st:dir);
 		if(dir!=0) {
 			String atext = page.allText;
 			int len=atext.length();
