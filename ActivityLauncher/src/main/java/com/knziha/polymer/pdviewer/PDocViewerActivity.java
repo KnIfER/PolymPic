@@ -85,10 +85,10 @@ public class PDocViewerActivity extends Toastable_Activity {
 			
 			//UIData.wdv.setDocumentPath("/sdcard/myFolder/Gpu Pro 1.pdf");
 			//UIData.wdv.setDocumentPath("/sdcard/myFolder/YotaSpec02.pdf"); // √
-			//UIData.wdv.setDocumentPath("/sdcard/myFolder/1.pdf");
+			UIData.wdv.setDocumentPath("/sdcard/myFolder/1.pdf");
 			//UIData.wdv.setDocumentPath("/sdcard/myFolder/sample.pdf");
 			//UIData.wdv.setDocumentPath("/sdcard/myFolder/sig-notes.pdf");
-			UIData.wdv.setDocumentPath("/sdcard/myFolder/sig-notes-new-txt.pdf");
+			//UIData.wdv.setDocumentPath("/sdcard/myFolder/sig-notes-new-txt.pdf");
 			
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -122,7 +122,7 @@ public class PDocViewerActivity extends Toastable_Activity {
 	public void OnMenuClicked(MenuItem item) {
 		switch (item.getItemId()) {
 			case R.id.ctx_copy:{
-				String text = UIData.wdv.getSelection();
+				String text = getSelection();
 				if(text!=null) {
 					ClipboardManager clipboard = (ClipboardManager) getSystemService(Activity.CLIPBOARD_SERVICE);
 					clipboard.setPrimaryClip(ClipData.newPlainText("POLYM", text));
@@ -169,7 +169,7 @@ public class PDocViewerActivity extends Toastable_Activity {
 	
 	private String getSelection() {
 		String ret = UIData.wdv.getSelection();
-		if(true) {
+		if(true && ret!=null) {
 			ret = ret.replace("\r\n", " ");
 		}
 		return ret;

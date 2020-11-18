@@ -861,16 +861,15 @@ JNI_FUNC(jobject, PdfiumCore, nativeGetAnnotRect)(JNI_ARGS, jlong pagePtr, jint 
     FPDF_ANNOTATION aI = FPDFPage_GetAnnot(page, index);
     FS_RECTF rect={0};
     FPDFAnnot_GetRect(aI, &rect);
-
-    double userWidth, userHeight;
     int deviceX, deviceY;
-    FPDF_PageToDevice(page, 0, 0, width, height, 0, width, height, &deviceX, &deviceY);
+    FPDF_PageToDevice(page, 0, 0, width, height, 0, rect.left, rect.top, &deviceX, &deviceY);
+
+    width = rect.right-rect.left;
+    height = rect.top-rect.bottom;
     rect.left = deviceX;
     rect.top = deviceY;
-
-    FPDF_PageToDevice(page, 0, 0, height, height, 0, width, height, &deviceX, &deviceY);
-    rect.right = deviceX;
-    rect.bottom = deviceY;
+    rect.right = rect.left+width;
+    rect.bottom = rect.top+height;
 
     jclass clazz = env->FindClass("android/graphics/RectF");
     jmethodID constructorID = env->GetMethodID(clazz, "<init>", "(FFFF)V");
@@ -998,7 +997,7 @@ JNI_FUNC(void, PdfiumCore, nativeSaveAsCopy)(JNI_ARGS, jlong docPtr, jint fd) {
     writer.dstFd = fd;
     //writer.dstFd = docFile->fileFd;
     writer.WriteBlock = &writeBlock;
-    FPDF_BOOL success = FPDF_SaveAsCopy(docFile->pdfDocument, &writer, FPDF_INCREMENTAL); // FPDF_INCREMENTAL FPDF_NO_INCREMENTAL
+    FPDF_BOOL success = FPDF_SaveAsCopy(docFile->pdfDocument, &writer, FPDF_NO_INCREMENTAL); // FPDF_INCREMENTAL FPDF_NO_INCREMENTAL
     if (!success) {
         jniThrowExceptionFmt(env, "java/io/IOException", "cannot write to fd. Error: %d", errno);
     }

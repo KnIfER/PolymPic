@@ -62,8 +62,6 @@ import com.knziha.polymer.slideshow.OverScroller;
 import com.knziha.polymer.slideshow.decoder.ImageDecoder;
 import com.knziha.polymer.slideshow.decoder.ImageRegionDecoder;
 
-import org.apache.commons.lang3.CharUtils;
-
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -343,7 +341,7 @@ public class PDocView extends View {
 	int selPageEd;
 	int selStart;
 	int selEnd;
-	boolean hasSelction;
+	boolean hasSelection;
 	boolean hasAnnotSelction;
 	
 	PDocument.PDocPage annotSelPage;
@@ -365,6 +363,8 @@ public class PDocView extends View {
 	PointF sCursorPos = new PointF();
 	private View contextView;
 	private boolean bSupressingUpdatCtxMenu;
+	private int selAnnotSt;
+	private int selAnnotEd;
 	
 	public void dragHandle() {
 		if(draggingHandle!=null) {
@@ -502,7 +502,7 @@ public class PDocView extends View {
 		selPageEd=pageIdx;
 		selStart=st;
 		selEnd=ed;
-		hasSelction=true;
+		hasSelection =true;
 		selectionPaintView.resetSel();
 	}
 	
@@ -516,22 +516,22 @@ public class PDocView extends View {
 	}
 	
 	public boolean hasSelection() {
-		return hasSelction;
+		return hasSelection;
 	}
 	
 	public boolean shouldDrawSelection() {
-		return hasSelction||hasAnnotSelction;
+		return hasSelection ||hasAnnotSelction;
 	}
 	
 	public void clearSelection() {
-		hasSelction=false;
+		hasSelection =false;
 		hasAnnotSelction=false;
 		redrawSel();
 		hideContextMenuView();
 	}
 	
 	public void setAnnotSelection(PDocument.PDocPage page, PDocument.AnnotShape annot) {
-		if(hasSelction) {
+		if(hasSelection) {
 			clearSelection();
 		}
 		annotSelPage = page;
@@ -558,29 +558,36 @@ public class PDocView extends View {
 	}
 	
 	public String getSelection() {
-		if(hasSelction && selectionPaintView!=null) {
+		if(shouldDrawSelection() && selectionPaintView!=null) {
 			try {
-				int pageStart = selectionPaintView.selPageSt;
-				int pageCount = selectionPaintView.selPageEd-pageStart;
-				if(pageCount==0) {
-					PDocument.PDocPage page = pdoc.mPDocPages[pageStart];
-					page.prepareText();
-					return page.allText.substring(selStart, selEnd);
+				if(hasSelection) {
+					int pageStart = selectionPaintView.selPageSt;
+					int pageCount = selectionPaintView.selPageEd-pageStart;
+					if(pageCount==0) {
+						PDocument.PDocPage page = pdoc.mPDocPages[pageStart];
+						page.prepareText();
+						return page.allText.substring(selStart, selEnd);
+					}
+					StringBuilder sb = new StringBuilder();
+					int selCount=0;
+					for (int i = 0; i <= pageCount; i++) {
+						PDocument.PDocPage page = pdoc.mPDocPages[pageStart+i];
+						page.prepareText();
+						int len = page.allText.length();
+						selCount+=i==0?len-selStart:i==pageCount?selEnd:len;
+					}
+					sb.ensureCapacity(selCount+64);
+					for (int i = 0; i <= pageCount; i++) {
+						PDocument.PDocPage page = pdoc.mPDocPages[pageStart+i];
+						sb.append(page.allText.substring(i==0?selStart:0, i==pageCount?selEnd:page.allText.length()));
+					}
+					return sb.toString();
+				} else {
+					expandAnnotToTextSelection();
+					if(annotSelectionValid()) {
+						return annotSelPage.allText.substring(selAnnotSt, selAnnotEd);
+					}
 				}
-				StringBuilder sb = new StringBuilder();
-				int selCount=0;
-				for (int i = 0; i <= pageCount; i++) {
-					PDocument.PDocPage page = pdoc.mPDocPages[pageStart+i];
-					page.prepareText();
-					int len = page.allText.length();
-					selCount+=i==0?len-selStart:i==pageCount?selEnd:len;
-				}
-				sb.ensureCapacity(selCount+64);
-				for (int i = 0; i <= pageCount; i++) {
-					PDocument.PDocPage page = pdoc.mPDocPages[pageStart+i];
-					sb.append(page.allText.substring(i==0?selStart:0, i==pageCount?selEnd:page.allText.length()));
-				}
-				return sb.toString();
 			} catch (Exception e) {
 				CMN.Log(e);
 			}
@@ -589,7 +596,7 @@ public class PDocView extends View {
 	}
 	
 	public void highlightSelection() {
-		if(hasSelction && selPageSt==selPageEd && selectionPaintView!=null) {
+		if(hasSelection && selPageSt==selPageEd && selectionPaintView!=null) {
 			ArrayList<RectF> selRects = selectionPaintView.rectPool.get(0);
 			PDocument.PDocPage page = pdoc.mPDocPages[selPageSt];
 			if(selRects.size()>0) { //sanity check
@@ -623,7 +630,7 @@ public class PDocView extends View {
 	/** Enlarge or expand text selection. <br/>
 	 *  If only a highlight annotation is selected, it will be converted to the corresponding text selection.  <br/>*/
 	public void enlargeSelection() {
-		if(hasSelction) {
+		if(hasSelection) {
 			int d=selPageEd-selPageSt;
 			boolean reversed=d<0||d==0&&selStart>selEnd;
 			selStart = trimSelToMargin(pdoc.mPDocPages[selPageSt], selStart, reversed);
@@ -632,38 +639,47 @@ public class PDocView extends View {
 			relocateContextMenuView();
 		}
 		else if(hasAnnotSelction) {
-			annotSelPage.fetchAnnotAttachPoints(annotSelection);
-			annotSelPage.prepareText();
-			int charSt=annotSelPage.allText.length(), charEd=0;
-			int len=annotSelection.attachPts.length;
-			if(len>0) {
-				PointF p = new PointF();
-				int charIdx;
-				for (int i = 0; i < len; i++) {
-					PDocument.QuadShape qI = annotSelection.attachPts[i];
-					setCenterPoint(p, qI.p1, qI.p3);
-					charIdx = annotSelPage.getCharIdxAtPos(this, p.x, p.y);
-					if(charIdx>=0) {
-						charSt = Math.min(charSt, charIdx);
-					}
-					setCenterPoint(p, qI.p2, qI.p4);
-					charIdx = annotSelPage.getCharIdxAtPos(this, p.x, p.y);
-					if(charIdx>=0) {
-						charEd = Math.max(charEd, charIdx+1);
-					}
-				}
-			} else {
-				RectF rect = annotSelection.box;
-				charSt = annotSelPage.getCharIdxAtPos(this, rect.left, rect.top);
-				charEd = annotSelPage.getCharIdxAtPos(this, rect.right, rect.bottom);
-			}
+			expandAnnotToTextSelection();
 			//CMN.Log("enlargeSelection", charSt, charEd);
-			if(charSt >= 0 && charSt < charEd) {
+			if(annotSelectionValid()) {
 				bSupressingUpdatCtxMenu=true;
 				clearSelection();
-				setSelectionAtPage(annotSelPage.pageIdx, charSt, charEd);
+				setSelectionAtPage(annotSelPage.pageIdx, selAnnotSt, selAnnotEd);
 				bSupressingUpdatCtxMenu=false;
 			}
+		}
+	}
+	
+	private boolean annotSelectionValid() {
+		return selAnnotSt >= 0 && selAnnotSt < selAnnotEd;
+	}
+	
+	private void expandAnnotToTextSelection() {
+		annotSelPage.fetchAnnotAttachPoints(annotSelection);
+		annotSelPage.prepareText();
+		selAnnotSt=annotSelPage.allText.length();
+		selAnnotEd=0;
+		int len=annotSelection.attachPts.length;
+		if(len>0) {
+			PointF p = new PointF();
+			int charIdx;
+			for (int i = 0; i < len; i++) {
+				PDocument.QuadShape qI = annotSelection.attachPts[i];
+				setCenterPoint(p, qI.p1, qI.p3);
+				charIdx = annotSelPage.getCharIdxAtPos(this, p.x, p.y);
+				if(charIdx>=0) {
+					selAnnotSt = Math.min(selAnnotSt, charIdx);
+				}
+				setCenterPoint(p, qI.p2, qI.p4);
+				charIdx = annotSelPage.getCharIdxAtPos(this, p.x, p.y);
+				if(charIdx>=0) {
+					selAnnotEd = Math.max(selAnnotEd, charIdx+1);
+				}
+			}
+		} else {
+			RectF rect = annotSelection.box;
+			selAnnotSt = annotSelPage.getCharIdxAtPos(this, rect.left, rect.top);
+			selAnnotEd = annotSelPage.getCharIdxAtPos(this, rect.right, rect.bottom);
 		}
 	}
 	
@@ -1170,7 +1186,7 @@ public class PDocView extends View {
 				if(shouldDrawSelection()) {
 					hideContextMenuView();
 				}
-				if(hasSelction) {
+				if(hasSelection) {
 					if (handleLeft.getBounds().contains((int) orgX, (int) orgY)) {
 						startInDrag = true;
 						draggingHandle = handleLeft;
@@ -1686,11 +1702,11 @@ public class PDocView extends View {
 	
 	public void relocateContextMenuView() {
 		if(contextView!=null && !isDown && !bSupressingUpdatCtxMenu) {
-			if(hasSelction||hasAnnotSelction) {
+			if(hasSelection ||hasAnnotSelction) {
 				int height = contextView.getMeasuredHeight();
 				float top1, top2;
 				float lh=0;
-				if(hasSelction) {
+				if(hasSelection) {
 					lh = Math.max(handleLeftPos.height(), handleRightPos.height());
 					top1 = sourceToViewY(handleLeftPos.top);
 					top2 = sourceToViewY(handleRightPos.top);

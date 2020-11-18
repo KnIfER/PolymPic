@@ -3,12 +3,10 @@ package com.knziha.polymer.pdviewer;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PointF;
-import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -105,7 +103,7 @@ public class PDocSelection extends View {
 	
 	public void resetSel() {
 		CMN.Log("resetSel", pDocView.selPageSt, pDocView.selPageEd, pDocView.selStart, pDocView.selEnd);
-		if(pDocView!=null&&pDocView.pdoc!=null&&pDocView.hasSelction) {
+		if(pDocView!=null&&pDocView.pdoc!=null&&pDocView.hasSelection) {
 			boolean b1=selPageEd<selPageSt;
 			if(b1) {
 				selPageEd = pDocView.selPageSt;
@@ -187,7 +185,7 @@ public class PDocSelection extends View {
 	@Override
 	protected void onDraw(Canvas canvas) {
 		if(pDocView!=null)
-		if(pDocView.hasSelction) {
+		if(pDocView.hasSelection) {
 			RectF VR = tmpPosRct;
 			Matrix matrix = pDocView.matrix;
 			

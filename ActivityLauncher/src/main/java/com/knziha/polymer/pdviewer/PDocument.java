@@ -306,6 +306,7 @@ public class PDocument {
 					pdfiumCore.nativeAppendAnnotPoints(pid.get(), antTmp, rI.left-offset2, rI.top-offset1, rI.right-offset2, rI.bottom-offset1, width, height);
 				}
 				pdfiumCore.nativeCloseAnnot(antTmp);
+				//mAnnotRects=null;
 			}
 		}
 
