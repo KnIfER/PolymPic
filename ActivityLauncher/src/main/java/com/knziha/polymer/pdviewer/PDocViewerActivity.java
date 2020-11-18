@@ -1,17 +1,14 @@
 package com.knziha.polymer.pdviewer;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.Spannable;
-import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.TextPaint;
 import android.text.style.ClickableSpan;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
@@ -26,11 +23,7 @@ import com.knziha.polymer.Toastable_Activity;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.WeakReferenceHelper;
 import com.knziha.polymer.databinding.ImageviewDebugBinding;
-import com.knziha.polymer.text.BreakIteratorHelper;
 import com.knziha.polymer.widgets.AppIconsAdapter;
-import com.shockwave.pdfium.PdfiumCore;
-
-import java.io.IOException;
 
 import static com.knziha.polymer.BrowserActivity.GoogleTranslate;
 
@@ -144,12 +137,12 @@ public class PDocViewerActivity extends Toastable_Activity {
 				UIData.wdv.enlargeSelection();
 			} break;
 			case R.id.ctx_share:{
-				shareUrlOrText(UIData.wdv.getSelection());
+				shareUrlOrText(getSelection());
 			} break;
 			case R.id.ctx_dictionay:{
 				if(UIData.wdv.shouldDrawSelection()) {
 					Intent intent = new Intent("colordict.intent.action.SEARCH");
-					intent.putExtra("EXTRA_QUERY", UIData.wdv.getSelection());
+					intent.putExtra("EXTRA_QUERY", getSelection());
 					hidingContextMenu=true;
 					startActivity(intent);
 				}
@@ -164,7 +157,7 @@ public class PDocViewerActivity extends Toastable_Activity {
 					try {
 						intent.setPackage(GoogleTranslate);
 						intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-						intent.putExtra(Extra, UIData.wdv.getSelection());
+						intent.putExtra(Extra, getSelection());
 						startActivity(intent);
 					} catch (Exception e) {
 						showT(R.string.gt_no_inst);
@@ -172,6 +165,14 @@ public class PDocViewerActivity extends Toastable_Activity {
 				}
 			} break;
 		}
+	}
+	
+	private String getSelection() {
+		String ret = UIData.wdv.getSelection();
+		if(true) {
+			ret = ret.replace("\r\n", " ");
+		}
+		return ret;
 	}
 	
 	private void shareUrlOrText(String selection) {
