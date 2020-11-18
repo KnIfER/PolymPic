@@ -19,11 +19,14 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.view.menu.MenuBuilder;
 import androidx.databinding.DataBindingUtil;
 
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.knziha.polymer.R;
 import com.knziha.polymer.Toastable_Activity;
 import com.knziha.polymer.Utils.CMN;
+import com.knziha.polymer.WeakReferenceHelper;
 import com.knziha.polymer.databinding.ImageviewDebugBinding;
 import com.knziha.polymer.text.BreakIteratorHelper;
+import com.knziha.polymer.widgets.AppIconsAdapter;
 import com.shockwave.pdfium.PdfiumCore;
 
 import java.io.IOException;
@@ -124,7 +127,23 @@ public class PDocViewerActivity extends Toastable_Activity {
 			case R.id.ctx_enlarge:{
 				UIData.wdv.enlargeSelection();
 			} break;
+			case R.id.ctx_share:{
+				shareUrlOrText(UIData.wdv.getSelection());
+			} break;
 		}
 	}
 	
+	private void shareUrlOrText(String selection) {
+		//CMN.Log("menu_icon6menu_icon6");
+		//CMN.rt("分享链接……");
+		int id = WeakReferenceHelper.share_dialog;
+		BottomSheetDialog dlg = (BottomSheetDialog) getReferencedObject(id);
+		if(dlg==null) {
+			putReferencedObject(id, dlg=new AppIconsAdapter(this).shareDialog);
+		}
+		//CMN.pt("新建耗时：");
+		AppIconsAdapter shareAdapter = (AppIconsAdapter) dlg.tag;
+		shareAdapter.pullAvailableApps(this, null, selection);
+		//CMN.pt("拉取耗时：");
+	}
 }

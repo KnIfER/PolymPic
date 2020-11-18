@@ -854,7 +854,7 @@ public class PDocView extends View {
 			@Override
 			public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
 				onFlingDetected =true;
-				if(isQuickScaling|| scale < minScale() || scale>maxScale){
+				if(isQuickScaling||scale < minScale() || scale>maxScale || draggingHandle!=null){
 					return true;
 				}
 				//if(false)

@@ -191,7 +191,6 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	private PopupWindow polypopup;
 	private View polypopupview;
 	private boolean polysearching;
-	private WeakReference[] WeakReferencePool = new WeakReference[WeakReferenceHelper.poolSize];
 	private ColorDrawable AppWhiteDrawable;
 	private Drawable frame_web;
 	private int mStatusBarH;
@@ -2748,17 +2747,6 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		((TextView)views[0]).setText(url);
 		views[2]=url;
 		bottomPlaylist.show();
-	}
-	
-	private Object getReferencedObject(int id) {
-		if(WeakReferencePool[id] == null) {
-			return null;
-		}
-		return WeakReferencePool[id].get();
-	}
-	
-	private void putReferencedObject(int id, Object object) {
-		WeakReferencePool[id] = new WeakReference(object);
 	}
 	
 	//longclick

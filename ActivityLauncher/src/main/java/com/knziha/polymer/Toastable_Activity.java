@@ -35,8 +35,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.GlobalOptions;
 import androidx.appcompat.widget.Toolbar;
 
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.Options;
+import com.knziha.polymer.widgets.AppIconsAdapter;
 import com.knziha.polymer.widgets.EditTextmy;
 import com.knziha.polymer.widgets.SimpleTextNotifier;
 import com.knziha.polymer.widgets.Utils;
@@ -50,6 +52,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.lang.ref.WeakReference;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -96,6 +99,8 @@ public class Toastable_Activity extends AppCompatActivity {
 	public Configuration mConfiguration;
 	boolean isDarkStamp;
 	ViewConfiguration ViewConfigDefault;
+	
+	protected WeakReference[] WeakReferencePool = new WeakReference[WeakReferenceHelper.poolSize];
 	
 	static class BaseHandler extends Handler {
 		float animator = 0.1f;
@@ -540,5 +545,15 @@ public class Toastable_Activity extends AppCompatActivity {
 			targetView.setLayoutParams(lp);
 		}
 	}
-
+	
+	protected Object getReferencedObject(int id) {
+		if(WeakReferencePool[id] == null) {
+			return null;
+		}
+		return WeakReferencePool[id].get();
+	}
+	
+	protected void putReferencedObject(int id, Object object) {
+		WeakReferencePool[id] = new WeakReference(object);
+	}
 }
