@@ -593,21 +593,21 @@ public class PDocView extends View {
 			ArrayList<RectF> selRects = selectionPaintView.rectPool.get(0);
 			PDocument.PDocPage page = pdoc.mPDocPages[selPageSt];
 			if(selRects.size()>0) { //sanity check
-				ArrayList<RectF> selLineRects = new ArrayList<>(selRects);
+				ArrayList<RectF> selLineRects = new ArrayList<>(selRects.size());
 				RectF box = new RectF(selRects.get(0));
 				RectF currentLineRect=new RectF(box);
 				selLineRects.add(currentLineRect);
 				for(RectF rI:selRects) {
-					CMN.Log("RectF rI:selRects", rI);
+					//CMN.Log("RectF rI:selRects", rI);
 					box.left = Math.min(box.left, rI.left);
 					box.right = Math.max(box.right, rI.right);
 					box.top = Math.min(box.top, rI.top);
 					box.bottom = Math.max(box.bottom, rI.bottom);
 					if(Math.abs((currentLineRect.top+currentLineRect.bottom)-(rI.top+rI.bottom))<currentLineRect.bottom-currentLineRect.top) {
-						currentLineRect.left = Math.min(box.left, rI.left);
-						currentLineRect.right = Math.max(box.right, rI.right);
-						currentLineRect.top = Math.min(box.top, rI.top);
-						currentLineRect.bottom = Math.max(box.bottom, rI.bottom);
+						currentLineRect.left = Math.min(currentLineRect.left, rI.left);
+						currentLineRect.right = Math.max(currentLineRect.right, rI.right);
+						currentLineRect.top = Math.min(currentLineRect.top, rI.top);
+						currentLineRect.bottom = Math.max(currentLineRect.bottom, rI.bottom);
 					} else {
 						currentLineRect=new RectF();
 						currentLineRect.set(rI);

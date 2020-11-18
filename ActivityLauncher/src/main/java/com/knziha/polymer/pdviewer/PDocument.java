@@ -298,7 +298,7 @@ public class PDocument {
 				long offset1 = OffsetAlongScrollAxis;
 				int offset2 = getHorizontalOffset();
 				double width = size.getWidth(), height = size.getHeight();
-				pdfiumCore.nativeSetAnnotColor(antTmp, 0, 0, 25, 128);
+				//pdfiumCore.nativeSetAnnotColor(antTmp, 0, 0, 25, 128);
 				pdfiumCore.nativeSetAnnotRect(pid.get(), antTmp, box.left-offset2, box.top-offset1, box.right-offset2, box.bottom-offset1, width, height);
 				//pdfiumCore.nativeAppendAnnotPoints(pid.get(), antTmp, box.left-offset2, box.top-offset1, box.right-offset2, box.bottom-offset1, width, height);
 				//pdfiumCore.nativeAppendAnnotPoints(pid.get(), antTmp, 0, size.getHeight()-100, 100, size.getHeight(), width, height);
