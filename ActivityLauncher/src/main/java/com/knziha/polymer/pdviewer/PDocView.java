@@ -1665,6 +1665,12 @@ public class PDocView extends View {
 	}
 	
 	
+	public void showContextMenuView() {
+		if(contextView!=null&&!bSupressingUpdatCtxMenu) {
+			contextView.setVisibility(View.VISIBLE);
+		}
+	}
+	
 	public void hideContextMenuView() {
 		if(contextView!=null&&!bSupressingUpdatCtxMenu) {
 			contextView.setVisibility(View.GONE);

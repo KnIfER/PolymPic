@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.ClipData;
 import android.content.ClipboardManager;
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.Spannable;
 import android.text.SpannableString;
@@ -33,6 +34,7 @@ import java.io.IOException;
 
 public class PDocViewerActivity extends Toastable_Activity {
 	ImageviewDebugBinding UIData;
+	private boolean hidingContextMenu;
 	
 	@Override
 	public void onBackPressed() {
@@ -99,9 +101,21 @@ public class PDocViewerActivity extends Toastable_Activity {
 	}
 	
 	@Override
+	protected void onResume() {
+		super.onResume();
+		if(hidingContextMenu) {
+			UIData.wdv.showContextMenuView();
+			hidingContextMenu=false;
+		}
+	}
+	
+	@Override
 	protected void onPause() {
 		super.onPause();
 		UIData.wdv.checkDoc();
+		if(hidingContextMenu) {
+			UIData.wdv.hideContextMenuView();
+		}
 	}
 	
 	@Override
@@ -129,6 +143,14 @@ public class PDocViewerActivity extends Toastable_Activity {
 			} break;
 			case R.id.ctx_share:{
 				shareUrlOrText(UIData.wdv.getSelection());
+			} break;
+			case R.id.ctx_dictionay:{
+				if(UIData.wdv.shouldDrawSelection()) {
+					Intent intent = new Intent("colordict.intent.action.SEARCH");
+					intent.putExtra("EXTRA_QUERY", UIData.wdv.getSelection());
+					hidingContextMenu=true;
+					startActivity(intent);
+				}
 			} break;
 		}
 	}
