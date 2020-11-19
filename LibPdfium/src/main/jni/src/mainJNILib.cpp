@@ -282,6 +282,7 @@ JNI_FUNC(jint, PdfiumCore, nativeGetPageCount)(JNI_ARGS, jlong documentPtr){
 
 JNI_FUNC(void, PdfiumCore, nativeCloseDocument)(JNI_ARGS, jlong documentPtr){
     DocumentFile *doc = reinterpret_cast<DocumentFile*>(documentPtr);
+    FPDF_CloseDocument((FPDF_DOCUMENT)doc->pdfDocument);
     delete doc;
 }
 
@@ -484,7 +485,13 @@ JNI_FUNC(jboolean, PdfiumCore, nativeGetMixedLooseCharPos)(JNI_ARGS, jlong pageP
     return true;
 }
 
-JNI_FUNC(void, PdfiumCore, nativeClosePage)(JNI_ARGS, jlong pagePtr){ closePageInternal(pagePtr); }
+//JNI_FUNC(void, PdfiumCore, nativeClosePage)(JNI_ARGS, jlong pagePtr){
+//    closePageInternal(pagePtr);
+//}
+
+JNI_FUNC(void, PdfiumCore, nativeClosePage)(JNI_ARGS, jlong pagePtr){
+    FPDF_ClosePage((FPDF_PAGE)pagePtr);
+}
 
 JNI_FUNC(void, PdfiumCore, nativeClosePages)(JNI_ARGS, jlongArray pagesPtr){
     int length = (int)(env -> GetArrayLength(pagesPtr));
@@ -494,6 +501,12 @@ JNI_FUNC(void, PdfiumCore, nativeClosePages)(JNI_ARGS, jlongArray pagesPtr){
     for(i = 0; i < length; i++){ closePageInternal(pages[i]); }
 }
 
+JNI_FUNC(void, PdfiumCore, nativeClosePageAndText)(JNI_ARGS, jlong pagePtr, jlong textPtr){
+    FPDF_ClosePage((FPDF_PAGE)pagePtr);
+    if(textPtr) {
+        FPDFText_ClosePage((FPDF_TEXTPAGE)textPtr);
+    }
+}
 JNI_FUNC(jint, PdfiumCore, nativeGetPageWidthPixel)(JNI_ARGS, jlong pagePtr, jint dpi){
     FPDF_PAGE page = reinterpret_cast<FPDF_PAGE>(pagePtr);
     return (jint)(FPDF_GetPageWidth(page) * dpi / 72);
@@ -944,18 +957,6 @@ JNI_FUNC(jobject, PdfiumCore, nativeGetLinkRect)(JNI_ARGS, jlong linkPtr) {
     return env->NewObject(clazz, constructorID, fsRectF.left, fsRectF.top, fsRectF.right, fsRectF.bottom);
 }
 
-JNI_FUNC(jobject, PdfiumCore, nativePageCoordsToDevice)(JNI_ARGS, jlong pagePtr, jint startX, jint startY, jint sizeX,
-                                            jint sizeY, jint rotate, jdouble pageX, jdouble pageY) {
-    FPDF_PAGE page = reinterpret_cast<FPDF_PAGE>(pagePtr);
-    int deviceX, deviceY;
-
-    FPDF_PageToDevice(page, startX, startY, sizeX, sizeY, rotate, pageX, pageY, &deviceX, &deviceY);
-
-    jclass clazz = env->FindClass("android/graphics/Point");
-    jmethodID constructorID = env->GetMethodID(clazz, "<init>", "(II)V");
-    return env->NewObject(clazz, constructorID, deviceX, deviceY);
-}
-
 // Start Save PDF
 struct PdfToFdWriter : FPDF_FILEWRITE {
     int dstFd;
@@ -991,13 +992,13 @@ static int writeBlock(FPDF_FILEWRITE* owner, const void* buffer, unsigned long s
     return 1;
 }
 
-JNI_FUNC(void, PdfiumCore, nativeSaveAsCopy)(JNI_ARGS, jlong docPtr, jint fd) {
+JNI_FUNC(void, PdfiumCore, nativeSaveAsCopy)(JNI_ARGS, jlong docPtr, jint fd, jboolean incremental) {
     DocumentFile* docFile = (DocumentFile*)docPtr;
     PdfToFdWriter writer;
     writer.dstFd = fd;
     //writer.dstFd = docFile->fileFd;
     writer.WriteBlock = &writeBlock;
-    FPDF_BOOL success = FPDF_SaveAsCopy(docFile->pdfDocument, &writer, FPDF_NO_INCREMENTAL); // FPDF_INCREMENTAL FPDF_NO_INCREMENTAL
+    FPDF_BOOL success = FPDF_SaveAsCopy(docFile->pdfDocument, &writer, incremental?FPDF_INCREMENTAL:FPDF_NO_INCREMENTAL); // FPDF_INCREMENTAL FPDF_NO_INCREMENTAL
     if (!success) {
         jniThrowExceptionFmt(env, "java/io/IOException", "cannot write to fd. Error: %d", errno);
     }

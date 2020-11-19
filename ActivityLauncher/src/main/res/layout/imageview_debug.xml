@@ -33,5 +33,13 @@
 			android:lineSpacingExtra="5dp"
 			android:translationY="-200dp"
 			/>
+
+		<ProgressBar
+			android:id="@+id/main_progress_bar"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_gravity="center_vertical|center_horizontal"
+			/>
+
 	</FrameLayout>
 </layout>

@@ -1,5 +1,7 @@
 package com.knziha.polymer.pdviewer;
 
+import android.animation.Animator;
+import android.animation.ObjectAnimator;
 import android.app.Activity;
 import android.content.ClipData;
 import android.content.ClipboardManager;
@@ -11,6 +13,9 @@ import android.text.TextPaint;
 import android.text.style.ClickableSpan;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -21,6 +26,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.knziha.polymer.R;
 import com.knziha.polymer.Toastable_Activity;
 import com.knziha.polymer.Utils.CMN;
+import com.knziha.polymer.Utils.Options;
 import com.knziha.polymer.WeakReferenceHelper;
 import com.knziha.polymer.databinding.ImageviewDebugBinding;
 import com.knziha.polymer.widgets.AppIconsAdapter;
@@ -43,7 +49,18 @@ public class PDocViewerActivity extends Toastable_Activity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		
+		Window win = getWindow();
+		//getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN|WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
+		//getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN|WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
+		win.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN|WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
+		requestWindowFeature(Window.FEATURE_NO_TITLE);
+		
+		boolean transit = Options.getTransitSplashScreen();
+		if(!transit) setTheme(R.style.AppThemeRaw);
+		
 		UIData = DataBindingUtil.setContentView(this, R.layout.imageview_debug);
+		root=UIData.root;
 		
 		try {
 			UIData.wdv.dm=dm;
@@ -53,7 +70,13 @@ public class PDocViewerActivity extends Toastable_Activity {
 			
 			UIData.wdv.a=this;
 			
+			
 			UIData.wdv.setContextMenuView(UIData.contextMenu);
+			
+			if(transit){
+				//root.setAlpha(0);
+				closeSplashScreen();
+			}
 			
 			UIData.wdv.setSelectionPaintView(UIData.sv);
 			
@@ -85,14 +108,45 @@ public class PDocViewerActivity extends Toastable_Activity {
 			
 			//UIData.wdv.setDocumentPath("/sdcard/myFolder/Gpu Pro 1.pdf");
 			//UIData.wdv.setDocumentPath("/sdcard/myFolder/YotaSpec02.pdf"); // √
-			UIData.wdv.setDocumentPath("/sdcard/myFolder/1.pdf");
+			//UIData.wdv.setDocumentPath("/sdcard/myFolder/1.pdf");
 			//UIData.wdv.setDocumentPath("/sdcard/myFolder/sample.pdf");
 			//UIData.wdv.setDocumentPath("/sdcard/myFolder/sig-notes.pdf");
 			//UIData.wdv.setDocumentPath("/sdcard/myFolder/sig-notes-new-txt.pdf");
 			
+			//if(transit){
+			//	UIData.wdv.setImageReadyListener(() -> {
+			//		root.post(this::closeSplashScreen);
+			//		UIData.wdv.setImageReadyListener(null);
+			//	});
+			//}
+			
+			UIData.wdv.setImageReadyListener(() -> {
+				root.post(() -> UIData.mainProgressBar.setVisibility(View.GONE));
+				UIData.wdv.setImageReadyListener(null);
+			});
+			
+			UIData.wdv.setDocumentPath("/sdcard/myFolder/sig-notes-t.pdf");
+			//UIData.wdv.setDocumentPath("/sdcard/myFolder/sig-notes-new-txt-page0.pdf");
+			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+	
+	private void closeSplashScreen() {
+		root.setAlpha(0);
+		ObjectAnimator fadeInContents = ObjectAnimator.ofFloat(root, "alpha", 0, 1);
+		fadeInContents.setInterpolator(new AccelerateDecelerateInterpolator());
+		fadeInContents.setDuration(350);
+		fadeInContents.addListener(new Animator.AnimatorListener() {
+			@Override public void onAnimationStart(Animator animation) { }
+			@Override public void onAnimationEnd(Animator animation) {
+				getWindow().setBackgroundDrawable(null);
+			}
+			@Override public void onAnimationCancel(Animator animation) { }
+			@Override public void onAnimationRepeat(Animator animation) { }
+		});
+		root.post(fadeInContents::start);
 	}
 	
 	@Override
@@ -107,7 +161,7 @@ public class PDocViewerActivity extends Toastable_Activity {
 	@Override
 	protected void onPause() {
 		super.onPause();
-		UIData.wdv.checkDoc();
+		UIData.wdv.checkDoc(false, true);
 		if(hidingContextMenu) {
 			UIData.wdv.hideContextMenuView();
 		}
@@ -116,7 +170,7 @@ public class PDocViewerActivity extends Toastable_Activity {
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
-		UIData.wdv.checkDoc();
+		UIData.wdv.checkDoc(false, false);
 	}
 	
 	public void OnMenuClicked(MenuItem item) {

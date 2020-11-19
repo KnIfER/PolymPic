@@ -8,6 +8,7 @@ import android.graphics.RectF;
 import android.os.ParcelFileDescriptor;
 import android.util.DisplayMetrics;
 import android.util.SparseArray;
+import android.util.SparseIntArray;
 
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.text.BreakIteratorHelper;
@@ -19,6 +20,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -26,6 +28,7 @@ public class PDocument {
 	public final String path;
 	final DisplayMetrics dm;
 	public /*final*/ PDocPage[] mPDocPages;
+	public HashSet<Integer> mPageOpenedRecord = new HashSet<>();
 	public static PdfiumCore pdfiumCore;
 	public PdfDocument pdfDocument;
 	public int maxPageWidth;
@@ -39,20 +42,38 @@ public class PDocument {
 	public float ThumbsHiResFactor=0.4f;
 	public float ThumbsLoResFactor=0.1f;
 	
-	public void saveDocAsCopy(String url) {
+	public static int SavingScheme;
+	public final static int SavingScheme_SaveOnClose=0;
+	public final static int SavingScheme_AlwaysSaveOnPause=1;
+	public final static int SavingScheme_NotSaving=2;
+	
+	public void saveDocAsCopy(String url,boolean incremental, boolean reload) {
 		if(isDirty) {
 			if(url==null) {
 				url=path;
 			}
 			try (ParcelFileDescriptor fd = ParcelFileDescriptor.open(new File(url), ParcelFileDescriptor.MODE_READ_WRITE|ParcelFileDescriptor.MODE_CREATE)) {
-				pdfiumCore.SaveAsCopy(pdfDocument.mNativeDocPtr, fd.getFd());
+				CMN.rt();
+				pdfiumCore.SaveAsCopy(pdfDocument.mNativeDocPtr, fd.getFd(), incremental);
+				if(reload) {
+					close();
+					pdfDocument = pdfiumCore.newDocument(pdfDocument.parcelFileDescriptor);
+				}
 				isDirty=false;
+				CMN.pt("PDF 保存耗时：");
 			} catch (IOException e) {
 				CMN.Log(e);
 			}
 		}
 	}
 	
+	private void close() {
+		for (int i:mPageOpenedRecord) {
+			mPDocPages[i].close();
+		}
+		mPageOpenedRecord.clear();
+		pdfiumCore.closeDocument(pdfDocument);
+	}
 	
 	class PDocPage {
 		final int pageIdx;
@@ -81,7 +102,19 @@ public class PDocument {
 				synchronized(pid) {
 					if(pid.get()==0) {
 						pid.set(pdfiumCore.openPage(pdfDocument, pageIdx));
+						mPageOpenedRecord.add(pageIdx);
 					}
+				}
+			}
+		}
+		
+		public void close() {
+			if(pid.get()!=0) {
+				synchronized(pid) {
+					pdfiumCore.closePageAndText(pid.get(), tid);
+					//mPageOpenedRecord.remove(pageIdx);
+					pid.set(0);
+					tid = 0;
 				}
 			}
 		}
@@ -306,13 +339,9 @@ public class PDocument {
 					pdfiumCore.nativeAppendAnnotPoints(pid.get(), antTmp, rI.left-offset2, rI.top-offset1, rI.right-offset2, rI.bottom-offset1, width, height);
 				}
 				pdfiumCore.nativeCloseAnnot(antTmp);
-				//mAnnotRects=null;
+				mAnnotRects=null;
 			}
 		}
-
-//		public void getCharPosLoose(RectF pos, int index) {
-//			pdfiumCore.nativeGetCharPos(pid.get(), (int)OffsetAlongScrollAxis, getHorizontalOffset(), size.getWidth(), size.getHeight(), pos, tid, index, true);
-//		}
 	}
 	
 	// https://www.cnblogs.com/fangsmile/p/9306510.html
@@ -383,7 +412,7 @@ public class PDocument {
 		//CMN.Log("renderBitmap", w, h, bitmap.getWidth(), bitmap.getHeight());
 		bitmap.eraseColor(Color.WHITE);
 		page.open();
-		pdfiumCore.renderPageBitmap(pdfDocument, bitmap, page.pageIdx, 0, 0, w, h , true);
+		pdfiumCore.renderPageBitmap(pdfDocument, bitmap, page.pageIdx, page.pid.get(), 0, 0, w, h , true);
 		return bitmap;
 	}
 	
@@ -393,7 +422,7 @@ public class PDocument {
 		bitmap.eraseColor(Color.WHITE);
 		page.open();
 		//CMN.Log("renderRegion", w, h, startX, startY, srcW, srcH);
-		pdfiumCore.renderPageBitmap(pdfDocument, bitmap, page.pageIdx, startX, startY, srcW, srcH, true);
+		pdfiumCore.renderPageBitmap(pdfDocument, bitmap, page.pageIdx, page.pid.get(), startX, startY, srcW, srcH, true);
 		return bitmap;
 	}
 	

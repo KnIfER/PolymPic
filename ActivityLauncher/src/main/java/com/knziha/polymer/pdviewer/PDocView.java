@@ -261,6 +261,10 @@ public class PDocView extends View {
 	private boolean isFlinging;
 	private TilesInitTask loadingTask;
 	
+	public interface ImageReadyListener { void ImageReady(); }
+	
+	ImageReadyListener mImageReadyListener;
+	
 	ArrayList<PDocument.AnnotShape> mAnnotBucket = new ArrayList<>(8);
 	
 	private Runnable flingRunnable = new Runnable() {
@@ -752,7 +756,7 @@ public class PDocView extends View {
 	final static char[] paragraphSepChars = new char[]{'.', '。', '!', '！'/*, '\'', '”'*/, '?', '？'};
 	
 	private boolean isParagraphSepChar(char charAt) {
-		CMN.Log("isParagraphSepChar : "+charAt, charAt=='\r', charAt=='\n', charAt==' ');
+		//CMN.Log("isParagraphSepChar : "+charAt, charAt=='\r', charAt=='\n', charAt==' ');
 		for (char paragraphSepChar : paragraphSepChars) {
 			if (paragraphSepChar == charAt) {
 				return true;
@@ -763,6 +767,10 @@ public class PDocView extends View {
 	
 	private void setCenterPoint(PointF p, PointF p1, PointF p2) {
 		p.set((p1.x+p2.x)/2, (p1.y+p2.y)/2);
+	}
+	
+	public void setImageReadyListener(ImageReadyListener imageReadyListener) {
+		mImageReadyListener = imageReadyListener;
 	}
 	
 	/**
@@ -2945,6 +2953,9 @@ public class PDocView extends View {
 				}
 				if(piv.flingScroller.isFinished())
 					piv.postInvalidate();
+				if(piv.mImageReadyListener!=null) {
+					piv.mImageReadyListener.ImageReady();
+				}
 			} catch (Exception e) {
 				CMN.Log(e);
 			}
@@ -4374,9 +4385,9 @@ public class PDocView extends View {
 	}
 	
 	
-	public void checkDoc() {
+	public void checkDoc(boolean incremental, boolean reload) {
 		if(pdoc!=null && pdoc.isDirty)
-			pdoc.saveDocAsCopy(null);
+			pdoc.saveDocAsCopy(null, incremental, reload);
 	}
 	
 	

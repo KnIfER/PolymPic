@@ -349,7 +349,7 @@ public class PDocSelection extends View {
 			canvas.drawRect(VR, rectFramePaint);
 			canvas.restore();
 			
-			CMN.Log("绘制了高亮");
+			//CMN.Log("绘制了高亮");
 		}
 	}
 	
