@@ -626,9 +626,34 @@ public class PDocView extends View {
 					}
 				}
 				page.createHighlight(box, selLineRects);
+				invalidateTiles(page, box);
+				clearSelection();
 				pdoc.isDirty=true;
 			}
 		}
+	}
+	
+	private void invalidateTiles(PDocument.PDocPage page, RectF box) {
+		if(page.tile!=null) {
+			page.tile.reset();
+			page.tileBk=page.tile;
+		}
+		for(RegionTile rtI:regionTiles) {
+			if(rtI!=null && rtI.currentOwner!=null && isRectOverlap(rtI.sRect, box)) {
+				rtI.reset();
+				CMN.Log("rtI.reset()");
+			}
+		}
+		refreshRequiredTiles(true);
+		//postInvalidate();
+	}
+	
+	boolean isRectOverlap(RectF rc1, RectF rc2)
+	{
+		return rc1.right > rc2.left &&
+				rc2.right > rc1.left &&
+				rc1.bottom > rc2.top &&
+				rc2.bottom > rc1.top;
 	}
 	
 	/** Enlarge or expand text selection. <br/>
@@ -2024,7 +2049,7 @@ public class PDocView extends View {
 						if(tile!=null) {
 							if(task==null)task = acquireFreeTask();
 							if(!NoTile) page.sendTileToBackup();
-							tile.assignToAsThumail(task, page, pdoc.ThumbsHiResFactor);
+							tile.assignToAsThumbnail(task, page, pdoc.ThumbsHiResFactor);
 							continue ThumbnailsAssignment;
 						}
 					}
@@ -2035,7 +2060,7 @@ public class PDocView extends View {
 						if(tile!=null) {
 							tickCheckLoRThumbsIter++;
 							if(task==null)task = acquireFreeTask();
-							tile.assignToAsThumail(task, page, pdoc.ThumbsLoResFactor);
+							tile.assignToAsThumbnail(task, page, pdoc.ThumbsLoResFactor);
 						}
 					}
 				}
@@ -3074,7 +3099,7 @@ public class PDocView extends View {
 		}
 		
 		@Override
-		public void assignToAsThumail(TileLoadingTask taskThread, PDocument.PDocPage page, float v) {
+		public void assignToAsThumbnail(TileLoadingTask taskThread, PDocument.PDocPage page, float v) {
 			throw new IllegalArgumentException();
 		}
 		
@@ -3155,7 +3180,7 @@ public class PDocView extends View {
 			}
 		}
 		
-		public void assignToAsThumail(TileLoadingTask taskThread, PDocument.PDocPage page, float v) {
+		public void assignToAsThumbnail(TileLoadingTask taskThread, PDocument.PDocPage page, float v) {
 			taskToken.abort.set(true);
 			currentOwner=page;
 			taskThread.addTask(taskToken=new TaskToken(this, v));
