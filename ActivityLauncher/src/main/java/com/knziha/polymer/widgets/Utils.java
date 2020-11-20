@@ -175,6 +175,14 @@ public class Utils {
 		}
 	}
 	
+	public static String getSuffix(String path) {
+		int idx=path.lastIndexOf(".");
+		if(idx>=0) {
+			return  path.substring(idx).toLowerCase();
+		}
+		return null;
+	}
+	
 	public static class DummyOnClick implements View.OnClickListener {
 		@Override
 		public void onClick(View v) {

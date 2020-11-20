@@ -56,6 +56,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.GlobalOptions;
 
 import com.knziha.polymer.R;
+import com.knziha.polymer.Toastable_Activity;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.slideshow.ImageViewState;
 import com.knziha.polymer.slideshow.OverScroller;
@@ -68,6 +69,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -106,7 +108,7 @@ public class PDocView extends View {
 	public static final int ORIGIN_FLING = 3;
 	/** State change originated from a double tap zoom anim. */
 	public static final int ORIGIN_DOUBLE_TAP_ZOOM = 4;
-	public PDocViewerActivity a;
+	public Toastable_Activity a;
 	public int BackGroundColor=Color.LTGRAY;
 	
 	// Uri of full size image
@@ -810,6 +812,8 @@ public class PDocView extends View {
 	 * Async task used to get image details without blocking the UI thread.
 	 */
 	
+	public final static ConcurrentHashMap<String, PDocument> books = new ConcurrentHashMap<>(12);
+	
 	private static class TilesInitTask implements Runnable {
 		private final String url;
 		private final AtomicBoolean abort = new AtomicBoolean();
@@ -833,11 +837,23 @@ public class PDocView extends View {
 					}
 				} else {
 					try {
-						PDocument doc = new PDocument(view.getContext(), url, view.dm, Looper.myLooper() == Looper.getMainLooper() ? null : abort);
+						boolean responsibleForThisBook=false;
+						PDocument doc = books.get(url);
+						if(doc==null) {
+							doc = new PDocument(view.getContext(), url, view.dm, Looper.myLooper() == Looper.getMainLooper() ? null : abort);
+							responsibleForThisBook=true;
+						}
 						if(!abort.get()) {
 							finished.set(true);
 							view.setDocument(doc);
 							view.post(this);
+							if(responsibleForThisBook) {
+								books.put(url, doc);
+							} else {
+								doc.referenceCount.incrementAndGet();
+							}
+						} else if(responsibleForThisBook) {
+							doc.close();
 						}
 					} catch (IOException e) {
 						CMN.Log(e);
@@ -2856,11 +2872,16 @@ public class PDocView extends View {
 			loadingTask.abort();
 		}
 		loadingTask = new TilesInitTask(this, path);
+		PDocument currentDoc = pdoc;
+		if(currentDoc!=null) {
+			currentDoc.tryClose(a.getTaskId());
+		}
 		loadingTask.start();
 	}
 	
 	public void setDocument(PDocument _pdoc) {
 		pdoc = _pdoc;
+		_pdoc.aid = a.getTaskId();
 		removeCallbacks(mAnimationRunnable);
 		long time = System.currentTimeMillis();
 		sWidth = pdoc.maxPageWidth;
@@ -2878,6 +2899,7 @@ public class PDocView extends View {
 		maxScale = scale*10;
 		
 		preDraw2(new PointF(pdoc.maxPageWidth *1.0f/2, pdoc.height*1.0f/2),scale);
+		
 		
 //		ViewGroup.LayoutParams lp = view_to_paint.getLayoutParams();
 //		lp.width=(int) (sWidth*scale);

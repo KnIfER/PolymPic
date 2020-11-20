@@ -8,8 +8,8 @@ import android.graphics.RectF;
 import android.os.ParcelFileDescriptor;
 import android.util.DisplayMetrics;
 import android.util.SparseArray;
-import android.util.SparseIntArray;
 
+import com.knziha.polymer.Toastable_Activity;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.text.BreakIteratorHelper;
 import com.shockwave.pdfium.PdfDocument;
@@ -17,15 +17,16 @@ import com.shockwave.pdfium.PdfiumCore;
 import com.shockwave.pdfium.util.Size;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class PDocument {
 	public final String path;
+	public final AtomicInteger referenceCount;
 	final DisplayMetrics dm;
 	public /*final*/ PDocPage[] mPDocPages;
 	public HashSet<Integer> mPageOpenedRecord = new HashSet<>();
@@ -37,6 +38,7 @@ public class PDocument {
 	public long height;
 	public int _num_entries;
 	public boolean isDirty;
+	public int aid;
 	private int _anchor_page;
 	
 	public float ThumbsHiResFactor=0.4f;
@@ -67,12 +69,18 @@ public class PDocument {
 		}
 	}
 	
-	private void close() {
+	public void close() {
 		for (int i:mPageOpenedRecord) {
 			mPDocPages[i].close();
 		}
 		mPageOpenedRecord.clear();
 		pdfiumCore.closeDocument(pdfDocument);
+	}
+	
+	public void tryClose(int taskId) {
+		if(referenceCount.decrementAndGet()==0) {
+			close();
+		}
 	}
 	
 	class PDocPage {
@@ -197,7 +205,7 @@ public class PDocument {
 					int ed=pageBreakIterator.following(charIdx);
 					int st=pageBreakIterator.previous();
 					view.setSelectionAtPage(pageIdx, st, ed);
-					CMN.Log("selWordAtPos", charIdx, allText.substring(st, ed+1)+"...");
+					//CMN.Log("selWordAtPos", charIdx, allText.substring(st, ed+1)+"...");
 					return true;
 				}
 			}
@@ -360,6 +368,7 @@ public class PDocument {
 	
 	public PDocument(Context c, String path, DisplayMetrics dm, AtomicBoolean abort) throws IOException {
 		this.path = path;
+		this.referenceCount = new AtomicInteger(1);
 		this.dm = dm;
 		if(pdfiumCore==null) {
 			pdfiumCore = new PdfiumCore(c);
@@ -367,6 +376,7 @@ public class PDocument {
 		File f = new File(path);
 		ParcelFileDescriptor pfd = ParcelFileDescriptor.open(f, ParcelFileDescriptor.MODE_READ_ONLY);
 		//ParcelFileDescriptor pfd = ParcelFileDescriptor.open(f, ParcelFileDescriptor.MODE_READ_WRITE);
+		CMN.Log("ParcelFileDescriptor", pfd.getFd());
 		pdfDocument = pdfiumCore.newDocument(pfd);
 		_num_entries = pdfiumCore.getPageCount(pdfDocument);
 		mPDocPages = new PDocPage[_num_entries];

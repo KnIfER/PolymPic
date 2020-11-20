@@ -3,9 +3,12 @@ package com.knziha.polymer.pdviewer;
 import android.animation.Animator;
 import android.animation.ObjectAnimator;
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Intent;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
@@ -20,6 +23,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.view.menu.MenuBuilder;
+import androidx.core.content.res.ResourcesCompat;
 import androidx.databinding.DataBindingUtil;
 
 import com.google.android.material.bottomsheet.BottomSheetDialog;
@@ -31,16 +35,20 @@ import com.knziha.polymer.WeakReferenceHelper;
 import com.knziha.polymer.databinding.ImageviewDebugBinding;
 import com.knziha.polymer.widgets.AppIconsAdapter;
 
+import java.io.File;
+
 import static com.knziha.polymer.BrowserActivity.GoogleTranslate;
 
 public class PDocViewerActivity extends Toastable_Activity {
 	ImageviewDebugBinding UIData;
 	private boolean hidingContextMenu;
+	private PDocView currentViewer;
+	
 	
 	@Override
 	public void onBackPressed() {
-		if(UIData.wdv.draggingHandle==null && UIData.wdv.shouldDrawSelection()) {
-			UIData.wdv.clearSelection();
+		if(currentViewer.draggingHandle==null && currentViewer.shouldDrawSelection()) {
+			currentViewer.clearSelection();
 		} else {
 			super.onBackPressed();
 		}
@@ -61,24 +69,22 @@ public class PDocViewerActivity extends Toastable_Activity {
 		
 		UIData = DataBindingUtil.setContentView(this, R.layout.imageview_debug);
 		root=UIData.root;
+		currentViewer = UIData.wdv;
 		
 		try {
-			UIData.wdv.dm=dm;
-			//PDocument pdoc = new PDocument(this, "/sdcard/myFolder/sample_hetero_dimension.pdf");
-			//PDocument pdoc = new PDocument(this, "/sdcard/myFolder/Gpu Pro 1.pdf", dm, null);
-			//UIData.wdv.setDocument(pdoc);
+			currentViewer.dm=dm;
 			
-			UIData.wdv.a=this;
+			currentViewer.a=this;
 			
 			
-			UIData.wdv.setContextMenuView(UIData.contextMenu);
+			currentViewer.setContextMenuView(UIData.contextMenu);
 			
 			if(transit){
 				//root.setAlpha(0);
 				closeSplashScreen();
 			}
 			
-			UIData.wdv.setSelectionPaintView(UIData.sv);
+			currentViewer.setSelectionPaintView(UIData.sv);
 			
 			MenuBuilder context_menu = new MenuBuilder(this);
 			getMenuInflater().inflate(R.menu.context_menu, context_menu);
@@ -105,33 +111,52 @@ public class PDocViewerActivity extends Toastable_Activity {
 			
 			UIData.contextMenu.setOnTouchListener(CMN.XYTouchRecorder());
 			
+			if(transit){
+				currentViewer.setImageReadyListener(() -> {
+					root.post(this::closeSplashScreen);
+					currentViewer.setImageReadyListener(null);
+				});
+			}
 			
-			//UIData.wdv.setDocumentPath("/sdcard/myFolder/Gpu Pro 1.pdf");
-			//UIData.wdv.setDocumentPath("/sdcard/myFolder/YotaSpec02.pdf"); // √
-			//UIData.wdv.setDocumentPath("/sdcard/myFolder/1.pdf");
-			//UIData.wdv.setDocumentPath("/sdcard/myFolder/sample.pdf");
-			//UIData.wdv.setDocumentPath("/sdcard/myFolder/sig-notes.pdf");
-			//UIData.wdv.setDocumentPath("/sdcard/myFolder/sig-notes-new-txt.pdf");
-			
-			//if(transit){
-			//	UIData.wdv.setImageReadyListener(() -> {
-			//		root.post(this::closeSplashScreen);
-			//		UIData.wdv.setImageReadyListener(null);
-			//	});
-			//}
-			
-			UIData.wdv.setImageReadyListener(() -> {
+			currentViewer.setImageReadyListener(() -> {
 				root.post(() -> UIData.mainProgressBar.setVisibility(View.GONE));
-				UIData.wdv.setImageReadyListener(null);
+				currentViewer.setImageReadyListener(null);
 			});
 			
-			UIData.wdv.setDocumentPath("/sdcard/myFolder/sig-notes-t.pdf");
-			//UIData.wdv.setDocumentPath("/sdcard/myFolder/tmp.pdf");
-			//UIData.wdv.setDocumentPath("/sdcard/myFolder/sig-notes-new-txt-page0.pdf");
-			
+			processIntent(getIntent());
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+	
+	private void processIntent(Intent intent) {
+		Uri uri = intent.getData();
+		if(uri!=null) {
+			String path = uri.getPath();
+			if (path != null) {
+				currentViewer.setDocumentPath(path);
+				if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+					ActivityManager.TaskDescription taskDesc = new ActivityManager.TaskDescription(
+							new File(path).getName(),//title
+							BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher),//图标
+							ResourcesCompat.getColor(getResources(), R.color.colorPrimary,
+									getTheme()));
+					setTaskDescription(taskDesc);
+				}
+			}
+		} else { //tg
+			//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/Gpu Pro 1.pdf");
+			//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/YotaSpec02.pdf"); // √
+			//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/sample.pdf");
+			//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/sig-notes.pdf");
+			//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/sig-notes-new-txt.pdf");
+			
+			//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/sig-notes-t.pdf");
+			//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/tmp.pdf");
+			//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/sig-notes-new-txt-page0.pdf");
+			currentViewer.setDocumentPath("/storage/emulated/0/myFolder/1.pdf");
+		}
+		
 	}
 	
 	private void closeSplashScreen() {
@@ -154,7 +179,7 @@ public class PDocViewerActivity extends Toastable_Activity {
 	protected void onResume() {
 		super.onResume();
 		if(hidingContextMenu) {
-			UIData.wdv.showContextMenuView();
+			currentViewer.showContextMenuView();
 			hidingContextMenu=false;
 		}
 	}
@@ -163,10 +188,10 @@ public class PDocViewerActivity extends Toastable_Activity {
 	protected void onPause() {
 		super.onPause();
 		if(PDocument.SavingScheme==PDocument.SavingScheme_AlwaysSaveOnPause) {
-			UIData.wdv.checkDoc(false, true);
+			currentViewer.checkDoc(false, true);
 		}
 		if(hidingContextMenu) {
-			UIData.wdv.hideContextMenuView();
+			currentViewer.hideContextMenuView();
 		}
 	}
 	
@@ -174,7 +199,7 @@ public class PDocViewerActivity extends Toastable_Activity {
 	protected void onDestroy() {
 		super.onDestroy();
 		if(PDocument.SavingScheme==PDocument.SavingScheme_SaveOnClose) {
-			UIData.wdv.checkDoc(false, false);
+			currentViewer.checkDoc(false, false);
 		}
 	}
 	
@@ -186,20 +211,20 @@ public class PDocViewerActivity extends Toastable_Activity {
 					ClipboardManager clipboard = (ClipboardManager) getSystemService(Activity.CLIPBOARD_SERVICE);
 					clipboard.setPrimaryClip(ClipData.newPlainText("POLYM", text));
 					showT("已复制！");
-					UIData.wdv.clearSelection();
+					currentViewer.clearSelection();
 				}
 			} break;
 			case R.id.ctx_hightlight:{
-				UIData.wdv.highlightSelection();
+				currentViewer.highlightSelection();
 			} break;
 			case R.id.ctx_enlarge:{
-				UIData.wdv.enlargeSelection();
+				currentViewer.enlargeSelection();
 			} break;
 			case R.id.ctx_share:{
 				shareUrlOrText(getSelection());
 			} break;
 			case R.id.ctx_dictionay:{
-				if(UIData.wdv.shouldDrawSelection()) {
+				if(currentViewer.shouldDrawSelection()) {
 					Intent intent = new Intent("colordict.intent.action.SEARCH");
 					intent.putExtra("EXTRA_QUERY", getSelection());
 					hidingContextMenu=true;
@@ -207,7 +232,7 @@ public class PDocViewerActivity extends Toastable_Activity {
 				}
 			} break;
 			case R.id.ctx_translation:{
-				if(UIData.wdv.shouldDrawSelection()) {
+				if(currentViewer.shouldDrawSelection()) {
 					boolean processText = true;
 					String Action=processText?Intent.ACTION_PROCESS_TEXT:Intent.ACTION_SEND;
 					String Extra=processText?Intent.EXTRA_PROCESS_TEXT:Intent.EXTRA_TEXT;
@@ -227,7 +252,7 @@ public class PDocViewerActivity extends Toastable_Activity {
 	}
 	
 	private String getSelection() {
-		String ret = UIData.wdv.getSelection();
+		String ret = currentViewer.getSelection();
 		if(true && ret!=null) {
 			ret = ret.replace("\r\n", " ");
 		}

@@ -130,6 +130,11 @@
 		<item name="android:windowBackground">@drawable/flash_screen</item>
 	</style>
 
+	<style name="FloatAppTheme" parent="AppTheme">
+		<item name="android:windowBackground">@android:color/transparent</item>
+		<item name="android:windowIsTranslucent">true</item>
+	</style>
+
 	<style name="scroll" parent="ActivityTheme">
 		<item name="colorPrimary">@android:color/white</item>
 	</style>
