@@ -126,6 +126,7 @@ public class PDocViewerActivity extends Toastable_Activity {
 			});
 			
 			UIData.wdv.setDocumentPath("/sdcard/myFolder/sig-notes-t.pdf");
+			//UIData.wdv.setDocumentPath("/sdcard/myFolder/tmp.pdf");
 			//UIData.wdv.setDocumentPath("/sdcard/myFolder/sig-notes-new-txt-page0.pdf");
 			
 		} catch (Exception e) {
@@ -161,7 +162,9 @@ public class PDocViewerActivity extends Toastable_Activity {
 	@Override
 	protected void onPause() {
 		super.onPause();
-		UIData.wdv.checkDoc(false, true);
+		if(PDocument.SavingScheme==PDocument.SavingScheme_AlwaysSaveOnPause) {
+			UIData.wdv.checkDoc(false, true);
+		}
 		if(hidingContextMenu) {
 			UIData.wdv.hideContextMenuView();
 		}
@@ -170,7 +173,9 @@ public class PDocViewerActivity extends Toastable_Activity {
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
-		UIData.wdv.checkDoc(false, false);
+		if(PDocument.SavingScheme==PDocument.SavingScheme_SaveOnClose) {
+			UIData.wdv.checkDoc(false, false);
+		}
 	}
 	
 	public void OnMenuClicked(MenuItem item) {

@@ -204,6 +204,10 @@ public class PDocument {
 			return false;
 		}
 		
+		/** Get the char index at a page position
+		 * @posX position X in the page coordinate<br/>
+		 * @posY position Y in the page coordinate<br/>
+		 * */
 		public int getCharIdxAtPos(PDocView view, float posX, float posY) {
 			prepareText();
 			if(tid!=0) {

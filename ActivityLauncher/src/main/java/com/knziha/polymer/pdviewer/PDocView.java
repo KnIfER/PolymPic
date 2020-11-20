@@ -604,17 +604,13 @@ public class PDocView extends View {
 			ArrayList<RectF> selRects = selectionPaintView.rectPool.get(0);
 			PDocument.PDocPage page = pdoc.mPDocPages[selPageSt];
 			if(selRects.size()>0) { //sanity check
+				RectF tmp = new RectF();
 				ArrayList<RectF> selLineRects = new ArrayList<>(selRects.size());
 				RectF box = new RectF(selRects.get(0));
-				RectF currentLineRect=new RectF(box);
-				selLineRects.add(currentLineRect);
+				RectF currentLineRect=null;
 				for(RectF rI:selRects) {
 					//CMN.Log("RectF rI:selRects", rI);
-					box.left = Math.min(box.left, rI.left);
-					box.right = Math.max(box.right, rI.right);
-					box.top = Math.min(box.top, rI.top);
-					box.bottom = Math.max(box.bottom, rI.bottom);
-					if(Math.abs((currentLineRect.top+currentLineRect.bottom)-(rI.top+rI.bottom))<currentLineRect.bottom-currentLineRect.top) {
+					if(currentLineRect!=null&&Math.abs((currentLineRect.top+currentLineRect.bottom)-(rI.top+rI.bottom))<currentLineRect.bottom-currentLineRect.top) {
 						currentLineRect.left = Math.min(currentLineRect.left, rI.left);
 						currentLineRect.right = Math.max(currentLineRect.right, rI.right);
 						currentLineRect.top = Math.min(currentLineRect.top, rI.top);
@@ -623,7 +619,19 @@ public class PDocView extends View {
 						currentLineRect=new RectF();
 						currentLineRect.set(rI);
 						selLineRects.add(currentLineRect);
+						int cid = page.getCharIdxAtPos(this, rI.left + 1, rI.top + rI.height() / 2);
+						if(cid>0) {
+							page.getCharLoosePos(tmp, cid);
+							currentLineRect.left = Math.min(currentLineRect.left, tmp.left);
+							currentLineRect.right = Math.max(currentLineRect.right, tmp.right);
+							currentLineRect.top = Math.min(currentLineRect.top, tmp.top);
+							currentLineRect.bottom = Math.max(currentLineRect.bottom, tmp.bottom);
+						}
 					}
+					box.left = Math.min(box.left, currentLineRect.left);
+					box.right = Math.max(box.right, currentLineRect.right);
+					box.top = Math.min(box.top, currentLineRect.top);
+					box.bottom = Math.max(box.bottom, currentLineRect.bottom);
 				}
 				page.createHighlight(box, selLineRects);
 				invalidateTiles(page, box);

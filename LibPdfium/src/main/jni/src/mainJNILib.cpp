@@ -843,7 +843,9 @@ JNI_FUNC(jboolean, PdfiumCore, nativeGetAttachmentPoints)(JNI_ARGS, jlong pagePt
 }
 
 JNI_FUNC(jlong, PdfiumCore, nativeCreateAnnot)(JNI_ARGS, jlong pagePtr, jint type) {
-    return (jlong)FPDFPage_CreateAnnot((FPDF_PAGE)pagePtr, type);
+    auto ret = FPDFPage_CreateAnnot((FPDF_PAGE)pagePtr, type);
+    FPDFAnnot_SetFlags(ret, 4);
+    return (jlong)ret;
 }
 
 JNI_FUNC(jboolean, PdfiumCore, nativeSetAnnotRect)(JNI_ARGS, jlong pagePtr, jlong annotPtr, jfloat left, jfloat top, jfloat right, jfloat bottom, jdouble width, jdouble height) {
