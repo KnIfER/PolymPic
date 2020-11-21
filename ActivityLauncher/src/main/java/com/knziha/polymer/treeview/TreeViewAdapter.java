@@ -21,7 +21,7 @@ import java.util.List;
 public class TreeViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> implements View.OnClickListener {
     private static final String KEY_IS_EXPAND = "IS_EXPAND";
     private final List<? extends TreeViewBinderInterface> viewBinders;
-    private List<TreeViewNode> displayNodes;
+    protected final List<TreeViewNode> displayNodes = new ArrayList<>();
     private int padding = 30;
     private OnTreeNodeListener onTreeNodeListener;
     private boolean toCollapseChild;
@@ -31,7 +31,6 @@ public class TreeViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     }
 
     public TreeViewAdapter(List<TreeViewNode> nodes, List<? extends TreeViewBinderInterface> viewBinders) {
-        displayNodes = new ArrayList<>();
 		findDisplayNodes(nodes);
         this.viewBinders = viewBinders;
     }

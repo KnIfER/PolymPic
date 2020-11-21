@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?><!--androidx.drawerlayout.widget.DrawerLayout  xml version="1.0" encoding="utf-8"?-->
+<layout>
+	<LinearLayout
+		xmlns:android="http://schemas.android.com/apk/res/android"
+		xmlns:app="http://schemas.android.com/apk/res-auto"
+		android:id="@+id/root"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:orientation="vertical"
+		android:fitsSystemWindows="true"
+		>
+
+		<androidx.appcompat.widget.Toolbar
+			android:id="@+id/toolbar"
+			android:layout_width="match_parent"
+			android:layout_height="51dp"
+			android:title="分组管理"
+			android:background="#8f8f8f"
+			/>
+
+		<androidx.viewpager.widget.ViewPager
+			android:id="@+id/viewpager"
+			android:layout_width="match_parent"
+			android:layout_height="0dp"
+			android:layout_weight="1"
+			android:flipInterval="30"
+			android:persistentDrawingCache="animation"
+			android:background="#fff"
+			/>
+
+		<com.google.android.material.tabs.TabLayout
+			android:id="@+id/mTabLayout"
+			android:layout_width="match_parent"
+			android:layout_height="51dp"
+			app:tabTextColor="@android:color/white"
+			app:tabSelectedTextColor="@android:color/white"
+			app:tabMode="scrollable"
+			android:background="#8f8f8f"
+			/>
+
+	</LinearLayout>
+</layout>

@@ -80,10 +80,10 @@
 			android:configChanges="orientation|keyboardHidden|screenSize|smallestScreenSize|screenLayout|uiMode|locale|layoutDirection"
 			android:theme="@style/ActivityTheme"
 			>
-<!--			<intent-filter>-->
-<!--				<action android:name="android.intent.action.MAIN" />-->
-<!--				<category android:name="android.intent.category.LAUNCHER" />-->
-<!--			</intent-filter>-->
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+			</intent-filter>
 		</activity>
 
 
@@ -182,10 +182,10 @@
 			android:launchMode="standard"
 			android:configChanges="keyboardHidden|orientation|screenSize"
 			android:theme="@style/ActivityTheme">
-						<intent-filter>
-							<action android:name="android.intent.action.MAIN" />
-							<category android:name="android.intent.category.LAUNCHER" />
-						</intent-filter>
+<!--						<intent-filter>-->
+<!--							<action android:name="android.intent.action.MAIN" />-->
+<!--							<category android:name="android.intent.category.LAUNCHER" />-->
+<!--						</intent-filter>-->
 		</activity>
 
 		<activity

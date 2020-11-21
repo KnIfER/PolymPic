@@ -9,6 +9,7 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Intent;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.Spannable;
@@ -23,24 +24,36 @@ import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.view.menu.MenuBuilder;
 import androidx.core.content.res.ResourcesCompat;
+import androidx.core.graphics.ColorUtils;
 import androidx.databinding.DataBindingUtil;
+import androidx.fragment.app.DialogFragment;
+import androidx.fragment.app.Fragment;
+import androidx.viewpager.widget.ViewPager;
 
 import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.google.android.material.tabs.TabLayout;
 import com.knziha.polymer.R;
 import com.knziha.polymer.Toastable_Activity;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.Options;
 import com.knziha.polymer.WeakReferenceHelper;
+import com.knziha.polymer.databinding.BookmarksBinding;
 import com.knziha.polymer.databinding.ImageviewDebugBinding;
+import com.knziha.polymer.pdviewer.bookmarks.BookMarkFragment;
+import com.knziha.polymer.pdviewer.bookmarks.BookMarksFragment;
+import com.knziha.polymer.pdviewer.bookmarks.FragAdapter;
 import com.knziha.polymer.widgets.AppIconsAdapter;
+import com.knziha.polymer.widgets.Utils;
 
 import java.io.File;
+import java.util.ArrayList;
 
 import static com.knziha.polymer.BrowserActivity.GoogleTranslate;
 
-public class PDocViewerActivity extends Toastable_Activity {
+public class PDocViewerActivity extends Toastable_Activity implements View.OnClickListener {
 	ImageviewDebugBinding UIData;
 	private boolean hidingContextMenu;
 	private PDocView currentViewer;
@@ -112,6 +125,8 @@ public class PDocViewerActivity extends Toastable_Activity {
 			
 			UIData.contextMenu.setOnTouchListener(CMN.XYTouchRecorder());
 			
+			Utils.setOnClickListenersOneDepth(UIData.bottombar2, this, 1, null);
+			
 			if(transit){
 				currentViewer.setImageReadyListener(() -> {
 					root.post(this::closeSplashScreen);
@@ -146,7 +161,7 @@ public class PDocViewerActivity extends Toastable_Activity {
 				}
 			}
 		} else { //tg
-			currentViewer.setDocumentPath("/storage/emulated/0/myFolder/Gpu Pro 1.pdf");
+			//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/Gpu Pro 1.pdf");
 			
 			//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/YotaSpec02.pdf"); // √
 			//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/sample.pdf");
@@ -156,7 +171,7 @@ public class PDocViewerActivity extends Toastable_Activity {
 			//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/sig-notes-t.pdf");
 			//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/tmp.pdf");
 			//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/sig-notes-new-txt-page0.pdf");
-			//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/1.pdf");
+			currentViewer.setDocumentPath("/storage/emulated/0/myFolder/1.pdf");
 		}
 		
 	}
@@ -175,6 +190,17 @@ public class PDocViewerActivity extends Toastable_Activity {
 			@Override public void onAnimationRepeat(Animator animation) { }
 		});
 		root.post(fadeInContents::start);
+	}
+	
+	
+	@SuppressLint("NonConstantResourceId")
+	@Override
+	public void onClick(View v) {
+		switch (v.getId()) {
+			case R.id.browser_widget10: {
+				new BookMarksFragment().show(getSupportFragmentManager(), "bkmks");
+			} break;
+		}
 	}
 	
 	@Override
