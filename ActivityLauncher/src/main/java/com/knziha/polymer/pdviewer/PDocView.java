@@ -2871,12 +2871,16 @@ public class PDocView extends View {
 		if(loadingTask!=null) {
 			loadingTask.abort();
 		}
-		loadingTask = new TilesInitTask(this, path);
 		PDocument currentDoc = pdoc;
 		if(currentDoc!=null) {
 			currentDoc.tryClose(a.getTaskId());
 		}
-		loadingTask.start();
+		if(path!=null) {
+			loadingTask = new TilesInitTask(this, path);
+			loadingTask.start();
+		} else {
+			loadingTask = null;
+		}
 	}
 	
 	public void setDocument(PDocument _pdoc) {

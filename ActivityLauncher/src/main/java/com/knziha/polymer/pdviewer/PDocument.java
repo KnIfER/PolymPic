@@ -24,6 +24,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.knziha.polymer.pdviewer.PDocView.books;
+
 public class PDocument {
 	public final String path;
 	public final AtomicInteger referenceCount;
@@ -80,6 +82,7 @@ public class PDocument {
 	public void tryClose(int taskId) {
 		if(referenceCount.decrementAndGet()==0) {
 			close();
+			books.remove(path);
 		}
 	}
 	
@@ -293,31 +296,49 @@ public class PDocument {
 			}
 			annotCount = selBucket.size();
 			
+			//CMN.Log("selBucket 1", selBucket.size());
+			
 			if(annotCount>1) {
 				PointF p = new PointF(posX, posY);
 				for (int i = annotCount-1; i >= 0; i--) {
 					AnnotShape aI = selBucket.get(i);
 					fetchAnnotAttachPoints(aI);
+					boolean remove=true;
 					for (int j = 0; j < aI.attachPts.length; j++) {
 						QuadShape qI = aI.attachPts[j];
-						if(!IsPointInMatrix(p, qI.p1, qI.p2, qI.p3, qI.p4)) {
-							selBucket.remove(i);
+						if(IsPointInMatrix(p, qI.p1, qI.p2, qI.p4, qI.p3)) {
+							remove=false;
+							break;
 						}
+					}
+					if(remove) {
+						selBucket.remove(i);
 					}
 				}
 			}
 			
-			CMN.Log("selBucket", selBucket.size());
+			//CMN.Log("selBucket", selBucket.size());
 			
 			annotCount = selBucket.size();
 			if(annotCount>0) {
-				ret = selBucket.get(annotCount-1);
-				view.setAnnotSelection(this, ret);
+				if(annotCount>1) {
+					float sizeMin = Integer.MAX_VALUE;
+					for (int i = 0; i < annotCount; i++) {
+						AnnotShape aI = selBucket.get(i);
+						float sz = aI.box.height() * aI.box.width();
+						if(sz<=sizeMin) {
+							sizeMin=sz;
+							ret = aI;
+						}
+					}
+				} else {
+					ret = selBucket.get(annotCount-1);
+				}
 			}
 			
-
-//			view.setAnnotSelection(this, i, rect);
-//			return i;
+			if(ret!=null) {
+				view.setAnnotSelection(this, ret);
+			}
 			
 			return ret;
 		}
@@ -327,9 +348,10 @@ public class PDocument {
 				long annotPtr = pdfiumCore.nativeOpenAnnot(pid.get(), aI.index);
 				int attachPtSz = pdfiumCore.nativeCountAttachmentPoints(annotPtr);
 				aI.attachPts = new QuadShape[attachPtSz];
+				int width=size.getWidth(), height=size.getHeight();
 				for (int j = 0; j < attachPtSz; j++) {
 					QuadShape qI = aI.attachPts[j] = new QuadShape();
-					pdfiumCore.nativeGetAttachmentPoints(pid.get(), annotPtr, j, qI.p1, qI.p2, qI.p3, qI.p4);
+					pdfiumCore.nativeGetAttachmentPoints(pid.get(), annotPtr, j, width, height, qI.p1, qI.p2, qI.p3, qI.p4);
 				}
 				pdfiumCore.nativeCloseAnnot(annotPtr);
 			}

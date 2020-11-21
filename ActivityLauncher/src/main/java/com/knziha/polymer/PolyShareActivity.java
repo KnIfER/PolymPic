@@ -18,7 +18,7 @@ import com.knziha.polymer.widgets.Utils;
 /**
  * Recreated by KnIfER on 2019
  */
-public class PolyActivity extends Activity {
+public class PolyShareActivity extends Activity {
 	private String debugString;
 	static ActivityManager.AppTask hiddenId;
 	public final static int SingleTaskFlags = Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP;

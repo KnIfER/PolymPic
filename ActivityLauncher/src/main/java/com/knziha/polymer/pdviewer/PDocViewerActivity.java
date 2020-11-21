@@ -201,6 +201,7 @@ public class PDocViewerActivity extends Toastable_Activity {
 		if(PDocument.SavingScheme==PDocument.SavingScheme_SaveOnClose) {
 			currentViewer.checkDoc(false, false);
 		}
+		currentViewer.setDocumentPath(null);
 	}
 	
 	public void OnMenuClicked(MenuItem item) {

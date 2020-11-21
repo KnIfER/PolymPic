@@ -281,9 +281,12 @@ JNI_FUNC(jint, PdfiumCore, nativeGetPageCount)(JNI_ARGS, jlong documentPtr){
 }
 
 JNI_FUNC(void, PdfiumCore, nativeCloseDocument)(JNI_ARGS, jlong documentPtr){
-    DocumentFile *doc = reinterpret_cast<DocumentFile*>(documentPtr);
-    FPDF_CloseDocument((FPDF_DOCUMENT)doc->pdfDocument);
-    delete doc;
+    if(documentPtr) {
+        DocumentFile *doc = reinterpret_cast<DocumentFile*>(documentPtr);
+        if(doc->pdfDocument) {
+            FPDF_CloseDocument((FPDF_DOCUMENT)doc->pdfDocument);
+        }
+    }
 }
 
 static jlong loadPageInternal(JNIEnv *env, DocumentFile *doc, int pageIndex){
@@ -502,9 +505,11 @@ JNI_FUNC(void, PdfiumCore, nativeClosePages)(JNI_ARGS, jlongArray pagesPtr){
 }
 
 JNI_FUNC(void, PdfiumCore, nativeClosePageAndText)(JNI_ARGS, jlong pagePtr, jlong textPtr){
-    FPDF_ClosePage((FPDF_PAGE)pagePtr);
     if(textPtr) {
         FPDFText_ClosePage((FPDF_TEXTPAGE)textPtr);
+    }
+    if(pagePtr) {
+        FPDF_ClosePage((FPDF_PAGE)pagePtr);
     }
 }
 JNI_FUNC(jint, PdfiumCore, nativeGetPageWidthPixel)(JNI_ARGS, jlong pagePtr, jint dpi){
@@ -805,7 +810,7 @@ JNI_FUNC(jint, PdfiumCore, nativeCountAttachmentPoints)(JNI_ARGS, jlong annotPtr
     return FPDFAnnot_CountAttachmentPoints((FPDF_ANNOTATION)annotPtr);
 }
 
-JNI_FUNC(jboolean, PdfiumCore, nativeGetAttachmentPoints)(JNI_ARGS, jlong pagePtr, jlong annotPtr, jlong idx, jobject p1, jobject p2, jobject p3, jobject p4) {
+JNI_FUNC(jboolean, PdfiumCore, nativeGetAttachmentPoints)(JNI_ARGS, jlong pagePtr, jlong annotPtr, jlong idx, jint width, jint height, jobject p1, jobject p2, jobject p3, jobject p4) {
 	jclass point = env->FindClass("android/graphics/PointF");
     jmethodID point_set = env->GetMethodID(point,"set","(FF)V");
 
@@ -813,25 +818,17 @@ JNI_FUNC(jboolean, PdfiumCore, nativeGetAttachmentPoints)(JNI_ARGS, jlong pagePt
 	FS_QUADPOINTSF points={0};
 
 	if(FPDFAnnot_GetAttachmentPoints((FPDF_ANNOTATION)annotPtr, idx, &points)) {
-        double userWidth, userHeight; int deviceX, deviceY;
-        int width = points.x1, height = points.y1;
-        FPDF_DeviceToPage(page, 0, 0, width, height, 0, width, 0, &userWidth, &userHeight);
-        FPDF_PageToDevice(page, 0, 0, userWidth, userHeight, 0, points.x1, points.y1, &deviceX, &deviceY);
+        int deviceX, deviceY;
+        FPDF_PageToDevice(page, 0, 0, width, height, 0, points.x1, points.y1, &deviceX, &deviceY);
         env->CallVoidMethod(p1, point_set, (float)deviceX, (float)deviceY);
 
-        width = points.x2, height = points.y2;
-        FPDF_DeviceToPage(page, 0, 0, width, height, 0, width, 0, &userWidth, &userHeight);
-        FPDF_PageToDevice(page, 0, 0, userWidth, userHeight, 0, width, height, &deviceX, &deviceY);
+        FPDF_PageToDevice(page, 0, 0, width, height, 0, points.x2, points.y2, &deviceX, &deviceY);
         env->CallVoidMethod(p2, point_set, (float)deviceX, (float)deviceY);
 
-        width = points.x3, height = points.y3;
-        FPDF_DeviceToPage(page, 0, 0, width, height, 0, width, 0, &userWidth, &userHeight);
-        FPDF_PageToDevice(page, 0, 0, userWidth, userHeight, 0, width, height, &deviceX, &deviceY);
+        FPDF_PageToDevice(page, 0, 0, width, height, 0, points.x3, points.y3, &deviceX, &deviceY);
         env->CallVoidMethod(p3, point_set, (float)deviceX, (float)deviceY);
 
-        width = points.x4, height = points.y4;
-        FPDF_DeviceToPage(page, 0, 0, width, height, 0, width, 0, &userWidth, &userHeight);
-        FPDF_PageToDevice(page, 0, 0, userWidth, userHeight, 0, width, height, &deviceX, &deviceY);
+        FPDF_PageToDevice(page, 0, 0, width, height, 0, points.x4, points.y4, &deviceX, &deviceY);
         env->CallVoidMethod(p4, point_set, (float)deviceX, (float)deviceY);
 
         //env->CallVoidMethod(p2, point_set, points.x2, points.y2);

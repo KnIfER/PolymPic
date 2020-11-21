@@ -361,7 +361,7 @@ public class PdfiumCore {
 	
 	public native int nativeCountAttachmentPoints(long annotPtr);
 	
-	public native boolean nativeGetAttachmentPoints(long pagePtr, long annotPtr, int idx, PointF p1, PointF p2, PointF p3, PointF p4);
+	public native boolean nativeGetAttachmentPoints(long pagePtr, long annotPtr, int idx, int width, int height, PointF p1, PointF p2, PointF p3, PointF p4);
 	
 	public native void nativeCloseAnnot(long annotPtr);
 	
