@@ -39,7 +39,7 @@ public class PDocument {
 	private long LengthAlongScrollAxis;
 	public int _num_entries;
 	public boolean isDirty;
-	private boolean isHorizontalView=true;
+	private boolean isHorizontalView=false;
 	public int aid;
 	private int _anchor_page;
 	
