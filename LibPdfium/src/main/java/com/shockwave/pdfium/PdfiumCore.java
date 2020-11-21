@@ -197,9 +197,9 @@ public class PdfiumCore {
         }
     }
 	
-	public int getTextRects(long pagePtr, long offsetY, int offsetX, Size size, ArrayList<RectF> arr, long textPtr, int selSt, int selEd) {
+	public int getTextRects(long pagePtr, int offsetY, int offsetX, Size size, ArrayList<RectF> arr, long textPtr, int selSt, int selEd) {
 		synchronized (lock) {
-			return nativeCountAndGetRects(pagePtr, (int)offsetY, offsetX, size.getWidth(), size.getHeight(), arr, textPtr, selSt, selEd);
+			return nativeCountAndGetRects(pagePtr, offsetY, offsetX, size.getWidth(), size.getHeight(), arr, textPtr, selSt, selEd);
 		}
 	}
     

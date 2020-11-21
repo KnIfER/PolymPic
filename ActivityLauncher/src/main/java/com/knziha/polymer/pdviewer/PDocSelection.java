@@ -215,10 +215,13 @@ public class PDocSelection extends View {
 				magdraw_stoff = pDocView.sCursorPos.y-magdrawH;
 				magdraw_edoff = pDocView.sCursorPos.y+magdrawH;
 			}
+			
+			boolean horizon = pDocView.pdoc.isHorizontalView();
 			// 绘制选区，是一页页分开存储的
 			for (int i = 0; i < rectPoolSize; i++) {
 				PDocument.PDocPage page = pDocView.pdoc.mPDocPages[selPageSt + i];
-				if(!(page.OffsetAlongScrollAxis>=pDocView.draw_edoff||page.OffsetAlongScrollAxis+page.size.getHeight()<=pDocView.draw_stoff)) {
+				if(!horizon&&!(page.OffsetAlongScrollAxis>=pDocView.draw_edoff||page.OffsetAlongScrollAxis+page.size.getHeight()<=pDocView.draw_stoff)
+					||horizon&&!(page.OffsetAlongScrollAxis>=pDocView.draw_edoffX||page.OffsetAlongScrollAxis+page.size.getWidth()<=pDocView.draw_stoffX)) {
 					ArrayList<RectF> rectPage = rectPool.get(i);
 					for(RectF rI:rectPage) {
 						if(!(rI.top>=pDocView.draw_edoff || rI.bottom<pDocView.draw_stoff

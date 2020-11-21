@@ -128,7 +128,7 @@ public class PDocView extends View {
 	public float maxScale = 1.5F;
 	
 	// Min scale allowed (prevent infinite zoom)
-	private float minScale = minScale();
+	private float minScale = 0.1f;
 	
 	// overrides for the dimensions of the generated tiles
 	public static final int TILE_SIZE_AUTO = Integer.MAX_VALUE;
@@ -285,9 +285,15 @@ public class PDocView extends View {
 				
 				int flag;
 				
-				if(freefling)
-					vTranslate.x = vTranslate.x+(flingVx>0?x:-x);// fingStartX + cfx-flingScroller.getStartX();
-				vTranslate.y = vTranslate.y+(flingVy>0?y:-y);// fingStartY + cfy-flingScroller.getStartY();
+				if(pdoc.isHorizontalView()) {
+					vTranslate.x = vTranslate.x+(flingVx>0?x:-x);
+					if(freefling)
+						vTranslate.y = vTranslate.y+(flingVy>0?y:-y);
+				} else {
+					if(freefling)
+						vTranslate.x = vTranslate.x+(flingVx>0?x:-x);// fingStartX + cfx-flingScroller.getStartX();
+					vTranslate.y = vTranslate.y+(flingVy>0?y:-y);// fingStartY + cfy-flingScroller.getStartY();
+				}
 				
 				//if(isProxy)
 				if(freefling)
@@ -383,12 +389,19 @@ public class PDocView extends View {
 			boolean isLeft = draggingHandle==handleLeft;
 			int charIdx=-1; int pageIdx=-1;
 			//if(false)
+			boolean horizon = pdoc.isHorizontalView();
 			for (int i = 0; i < logiLayoutSz; i++) {
 				PDocument.PDocPage pageI = pdoc.mPDocPages[logiLayoutSt + i];
-				if(pageI.OffsetAlongScrollAxis+pageI.size.getHeight()+pdoc.gap>posY) {
+				if(!horizon&&pageI.OffsetAlongScrollAxis+pageI.size.getHeight()+pdoc.gap>posY
+					||horizon&&pageI.OffsetAlongScrollAxis+pageI.size.getWidth()+pdoc.gap>posX) {
 					pageIdx = logiLayoutSt+i;
-					posY -= pageI.OffsetAlongScrollAxis;
-					posX -= pageI.getHorizontalOffset();
+					if(horizon) {
+						posX -= pageI.OffsetAlongScrollAxis;
+						posY -= pageI.getLateralOffset();
+					} else {
+						posY -= pageI.OffsetAlongScrollAxis;
+						posX -= pageI.getLateralOffset();
+					}
 					charIdx = pageI.getCharIdxAtPos(PDocView.this, posX, posY-lineHeight);
 					break;
 				}
@@ -434,8 +447,13 @@ public class PDocView extends View {
 					float posY = (lastY - vTranslate.y)/scale;
 					PDocument.PDocPage pageI = getPageAtSrcPos(posX, posY);
 					if(pageI!=null) {
-						posY -= pageI.OffsetAlongScrollAxis;
-						posX -= pageI.getHorizontalOffset();
+						if(pdoc.isHorizontalView()) {
+							posX -= pageI.OffsetAlongScrollAxis;
+							posY -= pageI.getLateralOffset();
+						} else {
+							posY -= pageI.OffsetAlongScrollAxis;
+							posX -= pageI.getLateralOffset();
+						}
 						if(pageI.selWordAtPos(PDocView.this, posX, posY, 5)) {
 							draggingHandle = handleRight;
 							sCursorPosStart.set(handleRightPos.right, handleRightPos.bottom);
@@ -545,10 +563,18 @@ public class PDocView extends View {
 		annotSelection = annot;
 		RectF rect = annotSelRect;
 		rect.set(annot.box);
-		rect.left+=page.getHorizontalOffset();
-		rect.right+=page.getHorizontalOffset();
-		rect.top+=page.OffsetAlongScrollAxis;
-		rect.bottom+=page.OffsetAlongScrollAxis;
+		int offset1, offset2;
+		if(pdoc.isHorizontalView()) {
+			offset1 = page.getLateralOffset();
+			offset2 = (int) page.OffsetAlongScrollAxis;
+		} else {
+			offset1 = (int) page.OffsetAlongScrollAxis;
+			offset2 = page.getLateralOffset();
+		}
+		rect.left+=offset2;
+		rect.right+=offset2;
+		rect.top+=offset1;
+		rect.bottom+=offset1;
 		hasAnnotSelction = true;
 		redrawSel();
 	}
@@ -991,7 +1017,7 @@ public class PDocView extends View {
 					} else {
 						distanceY = Math.abs((int) (vY>0?(maxY-vyDelta):(vyDelta-minY)));
 					}
-					if(vY!=0) {
+					if(pdoc.isHorizontalView()?vX!=0:vY!=0) {
 						// Account for rotation
 						boolean SameDir = Math.signum(vX) == Math.signum(flingVx) && Math.signum(vY) == Math.signum(flingVy);
 
@@ -1048,9 +1074,13 @@ public class PDocView extends View {
 				PDocument.PDocPage pageI = getPageAtSrcPos(posX, posY);
 				
 				if(pageI!=null) {
-					posY -= pageI.OffsetAlongScrollAxis;
-					posX -= pageI.getHorizontalOffset();
-					
+					if(pdoc.isHorizontalView()) {
+						posX -= pageI.OffsetAlongScrollAxis;
+						posY -= pageI.getLateralOffset();
+					} else {
+						posY -= pageI.OffsetAlongScrollAxis;
+						posX -= pageI.getLateralOffset();
+					}
 					
 					if(false) {
 						long lnkPtr = pageI.getLinkAtPos(posX, posY);
@@ -1113,9 +1143,11 @@ public class PDocView extends View {
 	}
 	
 	private PDocument.PDocPage getPageAtSrcPos(float posX, float posY) {
+		boolean horizon = pdoc.isHorizontalView();
 		for (int i = 0; i < logiLayoutSz; i++) {
 			PDocument.PDocPage pageI = pdoc.mPDocPages[logiLayoutSt + i];
-			if(pageI.OffsetAlongScrollAxis+pageI.size.getHeight()+pdoc.gap>posY) {
+			if(!horizon&&pageI.OffsetAlongScrollAxis+pageI.size.getHeight()+pdoc.gap>posY
+				||horizon&&pageI.OffsetAlongScrollAxis+pageI.size.getWidth()+pdoc.gap>posX) {
 				return pageI;
 			}
 		}
@@ -1648,7 +1680,7 @@ public class PDocView extends View {
 					float toScale = currentMinScale();
 					
 					tmpCenter.set(getScreenWidth()/2, getScreenHeight()/2);
-					
+					boolean horizon = pdoc.isHorizontalView();
 					boolean resetScale=false;
 					if(scale>toScale) {
 						toScale=scale;
@@ -1658,7 +1690,11 @@ public class PDocView extends View {
 						}
 					} else if(scale<toScale){
 						resetScale = shouldAnimate = true;
-						tmpCenter.set(getSWidth() / 2, getCenter().y);
+						if(horizon) {
+							tmpCenter.set(getCenter().x, getSHeight() / 2);
+						} else {
+							tmpCenter.set(getSWidth() / 2, getCenter().y);
+						}
 						//tmpCenter.set(getCenter());
 					}
 					CMN.Log("toScale", toScale, shouldAnimate);
@@ -1678,7 +1714,11 @@ public class PDocView extends View {
 					//if(false)
 					if(shouldAnimate) {
 						if(scale<toScale){
-							tmpCenter.y = Math.max(tmpCenter.y, getScreenHeight()/2/toScale);
+							if(horizon) {
+								tmpCenter.x = Math.max(tmpCenter.x, getScreenWidth()/2/toScale);
+							} else {
+								tmpCenter.y = Math.max(tmpCenter.y, getScreenHeight()/2/toScale);
+							}
 							//tmpCenter.set(getCenter());
 						}
 						//Take after everything.
@@ -1879,7 +1919,12 @@ public class PDocView extends View {
 			sw = sHeight;
 			sh = sWidth;
 		}
-		float scaleMin1 = (getScreenWidth() - hPadding) / (float) sw;
+		float scaleMin1;
+		if(pdoc.isHorizontalView()) {
+			scaleMin1 = (getScreenHeight() - vPadding) / (float) sh;
+		} else {
+			scaleMin1 = (getScreenWidth() - hPadding) / (float) sw;
+		}
 		float zoomInLevel = 2.5f;
 		
 		quickZoomLevels[0] = scaleMin1;
@@ -2031,16 +2076,19 @@ public class PDocView extends View {
 		edoff = stoff+getScreenHeight()/scale;
 		stoffX = (long) (-vTranslate.x/scale);
 		edoffX = stoffX+getScreenWidth()/scale;
-		logiLayoutSt = reduceDocOffset(stoff, 0, pdoc.mPDocPages.length);
+		//存疑
+		logiLayoutSt = reduceDocOffset(pdoc.isHorizontalView()?stoffX:stoff, 0, pdoc.mPDocPages.length);
 		if(pdoc.mPDocPages[logiLayoutSt].OffsetAlongScrollAxis> logiLayoutSt) {
 			logiLayoutSt--;
 		}
 		logiLayoutSz=0;
 		//CMN.Log("screen_scoped_src_is...", stoff, edoff);
+		boolean horizon = pdoc.isHorizontalView();
+		float EO = horizon ? edoffX : edoff;
 		while (logiLayoutSz < logicLayout.length
 				&& logiLayoutSt+logiLayoutSz <pdoc.mPDocPages.length) {
 			//CMN.Log("第几...", pdoc.mPDocPages[logiLayoutSt+logiLayoutSz].OffsetAlongScrollAxis);
-			if(pdoc.mPDocPages[logiLayoutSt+logiLayoutSz].OffsetAlongScrollAxis<edoff) {
+			if(pdoc.mPDocPages[logiLayoutSt+logiLayoutSz].OffsetAlongScrollAxis<EO) {
 				//stoff += (logiLayoutSz>0?pdoc.mPDocPages[logiLayoutSt+logiLayoutSz-1].size.getHeight()+0:0);
 				logicLayout[logiLayoutSz] = pdoc.mPDocPages[logiLayoutSt+logiLayoutSz].OffsetAlongScrollAxis;
 				logiLayoutSz++;
@@ -2063,8 +2111,10 @@ public class PDocView extends View {
 					continue ;
 				page = pdoc.mPDocPages[logiLayoutSt + i];
 				HiRes = i>=0 && i<=toHeavenSteps &&  (i>0 || logiLayoutSz<=2
-						|| vTranslate.y+(page.OffsetAlongScrollAxis+page.size.getHeight()/2)*scale>0 /*半入法眼*/
+						|| !horizon&&vTranslate.y+(page.OffsetAlongScrollAxis+page.size.getHeight()/2)*scale>0 /*半入法眼*/
+						|| horizon&&vTranslate.x+(page.OffsetAlongScrollAxis+page.size.getWidth()/2)*scale>0 /*半入法眼*/
 						);
+				CMN.Log("HiRes", HiRes);
 				//HiRes = false;
 				NoTile=page.tile==null;
 				if(NoTile || HiRes && !page.tile.HiRes) {
@@ -2093,69 +2143,133 @@ public class PDocView extends View {
 			//if(!((flingScroller.isFinished()||isDown) && !isZooming))
 			//CMN.Log("refreshRequiredTiles", flingScroller.isFinished()||isDown, !isZooming);
 			/* add regions */
+			//if(false)
 			if(scale>=minScale() && (!isFlinging||flingScroller.getCurrVelocity()<15000*5) && !isZooming) {
 				tickCheckHiResRgnsIter=0;
 				float stride = (256 / scale);
-				for (int i = 0; i < logiLayoutSz; i++) {
-					page = pdoc.mPDocPages[logiLayoutSt + i];
-					int HO=page.getHorizontalOffset();
-					long stoffX=this.stoffX-HO;
-					float edoffX=this.edoffX-HO;
-					long top = page.OffsetAlongScrollAxis;
-					int top_delta = (int) (stoff - top);
-					int startY = 0;
-					int startX = 0;
-					if (top_delta > 0) {
-						startY = (int) (top_delta / stride);
-					}
-					if (stoffX > 0) {
-						startX = (int) (stoffX / stride);
-					}
-					page.startX=startX;
-					page.startY=startY;
-					page.maxX = Math.min((int) Math.ceil(page.size.getWidth()*1.0f/stride), (int) Math.ceil(edoffX*1.0f/stride))-1;
-					page.maxY = Math.min((int) Math.ceil(page.size.getHeight()*1.0f/stride), (int) Math.ceil((edoff-top)*1.0f/stride))-1;
-					//CMN.Log(page, "maxX, maxY", page.maxX, page.maxY, "ST::X, Y", page.startX, page.startY);
-				}
 				
 				refreshedBucket.clear();
-				for (int i = 0; i < logiLayoutSz; i++) {
-					page = pdoc.mPDocPages[logiLayoutSt + i];
-					int sY= (int) page.startY;
-					long top = page.OffsetAlongScrollAxis;
-					float srcRgnTop=sY*stride;
-					while(top+srcRgnTop<edoff && sY<=page.maxY) { // 子块顶边不超出
-						int sX = (int) page.startX;
-						float srcRgnLeft=page.startX*stride;
-						while(srcRgnLeft<edoffX && sX<=page.maxX) {
-							RegionTile rgnTile = page.getRegionTileAt(sX, sY);
-							if(rgnTile==null)
-							{
-								//CMN.Log("attempting to place tile at::", sX, sY, "pageidx=", logiLayoutSt + i);
-								rgnTile = tickCheckHiResRegions(stride);
-								if(rgnTile!=null) {
-									tickCheckHiResRgnsIter++;
-									if(task==null)task = acquireFreeTask();
-									rgnTile.assignToAsRegion(task, page, sX, sY, scale, srcRgnTop, srcRgnLeft, stride);
-								} else {
-									CMN.Log("------lucking tiles!!!", sX, sY);
-								}
-							}
-							else if(rgnTile.scale!=scale) {
-								//CMN.Log("attempting to restart tile at::", sX, sY, "pageidx=", logiLayoutSt + i);
-								if(task==null)task = acquireFreeTask();
-								rgnTile.restart(task, page, sX, sY, scale, srcRgnTop, srcRgnLeft, stride);
-							}
-							if(rgnTile!=null) {
-								refreshedBucket.add(rgnTile);
-							}
-							//if(sX>2*256)break;
-							srcRgnLeft+=stride;
-							sX++;
+				if(horizon) {
+					for (int i = 0; i < logiLayoutSz; i++) {
+						page = pdoc.mPDocPages[logiLayoutSt + i];
+						int HO=page.getLateralOffset();
+						long stoff=this.stoff-HO;
+						float edoff=this.edoff-HO;
+						long scroll_axis_top = page.OffsetAlongScrollAxis;
+						int scroll_axis_top_delta = (int) (stoffX - scroll_axis_top);
+						int startY = 0;
+						int startX = 0;
+						if (scroll_axis_top_delta > 0) {
+							startX = (int) (scroll_axis_top_delta / stride);
 						}
-						//CMN.Log("startY", startY);
-						sY++;
-						srcRgnTop+=stride;
+						if (stoff > 0) {
+							startY = (int) (stoff / stride);
+						}
+						page.startX=startX;
+						page.startY=startY;
+						page.maxX = Math.min((int) Math.ceil(page.size.getWidth()*1.0f/stride), (int) Math.ceil((edoffX-scroll_axis_top)*1.0f/stride))-1;
+						page.maxY = Math.min((int) Math.ceil(page.size.getHeight()*1.0f/stride), (int) Math.ceil(edoff*1.0f/stride))-1;
+						//CMN.Log(page, "maxX, maxY", page.maxX, page.maxY, "ST::X, Y", page.startX, page.startY);
+					}
+					for (int i = 0; i < logiLayoutSz; i++) {
+						page = pdoc.mPDocPages[logiLayoutSt + i];
+						int sY= (int) page.startX;
+						long top = page.OffsetAlongScrollAxis;
+						float srcRgnTop=sY*stride;
+						while(top+srcRgnTop<edoffX && sY<=page.maxX) { // 子块顶边不超出
+							int sX = (int) page.startY;
+							float srcRgnLeft=page.startY*stride;
+							while(srcRgnLeft<edoff && sX<=page.maxY) {
+								RegionTile rgnTile = page.getRegionTileAt(sY, sX);
+								if(rgnTile==null)
+								{
+									//CMN.Log("attempting to place tile at::", sX, sY, "pageidx=", logiLayoutSt + i);
+									rgnTile = tickCheckHiResRegions(stride);
+									if(rgnTile!=null) {
+										tickCheckHiResRgnsIter++;
+										if(task==null)task = acquireFreeTask();
+										rgnTile.assignToAsRegion(task, page, sY, sX, scale, srcRgnLeft, srcRgnTop, stride);
+									} else {
+										CMN.Log("------lucking tiles!!!", sY, sX);
+									}
+								}
+								else if(rgnTile.scale!=scale) {
+									//CMN.Log("attempting to restart tile at::", sX, sY, "pageidx=", logiLayoutSt + i);
+									if(task==null)task = acquireFreeTask();
+									rgnTile.restart(task, page, sY, sX, scale, srcRgnLeft, srcRgnTop, stride);
+								}
+								if(rgnTile!=null) {
+									refreshedBucket.add(rgnTile);
+								}
+								//if(sX>2*256)break;
+								srcRgnLeft+=stride;
+								sX++;
+							}
+							//CMN.Log("startY", startY);
+							sY++;
+							srcRgnTop+=stride;
+						}
+					}
+				} else {
+					for (int i = 0; i < logiLayoutSz; i++) {
+						page = pdoc.mPDocPages[logiLayoutSt + i];
+						int HO=page.getLateralOffset();
+						long stoffX=this.stoffX-HO;
+						float edoffX=this.edoffX-HO;
+						long top = page.OffsetAlongScrollAxis;
+						int top_delta = (int) (stoff - top);
+						int startY = 0;
+						int startX = 0;
+						if (top_delta > 0) {
+							startY = (int) (top_delta / stride);
+						}
+						if (stoffX > 0) {
+							startX = (int) (stoffX / stride);
+						}
+						page.startX=startX;
+						page.startY=startY;
+						page.maxX = Math.min((int) Math.ceil(page.size.getWidth()*1.0f/stride), (int) Math.ceil(edoffX*1.0f/stride))-1;
+						page.maxY = Math.min((int) Math.ceil(page.size.getHeight()*1.0f/stride), (int) Math.ceil((edoff-top)*1.0f/stride))-1;
+						//CMN.Log(page, "maxX, maxY", page.maxX, page.maxY, "ST::X, Y", page.startX, page.startY);
+					}
+					for (int i = 0; i < logiLayoutSz; i++) {
+						page = pdoc.mPDocPages[logiLayoutSt + i];
+						int sY= (int) page.startY;
+						long top = page.OffsetAlongScrollAxis;
+						float srcRgnTop=sY*stride;
+						while(top+srcRgnTop<edoff && sY<=page.maxY) { // 子块顶边不超出
+							int sX = (int) page.startX;
+							float srcRgnLeft=page.startX*stride;
+							while(srcRgnLeft<edoffX && sX<=page.maxX) {
+								RegionTile rgnTile = page.getRegionTileAt(sX, sY);
+								if(rgnTile==null)
+								{
+									//CMN.Log("attempting to place tile at::", sX, sY, "pageidx=", logiLayoutSt + i);
+									rgnTile = tickCheckHiResRegions(stride);
+									if(rgnTile!=null) {
+										tickCheckHiResRgnsIter++;
+										if(task==null)task = acquireFreeTask();
+										rgnTile.assignToAsRegion(task, page, sX, sY, scale, srcRgnTop, srcRgnLeft, stride);
+									} else {
+										CMN.Log("------lucking tiles!!!", sX, sY);
+									}
+								}
+								else if(rgnTile.scale!=scale) {
+									//CMN.Log("attempting to restart tile at::", sX, sY, "pageidx=", logiLayoutSt + i);
+									if(task==null)task = acquireFreeTask();
+									rgnTile.restart(task, page, sX, sY, scale, srcRgnTop, srcRgnLeft, stride);
+								}
+								if(rgnTile!=null) {
+									refreshedBucket.add(rgnTile);
+								}
+								//if(sX>2*256)break;
+								srcRgnLeft+=stride;
+								sX++;
+							}
+							//CMN.Log("startY", startY);
+							sY++;
+							srcRgnTop+=stride;
+						}
 					}
 				}
 			}
@@ -2182,8 +2296,12 @@ public class PDocView extends View {
 			return;
 		}
 		page.open();
-		int HO = page.getHorizontalOffset();
-		tile.sRect.set(HO, (int)page.OffsetAlongScrollAxis, HO+page.size.getWidth(), (int)page.OffsetAlongScrollAxis+page.size.getHeight());
+		int HO = page.getLateralOffset();
+		if(pdoc.isHorizontalView()) {
+			tile.sRect.set((int)page.OffsetAlongScrollAxis, HO, (int)page.OffsetAlongScrollAxis+page.size.getWidth(), HO+page.size.getHeight());
+		} else {
+			tile.sRect.set(HO, (int)page.OffsetAlongScrollAxis, HO+page.size.getWidth(), (int)page.OffsetAlongScrollAxis+page.size.getHeight());
+		}
 		int w = (int) (page.size.getWidth()*scale);
 		int h = (int) (page.size.getHeight()*scale);
 		boolean recreate=OneSmallStep.isRecycled();
@@ -2227,8 +2345,14 @@ public class PDocView extends View {
 		}
 //		int src_top = (int) (tile.OffsetAlongScrollAxis+y/scale);
 //		int src_left = (int) (x/scale);
-		float src_top = (tile.OffsetAlongScrollAxis+tile.srcRgnTop);
-		float src_left = (tile.srcRgnLeft+page.getHorizontalOffset());
+		float src_top, src_left;
+		if(pdoc.isHorizontalView()) {
+			src_top = (page.getLateralOffset()+tile.srcRgnTop);
+			src_left = (tile.srcRgnLeft+tile.OffsetAlongScrollAxis);
+		} else {
+			src_top = (tile.OffsetAlongScrollAxis+tile.srcRgnTop);
+			src_left = (tile.srcRgnLeft+page.getLateralOffset());
+		}
 		w/=scale; // the drawSize, in src space
 		h/=scale; // the drawSize, in src space
 		tile.sRect.set(src_left, src_top, src_left+w, src_top+h);
@@ -2262,6 +2386,8 @@ public class PDocView extends View {
 		//CMN.Log("ondraw");
 		super.onDraw(canvas);
 		int drawCount=0;
+		boolean horizon = pdoc!=null&&pdoc.isHorizontalView();
+		//if(false)
 		if(pdoc!=null) {
 			if (anim != null) {
 				handle_animation();
@@ -2297,9 +2423,9 @@ public class PDocView extends View {
 			}
 			
 			//if(missingTile||isZooming||isFlinging||anim!=null)
+			//if(false)
 			{
 				// 绘制缩略图
-				//if(false)
 				for (int i = 0; i < logiLayoutSz; i++) {
 					PDocument.PDocPage page = pdoc.mPDocPages[logiLayoutSt + i];
 					Tile tile = page.tile;
@@ -2416,16 +2542,21 @@ public class PDocView extends View {
 		}
 		
 		
-		
-		if(SSVD) {
+		if(SSVD && pdoc!=null) {
 			if(SSVDF) {
 				for (int i = 0; i < logiLayoutSz; i++) {
-					long srcYOff = logicLayout[i];
+					long srcLayOff = logicLayout[i];
 					PDocument.PDocPage page = pdoc.mPDocPages[logiLayoutSt+i];
 					int srcRectW = page.size.getWidth();
 					int srcRectH = page.size.getHeight();
-					float top = vTranslate.y + srcYOff * scale;
-					float left = vTranslate.x+page.getHorizontalOffset()*scale;
+					float top, left;
+					if(horizon) {
+						top = vTranslate.y + page.getLateralOffset()*scale;
+						left = vTranslate.x + srcLayOff * scale;
+					} else {
+						top = vTranslate.y + srcLayOff * scale;
+						left = vTranslate.x+page.getLateralOffset()*scale;
+					}
 					canvas.drawRect(left, top, left+srcRectW*scale, top+srcRectH*scale, debugLinePaint);
 				}
 			}
@@ -2487,9 +2618,15 @@ public class PDocView extends View {
 			PointF animVCenterEnd = sourceToViewCoord(anim.sCenterEnd);
 			final float dX = animVCenterEnd.x - vFocusNowX;
 			final float dY = animVCenterEnd.y - vFocusNowY;
-			vTranslate.x -= (dX * cos + dY * sin);
-			if(freeAnimation)
+			if(pdoc.isHorizontalView()) {
+				if(freeAnimation)
+					vTranslate.x -= (dX * cos + dY * sin);
 				vTranslate.y -= (-dX * sin + dY * cos);
+			} else {
+				vTranslate.x -= (dX * cos + dY * sin);
+				if(freeAnimation)
+					vTranslate.y -= (-dX * sin + dY * cos);
+			}
 			//vTranslate.x -= sourceToViewX(anim.sCenterEnd.x) - vFocusNowX;
 			//vTranslate.y -= sourceToViewY(anim.sCenterEnd.y) - vFocusNowY;
 			
@@ -2704,8 +2841,13 @@ public class PDocView extends View {
 			//pendingScale = scale;
 			//sPendingCenter = _sPendingCenter;
 			Log.e("fatal","kiam preDraw2 scale="+scale+"  getWidth="+getScreenWidth()+"  getHeight="+getScreenHeight()+" width="+getWidth());
-			vTranslate.x = (getScreenWidth()*1.0f/2) - (scale * _sPendingCenter.x);
-			vTranslate.y = 0;//(getScreenHeight()*1.0f/2) - (scale * _sPendingCenter.y);
+			if(pdoc.isHorizontalView()) {
+				vTranslate.x = 0;
+				vTranslate.y = (getScreenHeight()*1.0f/2) - (scale * _sPendingCenter.y);
+			} else {
+				vTranslate.x = (getScreenWidth()*1.0f/2) - (scale * _sPendingCenter.x);
+				vTranslate.y = 0;//(getScreenHeight()*1.0f/2) - (scale * _sPendingCenter.y);
+			}
 			vTranslateOrg.set(vTranslate);
 			//Log.e("fatal poison", ""+getScreenWidth()+" x "+getScreenHeight());
 			Log.e("fatal","preDraw2 fitToBounds1");
@@ -2888,8 +3030,8 @@ public class PDocView extends View {
 		_pdoc.aid = a.getTaskId();
 		removeCallbacks(mAnimationRunnable);
 		long time = System.currentTimeMillis();
-		sWidth = pdoc.maxPageWidth;
-		sHeight = pdoc.height;
+		sWidth = pdoc.getWidth();
+		sHeight = pdoc.getHeight();
 		//sOrientation = 0;
 		ImgSrc = pdoc.path;
 		sOrientation = getExifOrientation(getContext(), ImgSrc);
@@ -2902,8 +3044,7 @@ public class PDocView extends View {
 		//minScale = getMinScale();
 		maxScale = scale*10;
 		
-		preDraw2(new PointF(pdoc.maxPageWidth *1.0f/2, pdoc.height*1.0f/2),scale);
-		
+		preDraw2(new PointF(sWidth *1.0f/2, sHeight *1.0f/2),scale);
 		
 //		ViewGroup.LayoutParams lp = view_to_paint.getLayoutParams();
 //		lp.width=(int) (sWidth*scale);
@@ -3087,8 +3228,14 @@ public class PDocView extends View {
 //		}
 		
 		public boolean resetIfOutside(PDocView pDocView, float stride) {
-			long top= (long) (OffsetAlongScrollAxis+y*stride);
-			int left= (int) (0+x*stride);
+			long top, left;
+			if(pDocView.pdoc.isHorizontalView()) {
+				top= (long) (y*stride);
+				left= (int) (0+x*stride+OffsetAlongScrollAxis);
+			} else {
+				top= (long) (OffsetAlongScrollAxis+y*stride);
+				left= (int) (0+x*stride);
+			}
 //			if(currentOwner!=null && (currentOwner.pageIdx<pDocView.logiLayoutSt||currentOwner.pageIdx>pDocView.logiLayoutSt+pDocView.logiLayoutSz
 //					||top>=pDocView.edoff||left>=pDocView.edoffX||top+stride<=pDocView.stoff||left+stride<=pDocView.stoffX)) {
 			if(currentOwner!=null && (currentOwner.pageIdx<pDocView.logiLayoutSt||currentOwner.pageIdx>=pDocView.logiLayoutSt+pDocView.logiLayoutSz
@@ -3100,22 +3247,40 @@ public class PDocView extends View {
 		}
 		
 		public boolean isOutSide(PDocView pDocView) {
-			long top= (long) (OffsetAlongScrollAxis+srcRgnTop);
-			int left= (int) (0+srcRgnLeft+currentOwner.getHorizontalOffset());
+			long top, left;
+			if(pDocView.pdoc.isHorizontalView()) {
+				top= (long) (currentOwner.getLateralOffset()+srcRgnTop);
+				left= (int) (0+srcRgnLeft+OffsetAlongScrollAxis);
+			} else {
+				top= (long) (OffsetAlongScrollAxis+srcRgnTop);
+				left= (int) (0+srcRgnLeft+currentOwner.getLateralOffset());
+			}
 			return (top>=pDocView.edoff || top+stride<pDocView.stoff
 					|| left>=pDocView.edoffX || left+stride<pDocView.stoffX);
 		}
 		
 		public boolean shouldDraw(PDocView pDocView) {
-			long top= (long) (OffsetAlongScrollAxis+srcRgnTop);
-			int left= (int) (0+srcRgnLeft+currentOwner.getHorizontalOffset());
+			long top, left;
+			if(pDocView.pdoc.isHorizontalView()) {
+				top= (long) (currentOwner.getLateralOffset()+srcRgnTop);
+				left= (int) (0+srcRgnLeft+OffsetAlongScrollAxis);
+			} else {
+				top= (long) (OffsetAlongScrollAxis+srcRgnTop);
+				left= (int) (0+srcRgnLeft+currentOwner.getLateralOffset());
+			}
 			return !(top>=pDocView.draw_edoff || top+stride<pDocView.draw_stoff
 					|| left>=pDocView.draw_edoffX || left+stride<pDocView.draw_stoffX);
 		}
 		
 		public boolean isInSide(PDocView pDocView) {
-			long top= (long) (OffsetAlongScrollAxis+srcRgnTop);
-			int left= (int) (0+srcRgnLeft+currentOwner.getHorizontalOffset());
+			long top, left;
+			if(pDocView.pdoc.isHorizontalView()) {
+				top= (long) (currentOwner.getLateralOffset()+srcRgnTop);
+				left= (int) (0+srcRgnLeft+OffsetAlongScrollAxis);
+			} else {
+				top= (long) (OffsetAlongScrollAxis+srcRgnTop);
+				left= (int) (0+srcRgnLeft+currentOwner.getLateralOffset());
+			}
 			return (top>=pDocView.stoff && top+stride<=pDocView.edoff
 					&& left>=pDocView.stoffX && left+stride<pDocView.edoffX);
 		}
@@ -3762,7 +3927,12 @@ public class PDocView extends View {
 	private float minScale() {//
 		int vPadding = getPaddingBottom() + getPaddingTop();
 		int hPadding = getPaddingLeft() + getPaddingRight();
-		float ret = (getScreenWidth() - hPadding) / (float) exifWidth();
+		float ret;
+		if(pdoc.isHorizontalView()) {
+			ret = (getScreenHeight() - vPadding) / (float) exifHeight();
+		} else {
+			ret = (getScreenWidth() - hPadding) / (float) exifWidth();
+		}
 		//CMN.Log("minScale", getScreenWidth(), exifWidth());
 		if(ret<=0 || ret==Float.NaN) ret = 0.05f;
 		return ret;
@@ -3782,7 +3952,11 @@ public class PDocView extends View {
 			sh = sWidth;
 		}
 		//CMN.Log("currentMinScale", getScreenWidth(), sw);
-		return (getScreenWidth() - hPadding) / (float) sw;
+		if(pdoc.isHorizontalView()) {
+			return (getScreenHeight() - vPadding) / (float) sh;
+		} else {
+			return (getScreenWidth() - hPadding) / (float) sw;
+		}
 	}
 	
 	/**

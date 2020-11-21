@@ -145,7 +145,8 @@ public class PDocViewerActivity extends Toastable_Activity {
 				}
 			}
 		} else { //tg
-			//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/Gpu Pro 1.pdf");
+			currentViewer.setDocumentPath("/storage/emulated/0/myFolder/Gpu Pro 1.pdf");
+			
 			//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/YotaSpec02.pdf"); // √
 			//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/sample.pdf");
 			//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/sig-notes.pdf");
@@ -154,7 +155,7 @@ public class PDocViewerActivity extends Toastable_Activity {
 			//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/sig-notes-t.pdf");
 			//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/tmp.pdf");
 			//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/sig-notes-new-txt-page0.pdf");
-			currentViewer.setDocumentPath("/storage/emulated/0/myFolder/1.pdf");
+			//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/1.pdf");
 		}
 		
 	}

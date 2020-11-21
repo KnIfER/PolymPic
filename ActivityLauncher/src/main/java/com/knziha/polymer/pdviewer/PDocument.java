@@ -9,7 +9,6 @@ import android.os.ParcelFileDescriptor;
 import android.util.DisplayMetrics;
 import android.util.SparseArray;
 
-import com.knziha.polymer.Toastable_Activity;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.text.BreakIteratorHelper;
 import com.shockwave.pdfium.PdfDocument;
@@ -37,9 +36,10 @@ public class PDocument {
 	public int maxPageWidth;
 	public int maxPageHeight;
 	public int gap=15;
-	public long height;
+	private long LengthAlongScrollAxis;
 	public int _num_entries;
 	public boolean isDirty;
+	private boolean isHorizontalView=true;
 	public int aid;
 	private int _anchor_page;
 	
@@ -84,6 +84,22 @@ public class PDocument {
 			close();
 			books.remove(path);
 		}
+	}
+	
+	public void setHorizontalView(boolean horizontalView) {
+		isHorizontalView = horizontalView;
+	}
+	
+	public boolean isHorizontalView() {
+		return isHorizontalView;
+	}
+	
+	public long getHeight() {
+		return isHorizontalView?maxPageHeight:LengthAlongScrollAxis;
+	}
+	
+	public long getWidth() {
+		return isHorizontalView?LengthAlongScrollAxis:maxPageWidth;
 	}
 	
 	class PDocPage {
@@ -169,10 +185,10 @@ public class PDocument {
 					'}';
 		}
 		
-		public int getHorizontalOffset() {
-			if(size.getWidth()!=maxPageWidth) {
-				return (maxPageWidth-size.getWidth())/2;
-			}
+		public int getLateralOffset() {
+			//if(size.getWidth()!=maxPageWidth) {
+			//	return (maxPageWidth-size.getWidth())/2;
+			//}
 			return 0;
 		}
 		
@@ -252,7 +268,10 @@ public class PDocument {
 				}
 				selEd -= selSt;
 				if(selEd>0) {
-					int rectCount = pdfiumCore.getTextRects(pid.get(), OffsetAlongScrollAxis, getHorizontalOffset(), size, rectPagePool, tid, selSt, selEd);
+					int rectCount = pdfiumCore.getTextRects(pid.get()
+							, isHorizontalView?getLateralOffset():(int)OffsetAlongScrollAxis
+							, isHorizontalView?(int)OffsetAlongScrollAxis:getLateralOffset()
+							, size, rectPagePool, tid, selSt, selEd);
 					//CMN.Log("getTextRects", selSt, selEd, rectCount, rectPagePool.toString());
 					if(rectCount>=0 && rectPagePool.size()>rectCount) {
 						rectPagePool.subList(rectCount, rectPagePool.size()).clear();
@@ -262,12 +281,16 @@ public class PDocument {
 		}
 		
 		public void getCharPos(RectF pos, int index) {
-			pdfiumCore.nativeGetCharPos(pid.get(), (int)OffsetAlongScrollAxis, getHorizontalOffset()
+			pdfiumCore.nativeGetCharPos(pid.get()
+					, isHorizontalView?getLateralOffset():(int)OffsetAlongScrollAxis
+					, isHorizontalView?(int)OffsetAlongScrollAxis:getLateralOffset()
 					, size.getWidth(), size.getHeight(), pos, tid, index, true);
 		}
 		
 		public void getCharLoosePos(RectF pos, int index) {
-			pdfiumCore.nativeGetMixedLooseCharPos(pid.get(), (int)OffsetAlongScrollAxis, getHorizontalOffset()
+			pdfiumCore.nativeGetMixedLooseCharPos(pid.get()
+					, isHorizontalView?getLateralOffset():(int)OffsetAlongScrollAxis
+					, isHorizontalView?(int)OffsetAlongScrollAxis:getLateralOffset()
 					, size.getWidth(), size.getHeight(), pos, tid, index, true);
 		}
 		
@@ -362,8 +385,14 @@ public class PDocument {
 			long antTmp = pdfiumCore.nativeCreateAnnot(pid.get(), 9);
 			if(antTmp!=0) {
 				CMN.Log("nativeCreateAnnot", antTmp);
-				long offset1 = OffsetAlongScrollAxis;
-				int offset2 = getHorizontalOffset();
+				int offset1, offset2;
+				if(isHorizontalView) {
+					offset1 = getLateralOffset();
+					offset2 = (int) OffsetAlongScrollAxis;
+				} else {
+					offset1 = (int) OffsetAlongScrollAxis;
+					offset2 = getLateralOffset();
+				}
 				double width = size.getWidth(), height = size.getHeight();
 				//pdfiumCore.nativeSetAnnotColor(antTmp, 0, 0, 25, 128);
 				pdfiumCore.nativeSetAnnotRect(pid.get(), antTmp, box.left-offset2, box.top-offset1, box.right-offset2, box.bottom-offset1, width, height);
@@ -398,28 +427,12 @@ public class PDocument {
 		File f = new File(path);
 		ParcelFileDescriptor pfd = ParcelFileDescriptor.open(f, ParcelFileDescriptor.MODE_READ_ONLY);
 		//ParcelFileDescriptor pfd = ParcelFileDescriptor.open(f, ParcelFileDescriptor.MODE_READ_WRITE);
-		CMN.Log("ParcelFileDescriptor", pfd.getFd());
+		//CMN.Log("ParcelFileDescriptor", pfd.getFd());
 		pdfDocument = pdfiumCore.newDocument(pfd);
 		_num_entries = pdfiumCore.getPageCount(pdfDocument);
 		mPDocPages = new PDocPage[_num_entries];
-		height=0;
-		for (int i = 0; i < _num_entries; i++) {
-			Size size = pdfiumCore.getPageSize(pdfDocument, i);
-			PDocPage page = new PDocPage(i, size);
-			mPDocPages[i]=page;
-			page.OffsetAlongScrollAxis=height;
-			height+=size.getHeight()+gap;
-			//if(i<10) CMN.Log("mPDocPages", i, size.getWidth(), size.getHeight());
-			maxPageWidth = Math.max(maxPageWidth, size.getWidth());
-			maxPageHeight = Math.max(maxPageHeight, size.getHeight());
-			if(abort!=null&&abort.get()) {
-				return;
-			}
-		}
-		if(_num_entries>0) {
-			PDocPage page = mPDocPages[_num_entries-1];
-			height = page.OffsetAlongScrollAxis+page.size.getHeight();
-		}
+		LengthAlongScrollAxis=0;
+		recalcPages(false, abort);
 		float w=dm.widthPixels, h=dm.heightPixels;
 		float v1=maxPageWidth*maxPageHeight, v2=w*h;
 		if(v1<=v2) {
@@ -438,7 +451,28 @@ public class PDocument {
 			}
 			ThumbsLoResFactor=ThumbsHiResFactor/4;
 		}
+		//ThumbsLoResFactor=0.01f;
 		CMN.Log("缩放比", ThumbsHiResFactor, ThumbsLoResFactor);
+	}
+	
+	private void recalcPages(boolean reinit, AtomicBoolean abort) {
+		for (int i = 0; i < _num_entries; i++) {
+			PDocPage page = reinit&&mPDocPages[i]!=null?mPDocPages[i]:(mPDocPages[i]=new PDocPage(i, pdfiumCore.getPageSize(pdfDocument, i)));
+			Size size = page.size;
+			page.OffsetAlongScrollAxis=LengthAlongScrollAxis;
+			LengthAlongScrollAxis+=(isHorizontalView?size.getWidth():size.getHeight())+gap;
+			//if(i<10) CMN.Log("mPDocPages", i, size.getWidth(), size.getHeight());
+			maxPageWidth = Math.max(maxPageWidth, size.getWidth());
+			maxPageHeight = Math.max(maxPageHeight, size.getHeight());
+			if(abort!=null&&abort.get()) {
+				return;
+			}
+		}
+		if(_num_entries>0) {
+			PDocPage page = mPDocPages[_num_entries-1];
+			Size size = page.size;
+			LengthAlongScrollAxis=page.OffsetAlongScrollAxis+(isHorizontalView?size.getWidth():size.getHeight());
+		}
 	}
 	
 	public Bitmap renderBitmap(PDocPage page, Bitmap bitmap, float scale) {
