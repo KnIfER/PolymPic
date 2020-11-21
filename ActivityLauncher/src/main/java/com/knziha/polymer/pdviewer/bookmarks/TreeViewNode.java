@@ -9,18 +9,19 @@ import java.util.List;
  * Created by tlh on 2016/10/1 :)
  */
 
-public class TreeNode<T extends TreeViewAdapter.LayoutItemType> implements Cloneable {
+@SuppressWarnings({"rawtypes"})
+public class TreeViewNode<T extends TreeViewAdapter.LayoutItemType> implements Cloneable {
     private T content;
-    private TreeNode parent;
-    private List<TreeNode> childList;
+    private TreeViewNode parent;
+    private List<TreeViewNode> childList;
     private boolean isExpand;
-    private boolean isLocked;
-    //the tree high
+    //private boolean isLocked;
+    //the tree height
     private int height = UNDEFINE;
 
     private static final int UNDEFINE = -1;
 
-    public TreeNode(@NonNull T content) {
+    public TreeViewNode(@NonNull T content) {
         this.content = content;
         this.childList = new ArrayList<>();
     }
@@ -49,18 +50,18 @@ public class TreeNode<T extends TreeViewAdapter.LayoutItemType> implements Clone
         return content;
     }
 
-    public List<TreeNode> getChildList() {
+    public List<TreeViewNode> getChildList() {
         return childList;
     }
 
-    public void setChildList(List<TreeNode> childList) {
+    public void setChildList(List<TreeViewNode> childList) {
         this.childList.clear();
-        for (TreeNode treeNode : childList) {
-            addChild(treeNode);
+        for (TreeViewNode treeViewNode : childList) {
+            addChild(treeViewNode);
         }
     }
 
-    public TreeNode addChild(TreeNode node) {
+    public TreeViewNode addChild(TreeViewNode node) {
         if (childList == null)
             childList = new ArrayList<>();
         childList.add(node);
@@ -68,10 +69,9 @@ public class TreeNode<T extends TreeViewAdapter.LayoutItemType> implements Clone
         return this;
     }
 
-    public boolean toggle() {
+    public void toggle() {
         isExpand = !isExpand;
-        return isExpand;
-    }
+	}
 
     public void collapse() {
         if (isExpand) {
@@ -83,7 +83,7 @@ public class TreeNode<T extends TreeViewAdapter.LayoutItemType> implements Clone
         if (childList == null || childList.isEmpty()) {
             return;
         }
-        for (TreeNode child : this.childList) {
+        for (TreeViewNode child : this.childList) {
             child.collapseAll();
         }
     }
@@ -99,7 +99,7 @@ public class TreeNode<T extends TreeViewAdapter.LayoutItemType> implements Clone
         if (childList == null || childList.isEmpty()) {
             return;
         }
-        for (TreeNode child : this.childList) {
+        for (TreeViewNode child : this.childList) {
             child.expandAll();
         }
     }
@@ -108,29 +108,16 @@ public class TreeNode<T extends TreeViewAdapter.LayoutItemType> implements Clone
         return isExpand;
     }
 
-    public void setParent(TreeNode parent) {
+    public void setParent(TreeViewNode parent) {
         this.parent = parent;
     }
 
-    public TreeNode getParent() {
+    public TreeViewNode getParent() {
         return parent;
     }
 
-    public TreeNode<T> lock() {
-        isLocked = true;
-        return this;
-    }
-
-    public TreeNode<T> unlock() {
-        isLocked = false;
-        return this;
-    }
-
-    public boolean isLocked() {
-        return isLocked;
-    }
-
-    @Override
+    @NonNull
+	@Override
     public String toString() {
         return "TreeNode{" +
                 "content=" + this.content +
@@ -140,9 +127,10 @@ public class TreeNode<T extends TreeViewAdapter.LayoutItemType> implements Clone
                 '}';
     }
 
-    @Override
-    protected TreeNode<T> clone() throws CloneNotSupportedException {
-        TreeNode<T> clone = new TreeNode<>(this.content);
+    @NonNull
+	@Override
+    protected TreeViewNode<T> clone() throws CloneNotSupportedException {
+        TreeViewNode<T> clone = new TreeViewNode<>(this.content);
         clone.isExpand = this.isExpand;
         return clone;
     }

@@ -30,7 +30,7 @@ public class BookMarkDir implements TreeViewAdapter.LayoutItemType {
 		}
 	
 		@Override
-		public void bindView(ViewHolder holder, int position, TreeNode node) {
+		public void bindView(ViewHolder holder, int position, TreeViewNode node) {
 			holder.ivArrow.setRotation(0);
 			holder.ivArrow.setImageResource(R.drawable.ic_keyboard_arrow_right_black_18dp);
 			int rotateDegree = node.isExpand() ? 90 : 0;
@@ -50,11 +50,14 @@ public class BookMarkDir implements TreeViewAdapter.LayoutItemType {
 		public static class ViewHolder extends TreeViewAdapter.TreeViewBinderInterface.ViewHolder {
 			private ImageView ivArrow;
 			private TextView tvName;
+			private TextView tvPage;
 		
 			public ViewHolder(View rootView) {
 				super(rootView);
 				this.ivArrow = rootView.findViewById(R.id.iv_arrow);
 				this.tvName = rootView.findViewById(R.id.tv_name);
+				this.tvPage = rootView.findViewById(R.id.tv_page);
+				itemView.setTag(this);
 			}
 		
 			public ImageView getIvArrow() {

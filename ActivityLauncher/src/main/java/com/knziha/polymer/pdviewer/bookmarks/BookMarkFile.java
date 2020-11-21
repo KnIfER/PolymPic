@@ -28,7 +28,7 @@ public class BookMarkFile implements TreeViewAdapter.LayoutItemType {
 		}
 	
 		@Override
-		public void bindView(ViewHolder holder, int position, TreeNode node) {
+		public void bindView(ViewHolder holder, int position, TreeViewNode node) {
 			BookMarkFile fileNode = (BookMarkFile) node.getContent();
 			holder.tvName.setText(fileNode.fileName);
 		}
@@ -40,10 +40,13 @@ public class BookMarkFile implements TreeViewAdapter.LayoutItemType {
 	
 		public class ViewHolder extends TreeViewAdapter.TreeViewBinderInterface.ViewHolder {
 			public TextView tvName;
+			public TextView tvPage;
 		
 			public ViewHolder(View rootView) {
 				super(rootView);
 				this.tvName = rootView.findViewById(R.id.tv_name);
+				this.tvPage = rootView.findViewById(R.id.tv_page);
+				itemView.setTag(this);
 			}
 		}
 	}

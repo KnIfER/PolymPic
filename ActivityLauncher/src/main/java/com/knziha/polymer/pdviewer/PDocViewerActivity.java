@@ -2,6 +2,7 @@ package com.knziha.polymer.pdviewer;
 
 import android.animation.Animator;
 import android.animation.ObjectAnimator;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.ClipData;
@@ -205,6 +206,7 @@ public class PDocViewerActivity extends Toastable_Activity {
 		currentViewer.setDocumentPath(null);
 	}
 	
+	@SuppressLint("NonConstantResourceId")
 	public void OnMenuClicked(MenuItem item) {
 		switch (item.getItemId()) {
 			case R.id.ctx_copy:{
