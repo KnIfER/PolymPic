@@ -6,51 +6,50 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.knziha.polymer.R;
+import com.knziha.polymer.treeview.TreeViewAdapter;
+import com.knziha.polymer.treeview.TreeViewNode;
 
 /**
  * Created by tlh on 2016/10/1 :)
  */
 
-public class BookMarkDir implements TreeViewAdapter.LayoutItemType {
-    public String dirName;
+public class BookMarkEntry implements TreeViewAdapter.LayoutItemType {
+    public int page;
+    public String entryName;
 
-    public BookMarkDir(String dirName) {
-        this.dirName = dirName;
+    public BookMarkEntry(String entryName) {
+        this.entryName = entryName;
     }
 
     @Override
     public int getLayoutId() {
-        return R.layout.test_bookmark_item_dir;
+        return R.layout.bookmark_item;
     }
     
-    static class DirectoryNodeBinder extends TreeViewAdapter.TreeViewBinderInterface<DirectoryNodeBinder.ViewHolder> {
+    static class BookMarkEntryBinder extends TreeViewAdapter.TreeViewBinderInterface<BookMarkEntryBinder.ViewHolder> {
 		@Override
 		public ViewHolder provideViewHolder(View itemView) {
+			//holder.ivArrow.setImageResource(R.drawable.ic_keyboard_arrow_right_black_18dp);
 			return new ViewHolder(itemView);
 		}
 	
 		@Override
 		public void bindView(ViewHolder holder, int position, TreeViewNode node) {
-			holder.ivArrow.setRotation(0);
-			holder.ivArrow.setImageResource(R.drawable.ic_keyboard_arrow_right_black_18dp);
-			int rotateDegree = node.isExpand() ? 90 : 0;
-			holder.ivArrow.setRotation(rotateDegree);
-			BookMarkDir dirNode = (BookMarkDir) node.getContent();
-			holder.tvName.setText(dirNode.dirName);
-			if (node.isLeaf())
-				holder.ivArrow.setVisibility(View.INVISIBLE);
-			else holder.ivArrow.setVisibility(View.VISIBLE);
+			holder.ivArrow.setRotation(node.isExpand() ? 90 : 0);
+			BookMarkEntry entryNode = (BookMarkEntry) node.getContent();
+			holder.tvName.setText(entryNode.entryName);
+			holder.ivArrow.setVisibility(node.isLeaf()?View.INVISIBLE:View.VISIBLE);
 		}
 	
 		@Override
 		public int getLayoutId() {
-			return R.layout.test_bookmark_item_dir;
+			return R.layout.bookmark_item;
 		}
 	
 		public static class ViewHolder extends TreeViewAdapter.TreeViewBinderInterface.ViewHolder {
-			private ImageView ivArrow;
-			private TextView tvName;
-			private TextView tvPage;
+			private final ImageView ivArrow;
+			private final TextView tvName;
+			private final TextView tvPage;
 		
 			public ViewHolder(View rootView) {
 				super(rootView);

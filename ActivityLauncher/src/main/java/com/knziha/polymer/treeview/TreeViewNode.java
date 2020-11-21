@@ -1,4 +1,4 @@
-package com.knziha.polymer.pdviewer.bookmarks;
+package com.knziha.polymer.treeview;
 
 import androidx.annotation.NonNull;
 

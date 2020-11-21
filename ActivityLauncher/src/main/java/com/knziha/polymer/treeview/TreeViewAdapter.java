@@ -1,6 +1,5 @@
-package com.knziha.polymer.pdviewer.bookmarks;
+package com.knziha.polymer.treeview;
 
-import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;

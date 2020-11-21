@@ -6,15 +6,19 @@ import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.ImageView;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.knziha.polymer.R;
+import com.knziha.polymer.treeview.TreeViewAdapter;
+import com.knziha.polymer.treeview.TreeViewNode;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class BookMarkActivity extends AppCompatActivity {
@@ -26,58 +30,58 @@ public class BookMarkActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        setContentView(R.layout.test_bookmark_view);
+        setContentView(R.layout.bookmark_test_view);
         
 		rv = findViewById(R.id.rv);
 	
 		List<TreeViewNode> nodes = new ArrayList<>();
-		TreeViewNode<BookMarkDir> app = new TreeViewNode<>(new BookMarkDir("app"));
+		TreeViewNode<BookMarkEntry> app = new TreeViewNode<>(new BookMarkEntry("app"));
 		nodes.add(app);
 		app.addChild(
-				new TreeViewNode<>(new BookMarkDir("manifests"))
-						.addChild(new TreeViewNode<>(new BookMarkFile("AndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifest.xml")))
+				new TreeViewNode<>(new BookMarkEntry("manifests"))
+						.addChild(new TreeViewNode<>(new BookMarkEntry("AndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifest.xml")))
 		);
 		
 		app.addChild(
-				new TreeViewNode<>(new BookMarkDir("java")).addChild(
-						new TreeViewNode<>(new BookMarkDir("tellh")).addChild(
-								new TreeViewNode<>(new BookMarkDir("com")).addChild(
-										new TreeViewNode<>(new BookMarkDir("recyclertreeview"))
-												.addChild(new TreeViewNode<>(new BookMarkFile("Dir")))
-												.addChild(new TreeViewNode<>(new BookMarkFile("DirectoryNodeBinder")))
-												.addChild(new TreeViewNode<>(new BookMarkFile("File")))
-												.addChild(new TreeViewNode<>(new BookMarkFile("FileNodeBinder")))
-												.addChild(new TreeViewNode<>(new BookMarkFile("TreeViewBinder")))
+				new TreeViewNode<>(new BookMarkEntry("java")).addChild(
+						new TreeViewNode<>(new BookMarkEntry("tellh")).addChild(
+								new TreeViewNode<>(new BookMarkEntry("com")).addChild(
+										new TreeViewNode<>(new BookMarkEntry("recyclertreeview"))
+												.addChild(new TreeViewNode<>(new BookMarkEntry("Dir")))
+												.addChild(new TreeViewNode<>(new BookMarkEntry("DirectoryNodeBinder")))
+												.addChild(new TreeViewNode<>(new BookMarkEntry("File")))
+												.addChild(new TreeViewNode<>(new BookMarkEntry("FileNodeBinder")))
+												.addChild(new TreeViewNode<>(new BookMarkEntry("TreeViewBinder")))
 								)
 						)
 				)
 		);
-		TreeViewNode<BookMarkDir> res = new TreeViewNode<>(new BookMarkDir("res"));
+		TreeViewNode<BookMarkEntry> res = new TreeViewNode<>(new BookMarkEntry("res"));
 		nodes.add(res);
 		res.addChild(
-				new TreeViewNode<>(new BookMarkDir("layout"))
-						.addChild(new TreeViewNode<>(new BookMarkFile("activity_main.xml")))
-						.addChild(new TreeViewNode<>(new BookMarkFile("item_dir.xml")))
-						.addChild(new TreeViewNode<>(new BookMarkFile("item_file.xml")))
+				new TreeViewNode<>(new BookMarkEntry("layout"))
+						.addChild(new TreeViewNode<>(new BookMarkEntry("activity_main.xml")))
+						.addChild(new TreeViewNode<>(new BookMarkEntry("item_dir.xml")))
+						.addChild(new TreeViewNode<>(new BookMarkEntry("item_file.xml")))
 		);
 		res.addChild(
-				new TreeViewNode<>(new BookMarkDir("mipmap"))
-						.addChild(new TreeViewNode<>(new BookMarkFile("ic_launcher.png")))
+				new TreeViewNode<>(new BookMarkEntry("mipmap"))
+						.addChild(new TreeViewNode<>(new BookMarkEntry("ic_launcher.png")))
 		);
 	
 		rv.setLayoutManager(new LinearLayoutManager(this));
 	
 		rv.setItemAnimator(null);
 		
-		adapter = new TreeViewAdapter(nodes, Arrays.asList(new BookMarkFile.FileNodeBinder(), new BookMarkDir.DirectoryNodeBinder()));
+		adapter = new TreeViewAdapter(nodes, Collections.singletonList(new BookMarkEntry.BookMarkEntryBinder()));
 		// whether collapse child nodes when their parent node was close.
 //        adapter.ifCollapseChildWhileCollapseParent(true);
 	
 		rv.addItemDecoration(new RecyclerView.ItemDecoration(){
-			ColorDrawable mDivider = new ColorDrawable(Color.GRAY);
-			int mDividerHeight = 1;
+			final ColorDrawable mDivider = new ColorDrawable(Color.GRAY);
+			final int mDividerHeight = 1;
 			@Override
-			public void onDrawOver(Canvas c, RecyclerView parent, RecyclerView.State state) {
+			public void onDrawOver(@NonNull Canvas c, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
 				if (mDivider != null) {
 					final int childCount = parent.getChildCount();
 					final int width = parent.getWidth();
@@ -92,7 +96,7 @@ public class BookMarkActivity extends AppCompatActivity {
 				}
 			}
 			@Override
-			public void getItemOffsets(Rect outRect, View view, RecyclerView parent, RecyclerView.State state) {
+			public void getItemOffsets(@NonNull Rect outRect, @NonNull View view, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
 				if (shouldDrawDividerBelow(view, parent)) {
 					outRect.bottom = mDividerHeight;
 				}
@@ -117,13 +121,10 @@ public class BookMarkActivity extends AppCompatActivity {
 		
 			@Override
 			public void onToggle(boolean isExpand, RecyclerView.ViewHolder holder) {
-				if(holder instanceof BookMarkDir.DirectoryNodeBinder.ViewHolder) {
-					
-					//DirectoryNodeBinder.ViewHolder dirViewHolder = (DirectoryNodeBinder.ViewHolder) holder;
-					//final ImageView ivArrow = dirViewHolder.getIvArrow();
-					//int rotateDegree = isExpand ? 90 : -90;
-					//ivArrow.animate().rotationBy(rotateDegree).start();
-					
+				if(holder instanceof BookMarkEntry.BookMarkEntryBinder.ViewHolder) {
+					BookMarkEntry.BookMarkEntryBinder.ViewHolder viewholder = (BookMarkEntry.BookMarkEntryBinder.ViewHolder) holder;
+					final ImageView ivArrow = viewholder.getIvArrow();
+					ivArrow.animate().rotation(isExpand ? 90 : 0).start();
 				}
 			}
 		});
