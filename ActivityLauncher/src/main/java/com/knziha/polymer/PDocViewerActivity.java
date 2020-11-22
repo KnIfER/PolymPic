@@ -1,4 +1,4 @@
-package com.knziha.polymer.pdviewer;
+package com.knziha.polymer;
 
 import android.animation.Animator;
 import android.animation.ObjectAnimator;
@@ -42,6 +42,8 @@ import com.knziha.polymer.Utils.Options;
 import com.knziha.polymer.WeakReferenceHelper;
 import com.knziha.polymer.databinding.BookmarksBinding;
 import com.knziha.polymer.databinding.ImageviewDebugBinding;
+import com.knziha.polymer.pdviewer.PDocView;
+import com.knziha.polymer.pdviewer.PDocument;
 import com.knziha.polymer.pdviewer.bookmarks.BookMarkFragment;
 import com.knziha.polymer.pdviewer.bookmarks.BookMarksFragment;
 import com.knziha.polymer.pdviewer.bookmarks.FragAdapter;
@@ -61,8 +63,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 	
 	@Override
 	public void onBackPressed() {
-		if(currentViewer.draggingHandle==null && currentViewer.shouldDrawSelection()) {
-			currentViewer.clearSelection();
+		if(currentViewer.tryClearSelection()) {
 		} else {
 			super.onBackPressed();
 		}
@@ -306,5 +307,13 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		AppIconsAdapter shareAdapter = (AppIconsAdapter) dlg.tag;
 		shareAdapter.pullAvailableApps(this, null, selection);
 		//CMN.pt("拉取耗时：");
+	}
+	
+	@Override
+	protected void onNewIntent(Intent intent) {
+		super.onNewIntent(intent);
+		if(intent.getData()!=null) {
+			showT("新的来啦！");
+		}
 	}
 }

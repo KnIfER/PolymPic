@@ -263,6 +263,14 @@ public class PDocView extends View {
 	private boolean isFlinging;
 	private TilesInitTask loadingTask;
 	
+	public boolean tryClearSelection() {
+		if(draggingHandle==null && hasSelection || hasAnnotSelction) {
+			clearSelection();
+			return true;
+		}
+		return false;
+	}
+	
 	public interface ImageReadyListener { void ImageReady(); }
 	
 	ImageReadyListener mImageReadyListener;

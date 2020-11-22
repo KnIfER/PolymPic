@@ -7,12 +7,16 @@ import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.PropertyValuesHolder;
 import android.animation.ValueAnimator;
+import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.app.DownloadManager;
+import android.app.PendingIntent;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ShortcutInfo;
+import android.content.pm.ShortcutManager;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.database.Cursor;
@@ -22,6 +26,7 @@ import android.graphics.PorterDuff;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.Icon;
 import android.graphics.drawable.LayerDrawable;
 import android.graphics.drawable.RotateDrawable;
 import android.net.Uri;
@@ -72,10 +77,14 @@ import android.widget.TextView;
 import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.GlobalOptions;
 import androidx.appcompat.widget.ListPopupWindow;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
+import androidx.core.content.pm.ShortcutInfoCompat;
+import androidx.core.content.pm.ShortcutManagerCompat;
+import androidx.core.graphics.drawable.IconCompat;
 import androidx.databinding.DataBindingUtil;
 import androidx.databinding.ViewDataBinding;
 import androidx.recyclerview.widget.GridLayoutManager;
@@ -86,6 +95,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.knziha.polymer.Utils.BufferedReader;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.LexicalDBHelper;
+import com.knziha.polymer.Utils.MyReceiver;
 import com.knziha.polymer.Utils.OptionProcessor;
 import com.knziha.polymer.Utils.Options;
 import com.knziha.polymer.Utils.WebOptions;
@@ -1779,6 +1789,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	}
 	
 	//click
+	@RequiresApi(api = Build.VERSION_CODES.N_MR1)
+	@SuppressLint("NonConstantResourceId") // no no no you don't want that. @Google
 	@Override
 	public void onClick(View v) {
 		if(mBrowserSlider.active()) {
@@ -1788,6 +1800,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			/* 分享 */
 			case R.id.menu_icon6: {
 				shareUrlOrText();
+			} break;
+			case R.id.menu_icon10: {
+				AddPDFViewerShortCut(getApplicationContext());
 			} break;
 			case R.id.ivBack:{ // 搜索引擎弹窗 //searpop
 				int polypopupW = (int) (_45_*1.5);
@@ -2102,6 +2117,23 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					execBrowserGoTo(url);
 				}
 			} break;
+		}
+	}
+	
+	private void AddPDFViewerShortCut(Context context) {
+		if (ShortcutManagerCompat.isRequestPinShortcutSupported(context)) {
+			Intent intent = new Intent(context, PDocViewerActivity.class);
+			intent.setAction(Intent.ACTION_MAIN);
+			
+			ShortcutInfoCompat info = new ShortcutInfoCompat.Builder(context, "The only id")
+					.setIcon(IconCompat.createWithResource(context, R.drawable.ic_pdoc_house))
+					.setShortLabel("Short Label")
+					.setIntent(intent)
+					.build();
+			
+			//当添加快捷方式的确认弹框弹出来时，将被回调
+			PendingIntent shortcutCallbackIntent = PendingIntent.getBroadcast(context, 0, new Intent(context, MyReceiver.class), PendingIntent.FLAG_UPDATE_CURRENT);
+			ShortcutManagerCompat.requestPinShortcut(context, info, shortcutCallbackIntent.getIntentSender());
 		}
 	}
 	

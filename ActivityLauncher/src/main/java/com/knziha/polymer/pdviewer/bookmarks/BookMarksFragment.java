@@ -20,7 +20,7 @@ import com.google.android.material.tabs.TabLayout;
 import com.knziha.polymer.R;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.databinding.BookmarksBinding;
-import com.knziha.polymer.pdviewer.PDocViewerActivity;
+import com.knziha.polymer.PDocViewerActivity;
 
 import java.util.ArrayList;
 
