@@ -69,7 +69,7 @@ public class Toastable_Activity extends AppCompatActivity {
 	private static int DockerMarginR;
 	private static int DockerMarginT;
 	private static int DockerMarginB;
-	protected ViewGroup root;
+	public ViewGroup root;
 	//public dictionary_App_Options opt;
 	//public List<mdict> md = new ArrayList<mdict>();//Collections.synchronizedList(new ArrayList<mdict>());
 

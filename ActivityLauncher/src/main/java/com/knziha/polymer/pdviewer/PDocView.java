@@ -251,7 +251,7 @@ public class PDocView extends View {
 	public String ImgSrc =null;
 	private Runnable mAnimationRunnable = this::handle_animation;
 	
-	PDocument pdoc;
+	public PDocument pdoc;
 	float lastX;
 	float lastY;
 	float orgX;

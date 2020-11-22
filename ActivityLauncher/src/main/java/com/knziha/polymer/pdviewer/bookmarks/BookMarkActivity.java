@@ -14,8 +14,10 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.knziha.polymer.R;
-import com.knziha.polymer.treeview.TreeViewAdapter;
-import com.knziha.polymer.treeview.TreeViewNode;
+import com.shockwave.pdfium.bookmarks.BookMarkEntry;
+import com.shockwave.pdfium.bookmarks.BookMarkNode;
+import com.shockwave.pdfium.treeview.TreeViewAdapter;
+import com.shockwave.pdfium.treeview.TreeViewNode;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,45 +37,45 @@ public class BookMarkActivity extends AppCompatActivity {
 		rv = findViewById(R.id.rv);
 	
 		List<TreeViewNode> nodes = new ArrayList<>();
-		TreeViewNode<BookMarkEntry> app = new TreeViewNode<>(new BookMarkEntry("app"));
+		BookMarkNode app = new BookMarkNode(new BookMarkEntry("app", 0));
 		nodes.add(app);
 		app.addChild(
-				new TreeViewNode<>(new BookMarkEntry("manifests"))
-						.addChild(new TreeViewNode<>(new BookMarkEntry("AndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifest.xml")))
+				new TreeViewNode<>(new BookMarkEntry("manifests", 0))
+						.addChild(new TreeViewNode<>(new BookMarkEntry("AndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifestAndroidManifest.xml", 0)))
 		);
 		
 		app.addChild(
-				new TreeViewNode<>(new BookMarkEntry("java")).addChild(
-						new TreeViewNode<>(new BookMarkEntry("tellh")).addChild(
-								new TreeViewNode<>(new BookMarkEntry("com")).addChild(
-										new TreeViewNode<>(new BookMarkEntry("recyclertreeview"))
-												.addChild(new TreeViewNode<>(new BookMarkEntry("Dir")))
-												.addChild(new TreeViewNode<>(new BookMarkEntry("DirectoryNodeBinder")))
-												.addChild(new TreeViewNode<>(new BookMarkEntry("File")))
-												.addChild(new TreeViewNode<>(new BookMarkEntry("FileNodeBinder")))
-												.addChild(new TreeViewNode<>(new BookMarkEntry("TreeViewBinder")))
+				new TreeViewNode<>(new BookMarkEntry("java", 0)).addChild(
+						new TreeViewNode<>(new BookMarkEntry("tellh", 0)).addChild(
+								new TreeViewNode<>(new BookMarkEntry("com", 0)).addChild(
+										new TreeViewNode<>(new BookMarkEntry("recyclertreeview", 0))
+												.addChild(new TreeViewNode<>(new BookMarkEntry("Dir", 0)))
+												.addChild(new TreeViewNode<>(new BookMarkEntry("DirectoryNodeBinder", 0)))
+												.addChild(new TreeViewNode<>(new BookMarkEntry("File", 0)))
+												.addChild(new TreeViewNode<>(new BookMarkEntry("FileNodeBinder", 0)))
+												.addChild(new TreeViewNode<>(new BookMarkEntry("TreeViewBinder", 0)))
 								)
 						)
 				)
 		);
-		TreeViewNode<BookMarkEntry> res = new TreeViewNode<>(new BookMarkEntry("res"));
+		TreeViewNode<BookMarkEntry> res = new TreeViewNode<>(new BookMarkEntry("res", 0));
 		nodes.add(res);
 		res.addChild(
-				new TreeViewNode<>(new BookMarkEntry("layout"))
-						.addChild(new TreeViewNode<>(new BookMarkEntry("activity_main.xml")))
-						.addChild(new TreeViewNode<>(new BookMarkEntry("item_dir.xml")))
-						.addChild(new TreeViewNode<>(new BookMarkEntry("item_file.xml")))
+				new TreeViewNode<>(new BookMarkEntry("layout", 0))
+						.addChild(new TreeViewNode<>(new BookMarkEntry("activity_main.xml", 0)))
+						.addChild(new TreeViewNode<>(new BookMarkEntry("item_dir.xml", 0)))
+						.addChild(new TreeViewNode<>(new BookMarkEntry("item_file.xml", 0)))
 		);
 		res.addChild(
-				new TreeViewNode<>(new BookMarkEntry("mipmap"))
-						.addChild(new TreeViewNode<>(new BookMarkEntry("ic_launcher.png")))
+				new TreeViewNode<>(new BookMarkEntry("mipmap", 0))
+						.addChild(new TreeViewNode<>(new BookMarkEntry("ic_launcher.png", 0)))
 		);
 	
 		rv.setLayoutManager(new LinearLayoutManager(this));
 	
 		rv.setItemAnimator(null);
 		
-		adapter = new TreeViewAdapter(nodes, Collections.singletonList(new BookMarkEntry.BookMarkEntryBinder()));
+		adapter = new TreeViewAdapter(nodes, Collections.singletonList(new BookMarkFragment.BookMarkEntryBinder()));
 		// whether collapse child nodes when their parent node was close.
 //        adapter.ifCollapseChildWhileCollapseParent(true);
 	
@@ -111,20 +113,18 @@ public class BookMarkActivity extends AppCompatActivity {
 			@Override
 			public boolean onClick(TreeViewNode node, RecyclerView.ViewHolder holder) {
 				if (!node.isLeaf()) {
-					//Update and toggle the node.
 					onToggle(!node.isExpand(), holder);
-//                    if (!node.isExpand())
-//                        adapter.collapseBrotherNode(node);
+                    if (!node.isExpand())
+                        adapter.collapseBrotherNode(node);
 				}
 				return false;
 			}
 		
 			@Override
 			public void onToggle(boolean isExpand, RecyclerView.ViewHolder holder) {
-				if(holder instanceof BookMarkEntry.BookMarkEntryBinder.ViewHolder) {
-					BookMarkEntry.BookMarkEntryBinder.ViewHolder viewholder = (BookMarkEntry.BookMarkEntryBinder.ViewHolder) holder;
-					final ImageView ivArrow = viewholder.getIvArrow();
-					ivArrow.animate().rotation(isExpand ? 90 : 0).start();
+				if(holder instanceof BookMarkFragment.BookMarkEntryBinder.ViewHolder) {
+					BookMarkFragment.BookMarkEntryBinder.ViewHolder viewholder = (BookMarkFragment.BookMarkEntryBinder.ViewHolder) holder;
+					viewholder.ivArrow.animate().rotation(isExpand ? 90 : 0).start();
 				}
 			}
 		});

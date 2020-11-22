@@ -5,6 +5,8 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -15,13 +17,18 @@ import androidx.fragment.app.Fragment;
 import androidx.viewpager.widget.ViewPager;
 
 import com.google.android.material.tabs.TabLayout;
+import com.knziha.polymer.R;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.databinding.BookmarksBinding;
+import com.knziha.polymer.pdviewer.PDocViewerActivity;
 
 import java.util.ArrayList;
 
 public class BookMarksFragment extends DialogFragment {
 	private BookmarksBinding bmView;
+	private BookMarkFragment f1;
+	
+	public int width=-1,height=-1,mMaxH=-1;
 	
 	@Nullable
 	@Override
@@ -29,7 +36,7 @@ public class BookMarksFragment extends DialogFragment {
 		if(bmView==null) {
 			bmView = BookmarksBinding.inflate(getLayoutInflater(), null, false);
 			ArrayList<Fragment> fragments = new ArrayList<>();
-			fragments.add(new BookMarkFragment());
+			fragments.add(f1 = new BookMarkFragment());
 			FragAdapter adapterf = new FragAdapter(getChildFragmentManager(), fragments);
 			
 			ViewPager viewPager = bmView.viewpager;
@@ -70,6 +77,40 @@ public class BookMarksFragment extends DialogFragment {
 	}
 	
 	
+	@Override
+	public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+		super.onActivityCreated(savedInstanceState);
+		PDocViewerActivity a = (PDocViewerActivity) getActivity();
+		a.root.postDelayed(new Runnable() {
+			@Override
+			public void run() {
+				f1.refresh(a.currentViewer.pdoc);
+			}
+		}, 200);
+	}
 	
+	
+	
+	@Override
+	public void onResume() {
+		super.onResume();
+		if(width!=-1 || height!=-1) {
+			if(getDialog()!=null) {
+				Window window = getDialog().getWindow();
+				if(window!= null) {
+					WindowManager.LayoutParams  attr = window.getAttributes();
+					if(attr.width!=width || attr.height!=height) {
+						//CMN.Log("onResume_");
+						window.setFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND, WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+						window.setDimAmount(0.1f);
+						window.setBackgroundDrawableResource(R.drawable.popup_shadow_l);
+						bmView.root.mMaxHeight=mMaxH;
+						window.setLayout(width,height);
+					}
+				}
+				getDialog().setCanceledOnTouchOutside(true);
+			}
+		}
+	}
 	
 }

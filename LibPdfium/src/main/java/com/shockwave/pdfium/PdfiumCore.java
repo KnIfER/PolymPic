@@ -9,6 +9,9 @@ import android.os.ParcelFileDescriptor;
 import android.util.Log;
 import android.view.Surface;
 
+import com.shockwave.pdfium.bookmarks.BookMarkEntry;
+import com.shockwave.pdfium.bookmarks.BookMarkNode;
+import com.shockwave.pdfium.treeview.TreeViewNode;
 import com.shockwave.pdfium.util.Size;
 
 import java.io.FileDescriptor;
@@ -372,6 +375,14 @@ public class PdfiumCore {
 	public native void nativeAppendAnnotPoints(long pagePtr, long annotPtr, double left, double top, double right, double bottom, double width, double height);
 	
 	public native void nativeSetAnnotColor(long annotPtr, int R, int G, int B, int A);
+	
+	public int BuildBookMarkTree(long docPtr, BookMarkNode rootNode) {
+		synchronized (lock) {
+			return nativeBuildBookMarkTree(docPtr, rootNode);
+		}
+	}
+	
+	public native int nativeBuildBookMarkTree(long docPtr, BookMarkNode rootNode);
 	
 	public void SaveAsCopy(long docPtr, int fd, boolean incremental) {
 		synchronized (lock) {

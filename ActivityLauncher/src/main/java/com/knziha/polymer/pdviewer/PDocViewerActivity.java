@@ -56,7 +56,7 @@ import static com.knziha.polymer.BrowserActivity.GoogleTranslate;
 public class PDocViewerActivity extends Toastable_Activity implements View.OnClickListener {
 	ImageviewDebugBinding UIData;
 	private boolean hidingContextMenu;
-	private PDocView currentViewer;
+	public PDocView currentViewer;
 	
 	
 	@Override
@@ -198,7 +198,12 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 	public void onClick(View v) {
 		switch (v.getId()) {
 			case R.id.browser_widget10: {
-				new BookMarksFragment().show(getSupportFragmentManager(), "bkmks");
+				currentViewer.pdoc.prepareBookMarks();
+				BookMarksFragment bmks = new BookMarksFragment();
+				bmks.width=(int) (dm.widthPixels-2*getResources().getDimension(R.dimen.diagMarginHor));
+				bmks.mMaxH=(int) (dm.heightPixels-2*getResources().getDimension(R.dimen.diagMarginVer));
+				bmks.height=-2;
+				bmks.show(getSupportFragmentManager(), "bkmks");
 			} break;
 		}
 	}

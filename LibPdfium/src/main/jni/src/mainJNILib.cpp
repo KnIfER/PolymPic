@@ -956,6 +956,60 @@ JNI_FUNC(jobject, PdfiumCore, nativeGetLinkRect)(JNI_ARGS, jlong linkPtr) {
     return env->NewObject(clazz, constructorID, fsRectF.left, fsRectF.top, fsRectF.right, fsRectF.bottom);
 }
 
+int bmkCount=0;
+jmethodID bmkNode_add = 0;
+jmethodID bmkNode_addToParent = 0;
+
+void recursiveFetchBookMarks(JNIEnv *env, FPDF_DOCUMENT doc, FPDF_BOOKMARK bm, jobject bmk);
+
+void processBookMarks(JNIEnv *env, FPDF_DOCUMENT doc, FPDF_BOOKMARK bm, jobject bmk) {
+    if(bm) { // 处理当前书签节点
+        long len = FPDFBookmark_GetTitle(bm, 0, 0);
+        FPDF_WCHAR* buffer = new FPDF_WCHAR[len];
+        len = FPDFBookmark_GetTitle(bm, buffer, len);
+        jstring ret = env->NewString(buffer, len / 2 - 1);
+        int pageIdx = 0;
+        FPDF_DEST dest = FPDFBookmark_GetDest(doc, bm);
+        if (dest) {
+            pageIdx = FPDFDest_GetDestPageIndex(doc, dest);
+        }
+        delete[] buffer;
+
+        bmk = env->CallObjectMethod(bmk
+            , bmkNode_add
+            , ret
+            , pageIdx
+        );
+        bmkCount++;
+    }
+    bm = FPDFBookmark_GetFirstChild(doc, bm);
+    if(bm) {
+        recursiveFetchBookMarks(env, doc, bm, bmk);
+    }
+}
+
+void recursiveFetchBookMarks(JNIEnv *env, FPDF_DOCUMENT doc, FPDF_BOOKMARK bm, jobject bmk) {
+    processBookMarks(env, doc, bm, bmk);
+    if(bm) {
+        while((bm=FPDFBookmark_GetNextSibling(doc, bm))!=NULL) {
+            processBookMarks(env, doc, bm, bmk);
+        }
+    }
+}
+
+JNI_FUNC(jint, PdfiumCore, nativeBuildBookMarkTree)(JNI_ARGS, jlong docPtr, jobject bmk) {
+    if(bmkNode_add==0) {
+        jclass bmkNode = env->FindClass("com/shockwave/pdfium/bookmarks/BookMarkNode");
+        bmkNode_addToParent = env->GetMethodID(bmkNode,"addToParent","(Ljava/lang/String;I)Lcom/shockwave/pdfium/bookmarks/BookMarkNode;");
+        bmkNode_add = env->GetMethodID(bmkNode,"add","(Ljava/lang/String;I)Lcom/shockwave/pdfium/bookmarks/BookMarkNode;");
+    }
+    bmkCount = 0;
+    DocumentFile* docFile = (DocumentFile*)docPtr;
+    recursiveFetchBookMarks(env, docFile->pdfDocument, 0, bmk);
+    return bmkCount;
+}
+
+
 // Start Save PDF
 struct PdfToFdWriter : FPDF_FILEWRITE {
     int dstFd;

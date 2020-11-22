@@ -13,12 +13,16 @@ import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.text.BreakIteratorHelper;
 import com.shockwave.pdfium.PdfDocument;
 import com.shockwave.pdfium.PdfiumCore;
+import com.shockwave.pdfium.bookmarks.BookMarkEntry;
+import com.shockwave.pdfium.bookmarks.BookMarkNode;
+import com.shockwave.pdfium.treeview.TreeViewNode;
 import com.shockwave.pdfium.util.Size;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -50,6 +54,8 @@ public class PDocument {
 	public final static int SavingScheme_SaveOnClose=0;
 	public final static int SavingScheme_AlwaysSaveOnPause=1;
 	public final static int SavingScheme_NotSaving=2;
+	public BookMarkNode bmRoot;
+	public int bmCount;
 	
 	public void saveDocAsCopy(String url,boolean incremental, boolean reload) {
 		if(isDirty) {
@@ -100,6 +106,18 @@ public class PDocument {
 	
 	public long getWidth() {
 		return isHorizontalView?LengthAlongScrollAxis:maxPageWidth;
+	}
+	
+	public void prepareBookMarks() {
+		if(bmRoot==null) {
+			try {
+				bmRoot = new BookMarkNode(new BookMarkEntry("root", 0));
+				bmCount = pdfiumCore.BuildBookMarkTree(pdfDocument.mNativeDocPtr, bmRoot);
+				//CMN.Log(bmRoot);
+			} catch (Exception e) {
+				CMN.Log(e);
+			}
+		}
 	}
 	
 	class PDocPage {
