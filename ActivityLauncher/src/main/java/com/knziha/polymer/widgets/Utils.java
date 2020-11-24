@@ -32,6 +32,7 @@ import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.EditText;
@@ -338,5 +339,17 @@ public class Utils {
 			}
 		}
 	}
-
+	
+	public static boolean removeIfParentBeOrNotBe(View view, ViewGroup parent, boolean tobe) {
+		if(view!=null) {
+			ViewParent svp = view.getParent();
+			if(parent==svp ^ !tobe) {
+				if(svp!=null) {
+					((ViewGroup)svp).removeView(view);
+				}
+				return true;
+			}
+		}
+		return false;
+	}
 }

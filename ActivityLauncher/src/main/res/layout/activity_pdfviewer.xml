@@ -85,7 +85,7 @@
 				android:background="@drawable/surrtrip1"
 				android:clickable="true"
 				android:layout_y="-1px"
-				android:src="@drawable/ic_window_black_24dp" />
+				android:src="@drawable/ic_baseline_book_24" />
 			<android.widget.ImageView
 				android:id="@+id/browser_widget11"
 				android:layout_width="0dp"

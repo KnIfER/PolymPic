@@ -21,6 +21,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.knziha.polymer.R;
+import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.pdviewer.PDocument;
 import com.knziha.polymer.widgets.Utils;
 import com.shockwave.pdfium.bookmarks.BookMarkEntry;
@@ -34,12 +35,13 @@ import java.util.List;
 public class BookMarkFragment extends Fragment {
 	public final static List<BookMarkEntryBinder> TreeViewBIInst = Collections.singletonList(new BookMarkEntryBinder());
 	
-	private RecyclerView bmRv;
-	private TreeViewAdapter adapter;
+	RecyclerView bmRv;
+	final TreeViewAdapter adapter = new TreeViewAdapter(null, TreeViewBIInst);
 	
 	@Nullable
 	@Override
 	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+		CMN.Log("onCreateView1");
 		if(bmRv==null) {
 			Context context = inflater.getContext();
 			RecyclerView recyclerView = new RecyclerView(context);
@@ -77,14 +79,13 @@ public class BookMarkFragment extends Fragment {
 				}
 			});
 			
-			adapter = new TreeViewAdapter(null, TreeViewBIInst);
-			
 			adapter.setOnTreeNodeListener(new TreeViewAdapter.OnTreeNodeListener() {
 				@Override
 				public boolean onClick(TreeViewNode node, RecyclerView.ViewHolder holder) {
 					if (!node.isLeaf()) {
 						onToggle(!node.isExpand(), holder);
 					}
+					CMN.Log("onToggle", bmRv.isLayoutSuppressed(), CMN.id(node.getContent()), CMN.id(bmRv), CMN.id(bmRv.getAdapter()), node.getContent());
 					return false;
 				}
 				
@@ -96,15 +97,21 @@ public class BookMarkFragment extends Fragment {
 					}
 				}
 			});
+			adapter.setHasStableIds(true);
 			recyclerView.setAdapter(adapter);
 			bmRv = recyclerView;
+		} else {
+			Utils.removeIfParentBeOrNotBe(bmRv, null, false);
 		}
 		return bmRv;
 	}
 	
-	
 	public void refresh(PDocument pdoc) {
 		adapter.refresh(pdoc.bmRoot.getChildList(), pdoc.bmCount);
+		adapter.notifyDataSetChanged();
+		//bmRv.setAdapter(null);
+		//bmRv.setAdapter(adapter);
+		//bmRv.scrollToPosition(0);
 	}
 	
 	public static class BookMarkEntryBinder extends TreeViewAdapter.TreeViewBinderInterface<BookMarkEntryBinder.ViewHolder> {
@@ -140,5 +147,11 @@ public class BookMarkFragment extends Fragment {
 				itemView.setTag(this);
 			}
 		}
+	}
+	
+	@Override
+	public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+		super.onActivityCreated(savedInstanceState);
+		CMN.Log("oac1", CMN.id(this));
 	}
 }

@@ -84,6 +84,16 @@
 <!--			</intent-filter>-->
 		</activity>
 
+		<activity
+			android:name=".PDocMainViewer"
+			android:label="PDF Viewer"
+			android:configChanges="orientation|keyboardHidden|screenSize|smallestScreenSize|screenLayout|uiMode|locale|layoutDirection"
+			android:theme="@style/ActivityTheme"
+			android:taskAffinity=""
+			android:launchMode="singleInstance"
+			>
+		</activity>
+
 
 		<activity android:name=".PolyShareActivity"
 			android:theme="@style/FloatAppTheme"

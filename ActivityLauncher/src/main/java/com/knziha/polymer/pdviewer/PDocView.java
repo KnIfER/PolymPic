@@ -271,6 +271,15 @@ public class PDocView extends View {
 		return false;
 	}
 	
+	public void navigateTo(PDFPageParms pageParms) {
+		int pageIdx = Math.max(0, Math.min(pageParms.pageIdx, pdoc._num_entries));
+		PDocument.PDocPage page = pdoc.mPDocPages[pageIdx];
+		float scale = Math.min(currentMinScale()*Math.max(0.01f, pageParms.scale), maxScale);
+		vTranslate.set(0, (page.OffsetAlongScrollAxis+pageParms.offsetY)*scale);
+		this.scale = scale;
+		invalidate();
+	}
+	
 	public interface ImageReadyListener { void ImageReady(); }
 	
 	ImageReadyListener mImageReadyListener;

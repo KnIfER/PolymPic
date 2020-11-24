@@ -9,13 +9,13 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Intent;
 import android.graphics.BitmapFactory;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.TextPaint;
 import android.text.style.ClickableSpan;
+import android.util.SparseArray;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
@@ -24,41 +24,30 @@ import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.view.menu.MenuBuilder;
 import androidx.core.content.res.ResourcesCompat;
-import androidx.core.graphics.ColorUtils;
 import androidx.databinding.DataBindingUtil;
-import androidx.fragment.app.DialogFragment;
-import androidx.fragment.app.Fragment;
-import androidx.viewpager.widget.ViewPager;
 
 import com.google.android.material.bottomsheet.BottomSheetDialog;
-import com.google.android.material.tabs.TabLayout;
-import com.knziha.polymer.R;
-import com.knziha.polymer.Toastable_Activity;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.Options;
-import com.knziha.polymer.WeakReferenceHelper;
-import com.knziha.polymer.databinding.BookmarksBinding;
-import com.knziha.polymer.databinding.ImageviewDebugBinding;
+import com.knziha.polymer.databinding.ActivityPdfviewerBinding;
+import com.knziha.polymer.pdviewer.PDFPageParms;
 import com.knziha.polymer.pdviewer.PDocView;
 import com.knziha.polymer.pdviewer.PDocument;
-import com.knziha.polymer.pdviewer.bookmarks.BookMarkFragment;
 import com.knziha.polymer.pdviewer.bookmarks.BookMarksFragment;
-import com.knziha.polymer.pdviewer.bookmarks.FragAdapter;
 import com.knziha.polymer.widgets.AppIconsAdapter;
 import com.knziha.polymer.widgets.Utils;
 
 import java.io.File;
-import java.util.ArrayList;
 
 import static com.knziha.polymer.BrowserActivity.GoogleTranslate;
 
 public class PDocViewerActivity extends Toastable_Activity implements View.OnClickListener {
-	ImageviewDebugBinding UIData;
+	ActivityPdfviewerBinding UIData;
 	private boolean hidingContextMenu;
 	public PDocView currentViewer;
+	protected boolean this_instanceof_PDocMainViewer;
 	
 	
 	@Override
@@ -82,7 +71,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		boolean transit = Options.getTransitSplashScreen();
 		if(!transit) setTheme(R.style.AppThemeRaw);
 		
-		UIData = DataBindingUtil.setContentView(this, R.layout.imageview_debug);
+		UIData = DataBindingUtil.setContentView(this, R.layout.activity_pdfviewer);
 		root=UIData.root;
 		currentViewer = UIData.wdv;
 		
@@ -152,7 +141,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 			String path = uri.getPath();
 			if (path != null) {
 				currentViewer.setDocumentPath(path);
-				if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+				if (!this_instanceof_PDocMainViewer && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
 					ActivityManager.TaskDescription taskDesc = new ActivityManager.TaskDescription(
 							new File(path).getName(),//title
 							BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher),//图标
@@ -199,8 +188,11 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 	public void onClick(View v) {
 		switch (v.getId()) {
 			case R.id.browser_widget10: {
-				currentViewer.pdoc.prepareBookMarks();
-				BookMarksFragment bmks = new BookMarksFragment();
+				int id = WeakReferenceHelper.top_menu;
+				BookMarksFragment bmks = (BookMarksFragment) getReferencedObject(id);
+				if(bmks==null) {
+					putReferencedObject(id, bmks=new BookMarksFragment());
+				}
 				bmks.width=(int) (dm.widthPixels-2*getResources().getDimension(R.dimen.diagMarginHor));
 				bmks.mMaxH=(int) (dm.heightPixels-2*getResources().getDimension(R.dimen.diagMarginVer));
 				bmks.height=-2;
@@ -215,6 +207,12 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		if(hidingContextMenu) {
 			currentViewer.showContextMenuView();
 			hidingContextMenu=false;
+		}
+		if(!this_instanceof_PDocMainViewer) {
+			PDFPageParms pageParms = parsePDFPageParms(null);
+			if(pageParms!=null) {
+				currentViewer.navigateTo(pageParms);
+			}
 		}
 	}
 	
@@ -309,11 +307,36 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		//CMN.pt("拉取耗时：");
 	}
 	
+	final static SparseArray<PDFPageParms> PDFPageParmsMap = new SparseArray<>();
+	
+	PDFPageParms parsePDFPageParms(Intent intent) {
+		PDFPageParms ret = PDFPageParmsMap.get(getTaskId());
+		if(ret!=null) {
+			PDFPageParmsMap.remove(getTaskId());
+		}
+		return ret;
+	}
+	
+	static PDFPageParms parsePDFPageParmsFromIntent(Intent intent) {
+		if(intent!=null && intent.hasExtra("PPP")) {
+			return new PDFPageParms( intent.getIntExtra("p", 0)
+					, intent.getIntExtra("x", 0)
+					, intent.getIntExtra("y", 0)
+					, intent.getFloatExtra("s", 0) );
+		}
+		return null;
+	}
+	
 	@Override
 	protected void onNewIntent(Intent intent) {
 		super.onNewIntent(intent);
-		if(intent.getData()!=null) {
-			showT("新的来啦！");
+		if(this_instanceof_PDocMainViewer) {
+			Uri newUri = intent.getData();
+			if(newUri!=null) {
+				PDFPageParms pageParms = parsePDFPageParms(intent);
+				showT("新的来啦！");
+				
+			}
 		}
 	}
 }

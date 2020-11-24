@@ -1,5 +1,6 @@
 package com.knziha.polymer.pdviewer.bookmarks;
 
+import android.content.Context;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -21,6 +22,8 @@ import com.knziha.polymer.R;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.databinding.BookmarksBinding;
 import com.knziha.polymer.PDocViewerActivity;
+import com.knziha.polymer.pdviewer.PDocument;
+import com.knziha.polymer.widgets.Utils;
 
 import java.util.ArrayList;
 
@@ -29,20 +32,20 @@ public class BookMarksFragment extends DialogFragment {
 	private BookMarkFragment f1;
 	
 	public int width=-1,height=-1,mMaxH=-1;
+	private ArrayList<Fragment> fragments = new ArrayList<>(6);
+	private int lastUpdatedDoc;
 	
 	@Nullable
 	@Override
 	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
 		if(bmView==null) {
 			bmView = BookmarksBinding.inflate(getLayoutInflater(), null, false);
-			ArrayList<Fragment> fragments = new ArrayList<>();
 			fragments.add(f1 = new BookMarkFragment());
-			FragAdapter adapterf = new FragAdapter(getChildFragmentManager(), fragments);
 			
 			ViewPager viewPager = bmView.viewpager;
 			TabLayout mTabLayout = bmView.mTabLayout;
 			
-			viewPager.setAdapter(adapterf);
+			viewPager.setAdapter(new FragAdapter(getChildFragmentManager(), fragments));
 			
 			String[] tabTitle = {"目录"};
 			for (String s : tabTitle) {
@@ -72,24 +75,41 @@ public class BookMarksFragment extends DialogFragment {
 			viewPager.setCurrentItem(0);
 			
 			viewPager.setOffscreenPageLimit(1);
+		} else {
+			Utils.removeIfParentBeOrNotBe(bmView.root, null, false);
+			bmView.viewpager.setAdapter(new FragAdapter(getChildFragmentManager(), fragments));
 		}
 		return bmView.root;
 	}
 	
+	@Override
+	public void onAttach(@NonNull Context context) {
+		super.onAttach(context);
+		CMN.Log("onAttach");
+	}
 	
 	@Override
 	public void onActivityCreated(@Nullable Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
+		CMN.Log("onActivityCreated", CMN.id(this));
 		PDocViewerActivity a = (PDocViewerActivity) getActivity();
-		a.root.postDelayed(new Runnable() {
-			@Override
-			public void run() {
-				f1.refresh(a.currentViewer.pdoc);
+		if(a!=null) {
+			PDocument doc = a.currentViewer.pdoc;
+			if(lastUpdatedDoc!=CMN.id(doc)) {
+				refreshToc();
 			}
-		}, 200);
+		}
 	}
 	
-	
+	private void refreshToc() {
+		PDocViewerActivity a = (PDocViewerActivity) getActivity();
+		if(a!=null) {
+			PDocument doc = a.currentViewer.pdoc;
+			doc.prepareBookMarks();
+			f1.refresh(doc);
+			lastUpdatedDoc = CMN.id(doc);
+		}
+	}
 	
 	@Override
 	public void onResume() {
