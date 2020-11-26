@@ -90,7 +90,6 @@
 			android:label="PDF Viewer"
 			android:configChanges="orientation|keyboardHidden|screenSize|smallestScreenSize|screenLayout|uiMode|locale|layoutDirection"
 			android:theme="@style/ActivityTheme"
-			android:taskAffinity=""
 			>
 		</activity>
 
@@ -113,7 +112,10 @@
 			</intent-filter>
 		</activity>
 
-		<activity android:name=".PDocShortCutActivity" />
+		<activity android:name=".PDocShortCutActivity"
+			android:theme="@style/ActivityFloatTheme"
+			android:taskAffinity=""
+			/>
 
 		<activity android:name=".pdviewer.PDocBenchMarkctivity"
 			android:label="@string/app_name"

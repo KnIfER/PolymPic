@@ -2149,6 +2149,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			//当添加快捷方式的确认弹框弹出来时，将被回调
 			PendingIntent shortcutCallbackIntent = PendingIntent.getBroadcast(context, 0, new Intent(context, MyReceiver.class), PendingIntent.FLAG_UPDATE_CURRENT);
 			ShortcutManagerCompat.requestPinShortcut(context, info, shortcutCallbackIntent.getIntentSender());
+			//ShortcutManagerCompat.addDynamicShortcuts(context, Collections.singletonList(info));
 			//ShortcutManagerCompat.requestPinShortcut(context, info, null);
 		}
 	}

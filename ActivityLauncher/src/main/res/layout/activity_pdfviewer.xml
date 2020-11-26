@@ -9,6 +9,8 @@
 		android:layout_height="match_parent"
 		android:fitsSystemWindows="true"
 		android:padding="0dp"
+		android:alpha="1"
+		tools:alpha="1"
 		>
 
 		<com.knziha.polymer.pdviewer.PDocView

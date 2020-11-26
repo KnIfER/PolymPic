@@ -68,12 +68,25 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 	
 	public static boolean MultiInstMode = false;
 	final static Set<Object> instTidBucket = Collections.synchronizedSet(new HashSet<>());
+	public static int singleInstCout;
+	private boolean isSingleInst;
+	private int BST;
 	
 	
 	@Override
 	public void onBackPressed() {
 		if(currentViewer.tryClearSelection()) {
 		} else {
+			if(BST!=0) {
+				Activity act = PDocShortCutActivity.blackSmithStack.get(BST);
+				if(act!=null) {
+					act.finish();
+				}
+			}
+			if(isSingleInst) {
+				showT("单例");
+				singleInstCout=0;
+			}
 			super.onBackPressed();
 		}
 	}
@@ -173,28 +186,63 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		
 		menu_grid_painter = DescriptiveImageView.createTextPainter();
 		
-		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && getIntent().getBooleanExtra("sin", false)) { // I am single, remove dead history
-			ActivityManager am = (ActivityManager)getSystemService(Context.ACTIVITY_SERVICE);
-			List<ActivityManager.AppTask> tasks = am.getAppTasks();
-			CMN.Log("tasks", tasks);
-			int taskId = getTaskId();
-			if(instTidBucket.size()>0) {
-				for (int i = 0; i < tasks.size(); i++) {
-					ActivityManager.AppTask appTask = tasks.get(i);
-					int id = appTask.getTaskInfo().id;
-					CMN.Log("隐藏了???", id);
-					if(id==-1 || instTidBucket.remove(id)){
-						//appTask.setExcludeFromRecents(true);
-						appTask.finishAndRemoveTask();
-						CMN.Log("隐藏了");
+		Intent intent = getIntent();
+		
+		if(intent.getBooleanExtra("sin", false)) { // I am single, remove dead history
+			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+				ActivityManager am = (ActivityManager)getSystemService(Context.ACTIVITY_SERVICE);
+				List<ActivityManager.AppTask> tasks = am.getAppTasks();
+				CMN.Log("tasks", tasks);
+				int taskId = getTaskId();
+				if(instTidBucket.size()>0) {
+					for (int i = 0; i < tasks.size(); i++) {
+						ActivityManager.AppTask appTask = tasks.get(i);
+						int id = appTask.getTaskInfo().id;
+						CMN.Log("隐藏了???", id);
+						if(id==-1 || instTidBucket.remove(id)){
+							//appTask.setExcludeFromRecents(true);
+							appTask.finishAndRemoveTask();
+							CMN.Log("隐藏了");
+						}
+					}
+					//instTidBucket.clear();
+				}
+				CMN.Log("启动???", taskId, instTidBucket.size());
+				instTidBucket.add(taskId);
+			}
+			isSingleInst=true;
+			singleInstCout=1;
+		}
+		
+		processBST(getIntent());
+		
+	}
+	
+	private void processBST(Intent intent) {
+		BST = intent.getIntExtra("BST", 0);
+		
+		if(BST!=0) {
+			Activity act = PDocShortCutActivity.blackSmithStack.get(BST);
+			if(act!=null) {
+				if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+					ActivityManager am = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+					List<ActivityManager.AppTask> tasks = am.getAppTasks();
+					if (instTidBucket.size() > 0) {
+						for (int i = 0; i < tasks.size(); i++) {
+							ActivityManager.AppTask appTask = tasks.get(i);
+							if (appTask.getTaskInfo().id == BST) {
+								appTask.finishAndRemoveTask();
+								break;
+							}
+						}
 					}
 				}
-				//instTidBucket.clear();
+				//act.finish();
+				showT("act.finish()");
 			}
-			CMN.Log("启动???", taskId, instTidBucket.size());
-			instTidBucket.add(taskId);
 		}
 	}
+	
 	
 	public void toggleMainMenuList() {
 		int TargetTransY = -UIData.bottombar2.getHeight();
@@ -381,6 +429,9 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 			currentViewer.checkDoc(false, false);
 		}
 		currentViewer.setDocumentPath(null);
+		if(isSingleInst) {
+			singleInstCout=0;
+		}
 	}
 	
 	@SuppressLint("NonConstantResourceId")
@@ -512,5 +563,6 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 				currentViewer.setDocumentPath(newUri.getPath());
 			}
 		}
+		processBST(intent);
 	}
 }
