@@ -24,8 +24,6 @@ using namespace android;
 #include <string>
 #include <vector>
 
-#include "BufferedBlockWriter.h"
-
 static Mutex sLibraryLock;
 
 static int sLibraryReferenceCount = 0;
@@ -182,10 +180,12 @@ void rgbBitmapTo565(void *source, int sourceStride, void *dest, AndroidBitmapInf
 
 extern "C" { //For JNI support
 
+// custom getBlock. called every scroll. 
 static int getBlock(void* param, unsigned long position, unsigned char* outBuffer,
         unsigned long size) {
     const int fd = reinterpret_cast<intptr_t>(param);
     const int readCount = pread(fd, outBuffer, size, position);
+    //LOGE("fatal getBlock position=%ld size=%ld", position, size);
     if (readCount < 0) {
         LOGE("Cannot read from file descriptor. Error:%d", errno);
         return 0;
@@ -193,6 +193,7 @@ static int getBlock(void* param, unsigned long position, unsigned char* outBuffe
     return 1;
 }
 
+// open pdf from fileDescriptor
 JNI_FUNC(jlong, PdfiumCore, nativeOpenDocument)(JNI_ARGS, jint fd, jstring password){
 
     size_t fileLength = (size_t)getFileSize(fd);
@@ -215,6 +216,8 @@ JNI_FUNC(jlong, PdfiumCore, nativeOpenDocument)(JNI_ARGS, jint fd, jstring passw
     }
 
     FPDF_DOCUMENT document = FPDF_LoadCustomDocument(&loader, cpassword);
+    //FPDF_DOCUMENT document = FPDF_LoadDocument(, options.password().c_str());
+
 
     if(cpassword != NULL) {
         env->ReleaseStringUTFChars(password, cpassword);
@@ -243,6 +246,7 @@ JNI_FUNC(jlong, PdfiumCore, nativeOpenDocument)(JNI_ARGS, jint fd, jstring passw
     return reinterpret_cast<jlong>(docFile);
 }
 
+// open in-memory pdf
 JNI_FUNC(jlong, PdfiumCore, nativeOpenMemDocument)(JNI_ARGS, jbyteArray data, jstring password){
     DocumentFile *docFile = new DocumentFile();
 
@@ -970,12 +974,14 @@ JNI_FUNC(jobject, PdfiumCore, nativeGetLinkRect)(JNI_ARGS, jlong linkPtr) {
     return env->NewObject(clazz, constructorID, fsRectF.left, fsRectF.top, fsRectF.right, fsRectF.bottom);
 }
 
+// bookmarks
 int bmkCount=0;
 jmethodID bmkNode_add = 0;
 jmethodID bmkNode_addToParent = 0;
 
 void recursiveFetchBookMarks(JNIEnv *env, FPDF_DOCUMENT doc, FPDF_BOOKMARK bm, jobject bmk);
 
+// bookmarks
 void processBookMarks(JNIEnv *env, FPDF_DOCUMENT doc, FPDF_BOOKMARK bm, jobject bmk) {
     if(bm) { // 处理当前书签节点
         long len = FPDFBookmark_GetTitle(bm, 0, 0);
@@ -1002,6 +1008,7 @@ void processBookMarks(JNIEnv *env, FPDF_DOCUMENT doc, FPDF_BOOKMARK bm, jobject 
     }
 }
 
+// bookmarks
 void recursiveFetchBookMarks(JNIEnv *env, FPDF_DOCUMENT doc, FPDF_BOOKMARK bm, jobject bmk) {
     processBookMarks(env, doc, bm, bmk);
     if(bm) {
@@ -1011,6 +1018,7 @@ void recursiveFetchBookMarks(JNIEnv *env, FPDF_DOCUMENT doc, FPDF_BOOKMARK bm, j
     }
 }
 
+// bookmarks
 JNI_FUNC(jint, PdfiumCore, nativeBuildBookMarkTree)(JNI_ARGS, jlong docPtr, jobject bmk) {
     if(bmkNode_add==0) {
         jclass bmkNode = env->FindClass("com/shockwave/pdfium/bookmarks/BookMarkNode");
@@ -1023,15 +1031,14 @@ JNI_FUNC(jint, PdfiumCore, nativeBuildBookMarkTree)(JNI_ARGS, jlong docPtr, jobj
     return bmkCount;
 }
 
-// Start Save PDF
-
-
+// Save the PDF in-situ. Using buffered output techique, not thread safe.
+//  |incremental| is always false due to it'i not implemented?
 JNI_FUNC(void, PdfiumCore, nativeSaveAsCopy)(JNI_ARGS, jlong docPtr, jint fd, jboolean incremental) {
     DocumentFile* docFile = (DocumentFile*)docPtr;
     PdfToFdWriter writer;
     writer.dstFd = fd;
     //writer.dstFd = docFile->fileFd;
-    if(true) {
+    if(false) {
         writer.WriteBlock = &writeBlock;
     } else {
         writer.WriteBlock = &writeBlockBuffered;

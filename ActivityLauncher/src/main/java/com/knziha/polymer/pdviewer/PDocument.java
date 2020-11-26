@@ -64,6 +64,7 @@ public class PDocument {
 				url=path;
 			}
 			File path = new File(url);
+			//incremental = true; //debug inc
 			//path = new File(path.getParentFile(), "tmp2.pdf"); //debug save
 			try (ParcelFileDescriptor fd = ParcelFileDescriptor.open(path, ParcelFileDescriptor.MODE_WRITE_ONLY|ParcelFileDescriptor.MODE_CREATE)) {
 				CMN.rt();
