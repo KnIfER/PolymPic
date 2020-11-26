@@ -16,6 +16,6 @@ LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
 LOCAL_SHARED_LIBRARIES += LibPdfium
 LOCAL_LDLIBS += -llog -landroid -ljnigraphics
 
-LOCAL_SRC_FILES :=  $(LOCAL_PATH)/src/mainJNILib.cpp
+LOCAL_SRC_FILES :=  $(LOCAL_PATH)/src/mainJNILib.cpp $(LOCAL_PATH)/src/BufferedBlockWriter.cpp
 
 include $(BUILD_SHARED_LIBRARY)

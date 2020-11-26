@@ -306,8 +306,16 @@ public class PdfiumCore {
     /** Release native resources and opened file */
     public void closeDocument(PdfDocument doc) {
         synchronized (lock) {
-            nativeCloseDocument(doc.mNativeDocPtr);
-        }
+			if(doc.mNativeDocPtr!=0) {
+				doc.mNativeDocPtr = 0;
+				nativeCloseDocument(doc.mNativeDocPtr);
+				try {
+					doc.parcelFileDescriptor.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
     }
 
     /** Get metadata for given document */

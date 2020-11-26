@@ -63,15 +63,18 @@ public class PDocument {
 			if(url==null) {
 				url=path;
 			}
-			try (ParcelFileDescriptor fd = ParcelFileDescriptor.open(new File(url), ParcelFileDescriptor.MODE_READ_WRITE|ParcelFileDescriptor.MODE_CREATE)) {
+			File path = new File(url);
+			//path = new File(path.getParentFile(), "tmp2.pdf"); //debug save
+			try (ParcelFileDescriptor fd = ParcelFileDescriptor.open(path, ParcelFileDescriptor.MODE_WRITE_ONLY|ParcelFileDescriptor.MODE_CREATE)) {
 				CMN.rt();
+				//pdfDocument.closeFile();
 				pdfiumCore.SaveAsCopy(pdfDocument.mNativeDocPtr, fd.getFd(), incremental);
 				if(reload) {
 					close();
-					pdfDocument = pdfiumCore.newDocument(pdfDocument.parcelFileDescriptor);
+					pdfDocument = pdfiumCore.newDocument(ParcelFileDescriptor.open(path, ParcelFileDescriptor.MODE_READ_ONLY));
 				}
 				isDirty=false;
-				CMN.pt("PDF 保存耗时：");
+				CMN.pt("PDF 保存耗时：", path);
 			} catch (IOException e) {
 				CMN.Log(e);
 			}
@@ -445,8 +448,8 @@ public class PDocument {
 			pdfiumCore = new PdfiumCore(c);
 		}
 		File f = new File(path);
-		ParcelFileDescriptor pfd = ParcelFileDescriptor.open(f, ParcelFileDescriptor.MODE_READ_ONLY);
-		//ParcelFileDescriptor pfd = ParcelFileDescriptor.open(f, ParcelFileDescriptor.MODE_READ_WRITE);
+		//ParcelFileDescriptor pfd = ParcelFileDescriptor.open(f, ParcelFileDescriptor.MODE_READ_ONLY);
+		ParcelFileDescriptor pfd = ParcelFileDescriptor.open(f, ParcelFileDescriptor.MODE_READ_WRITE);
 		//CMN.Log("ParcelFileDescriptor", pfd.getFd());
 		pdfDocument = pdfiumCore.newDocument(pfd);
 		_num_entries = pdfiumCore.getPageCount(pdfDocument);

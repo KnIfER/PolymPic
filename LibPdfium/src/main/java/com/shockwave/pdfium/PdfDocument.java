@@ -3,12 +3,21 @@ package com.shockwave.pdfium;
 import android.graphics.RectF;
 import android.os.ParcelFileDescriptor;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class PdfDocument {
-
-    public static class Meta {
+	
+	public void closeFile() {
+		try {
+			parcelFileDescriptor.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public static class Meta {
         String title;
         String author;
         String subject;
