@@ -77,6 +77,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Inspired by https://github.com/davemorrissey/subsampling-scale-image-view
  *
  * 特性：v1.0 连续渲染页面，双击、缩放动画，单指双击缩放，平滑惯性滑动，弹性滚动限制
+ * 		v2.0 选择、高亮文本
  *
  */
 @SuppressWarnings({"unused", "IntegerDivisionInFloatingPointContext"})
@@ -262,6 +263,7 @@ public class PDocView extends View {
 	boolean freeAnimation=true;
 	private boolean isFlinging;
 	private TilesInitTask loadingTask;
+	private boolean treatNxtUpAsSingle;
 	
 	public boolean tryClearSelection() {
 		if(draggingHandle==null && hasSelection || hasAnnotSelction) {
@@ -366,7 +368,7 @@ public class PDocView extends View {
 	long draw_stoffX;
 	float draw_edoffX;
 	final Rect vRect = new Rect();
-	int selPageSt;
+	int selPageSt=-1;
 	int selPageEd;
 	int selStart;
 	int selEnd;
@@ -711,16 +713,8 @@ public class PDocView extends View {
 	
 	/** Enlarge or expand text selection. <br/>
 	 *  If only a highlight annotation is selected, it will be converted to the corresponding text selection.  <br/>*/
-	public void enlargeSelection() {
-		if(hasSelection) {
-			int d=selPageEd-selPageSt;
-			boolean reversed=d<0||d==0&&selStart>selEnd;
-			selStart = trimSelToMargin(pdoc.mPDocPages[selPageSt], selStart, reversed);
-			selEnd = trimSelToMargin(pdoc.mPDocPages[selPageEd], selEnd, !reversed);
-			selectionPaintView.resetSel();
-			relocateContextMenuView();
-		}
-		else if(hasAnnotSelction) {
+	public void enlargeSelection(boolean baseStart) {
+		if(hasAnnotSelction) {
 			expandAnnotToTextSelection();
 			//CMN.Log("enlargeSelection", charSt, charEd);
 			if(annotSelectionValid()) {
@@ -728,6 +722,31 @@ public class PDocView extends View {
 				clearSelection();
 				setSelectionAtPage(annotSelPage.pageIdx, selAnnotSt, selAnnotEd);
 				bSupressingUpdatCtxMenu=false;
+			}
+		} else {
+			if(!hasSelection && selPageSt!=-1) {
+				hasSelection = true;
+				selEnd = selStart+1;
+			}
+			if(hasSelection) {
+				if(baseStart) {
+					//@hide(9)
+					selPageEd = selPageSt;
+					PDocument.PDocPage pageSt = pdoc.mPDocPages[selPageSt];
+					if(selStart+1<pageSt.allText.length()) {
+						selStart++;
+					}
+					if(selStart+1<pageSt.allText.length()) {
+						selStart++;
+					}
+					selEnd = selStart+1;
+				}
+				int d=selPageEd-selPageSt;
+				boolean reversed=d<0||d==0&&selStart>selEnd;
+				selStart = trimSelToMargin(pdoc.mPDocPages[selPageSt], selStart, reversed);
+				selEnd = trimSelToMargin(pdoc.mPDocPages[selPageEd], selEnd, !reversed);
+				selectionPaintView.resetSel();
+				relocateContextMenuView();
 			}
 		}
 	}
@@ -863,6 +882,7 @@ public class PDocView extends View {
 		private final AtomicBoolean finished = new AtomicBoolean();
 		private final WeakReference<PDocView> viewRef;
 		private Thread t;
+		private PDocument result;
 		
 		TilesInitTask(PDocView view, String url) {
 			this.url = url;
@@ -874,6 +894,9 @@ public class PDocView extends View {
 			final PDocView view = viewRef.get();
 			if (view != null) {
 				if(finished.get()) {
+					view.setDocument(result);
+					//result.isDirty=true; //debug save
+					view.selPageSt=-1;
 					if(!abort.get() && view.loadingTask==this) {
 						view.onTileInited();
 						view.loadingTask=null;
@@ -888,7 +911,7 @@ public class PDocView extends View {
 						}
 						if(!abort.get()) {
 							finished.set(true);
-							view.setDocument(doc);
+							result = doc;
 							view.post(this);
 							if(responsibleForThisBook) {
 								books.put(url, doc);
@@ -967,6 +990,8 @@ public class PDocView extends View {
 	@SuppressWarnings("SuspiciousNameCombination")
 	private void setGestureDetector(final Context context) {
 		this.flingdetector = new GestureDetector(context, new GestureDetector.SimpleOnGestureListener() {
+			private long wastedClickTime;
+			
 			@Override
 			public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
 				onFlingDetected =true;
@@ -1116,8 +1141,14 @@ public class PDocView extends View {
 						}
 					}
 					
-					if(true) {
-						if(!pageI.selWordAtPos(PDocView.this, posX, posY, 1)) {
+					boolean singleTapSel = true;
+					if(true && hasSelection) {
+						clearSelection();
+						singleTapSel = false;
+						wastedClickTime = e.getDownTime();
+					}
+					if(true && singleTapSel) {
+						if(!pageI.selWordAtPos(PDocView.this, posX, posY, 1.5f)) {
 							clearSelection();
 						}
 					}
@@ -1128,6 +1159,17 @@ public class PDocView extends View {
 			
 			@Override
 			public boolean onDoubleTapEvent(MotionEvent e) {
+				if(treatNxtUpAsSingle && e.getActionMasked()==MotionEvent.ACTION_UP) {
+					onSingleTapUp(e);
+				}
+				if(wastedClickTime!=0) {
+					if(e.getDownTime()-wastedClickTime<450) {
+						treatNxtUpAsSingle = true;
+						return true;
+					} else {
+						wastedClickTime = 0;
+					}
+				}
 				if (zoomEnabled && (readySent||isProxy) && e.getActionMasked()==MotionEvent.ACTION_DOWN) {
 					CMN.Log("kiam 双击");
 					//setGestureDetector(context);
@@ -2131,7 +2173,7 @@ public class PDocView extends View {
 						|| !horizon&&vTranslate.y+(page.OffsetAlongScrollAxis+page.size.getHeight()/2)*scale>0 /*半入法眼*/
 						|| horizon&&vTranslate.x+(page.OffsetAlongScrollAxis+page.size.getWidth()/2)*scale>0 /*半入法眼*/
 						);
-				CMN.Log("HiRes", HiRes);
+				//CMN.Log("HiRes", HiRes);
 				//HiRes = false;
 				NoTile=page.tile==null;
 				if(NoTile || HiRes && !page.tile.HiRes) {
@@ -2307,6 +2349,9 @@ public class PDocView extends View {
 	}
 	
 	void decodeThumbAt(Tile tile, float scale) {
+		if(pdoc.isClosed) {
+			return;
+		}
 		Bitmap OneSmallStep = tile.bitmap;
 		PDocument.PDocPage page = tile.currentOwner;
 		if(OneSmallStep==null||page==null) {
@@ -2339,6 +2384,9 @@ public class PDocView extends View {
 	/** decode Region At */
 	void decodeRegionAt(RegionTile tile, float scale) {
 		//CMN.Log("decodeRegionAt");
+		if(pdoc.isClosed) {
+			return;
+		}
 		Bitmap OneSmallStep = tile.bitmap;
 		PDocument.PDocPage page = tile.currentOwner;
 		if(OneSmallStep==null||page==null) {
@@ -3032,6 +3080,7 @@ public class PDocView extends View {
 		}
 		PDocument currentDoc = pdoc;
 		if(currentDoc!=null) {
+			checkDoc(false, false);
 			currentDoc.tryClose(a.getTaskId());
 		}
 		if(path!=null) {

@@ -125,7 +125,7 @@ public class BookMarkFragment extends Fragment {
 			holder.ivArrow.setRotation(node.isExpand() ? 90 : 0);
 			BookMarkEntry entryNode = (BookMarkEntry) node.getContent();
 			holder.tvName.setText(entryNode.entryName);
-			holder.tvPage.setText(Integer.toString(entryNode.page));
+			holder.tvPage.setText(entryNode.page<0?null:Integer.toString(entryNode.page));
 			holder.ivArrow.setVisibility(node.isLeaf()?View.INVISIBLE:View.VISIBLE);
 		}
 		

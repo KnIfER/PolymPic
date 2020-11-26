@@ -46,6 +46,9 @@ public class DescriptiveImageView extends ImageView {
 		mText = a.getString(R.styleable.DescriptiveImageView_android_text);
 		offsetY = a.getDimension(R.styleable.DescriptiveImageView_android_layout_y, 0);
 		a.recycle();
+		if(isInEditMode()) {
+			textPainter = createTextPainter();
+		}
 	}
 	
 	public static TextPaint createTextPainter() {

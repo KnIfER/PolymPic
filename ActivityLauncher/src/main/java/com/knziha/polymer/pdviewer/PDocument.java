@@ -50,12 +50,13 @@ public class PDocument {
 	public float ThumbsHiResFactor=0.4f;
 	public float ThumbsLoResFactor=0.1f;
 	
-	public static int SavingScheme;
 	public final static int SavingScheme_SaveOnClose=0;
 	public final static int SavingScheme_AlwaysSaveOnPause=1;
 	public final static int SavingScheme_NotSaving=2;
+	public static int SavingScheme=SavingScheme_AlwaysSaveOnPause;
 	public BookMarkNode bmRoot;
 	public int bmCount;
+	public boolean isClosed;
 	
 	public void saveDocAsCopy(String url,boolean incremental, boolean reload) {
 		if(isDirty) {
@@ -78,6 +79,7 @@ public class PDocument {
 	}
 	
 	public void close() {
+		isClosed = true;
 		for (int i:mPageOpenedRecord) {
 			mPDocPages[i].close();
 		}

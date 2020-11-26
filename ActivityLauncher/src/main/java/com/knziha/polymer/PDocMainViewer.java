@@ -23,13 +23,4 @@ public class PDocMainViewer extends PDocViewerActivity{
 			setTaskDescription(taskDesc);
 		}
 	}
-	
-	@Override
-	PDFPageParms parsePDFPageParms(Intent intent) {
-		PDFPageParms ret = parsePDFPageParmsFromIntent(intent);
-		if(ret!=null) {
-			return ret;
-		}
-		return super.parsePDFPageParms(intent);
-	}
 }

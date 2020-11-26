@@ -1803,6 +1803,21 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			} break;
 			case R.id.menu_icon10: {
 				AddPDFViewerShortCut(getApplicationContext());
+				
+//				Intent intent = new Intent("colordict.intent.action.SEARCH");
+//				intent.putExtra("EXTRA_QUERY", "happy");
+//				startActivity(intent);
+				//intent.addCategory(Intent.CATEGORY_BROWSABLE);
+//				intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//				intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+//				intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
+//				intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
+				
+				
+				//intent.setFlags(0x10000000);
+				
+				
+				
 			} break;
 			case R.id.ivBack:{ // 搜索引擎弹窗 //searpop
 				int polypopupW = (int) (_45_*1.5);
@@ -2122,12 +2137,10 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	
 	private void AddPDFViewerShortCut(Context context) {
 		if (ShortcutManagerCompat.isRequestPinShortcutSupported(context)) {
-			Intent intent = new Intent(context, PDocMainViewer.class);
-			intent.setAction(Intent.ACTION_MAIN);
-			intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-			intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+			Intent intent = new Intent(Intent.ACTION_MAIN);
+			intent.setClassName("com.knziha.polymer", "com.knziha.polymer.PDocShortCutActivity");
 			
-			ShortcutInfoCompat info = new ShortcutInfoCompat.Builder(context, "knziha.pdf")
+			ShortcutInfoCompat info = new ShortcutInfoCompat.Builder(context, "knziha.pd1f")
 					.setIcon(IconCompat.createWithResource(context, R.drawable.ic_pdoc_house))
 					.setShortLabel("PDF Viewer")
 					.setIntent(intent)

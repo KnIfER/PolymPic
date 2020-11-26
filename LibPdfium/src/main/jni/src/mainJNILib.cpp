@@ -30,7 +30,14 @@ static void initLibraryIfNeed(){
     Mutex::Autolock lock(sLibraryLock);
     if(sLibraryReferenceCount == 0){
         LOGD("Init FPDF library");
-        FPDF_InitLibrary();
+        //FPDF_InitLibrary();
+        FPDF_LIBRARY_CONFIG config;
+        config.version = 2;
+        config.m_pUserFontPaths = nullptr;
+        config.m_pIsolate = nullptr;
+        config.m_v8EmbedderSlot = 0;
+
+        FPDF_InitLibraryWithConfig(&config);
     }
     sLibraryReferenceCount++;
 }
@@ -285,6 +292,7 @@ JNI_FUNC(void, PdfiumCore, nativeCloseDocument)(JNI_ARGS, jlong documentPtr){
         DocumentFile *doc = reinterpret_cast<DocumentFile*>(documentPtr);
         if(doc->pdfDocument) {
             FPDF_CloseDocument((FPDF_DOCUMENT)doc->pdfDocument);
+            doc->pdfDocument = 0;
         }
     }
 }
@@ -638,13 +646,15 @@ JNI_FUNC(void, PdfiumCore, nativeRenderPage)(JNI_ARGS, jlong pagePtr, jobject ob
     ANativeWindow_release(nativeWindow);
 }
 
-JNI_FUNC(void, PdfiumCore, nativeRenderPageBitmap)(JNI_ARGS, jlong pagePtr, jobject bitmap,
+JNI_FUNC(void, PdfiumCore, nativeRenderPageBitmap)(JNI_ARGS, jlong documentPtr, jlong pagePtr, jobject bitmap,
                                              jint dpi, jint startX, jint startY,
                                              jint drawSizeHor, jint drawSizeVer,
                                              jboolean renderAnnot){
-
+    DocumentFile *doc = reinterpret_cast<DocumentFile*>(documentPtr);
+    if(!doc->pdfDocument) {
+        return;
+    }
     FPDF_PAGE page = reinterpret_cast<FPDF_PAGE>(pagePtr);
-
     if(page == NULL || bitmap == NULL){
         LOGE("Render page pointers invalid");
         return;
@@ -1025,8 +1035,8 @@ static bool writeAllBytes(const int fd, const void *buffer, const size_t byteCou
             if (errno == EINTR) {
                 continue;
             }
-            LOGE("Error writing to buffer: %d", errno);
-            return false;
+            LOGE("fatal Error writing to buffer: %d", errno);
+            return true;
         }
         remainingBytes -= writtenByteCount;
         writeBuffer += writtenByteCount;
@@ -1039,7 +1049,7 @@ static int writeBlock(FPDF_FILEWRITE* owner, const void* buffer, unsigned long s
     const PdfToFdWriter* writer = reinterpret_cast<PdfToFdWriter*>(owner);
     const bool success = writeAllBytes(writer->dstFd, buffer, size);
     if (!success) {
-        LOGE("Cannot write to file descriptor. Error:%d", errno);
+        LOGE("fatal Cannot write to file descriptor. Error:%d", errno);
         return 0;
     }
     return 1;
@@ -1052,6 +1062,7 @@ JNI_FUNC(void, PdfiumCore, nativeSaveAsCopy)(JNI_ARGS, jlong docPtr, jint fd, jb
     //writer.dstFd = docFile->fileFd;
     writer.WriteBlock = &writeBlock;
     FPDF_BOOL success = FPDF_SaveAsCopy(docFile->pdfDocument, &writer, incremental?FPDF_INCREMENTAL:FPDF_NO_INCREMENTAL); // FPDF_INCREMENTAL FPDF_NO_INCREMENTAL
+    //FPDF_BOOL success = FPDF_SaveWithVersion(docFile->pdfDocument, &writer, incremental?FPDF_INCREMENTAL:FPDF_NO_INCREMENTAL, 14); // FPDF_INCREMENTAL FPDF_NO_INCREMENTAL
     if (!success) {
         jniThrowExceptionFmt(env, "java/io/IOException", "cannot write to fd. Error: %d", errno);
     }

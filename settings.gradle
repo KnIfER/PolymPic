@@ -13,6 +13,8 @@ include ':LibPdfium'
 include ':filepicker'
 include ':GestureView'
 
+include ':twowaygridview'
+
 include ':multiline'
 
 

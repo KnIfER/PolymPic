@@ -90,5 +90,7 @@ dependencies {
         api(project(':AppPreference'))
     }
 
+    api project(':twowaygridview')
+
     api fileTree(dir: 'libs', include: ['*.jar'])
 }

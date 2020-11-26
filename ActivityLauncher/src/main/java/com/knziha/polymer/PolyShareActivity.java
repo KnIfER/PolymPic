@@ -17,6 +17,7 @@ import com.knziha.polymer.widgets.Utils;
 
 import java.util.HashMap;
 
+import static com.knziha.polymer.PDocViewerActivity.MultiInstMode;
 import static com.knziha.polymer.PDocViewerActivity.PDFPageParmsMap;
 import static com.knziha.polymer.PDocViewerActivity.parsePDFPageParmsFromIntent;
 
@@ -45,19 +46,20 @@ public class PolyShareActivity extends Activity {
 					PDocument doc = PDocView.books.get(path);
 					if(doc==null) {
 						Intent popup = new Intent().setData(uri);
-						if(true) {
+						if(MultiInstMode) {
 							popup.setClassName("com.knziha.polymer", "com.knziha.polymer.PDocViewerActivity");
 							popup.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 							popup.addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT);
 							popup.addFlags(Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
 							//CMN.Log("pop that way!");
 						} else {
-							popup.setClassName("com.knziha.polymer", "com.knziha.polymer.PDocMainViewer");
+							popup.setClassName("com.knziha.polymer", "com.knziha.polymer.PDocViewerActivity");
 							popup.setAction(Intent.ACTION_MAIN);
-							//popup.setFlags(0);
+							popup.setFlags(0);
 							popup.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 							popup.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
 							popup.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+							popup.putExtra("sin", true); // you are single, remove dead history
 						}
 						getApplicationContext().startActivity(popup);
 					} else {

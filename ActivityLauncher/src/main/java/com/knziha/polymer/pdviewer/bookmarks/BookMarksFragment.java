@@ -18,10 +18,10 @@ import androidx.fragment.app.Fragment;
 import androidx.viewpager.widget.ViewPager;
 
 import com.google.android.material.tabs.TabLayout;
+import com.knziha.polymer.PDocViewerActivity;
 import com.knziha.polymer.R;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.databinding.BookmarksBinding;
-import com.knziha.polymer.PDocViewerActivity;
 import com.knziha.polymer.pdviewer.PDocument;
 import com.knziha.polymer.widgets.Utils;
 
@@ -77,6 +77,7 @@ public class BookMarksFragment extends DialogFragment {
 			viewPager.setOffscreenPageLimit(1);
 		} else {
 			Utils.removeIfParentBeOrNotBe(bmView.root, null, false);
+			//@Hide(1)
 			bmView.viewpager.setAdapter(new FragAdapter(getChildFragmentManager(), fragments));
 		}
 		return bmView.root;
