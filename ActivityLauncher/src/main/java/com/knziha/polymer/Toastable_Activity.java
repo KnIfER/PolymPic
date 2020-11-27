@@ -159,7 +159,7 @@ public class Toastable_Activity extends AppCompatActivity {
 		if(Options.getKeepScreen())
 			getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-		opt.mConfiguration = mConfiguration = new Configuration(getResources().getConfiguration());
+		opt.mConfiguration = mConfiguration;
 		Options.isLarge = (getResources().getConfiguration().screenLayout & Configuration.SCREENLAYOUT_SIZE_MASK) >=3 ;
 		checkLanguage();
 	}

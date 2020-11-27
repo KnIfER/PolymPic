@@ -9,6 +9,7 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Build;
@@ -29,6 +30,7 @@ import android.widget.GridView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.GlobalOptions;
 import androidx.appcompat.view.menu.MenuBuilder;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.databinding.DataBindingUtil;
@@ -216,12 +218,13 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		
 		processBST(getIntent());
 		
+		systemIntialized = true;
 	}
 	
 	private void processBST(Intent intent) {
 		BST = intent.getIntExtra("BST", 0);
 		
-		if(BST!=0) {
+		if(BST!=0) { // remove the background splash screen.
 			Activity act = PDocShortCutActivity.blackSmithStack.get(BST);
 			if(act!=null) {
 				if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -372,6 +375,16 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		root.post(fadeInContents::start);
 	}
 	
+	@Override
+	public void onConfigurationChanged(@NonNull Configuration newConfig) {
+		getWindowManager().getDefaultDisplay().getMetrics(dm);
+		super.onConfigurationChanged(newConfig);
+		if(!systemIntialized) return;
+		if(mConfiguration.orientation!=newConfig.orientation) {
+		
+		}
+		mConfiguration.setTo(newConfig);
+	}
 	
 	@SuppressLint("NonConstantResourceId")
 	@Override
@@ -381,13 +394,11 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 				int id = WeakReferenceHelper.top_menu;
 				BookMarksFragment bmks = (BookMarksFragment) getReferencedObject(id);
 				if(bmks==null) {
-					putReferencedObject(id, bmks=new BookMarksFragment());
+					putReferencedObject(id, bmks=new BookMarksFragment(dm));
 				} else if(bmks.isAdded()) {
 					break;
 				}
-				bmks.width=(int) (dm.widthPixels-2*getResources().getDimension(R.dimen.diagMarginHor));
-				bmks.mMaxH=(int) (dm.heightPixels-2*getResources().getDimension(R.dimen.diagMarginVer));
-				bmks.height=-2;
+				bmks.resizeLayout(false);
 				bmks.show(getSupportFragmentManager(), "bkmks");
 			} break;
 			case R.id.browser_widget11: {

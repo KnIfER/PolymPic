@@ -1,12 +1,13 @@
 package com.knziha.polymer.pdviewer.bookmarks;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.content.Context;
+import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
-import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -30,7 +31,6 @@ import androidx.viewpager.widget.ViewPager;
 import com.google.android.material.tabs.TabLayout;
 import com.knziha.polymer.PDocViewerActivity;
 import com.knziha.polymer.R;
-import com.knziha.polymer.Toastable_Activity;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.databinding.BookmarksBinding;
 import com.knziha.polymer.pdviewer.PDocument;
@@ -41,12 +41,64 @@ import java.util.ArrayList;
 public class BookMarksFragment extends DialogFragment implements Toolbar.OnMenuItemClickListener {
 	private BookmarksBinding bmView;
 	private BookMarkFragment f1;
+	private final DisplayMetrics dm;
 	
-	public int width=-1,height=-1,mMaxH=-1;
+	public int width=-1,height=-2,mMaxH=-1;
 	private ArrayList<Fragment> fragments = new ArrayList<>(6);
 	private int lastUpdatedDoc;
 	private MenuBuilder AllMenus;
 	private MenuBuilder ActMenu;
+	
+	int lastW;
+	int lastH;
+	
+	public BookMarksFragment(DisplayMetrics dm) {
+		this.dm = dm;
+	}
+	
+	@Override
+	public void onConfigurationChanged(@NonNull Configuration newConfig) {
+		super.onConfigurationChanged(newConfig);
+		resizeLayout(true);
+	}
+	
+	public void resizeLayout(boolean refresh) {
+		int w = dm.widthPixels, h=dm.heightPixels;
+		if(w!=lastW||h!=lastH) {
+			//CMN.Log("w*h", dm.widthPixels, dm.heightPixels);
+			width=(int) Math.min(dm.widthPixels-2*28*dm.density, GlobalOptions.density*480);
+			if(dm.heightPixels>dm.widthPixels) {
+				mMaxH=(int) (dm.heightPixels-2*48*dm.density);
+			} else {
+				mMaxH=-1;
+			}
+			lastW = w;
+			lastH = h;
+			if(refresh) {
+				resize();
+			}
+		}
+	}
+	
+	private void resize() {
+		if(width!=-1 || height!=-1) {
+			if(getDialog()!=null) {
+				Window window = getDialog().getWindow();
+				if(window!= null) {
+					WindowManager.LayoutParams  attr = window.getAttributes();
+					if(attr.width!=width || attr.height!=height) {
+						//CMN.Log("onResume_");
+						window.setFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND, WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+						window.setDimAmount(0.1f);
+						window.setBackgroundDrawableResource(R.drawable.popup_shadow_l);
+						bmView.root.mMaxHeight=mMaxH;
+						window.setLayout(width,height);
+					}
+				}
+				getDialog().setCanceledOnTouchOutside(true);
+			}
+		}
+	}
 	
 	@Nullable
 	@Override
@@ -135,23 +187,7 @@ public class BookMarksFragment extends DialogFragment implements Toolbar.OnMenuI
 	@Override
 	public void onResume() {
 		super.onResume();
-		if(width!=-1 || height!=-1) {
-			if(getDialog()!=null) {
-				Window window = getDialog().getWindow();
-				if(window!= null) {
-					WindowManager.LayoutParams  attr = window.getAttributes();
-					if(attr.width!=width || attr.height!=height) {
-						//CMN.Log("onResume_");
-						window.setFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND, WindowManager.LayoutParams.FLAG_DIM_BEHIND);
-						window.setDimAmount(0.1f);
-						window.setBackgroundDrawableResource(R.drawable.popup_shadow_l);
-						bmView.root.mMaxHeight=mMaxH;
-						window.setLayout(width,height);
-					}
-				}
-				getDialog().setCanceledOnTouchOutside(true);
-			}
-		}
+		resize();
 	}
 	
 	@SuppressLint("NonConstantResourceId")
@@ -168,24 +204,26 @@ public class BookMarksFragment extends DialogFragment implements Toolbar.OnMenuI
 		boolean closeMenu=ret;
 		switch (id) {
 			case R.id.bm_expand: {
-				View anchorView = menuItem.actionView;
-				if(anchorView!=null) {
-					MenuBuilder menuBuilder = new MenuBuilder(a);
-					MenuInflater inflater = a.getMenuInflater();
-					inflater.inflate(R.menu.bookmark_tools_expand, menuBuilder);
-					menuBuilder.setCallback(new MenuBuilder.Callback() {
-						@Override
-						public boolean onMenuItemSelected(MenuBuilder menu, MenuItem item) {
-							MenuBuilder tmpMenu = ActMenu;
-							ActMenu = menu;
-							boolean ret = onMenuItemClick(item);
-							ActMenu = tmpMenu;
-							return ret;
-						}
-						@Override public void onMenuModeChange(MenuBuilder menu) { }
-					});
-					MenuPopup m_popup = new MenuPopupHelper(a, menuBuilder, anchorView).getPopup();
-					m_popup.show();
+				if(!isLongClicked) {
+					View anchorView = menuItem.actionView;
+					if(anchorView!=null) {
+						MenuBuilder menuBuilder = new MenuBuilder(a);
+						MenuInflater inflater = a.getMenuInflater();
+						inflater.inflate(R.menu.bookmark_tools_expand, menuBuilder);
+						menuBuilder.setCallback(new MenuBuilder.Callback() {
+							@Override
+							public boolean onMenuItemSelected(MenuBuilder menu, MenuItem item) {
+								MenuBuilder tmpMenu = ActMenu;
+								ActMenu = menu;
+								boolean ret = onMenuItemClick(item);
+								ActMenu = tmpMenu;
+								return ret;
+							}
+							@Override public void onMenuModeChange(MenuBuilder menu) { }
+						});
+						MenuPopup m_popup = new MenuPopupHelper(a, menuBuilder, anchorView).getPopup();
+						m_popup.show();
+					}
 				}
 			} break;
 			case R.id.bm_exp_all:
