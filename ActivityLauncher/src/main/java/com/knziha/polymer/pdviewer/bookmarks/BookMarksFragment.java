@@ -1,9 +1,14 @@
 package com.knziha.polymer.pdviewer.bookmarks;
 
+import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Context;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -12,6 +17,11 @@ import android.view.WindowManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.GlobalOptions;
+import androidx.appcompat.view.menu.MenuBuilder;
+import androidx.appcompat.view.menu.MenuItemImpl;
+import androidx.appcompat.view.menu.MenuPopup;
+import androidx.appcompat.view.menu.MenuPopupHelper;
+import androidx.appcompat.widget.Toolbar;
 import androidx.core.graphics.ColorUtils;
 import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
@@ -20,6 +30,7 @@ import androidx.viewpager.widget.ViewPager;
 import com.google.android.material.tabs.TabLayout;
 import com.knziha.polymer.PDocViewerActivity;
 import com.knziha.polymer.R;
+import com.knziha.polymer.Toastable_Activity;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.databinding.BookmarksBinding;
 import com.knziha.polymer.pdviewer.PDocument;
@@ -27,23 +38,28 @@ import com.knziha.polymer.widgets.Utils;
 
 import java.util.ArrayList;
 
-public class BookMarksFragment extends DialogFragment {
+public class BookMarksFragment extends DialogFragment implements Toolbar.OnMenuItemClickListener {
 	private BookmarksBinding bmView;
 	private BookMarkFragment f1;
 	
 	public int width=-1,height=-1,mMaxH=-1;
 	private ArrayList<Fragment> fragments = new ArrayList<>(6);
 	private int lastUpdatedDoc;
+	private MenuBuilder AllMenus;
+	private MenuBuilder ActMenu;
 	
 	@Nullable
 	@Override
 	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
 		if(bmView==null) {
+			GlobalOptions.shouldRecordMenuView = true;
 			bmView = BookmarksBinding.inflate(getLayoutInflater(), null, false);
 			fragments.add(f1 = new BookMarkFragment());
-			
 			ViewPager viewPager = bmView.viewpager;
 			TabLayout mTabLayout = bmView.mTabLayout;
+			Toolbar mToolbar = bmView.toolbar;
+			
+			mToolbar.setOnMenuItemClickListener(this);
 			
 			viewPager.setAdapter(new FragAdapter(getChildFragmentManager(), fragments));
 			
@@ -75,6 +91,10 @@ public class BookMarksFragment extends DialogFragment {
 			viewPager.setCurrentItem(0);
 			
 			viewPager.setOffscreenPageLimit(1);
+			
+			mToolbar.inflateMenu(R.menu.bookmark_tools);
+			AllMenus = (MenuBuilder) mToolbar.getMenu();
+			ActMenu = AllMenus;
 		} else {
 			Utils.removeIfParentBeOrNotBe(bmView.root, null, false);
 			//@Hide(1)
@@ -134,4 +154,52 @@ public class BookMarksFragment extends DialogFragment {
 		}
 	}
 	
+	@SuppressLint("NonConstantResourceId")
+	@Override
+	public boolean onMenuItemClick(MenuItem item) {
+		PDocViewerActivity a = (PDocViewerActivity) getActivity();
+		if(a==null) {
+			return false;
+		}
+		int id = item.getItemId();
+		MenuItemImpl menuItem = item instanceof MenuItemImpl?(MenuItemImpl)item:null;
+		boolean isLongClicked= menuItem!=null && menuItem.isLongClicked;
+		boolean ret = !isLongClicked;
+		boolean closeMenu=ret;
+		switch (id) {
+			case R.id.bm_expand: {
+				View anchorView = menuItem.actionView;
+				if(anchorView!=null) {
+					MenuBuilder menuBuilder = new MenuBuilder(a);
+					MenuInflater inflater = a.getMenuInflater();
+					inflater.inflate(R.menu.bookmark_tools_expand, menuBuilder);
+					menuBuilder.setCallback(new MenuBuilder.Callback() {
+						@Override
+						public boolean onMenuItemSelected(MenuBuilder menu, MenuItem item) {
+							MenuBuilder tmpMenu = ActMenu;
+							ActMenu = menu;
+							boolean ret = onMenuItemClick(item);
+							ActMenu = tmpMenu;
+							return ret;
+						}
+						@Override public void onMenuModeChange(MenuBuilder menu) { }
+					});
+					MenuPopup m_popup = new MenuPopupHelper(a, menuBuilder, anchorView).getPopup();
+					m_popup.show();
+				}
+			} break;
+			case R.id.bm_exp_all:
+			case R.id.bm_csp_all: {
+				PDocument doc = a.currentViewer.pdoc;
+				f1.expandAll(doc, id==R.id.bm_exp_all);
+			} break;
+		}
+		if(closeMenu)
+			closeIfNoActionView(menuItem);
+		return ret;
+	}
+	
+	void closeIfNoActionView(MenuItemImpl mi) {
+		if(mi!=null && !mi.isActionButton()) ActMenu.close();
+	}
 }

@@ -12,6 +12,7 @@ import android.util.SparseIntArray;
 import androidx.annotation.Nullable;
 import androidx.core.content.res.ResourcesCompat;
 
+import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.pdviewer.PDFPageParms;
 
 import java.io.File;
@@ -22,6 +23,7 @@ public class PDocShortCutActivity extends Activity {
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
+		CMN.Log("PDocShortCutActivity", getIntent(), getIntent().hasExtra("ASD"));
 		
 		Intent popup = new Intent(Intent.ACTION_VIEW).setData(Uri.fromFile(new File("/storage/emulated/0/myFolder/Gpu Pro 1.pdf")));
 		popup.setClassName("com.knziha.polymer", "com.knziha.polymer.PDocViewerActivity");

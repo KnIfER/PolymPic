@@ -62,6 +62,7 @@ import com.knziha.polymer.slideshow.ImageViewState;
 import com.knziha.polymer.slideshow.OverScroller;
 import com.knziha.polymer.slideshow.decoder.ImageDecoder;
 import com.knziha.polymer.slideshow.decoder.ImageRegionDecoder;
+import com.shockwave.pdfium.bookmarks.BookMarkEntry;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
@@ -276,10 +277,13 @@ public class PDocView extends View {
 	public void navigateTo(PDFPageParms pageParms) {
 		int pageIdx = Math.max(0, Math.min(pageParms.pageIdx, pdoc._num_entries));
 		PDocument.PDocPage page = pdoc.mPDocPages[pageIdx];
-		float scale = Math.min(currentMinScale()*Math.max(0.01f, pageParms.scale), maxScale);
-		vTranslate.set(0, (page.OffsetAlongScrollAxis+pageParms.offsetY)*scale);
-		this.scale = scale;
-		invalidate();
+		float newScale = pageParms.scale;
+		if(newScale>0) {
+			newScale = Math.min(currentMinScale()*Math.max(0.01f, newScale), maxScale);
+			scale = newScale;
+		}
+		vTranslate.set(0, -(page.OffsetAlongScrollAxis+pageParms.offsetY)*scale);
+		refreshRequiredTiles(true);
 	}
 	
 	public interface ImageReadyListener { void ImageReady(); }
@@ -2130,7 +2134,8 @@ public class PDocView extends View {
 	}
 	
 	private void refreshRequiredTiles(boolean load) {
-		if (pdoc==null) { return; }
+		//CMN.Log("refreshRequiredTiles", pdoc);
+		if (pdoc==null || pdoc.isClosed) { return; }
 		stoff = (long) (-vTranslate.y/scale);
 		edoff = stoff+getScreenHeight()/scale;
 		stoffX = (long) (-vTranslate.x/scale);

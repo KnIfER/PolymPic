@@ -84,7 +84,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 				}
 			}
 			if(isSingleInst) {
-				showT("单例");
+				//showT("单例");
 				singleInstCout=0;
 			}
 			super.onBackPressed();
@@ -238,7 +238,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 					}
 				}
 				//act.finish();
-				showT("act.finish()");
+				//showT("act.finish()");
 			}
 		}
 	}

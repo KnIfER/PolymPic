@@ -16,15 +16,19 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.knziha.polymer.PDocViewerActivity;
 import com.knziha.polymer.R;
 import com.knziha.polymer.Utils.CMN;
+import com.knziha.polymer.pdviewer.PDFPageParms;
 import com.knziha.polymer.pdviewer.PDocument;
 import com.knziha.polymer.widgets.Utils;
 import com.shockwave.pdfium.bookmarks.BookMarkEntry;
+import com.shockwave.pdfium.bookmarks.BookMarkNode;
 import com.shockwave.pdfium.treeview.TreeViewAdapter;
 import com.shockwave.pdfium.treeview.TreeViewNode;
 
@@ -84,8 +88,14 @@ public class BookMarkFragment extends Fragment {
 				public boolean onClick(TreeViewNode node, RecyclerView.ViewHolder holder) {
 					if (!node.isLeaf()) {
 						onToggle(!node.isExpand(), holder);
+					} else {
+						TreeViewAdapter.LayoutItemType content = node.getContent();
+						if(content instanceof BookMarkEntry) {
+							onJumpToBookMark((BookMarkEntry)content);
+						}
 					}
-					CMN.Log("onToggle", bmRv.isLayoutSuppressed(), CMN.id(node.getContent()), CMN.id(bmRv), CMN.id(bmRv.getAdapter()), node.getContent());
+					//CMN.Log("onToggle", bmRv.isLayoutSuppressed(), CMN.id(node.getContent()), CMN.id(bmRv), CMN.id(bmRv.getAdapter()), node.getContent());
+					
 					return false;
 				}
 				
@@ -106,12 +116,24 @@ public class BookMarkFragment extends Fragment {
 		return bmRv;
 	}
 	
+	private void onJumpToBookMark(BookMarkEntry bkmk) {
+		PDocViewerActivity a = (PDocViewerActivity) getActivity();
+		if(a!=null) {
+			a.currentViewer.navigateTo(new PDFPageParms(bkmk.page, 0, 0, -1));
+			((DialogFragment)getParentFragment()).dismiss();
+		}
+	}
+	
 	public void refresh(PDocument pdoc) {
 		adapter.refresh(pdoc.bmRoot.getChildList(), pdoc.bmCount);
-		adapter.notifyDataSetChanged();
+		//adapter.notifyDataSetChanged();
 		//bmRv.setAdapter(null);
 		//bmRv.setAdapter(adapter);
 		//bmRv.scrollToPosition(0);
+	}
+	
+	public void expandAll(PDocument pdoc, boolean expand) {
+		adapter.refresh(bmRv, pdoc.bmRoot.getChildList(), pdoc.bmCount, expand);
 	}
 	
 	public static class BookMarkEntryBinder extends TreeViewAdapter.TreeViewBinderInterface<BookMarkEntryBinder.ViewHolder> {

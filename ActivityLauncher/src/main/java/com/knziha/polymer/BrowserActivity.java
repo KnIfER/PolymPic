@@ -2139,8 +2139,12 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		if (ShortcutManagerCompat.isRequestPinShortcutSupported(context)) {
 			Intent intent = new Intent(Intent.ACTION_MAIN);
 			intent.setClassName("com.knziha.polymer", "com.knziha.polymer.PDocShortCutActivity");
+			//intent.putExtra("ASD", "dsa");
+			intent.putExtra("ASD", 123);
 			
-			ShortcutInfoCompat info = new ShortcutInfoCompat.Builder(context, "knziha.pd1f")
+			intent.setData(Uri.fromFile(new File("123345")));
+			
+			ShortcutInfoCompat info = new ShortcutInfoCompat.Builder(context, "knziha.pd2f")
 					.setIcon(IconCompat.createWithResource(context, R.drawable.ic_pdoc_house))
 					.setShortLabel("PDF Viewer")
 					.setIntent(intent)
@@ -2148,6 +2152,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			
 			//当添加快捷方式的确认弹框弹出来时，将被回调
 			PendingIntent shortcutCallbackIntent = PendingIntent.getBroadcast(context, 0, new Intent(context, MyReceiver.class), PendingIntent.FLAG_UPDATE_CURRENT);
+			//ShortcutManagerCompat.requestPinShortcut(context, info, shortcutCallbackIntent.getIntentSender());
 			ShortcutManagerCompat.requestPinShortcut(context, info, shortcutCallbackIntent.getIntentSender());
 			//ShortcutManagerCompat.addDynamicShortcuts(context, Collections.singletonList(info));
 			//ShortcutManagerCompat.requestPinShortcut(context, info, null);

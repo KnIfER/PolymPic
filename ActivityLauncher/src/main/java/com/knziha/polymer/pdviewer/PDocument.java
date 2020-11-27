@@ -73,6 +73,7 @@ public class PDocument {
 				if(reload) {
 					close();
 					pdfDocument = pdfiumCore.newDocument(ParcelFileDescriptor.open(path, ParcelFileDescriptor.MODE_READ_ONLY));
+					isClosed = false;
 				}
 				isDirty=false;
 				CMN.pt("PDF 保存耗时：", path);
@@ -559,5 +560,12 @@ public class PDocument {
 		PointF p2=new PointF();
 		PointF p3=new PointF();
 		PointF p4=new PointF();
+	}
+	
+	@Override
+	public String toString() {
+		return "PDocument{" +
+				"isClosed=" + isClosed +
+				'}';
 	}
 }
