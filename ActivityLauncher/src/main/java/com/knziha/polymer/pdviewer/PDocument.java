@@ -5,12 +5,14 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.PointF;
 import android.graphics.RectF;
+import android.net.Uri;
 import android.os.ParcelFileDescriptor;
 import android.util.DisplayMetrics;
 import android.util.SparseArray;
 
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.text.BreakIteratorHelper;
+import com.knziha.polymer.widgets.Utils;
 import com.shockwave.pdfium.PdfDocument;
 import com.shockwave.pdfium.PdfiumCore;
 import com.shockwave.pdfium.bookmarks.BookMarkEntry;
@@ -30,7 +32,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import static com.knziha.polymer.pdviewer.PDocView.books;
 
 public class PDocument {
-	public final String path;
+	public final Uri path;
 	public final AtomicInteger referenceCount;
 	final DisplayMetrics dm;
 	public /*final*/ PDocPage[] mPDocPages;
@@ -58,21 +60,23 @@ public class PDocument {
 	public int bmCount;
 	public boolean isClosed;
 	
-	public void saveDocAsCopy(String url,boolean incremental, boolean reload) {
+	public void saveDocAsCopy(Context c, Uri url,boolean incremental, boolean reload) {
 		if(isDirty) {
 			if(url==null) {
 				url=path;
 			}
-			File path = new File(url);
+			//File path = new File(url);
 			//incremental = true; //debug inc
 			//path = new File(path.getParentFile(), "tmp2.pdf"); //debug save
-			try (ParcelFileDescriptor fd = ParcelFileDescriptor.open(path, ParcelFileDescriptor.MODE_WRITE_ONLY|ParcelFileDescriptor.MODE_CREATE)) {
+			//try (ParcelFileDescriptor fd = ParcelFileDescriptor.open(path, ParcelFileDescriptor.MODE_WRITE_ONLY|ParcelFileDescriptor.MODE_CREATE)) {
+			try (ParcelFileDescriptor fd = c.getContentResolver().openFileDescriptor(path, "w")) {
 				CMN.rt();
 				//pdfDocument.closeFile();
 				pdfiumCore.SaveAsCopy(pdfDocument.mNativeDocPtr, fd.getFd(), incremental);
 				if(reload) {
 					close();
-					pdfDocument = pdfiumCore.newDocument(ParcelFileDescriptor.open(path, ParcelFileDescriptor.MODE_READ_ONLY));
+					//pdfDocument = pdfiumCore.newDocument(ParcelFileDescriptor.open(path, ParcelFileDescriptor.MODE_READ_ONLY));
+					pdfDocument = pdfiumCore.newDocument(c.getContentResolver().openFileDescriptor(path, "r"));
 					isClosed = false;
 				}
 				isDirty=false;
@@ -95,7 +99,7 @@ public class PDocument {
 	public void tryClose(int taskId) {
 		if(referenceCount.decrementAndGet()==0) {
 			close();
-			books.remove(path);
+			books.remove(Utils.getRunTimePath(path));
 		}
 	}
 	
@@ -442,16 +446,16 @@ public class PDocument {
 		return GetCross(p1, p2, p) * GetCross(p3, p4, p) >= 0 && GetCross(p2, p3, p) * GetCross(p4, p1, p) >= 0;
 	}
 	
-	public PDocument(Context c, String path, DisplayMetrics dm, AtomicBoolean abort) throws IOException {
+	public PDocument(Context c, Uri path, DisplayMetrics dm, AtomicBoolean abort) throws IOException {
 		this.path = path;
 		this.referenceCount = new AtomicInteger(1);
 		this.dm = dm;
 		if(pdfiumCore==null) {
 			pdfiumCore = new PdfiumCore(c);
 		}
-		File f = new File(path);
+		//File f = new File(path);
 		//ParcelFileDescriptor pfd = ParcelFileDescriptor.open(f, ParcelFileDescriptor.MODE_READ_ONLY);
-		ParcelFileDescriptor pfd = ParcelFileDescriptor.open(f, ParcelFileDescriptor.MODE_READ_WRITE);
+		ParcelFileDescriptor pfd = c.getContentResolver().openFileDescriptor(path, "r");
 		//CMN.Log("ParcelFileDescriptor", pfd.getFd());
 		pdfDocument = pdfiumCore.newDocument(pfd);
 		_num_entries = pdfiumCore.getPageCount(pdfDocument);

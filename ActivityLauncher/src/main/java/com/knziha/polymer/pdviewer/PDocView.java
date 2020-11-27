@@ -62,8 +62,10 @@ import com.knziha.polymer.slideshow.ImageViewState;
 import com.knziha.polymer.slideshow.OverScroller;
 import com.knziha.polymer.slideshow.decoder.ImageDecoder;
 import com.knziha.polymer.slideshow.decoder.ImageRegionDecoder;
+import com.knziha.polymer.widgets.Utils;
 import com.shockwave.pdfium.bookmarks.BookMarkEntry;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -881,14 +883,14 @@ public class PDocView extends View {
 	public final static ConcurrentHashMap<String, PDocument> books = new ConcurrentHashMap<>(12);
 	
 	private static class TilesInitTask implements Runnable {
-		private final String url;
+		private final Uri url;
 		private final AtomicBoolean abort = new AtomicBoolean();
 		private final AtomicBoolean finished = new AtomicBoolean();
 		private final WeakReference<PDocView> viewRef;
 		private Thread t;
 		private PDocument result;
 		
-		TilesInitTask(PDocView view, String url) {
+		TilesInitTask(PDocView view, Uri url) {
 			this.url = url;
 			viewRef = new WeakReference<>(view);
 		}
@@ -907,8 +909,9 @@ public class PDocView extends View {
 					}
 				} else {
 					try {
+						String path = Utils.getRunTimePath(url);
 						boolean responsibleForThisBook=false;
-						PDocument doc = books.get(url);
+						PDocument doc = books.get(path);
 						if(doc==null) {
 							doc = new PDocument(view.getContext(), url, view.dm, Looper.myLooper() == Looper.getMainLooper() ? null : abort);
 							responsibleForThisBook=true;
@@ -918,14 +921,14 @@ public class PDocView extends View {
 							result = doc;
 							view.post(this);
 							if(responsibleForThisBook) {
-								books.put(url, doc);
+								books.put(path, doc);
 							} else {
 								doc.referenceCount.incrementAndGet();
 							}
 						} else if(responsibleForThisBook) {
 							doc.close();
 						}
-					} catch (IOException e) {
+					} catch (Exception e) {
 						CMN.Log(e);
 					}
 				}
@@ -1267,6 +1270,9 @@ public class PDocView extends View {
 	public boolean onTouchEvent(@NonNull MotionEvent event) {
 		//CMN.Log("onTouchEvent");
 		// During non-interruptible anims, ignore all touch events
+		if(pdoc==null) {
+			return true;
+		}
 		int touch_type = event.getAction() & MotionEvent.ACTION_MASK;
 		boolean isDown = touch_type==MotionEvent.ACTION_DOWN||touch_type==MotionEvent.ACTION_POINTER_DOWN;
 		if(waitingNextTouchResume){
@@ -3080,12 +3086,16 @@ public class PDocView extends View {
 	}
 	
 	public void setDocumentPath(String path) {
+		setDocumentUri(Uri.fromFile(new File(path)));
+	}
+	
+	public void setDocumentUri(Uri path) {
 		if(loadingTask!=null) {
 			loadingTask.abort();
 		}
 		PDocument currentDoc = pdoc;
 		if(currentDoc!=null) {
-			checkDoc(false, false);
+			checkDoc(getContext(), false, false);
 			currentDoc.tryClose(a.getTaskId());
 		}
 		if(path!=null) {
@@ -3104,7 +3114,7 @@ public class PDocView extends View {
 		sWidth = pdoc.getWidth();
 		sHeight = pdoc.getHeight();
 		//sOrientation = 0;
-		ImgSrc = pdoc.path;
+		ImgSrc = Utils.getRunTimePath(pdoc.path);
 		sOrientation = getExifOrientation(getContext(), ImgSrc);
 		rotation = (float) Math.toRadians(sOrientation);
 		CMN.Log("setProxy getExifOrientation", sOrientation, rotation, ImgSrc);
@@ -4689,9 +4699,9 @@ public class PDocView extends View {
 	}
 	
 	
-	public void checkDoc(boolean incremental, boolean reload) {
+	public void checkDoc(Context c, boolean incremental, boolean reload) {
 		if(pdoc!=null && pdoc.isDirty)
-			pdoc.saveDocAsCopy(null, incremental, reload);
+			pdoc.saveDocAsCopy(c, null, incremental, reload);
 	}
 	
 	

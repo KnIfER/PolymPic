@@ -16,15 +16,20 @@
 
 package com.knziha.polymer.widgets;
 
+import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.database.AbstractWindowedCursor;
 import android.database.Cursor;
 import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
+import android.net.Uri;
+import android.os.Binder;
 import android.os.Build;
-import android.text.SpannableStringBuilder;
+import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.LayoutDirection;
 import android.util.SparseArray;
@@ -37,24 +42,27 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.EditText;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.GlobalOptions;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.Options;
 
-import org.apache.commons.lang3.ObjectUtils;
-
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
+import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import static com.knziha.polymer.Utils.IU.parseInt;
 
@@ -182,6 +190,79 @@ public class Utils {
 			return  path.substring(idx).toLowerCase();
 		}
 		return null;
+	}
+	
+	public static String getRunTimePath(Uri uri) {
+		String path  = uri.getPath();
+		if(TextUtils.isEmpty(path)) {
+			path = uri.toString();
+		}
+		return path;
+	}
+	
+	public static Uri getSimplifiedUrl(Activity a, Uri data) {
+		int perm = a.checkUriPermission(data, Binder.getCallingPid(), Binder.getCallingUid(), Intent.FLAG_GRANT_READ_URI_PERMISSION);
+		CMN.Log("perm", perm==PackageManager.PERMISSION_GRANTED);
+		if (perm != PackageManager.PERMISSION_GRANTED) {
+			return Uri.fromFile(preparePDFGuide(a));
+		}
+		return data;
+	}
+	
+	public static void UnZipAssetsFolder(Context context, String zipAsset, File outPath) {
+		try {
+			ZipInputStream inZip = new ZipInputStream(context.getAssets().open(zipAsset));
+			ZipEntry zipEntry;
+			String entryName;
+			while ((zipEntry = inZip.getNextEntry()) != null) {
+				entryName = zipEntry.getName();
+				if (zipEntry.isDirectory()) {
+					entryName = entryName.substring(0, entryName.length() - 1);
+					File folder = new File(outPath, entryName);
+					folder.mkdirs();
+				} else {
+					File file = new File(outPath, entryName);
+					if (!file.exists()) {
+						file.getParentFile().mkdirs();
+						file.createNewFile();
+					}
+					FileOutputStream out = new FileOutputStream(file);
+					int len;
+					byte[] buffer = new byte[1024];
+					while ((len = inZip.read(buffer)) != -1) {
+						out.write(buffer, 0, len);
+						out.flush();
+					}
+					out.close();
+				}
+			}
+			inZip.close();
+		} catch (Exception e) {
+			CMN.Log(e);
+		}
+	}
+	
+	private static File preparePDFGuide(Activity a) {
+		final String name = "indir.pdf";
+		File guide = new File(a.getExternalFilesDir(null), name);
+		if(!guide.exists()) {
+			//UnZipAssetsFolder(a, "pdf.zip", a.getExternalFilesDir(null));
+			try {
+				InputStream is = a.getAssets().open(name);
+				FileOutputStream fos = new FileOutputStream(guide);
+				byte[] buffer = new byte[1024];
+				int byteCount;
+				while ((byteCount = is.read(buffer)) != -1) {
+					fos.write(buffer, 0, byteCount);
+				}
+				fos.flush();
+				is.close();
+				fos.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		return guide;
 	}
 	
 	public static class DummyOnClick implements View.OnClickListener {

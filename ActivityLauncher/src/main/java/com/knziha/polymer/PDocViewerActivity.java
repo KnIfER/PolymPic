@@ -30,7 +30,6 @@ import android.widget.GridView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.GlobalOptions;
 import androidx.appcompat.view.menu.MenuBuilder;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.databinding.DataBindingUtil;
@@ -201,7 +200,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 						ActivityManager.AppTask appTask = tasks.get(i);
 						int id = appTask.getTaskInfo().id;
 						CMN.Log("隐藏了???", id);
-						if(id==-1 || instTidBucket.remove(id)){
+						if(id==-1 || id!=taskId&&instTidBucket.remove(id)){
 							//appTask.setExcludeFromRecents(true);
 							appTask.finishAndRemoveTask();
 							CMN.Log("隐藏了");
@@ -328,20 +327,17 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 	}
 	
 	private void processIntent(Intent intent) {
-		Uri uri = intent.getData();
-		CMN.Log("processIntent", intent, intent.getData());
+		Uri uri = Utils.getSimplifiedUrl(this, intent.getData());
+		CMN.Log("processIntent", intent, uri);
 		if(uri!=null) {
-			String path = uri.getPath();
-			if (path != null) {
-				currentViewer.setDocumentPath(path);
-				if (!this_instanceof_PDocMainViewer && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-					ActivityManager.TaskDescription taskDesc = new ActivityManager.TaskDescription(
-							new File(path).getName(),//title
-							BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher),//图标
-							ResourcesCompat.getColor(getResources(), R.color.colorPrimary,
-									getTheme()));
-					setTaskDescription(taskDesc);
-				}
+			currentViewer.setDocumentUri(uri);
+			if (!this_instanceof_PDocMainViewer && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+				ActivityManager.TaskDescription taskDesc = new ActivityManager.TaskDescription(
+						new File(uri.getPath()).getName(),//title
+						BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher),//图标
+						ResourcesCompat.getColor(getResources(), R.color.colorPrimary,
+								getTheme()));
+				setTaskDescription(taskDesc);
 			}
 		} else { //tg
 			//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/Gpu Pro 1.pdf");
@@ -391,6 +387,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 	public void onClick(View v) {
 		switch (v.getId()) {
 			case R.id.browser_widget10: {
+				if(InvalidSate()) break;
 				int id = WeakReferenceHelper.top_menu;
 				BookMarksFragment bmks = (BookMarksFragment) getReferencedObject(id);
 				if(bmks==null) {
@@ -405,6 +402,14 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 				toggleMainMenuList();
 			} break;
 		}
+	}
+	
+	private boolean InvalidSate() {
+		if(currentViewer.pdoc==null) {
+			showT("No Opened Document !");
+			return true;
+		}
+		return false;
 	}
 	
 	@Override
@@ -426,7 +431,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 	protected void onPause() {
 		super.onPause();
 		if(PDocument.SavingScheme==PDocument.SavingScheme_AlwaysSaveOnPause) {
-			currentViewer.checkDoc(false, true);
+			currentViewer.checkDoc(this, false, true);
 		}
 		if(hidingContextMenu) {
 			currentViewer.hideContextMenuView();
@@ -437,9 +442,9 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 	protected void onDestroy() {
 		super.onDestroy();
 		if(PDocument.SavingScheme==PDocument.SavingScheme_SaveOnClose) {
-			currentViewer.checkDoc(false, false);
+			currentViewer.checkDoc(this, false, false);
 		}
-		currentViewer.setDocumentPath(null);
+		currentViewer.setDocumentUri(null);
 		if(isSingleInst) {
 			singleInstCout=0;
 		}
@@ -571,7 +576,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 			if(newUri!=null) {
 				PDFPageParms pageParms = parsePDFPageParms(intent);
 				showT("新的来啦！");
-				currentViewer.setDocumentPath(newUri.getPath());
+				currentViewer.setDocumentUri(newUri);
 			}
 		}
 		processBST(intent);

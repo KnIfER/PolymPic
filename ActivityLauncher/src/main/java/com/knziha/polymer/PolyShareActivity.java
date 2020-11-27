@@ -4,7 +4,9 @@ import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Binder;
 import android.os.Bundle;
 import android.util.SparseArray;
 import android.view.Window;
@@ -39,14 +41,15 @@ public class PolyShareActivity extends Activity {
 	public void ProcessIntent(Intent intent) {
 		Uri uri = intent.getData();
 		if(uri!=null) {
-			String path = uri.getPath();
+			String path = Utils.getRunTimePath(uri);
+			CMN.Log("PolySharing", "path = "+path);
 			if(path!=null) {
-				if(".pdf".equals(Utils.getSuffix(path))) {
-					CMN.Log("PDocView.books",PDocView.books);
+				if (".pdf".equals(Utils.getSuffix(path))) {
+					CMN.Log("PDocView.books", PDocView.books);
 					PDocument doc = PDocView.books.get(path);
-					if(doc==null) {
+					if (doc == null) {
 						Intent popup = new Intent().setData(uri);
-						if(MultiInstMode) {
+						if (MultiInstMode) {
 							popup.setClassName("com.knziha.polymer", "com.knziha.polymer.PDocViewerActivity");
 							popup.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 							popup.addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT);
@@ -65,10 +68,10 @@ public class PolyShareActivity extends Activity {
 					} else {
 						int aid = doc.aid;
 						ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
-						if (aid!=0 && manager != null) {
+						if (aid != 0 && manager != null) {
 							manager.moveTaskToFront(aid, ActivityManager.MOVE_TASK_WITH_HOME);
 							PDFPageParms pageParms = parsePDFPageParmsFromIntent(intent);
-							if(pageParms!=null) {
+							if (pageParms != null) {
 								PDFPageParmsMap.put(aid, pageParms);
 							}
 						}
