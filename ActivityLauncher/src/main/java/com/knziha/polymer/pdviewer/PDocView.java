@@ -3087,12 +3087,13 @@ public class PDocView extends View {
 	
 	}
 	
+	@Deprecated
 	public void setDocumentPath(String path) {
 		setDocumentUri(Uri.fromFile(new File(path)));
 	}
 	
 	public boolean setDocumentUri(Uri path) {
-		if(isDocTheSame(path)) {
+		if(path!=null && isDocTheSame(path)) {
 			return false;
 		}
 		if(loadingTask!=null) {

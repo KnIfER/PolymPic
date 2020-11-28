@@ -339,7 +339,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 	
 	private void processIntent(Intent intent, boolean 人生若只如初见, boolean 不如不见) {
 		Uri uri = intent.getData();
-		if(!currentViewer.isDocTheSame(uri)) {
+		if(uri!=null && !currentViewer.isDocTheSame(uri)) {
 			if(!不如不见) {
 				uri = Utils.getSimplifiedUrl(this, intent.getData());
 			}
