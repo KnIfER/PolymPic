@@ -339,43 +339,45 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 	
 	private void processIntent(Intent intent, boolean 人生若只如初见, boolean 不如不见) {
 		Uri uri = intent.getData();
-		if(!不如不见) {
-			uri = Utils.getSimplifiedUrl(this, intent.getData());
-		}
-		CMN.Log("processIntent", intent, uri);
-		if(uri!=null) {
-			if(人生若只如初见) {
-				String file_path = uri.getPath();
-				int ret=100;
-				if(!TextUtils.isEmpty(file_path)
-						&& (ret=FU.checkSdcardPermission(this, new File(file_path), R.string.pls_pick_permission, 666, uri))==-1) {
-					return;
+		if(!currentViewer.isDocTheSame(uri)) {
+			if(!不如不见) {
+				uri = Utils.getSimplifiedUrl(this, intent.getData());
+			}
+			CMN.Log("processIntent", intent, uri);
+			if(uri!=null) {
+				if(人生若只如初见) {
+					String file_path = uri.getPath();
+					int ret=100;
+					if(!TextUtils.isEmpty(file_path)
+							&& (ret=FU.checkSdcardPermission(this, new File(file_path), R.string.pls_pick_permission, 666, uri))==-1) {
+						return;
+					}
+					CMN.Log("人生若只如初见", file_path, ret);
 				}
-				CMN.Log("人生若只如初见", file_path, ret);
+				if(currentViewer.setDocumentUri(uri))
+				if (!this_instanceof_PDocMainViewer && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+					ActivityManager.TaskDescription taskDesc = new ActivityManager.TaskDescription(
+							new File(uri.getPath()).getName(),//title
+							BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher),//图标
+							ResourcesCompat.getColor(getResources(), R.color.colorPrimary,
+									getTheme()));
+					setTaskDescription(taskDesc);
+				}
+			} else { //tg
+				//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/Gpu Pro 1.pdf");
+				
+				//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/YotaSpec02.pdf"); // √
+				//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/sample.pdf");
+				//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/sig-notes.pdf");
+				//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/sig-notes-new-txt.pdf");
+				
+				//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/sig-notes-t.pdf");
+				//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/tmp.pdf");
+				//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/sig-notes-new-txt-page0.pdf");
+				currentViewer.setDocumentPath("/storage/emulated/0/myFolder/1.pdf");
 			}
-			currentViewer.setDocumentUri(uri);
-			if (!this_instanceof_PDocMainViewer && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-				ActivityManager.TaskDescription taskDesc = new ActivityManager.TaskDescription(
-						new File(uri.getPath()).getName(),//title
-						BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher),//图标
-						ResourcesCompat.getColor(getResources(), R.color.colorPrimary,
-								getTheme()));
-				setTaskDescription(taskDesc);
-			}
-		} else { //tg
-			//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/Gpu Pro 1.pdf");
-			
-			//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/YotaSpec02.pdf"); // √
-			//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/sample.pdf");
-			//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/sig-notes.pdf");
-			//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/sig-notes-new-txt.pdf");
-			
-			//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/sig-notes-t.pdf");
-			//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/tmp.pdf");
-			//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/sig-notes-new-txt-page0.pdf");
-			currentViewer.setDocumentPath("/storage/emulated/0/myFolder/1.pdf");
 		}
-		
+		PDFPageParms pageParms = parsePDFPageParms(intent);
 	}
 	
 	@Override
@@ -624,9 +626,10 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		{
 			Uri newUri = intent.getData();
 			if(newUri!=null) {
+				setIntent(intent);
 				PDFPageParms pageParms = parsePDFPageParms(intent);
 				showT("新的来啦！");
-				currentViewer.setDocumentUri(newUri);
+				processIntent(intent, true, false);
 			}
 		}
 		processBST(intent);

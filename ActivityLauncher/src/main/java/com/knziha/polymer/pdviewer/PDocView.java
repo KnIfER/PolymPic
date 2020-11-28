@@ -81,6 +81,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * 特性：v1.0 连续渲染页面，双击、缩放动画，单指双击缩放，平滑惯性滑动，弹性滚动限制
  * 		v2.0 选择、高亮文本
+ * 		v3.0 保存
  *
  */
 @SuppressWarnings({"unused", "IntegerDivisionInFloatingPointContext"})
@@ -1140,7 +1141,14 @@ public class PDocView extends View {
 						}
 					}
 					
-					if(true) {
+					boolean singleTapSel = true;
+					if(true && shouldDrawSelection()) {
+						clearSelection();
+						singleTapSel = false;
+						wastedClickTime = e.getDownTime();
+					}
+					
+					if(true && singleTapSel) {
 						PDocument.AnnotShape annot = pageI.selAnnotAtPos(PDocView.this, posX, posY);
 						if(annot!=null) {
 							//a.showT("annotIdx::"+annotIdx);
@@ -1148,12 +1156,6 @@ public class PDocView extends View {
 						}
 					}
 					
-					boolean singleTapSel = true;
-					if(true && hasSelection) {
-						clearSelection();
-						singleTapSel = false;
-						wastedClickTime = e.getDownTime();
-					}
 					if(true && singleTapSel) {
 						if(!pageI.selWordAtPos(PDocView.this, posX, posY, 1.5f)) {
 							clearSelection();
@@ -3089,7 +3091,10 @@ public class PDocView extends View {
 		setDocumentUri(Uri.fromFile(new File(path)));
 	}
 	
-	public void setDocumentUri(Uri path) {
+	public boolean setDocumentUri(Uri path) {
+		if(isDocTheSame(path)) {
+			return false;
+		}
 		if(loadingTask!=null) {
 			loadingTask.abort();
 		}
@@ -3104,6 +3109,11 @@ public class PDocView extends View {
 		} else {
 			loadingTask = null;
 		}
+		return true;
+	}
+	
+	public boolean isDocTheSame(Uri path) {
+		return pdoc!=null && path.equals(pdoc.path);
 	}
 	
 	public void setDocument(PDocument _pdoc) {
