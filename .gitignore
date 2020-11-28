@@ -15,7 +15,7 @@ AxtAppCompat/build/
 **/release/
 **/gen/
 **/test/
-**/LibPdfium/
+**/LibPdfium/src/main/jni/include
 ODPlayer/src/main/assets
 ODPlayer/src/main/jniLibs/arm64-v8a/*.so
 ODPlayer/src/main/jniLibs/armeabi-v7a/*.so
