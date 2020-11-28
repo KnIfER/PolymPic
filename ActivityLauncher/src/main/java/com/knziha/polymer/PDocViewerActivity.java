@@ -349,8 +349,6 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 				int ret=100;
 				if(!TextUtils.isEmpty(file_path)
 						&& (ret=FU.checkSdcardPermission(this, new File(file_path), R.string.pls_pick_permission, 666, uri))==-1) {
-					
-					
 					return;
 				}
 				CMN.Log("人生若只如初见", file_path, ret);
@@ -387,7 +385,6 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		if(requestCode==666) {
 			if(resultCode==RESULT_OK&&data!=null) {
 				Uri treeUri = data.getData();
-				String uri_path = Utils.getSimplifiedUrl(this, treeUri).getPath();
 				if(treeUri!=null) {
 					int GRANTFLAGS = Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION;
 					grantUriPermission(getPackageName(), treeUri, GRANTFLAGS);

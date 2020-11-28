@@ -19,15 +19,12 @@ package com.knziha.polymer.widgets;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
-import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.database.AbstractWindowedCursor;
 import android.database.Cursor;
 import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
-import android.os.Binder;
 import android.os.Build;
 import android.os.Environment;
 import android.provider.DocumentsContract;
@@ -52,7 +49,6 @@ import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.Options;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.InputStream;
@@ -61,7 +57,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.net.URLDecoder;
-import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -206,13 +201,8 @@ public class Utils {
 	}
 	
 	public static String getPath(final Context context, final Uri uri) {
-		final boolean isKitKat = Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT;
-		// DocumentProvider
-		if (isKitKat && DocumentsContract.isDocumentUri(context, uri)) {
-			//CMN.Log("getPath() uri: " + uri.toString());
-			//CMN.Log("getPath() uri authority: " + uri.getAuthority());
-			//CMN.Log("getPath() uri path: " + uri.getPath());
-			
+		if (DocumentsContract.isDocumentUri(context, uri)) {
+			//CMN.Log("getPath autho", uri.getAuthority());
 			// ExternalStorageProvider
 			if ("com.android.externalstorage.documents".equals(uri.getAuthority()))
 			{
@@ -235,7 +225,21 @@ public class Utils {
 				
 			}
 		}
+		if("content".equals(uri.getScheme())) {
+			return resolveContentUri(context, uri);
+		}
 		return null;
+	}
+	
+	static String resolveContentUri(Context a, Uri uri) {
+		String filePath = null;
+		if (uri != null) {
+			Cursor cursor = a.getContentResolver().query(uri, new String[] { android.provider.MediaStore.Images.ImageColumns.DATA }, null, null, null);
+			cursor.moveToFirst();
+			filePath = cursor.getString(0);
+			cursor.close();
+		}
+		return filePath;
 	}
 	
 	/** Simplify content uri to file uri if permitted */
