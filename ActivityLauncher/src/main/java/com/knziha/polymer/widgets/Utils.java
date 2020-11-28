@@ -29,6 +29,8 @@ import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.Build;
+import android.os.Environment;
+import android.provider.DocumentsContract;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.LayoutDirection;
@@ -45,6 +47,7 @@ import android.widget.EditText;
 import androidx.appcompat.app.GlobalOptions;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.knziha.polymer.Toastable_Activity;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.Options;
 
@@ -53,9 +56,11 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
+import java.net.URLDecoder;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -200,11 +205,60 @@ public class Utils {
 		return path;
 	}
 	
+	public static String getPath(final Context context, final Uri uri) {
+		final boolean isKitKat = Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT;
+		// DocumentProvider
+		if (isKitKat && DocumentsContract.isDocumentUri(context, uri)) {
+			//CMN.Log("getPath() uri: " + uri.toString());
+			//CMN.Log("getPath() uri authority: " + uri.getAuthority());
+			//CMN.Log("getPath() uri path: " + uri.getPath());
+			
+			// ExternalStorageProvider
+			if ("com.android.externalstorage.documents".equals(uri.getAuthority()))
+			{
+				final String docId = DocumentsContract.getDocumentId(uri);
+				final String[] split = docId.split(":");
+				final String type = split[0];
+				System.out.println("getPath() docId: " + docId + ", split: " + split.length + ", type: " + type);
+				
+				// This is for checking Main Memory
+				if ("primary".equalsIgnoreCase(type)) {
+					if (split.length > 1) {
+						return Environment.getExternalStorageDirectory() + "/" + split[1] + "/";
+					} else {
+						return Environment.getExternalStorageDirectory() + "/";
+					}
+					// This is for checking SD Card
+				} else {
+					return "storage" + "/" + docId.replace(":", "/");
+				}
+				
+			}
+		}
+		return null;
+	}
+	
+	/** Simplify content uri to file uri if permitted */
 	public static Uri getSimplifiedUrl(Activity a, Uri data) {
-		int perm = a.checkUriPermission(data, Binder.getCallingPid(), Binder.getCallingUid(), Intent.FLAG_GRANT_READ_URI_PERMISSION);
-		CMN.Log("perm", perm==PackageManager.PERMISSION_GRANTED);
-		if (perm != PackageManager.PERMISSION_GRANTED) {
-			return Uri.fromFile(preparePDFGuide(a));
+		try {
+			Uri symda = data;
+			String path = data.toString();
+			if(path.contains("content:")) {
+				//CMN.Log("path 1", path); CMN.Log();
+				path = URLDecoder.decode(data.toString(), "utf8");;
+				//CMN.Log("path 2", path); CMN.Log();
+				int idx = path.indexOf("content://com.android.externalstorage");
+				if(idx>0) {
+					symda = Uri.parse(path.substring(idx));
+				}
+				path = getPath(a, symda);
+				CMN.Log("getSimplifiedUrl", path, symda.getAuthority());
+				if(path!=null) {
+					return Uri.fromFile(new File(path));
+				}
+			}
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
 		}
 		return data;
 	}
@@ -263,6 +317,12 @@ public class Utils {
 			}
 		}
 		return guide;
+	}
+	
+	public static void blameAndroidIfNeeded(Context a) {
+		if(a instanceof Toastable_Activity) {
+			((Toastable_Activity)a).showT("Permission denied. Blame Android! ");
+		}
 	}
 	
 	public static class DummyOnClick implements View.OnClickListener {

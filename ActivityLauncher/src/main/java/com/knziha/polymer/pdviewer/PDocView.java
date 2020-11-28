@@ -4699,9 +4699,9 @@ public class PDocView extends View {
 	}
 	
 	
-	public void checkDoc(Context c, boolean incremental, boolean reload) {
+	public void checkDoc(Context a, boolean incremental, boolean reload) {
 		if(pdoc!=null && pdoc.isDirty)
-			pdoc.saveDocAsCopy(c, null, incremental, reload);
+			pdoc.saveDocAsCopy(a, null, incremental, reload);
 	}
 	
 	

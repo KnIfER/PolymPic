@@ -1,15 +1,20 @@
 package com.knziha.polymer.pdviewer;
 
+import android.content.ContentResolver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.PointF;
 import android.graphics.RectF;
 import android.net.Uri;
+import android.os.Binder;
 import android.os.ParcelFileDescriptor;
 import android.util.DisplayMetrics;
 import android.util.SparseArray;
 
+import com.knziha.polymer.Toastable_Activity;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.text.BreakIteratorHelper;
 import com.knziha.polymer.widgets.Utils;
@@ -60,7 +65,7 @@ public class PDocument {
 	public int bmCount;
 	public boolean isClosed;
 	
-	public void saveDocAsCopy(Context c, Uri url,boolean incremental, boolean reload) {
+	public void saveDocAsCopy(Context a, Uri url, boolean incremental, boolean reload) {
 		if(isDirty) {
 			if(url==null) {
 				url=path;
@@ -69,19 +74,23 @@ public class PDocument {
 			//incremental = true; //debug inc
 			//path = new File(path.getParentFile(), "tmp2.pdf"); //debug save
 			//try (ParcelFileDescriptor fd = ParcelFileDescriptor.open(path, ParcelFileDescriptor.MODE_WRITE_ONLY|ParcelFileDescriptor.MODE_CREATE)) {
-			try (ParcelFileDescriptor fd = c.getContentResolver().openFileDescriptor(path, "w")) {
+			ContentResolver contentResolver = a.getContentResolver();
+			try (ParcelFileDescriptor fd = contentResolver.openFileDescriptor(url, "rw")) {
 				CMN.rt();
 				//pdfDocument.closeFile();
 				pdfiumCore.SaveAsCopy(pdfDocument.mNativeDocPtr, fd.getFd(), incremental);
 				if(reload) {
 					close();
 					//pdfDocument = pdfiumCore.newDocument(ParcelFileDescriptor.open(path, ParcelFileDescriptor.MODE_READ_ONLY));
-					pdfDocument = pdfiumCore.newDocument(c.getContentResolver().openFileDescriptor(path, "r"));
+					pdfDocument = pdfiumCore.newDocument(contentResolver.openFileDescriptor(url, "r"));
 					isClosed = false;
 				}
 				isDirty=false;
-				CMN.pt("PDF 保存耗时：", path);
+				CMN.pt("PDF 保存耗时：", url);
 			} catch (IOException e) {
+				if(reload && String.valueOf(e.getMessage()).contains("Permission")) {
+					Utils.blameAndroidIfNeeded(a);
+				}
 				CMN.Log(e);
 			}
 		}
