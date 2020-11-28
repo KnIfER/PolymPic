@@ -252,9 +252,10 @@ public class Utils {
 					symda = Uri.parse(path.substring(idx));
 				}
 				path = getPath(a, symda);
-				CMN.Log("getSimplifiedUrl", path, symda.getAuthority());
 				if(path!=null) {
-					return Uri.fromFile(new File(path));
+					File f = new File(path).getAbsoluteFile();
+					CMN.Log("getSimplifiedUrl", path, f, symda.getAuthority());
+					return Uri.fromFile(f);
 				}
 			}
 		} catch (UnsupportedEncodingException e) {

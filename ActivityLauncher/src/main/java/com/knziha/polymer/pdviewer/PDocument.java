@@ -14,6 +14,9 @@ import android.os.ParcelFileDescriptor;
 import android.util.DisplayMetrics;
 import android.util.SparseArray;
 
+import androidx.documentfile.provider.DocumentFile;
+
+import com.knziha.filepicker.utils.FU;
 import com.knziha.polymer.Toastable_Activity;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.text.BreakIteratorHelper;
@@ -70,12 +73,19 @@ public class PDocument {
 			if(url==null) {
 				url=path;
 			}
+			Uri urlWriter = url;
 			//File path = new File(url);
 			//incremental = true; //debug inc
 			//path = new File(path.getParentFile(), "tmp2.pdf"); //debug save
 			//try (ParcelFileDescriptor fd = ParcelFileDescriptor.open(path, ParcelFileDescriptor.MODE_WRITE_ONLY|ParcelFileDescriptor.MODE_CREATE)) {
 			ContentResolver contentResolver = a.getContentResolver();
-			try (ParcelFileDescriptor fd = contentResolver.openFileDescriptor(url, "rw")) {
+			Uri tmp = FU.buildContentUrl(a, url.getPath());
+			if(tmp!=null) {
+				urlWriter = tmp;
+				CMN.Log("urlWriter", urlWriter);
+				//urlWriter = Uri.parse("content://com.android.externalstorage.documents/tree/2486-F9E1%3A/document/2486-F9E1%3ADownload%2F文件夹%2F文件夹%2Fcheat.pdf");
+			}
+			try (ParcelFileDescriptor fd = contentResolver.openFileDescriptor(urlWriter, "rw")) {
 				CMN.rt();
 				//pdfDocument.closeFile();
 				pdfiumCore.SaveAsCopy(pdfDocument.mNativeDocPtr, fd.getFd(), incremental);
@@ -87,7 +97,7 @@ public class PDocument {
 				}
 				isDirty=false;
 				CMN.pt("PDF 保存耗时：", url);
-			} catch (IOException e) {
+			} catch (Exception e) {
 				if(reload && String.valueOf(e.getMessage()).contains("Permission")) {
 					Utils.blameAndroidIfNeeded(a);
 				}

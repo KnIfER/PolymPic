@@ -9,6 +9,7 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
@@ -17,6 +18,7 @@ import android.os.Bundle;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.TextPaint;
+import android.text.TextUtils;
 import android.text.style.ClickableSpan;
 import android.util.SparseArray;
 import android.view.MenuItem;
@@ -30,6 +32,7 @@ import android.widget.GridView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.view.menu.MenuBuilder;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.databinding.DataBindingUtil;
@@ -37,6 +40,7 @@ import androidx.databinding.DataBindingUtil;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.jess.ui.TwoWayAdapterView;
 import com.jess.ui.TwoWayGridView;
+import com.knziha.filepicker.utils.FU;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.Options;
 import com.knziha.polymer.databinding.ActivityPdfviewerBinding;
@@ -72,6 +76,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 	public static int singleInstCout;
 	private boolean isSingleInst;
 	private int BST;
+	private boolean hasNoPermission;
 	
 	
 	@Override
@@ -162,11 +167,12 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 				root.post(() -> UIData.mainProgressBar.setVisibility(View.GONE));
 				currentViewer.setImageReadyListener(null);
 			});
-			
-			processIntent(getIntent());
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		
+		requireStorage = true;
+		checkLog(savedInstanceState);
 		
 		menuList.add("单例模式");
 		menuList.add("选段翻译");
@@ -220,6 +226,12 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		systemIntialized = true;
 	}
 	
+	@Override
+	protected void further_loading(Bundle savedInstanceState) {
+		super.further_loading(savedInstanceState);
+		processIntent(getIntent(), true, hasNoPermission);
+	}
+	
 	private void processBST(Intent intent) {
 		BST = intent.getIntExtra("BST", 0);
 		
@@ -244,7 +256,6 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 			}
 		}
 	}
-	
 	
 	public void toggleMainMenuList() {
 		int TargetTransY = -UIData.bottombar2.getHeight();
@@ -326,10 +337,24 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		}
 	}
 	
-	private void processIntent(Intent intent) {
-		Uri uri = Utils.getSimplifiedUrl(this, intent.getData());
+	private void processIntent(Intent intent, boolean 人生若只如初见, boolean 不如不见) {
+		Uri uri = intent.getData();
+		if(!不如不见) {
+			uri = Utils.getSimplifiedUrl(this, intent.getData());
+		}
 		CMN.Log("processIntent", intent, uri);
 		if(uri!=null) {
+			if(人生若只如初见) {
+				String file_path = uri.getPath();
+				int ret=100;
+				if(!TextUtils.isEmpty(file_path)
+						&& (ret=FU.checkSdcardPermission(this, new File(file_path), R.string.pls_pick_permission, 666, uri))==-1) {
+					
+					
+					return;
+				}
+				CMN.Log("人生若只如初见", file_path, ret);
+			}
 			currentViewer.setDocumentUri(uri);
 			if (!this_instanceof_PDocMainViewer && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
 				ActivityManager.TaskDescription taskDesc = new ActivityManager.TaskDescription(
@@ -353,6 +378,34 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 			currentViewer.setDocumentPath("/storage/emulated/0/myFolder/1.pdf");
 		}
 		
+	}
+	
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+		super.onActivityResult(requestCode, resultCode, data);
+		CMN.Log("onActivityResult", resultCode==RESULT_OK, data, data!=null&&data.hasExtra("ASD"));
+		if(requestCode==666) {
+			if(resultCode==RESULT_OK&&data!=null) {
+				Uri treeUri = data.getData();
+				String uri_path = Utils.getSimplifiedUrl(this, treeUri).getPath();
+				if(treeUri!=null) {
+					int GRANTFLAGS = Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION;
+					grantUriPermission(getPackageName(), treeUri, GRANTFLAGS);
+					getContentResolver().takePersistableUriPermission(treeUri, GRANTFLAGS);
+				}
+				CMN.Log("treeUri", treeUri);
+			}
+			processIntent(getIntent(), false, false);
+		}
+	}
+	
+	@Override
+	public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+		super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+		if (requestCode==321) {
+			hasNoPermission = grantResults[0] != PackageManager.PERMISSION_GRANTED;
+			further_loading(null);
+		}
 	}
 	
 	private void closeSplashScreen() {

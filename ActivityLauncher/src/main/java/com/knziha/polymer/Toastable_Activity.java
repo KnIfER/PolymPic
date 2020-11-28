@@ -8,6 +8,7 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Color;
@@ -101,6 +102,7 @@ public class Toastable_Activity extends AppCompatActivity {
 	ViewConfiguration ViewConfigDefault;
 	
 	protected WeakReference[] WeakReferencePool = new WeakReference[WeakReferenceHelper.poolSize];
+	protected boolean requireStorage;
 	
 	static class BaseHandler extends Handler {
 		float animator = 0.1f;
@@ -290,7 +292,11 @@ public class Toastable_Activity extends AppCompatActivity {
 	}
 
 	protected void checkLaunch(Bundle savedInstanceState) {
-		further_loading(savedInstanceState);
+		if (requireStorage && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && checkSelfPermission(permissions[0]) != PackageManager.PERMISSION_GRANTED) {
+			requestPermissions(permissions, 321);
+		} else {
+			further_loading(savedInstanceState);
+		}
 	}
 
 

@@ -1318,7 +1318,7 @@ public class FilePickerDialog extends AlertDialog implements
 								listView.setSelection(id13);
 							return;
 						}
-						int ret= FU.checkSdcardPermission(getContext(),new_Folder);
+						int ret= FU.checkSdcardPermission(getContext(), new_Folder);
 						if(ret!=0) {
 							if(ret==-1) AskPermissionSnack(etNew);
 							else Toast.makeText(getContext(), "未知错误1:"+ret, Toast.LENGTH_LONG).show();
