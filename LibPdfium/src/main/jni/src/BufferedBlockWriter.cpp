@@ -41,20 +41,35 @@ int writeBlock(FPDF_FILEWRITE* owner, const void* buffer, unsigned long size) {
     return 1;
 }
 
-static size_t buf_length = 1024*1024*1;
+static size_t buf_length = 1024*1024*1/2;
 
-static char* buf = new char[buf_length];
+static char* buf = new char[buf_length*2];
 
 static size_t count;
 
+long bufWriteHead;
+long readBufSt;
+long readBufEd;
+
+DocumentFile* docFile;
+
 int error = 0;
+
+bool writeAndBackupAllBytes(const int fd, const void *buffer, const size_t byteCount) {
+    //readBufSt = lseek(fd, 0, SEEK_CUR);
+    //readBufEd = readBufSt + pread(docFile->fileFd, docFile->readBuf, buf_length, readBufSt);
+    LOGE("fatal writeAndBackupAllBytes readBufSt=%ld  readBufEd=%ld  byteCount=%ld", readBufSt, readBufEd, byteCount);
+    if(!writeAllBytes(fd, buffer, byteCount)) {
+        error = 1;
+        return false;
+    }
+    return true;
+}
 
 void flushBuffer(int fd) {
     //LOGE("fatal flushBuffer count=%ld  buf_length=%ld", count, buf_length);
     if (count > 0) {
-        if(!writeAllBytes(fd, buf, count)) {
-            error = 1;
-        }
+        writeAndBackupAllBytes(fd, buf, count);
         count = 0;
     }
 }
@@ -65,7 +80,7 @@ bool writeAllBytesBuffered(const int fd, const void *buffer, const size_t len) {
         flush the output buffer and then write the data directly.
         In this way buffered streams will cascade harmlessly. */
         flushBuffer(fd);
-        return writeAllBytes(fd, buffer, len);
+        return writeAndBackupAllBytes(fd, buffer, len);
     }
     if (len > buf_length - count) {
         flushBuffer(fd);
@@ -91,6 +106,18 @@ int writeBlockBuffered(FPDF_FILEWRITE* owner, const void* buffer, unsigned long 
 }
 
 
-void startBufferedWriting(size_t buffer_size) {
+void startBufferedWriting(DocumentFile* doc, size_t buffer_size) {
     count = 0;
+    readBufSt = 0;
+    readBufEd = 0;
+    bufWriteHead = 0;
+    docFile = doc;
+    if(doc->responsibleForReadBuf) {
+        readBufSt = doc->readBufSt;
+        readBufEd = doc->readBufEd;
+    } else {
+        doc->readBuf = buf+buf_length;
+        readBufSt = 0;
+        readBufEd = readBufSt + pread(docFile->fileFd, docFile->readBuf, buf_length, readBufSt);
+    }
 }

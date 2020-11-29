@@ -59,21 +59,20 @@ struct rgb {
     uint8_t blue;
 };
 
-class DocumentFile {
-    public:
-    int fileFd;
-    FPDF_DOCUMENT pdfDocument = NULL;
-    size_t fileSize;
-
-    DocumentFile() { initLibraryIfNeed(); }
-    ~DocumentFile();
-};
+DocumentFile::DocumentFile() {
+    initLibraryIfNeed();
+}
 
 DocumentFile::~DocumentFile(){
+    //LOGE("fatal 销毁 DocumentFile");
     if(pdfDocument != NULL){
         FPDF_CloseDocument(pdfDocument);
     }
-
+    if(responsibleForReadBuf && readBuf) {
+        delete[] readBuf;
+        readBuf = 0;
+        responsibleForReadBuf = false;
+    }
     //destroyLibraryIfNeed();
 }
 
@@ -178,17 +177,32 @@ void rgbBitmapTo565(void *source, int sourceStride, void *dest, AndroidBitmapInf
     }
 }
 
+extern long readBufSt;
+extern long readBufEd;
+
 extern "C" { //For JNI support
 
 // custom getBlock. called every scroll. 
 static int getBlock(void* param, unsigned long position, unsigned char* outBuffer,
         unsigned long size) {
-    const int fd = reinterpret_cast<intptr_t>(param);
-    const int readCount = pread(fd, outBuffer, size, position);
-    //LOGE("fatal getBlock position=%ld size=%ld", position, size);
-    if (readCount < 0) {
-        LOGE("Cannot read from file descriptor. Error:%d", errno);
-        return 0;
+    //const int fd = reinterpret_cast<intptr_t>(param);
+    DocumentFile* doc = (DocumentFile*)param;
+    if(doc->readBuf && position>=readBufSt && position<readBufEd) {
+        int readBufLen = readBufEd-position;
+        if(readBufLen>size) {
+            readBufLen = size;
+        }
+        memcpy(outBuffer, doc->readBuf+position-readBufSt, readBufLen);
+        position += readBufLen;
+        size -= readBufLen;
+    }
+    if(size) {
+        int readCount = pread(doc->fileFd, outBuffer, size, position);
+        LOGE("fatal getBlock position=%ld size=%ld", position, size);
+        if (readCount < 0) {
+            LOGE("Cannot read from file descriptor. Error:%d", errno);
+            return 0;
+        }
     }
     return 1;
 }
@@ -198,16 +212,17 @@ JNI_FUNC(jlong, PdfiumCore, nativeOpenDocument)(JNI_ARGS, jint fd, jstring passw
 
     size_t fileLength = (size_t)getFileSize(fd);
     if(fileLength <= 0) {
-        jniThrowException(env, "java/io/IOException",
-                                    "File is empty");
+        jniThrowException(env, "java/io/IOException", "File is empty");
         return -1;
     }
 
     DocumentFile *docFile = new DocumentFile();
 
+    docFile->fileFd = fd;
+
     FPDF_FILEACCESS loader;
     loader.m_FileLen = fileLength;
-    loader.m_Param = reinterpret_cast<void*>(intptr_t(fd));
+    loader.m_Param = docFile;//reinterpret_cast<void*>(intptr_t(fd));
     loader.m_GetBlock = &getBlock;
 
     const char *cpassword = NULL;
@@ -217,7 +232,6 @@ JNI_FUNC(jlong, PdfiumCore, nativeOpenDocument)(JNI_ARGS, jint fd, jstring passw
 
     FPDF_DOCUMENT document = FPDF_LoadCustomDocument(&loader, cpassword);
     //FPDF_DOCUMENT document = FPDF_LoadDocument(, options.password().c_str());
-
 
     if(cpassword != NULL) {
         env->ReleaseStringUTFChars(password, cpassword);
@@ -239,6 +253,24 @@ JNI_FUNC(jlong, PdfiumCore, nativeOpenDocument)(JNI_ARGS, jint fd, jstring passw
         }
 
         return -1;
+    }
+
+    if(1) {
+        docFile->readBuf = new char[fileLength];
+        size_t remainingBytes = fileLength;
+        char *writeBuffer = docFile->readBuf;
+        while(remainingBytes > 0) {
+            int readCount = pread(docFile->fileFd, writeBuffer, remainingBytes, fileLength-remainingBytes);
+            if (readCount == -1) {
+                if (errno == EINTR) {
+                    continue;
+                }
+                break;
+            }
+            remainingBytes -= readCount;
+            writeBuffer += readCount;
+        }
+        docFile->responsibleForReadBuf = true;
     }
 
     docFile->pdfDocument = document;
@@ -298,10 +330,7 @@ JNI_FUNC(jint, PdfiumCore, nativeGetPageCount)(JNI_ARGS, jlong documentPtr){
 JNI_FUNC(void, PdfiumCore, nativeCloseDocument)(JNI_ARGS, jlong documentPtr){
     if(documentPtr) {
         DocumentFile *doc = reinterpret_cast<DocumentFile*>(documentPtr);
-        if(doc->pdfDocument) {
-            FPDF_CloseDocument((FPDF_DOCUMENT)doc->pdfDocument);
-            doc->pdfDocument = 0;
-        }
+        delete doc;
     }
 }
 
@@ -1042,7 +1071,7 @@ JNI_FUNC(void, PdfiumCore, nativeSaveAsCopy)(JNI_ARGS, jlong docPtr, jint fd, jb
         writer.WriteBlock = &writeBlock;
     } else {
         writer.WriteBlock = &writeBlockBuffered;
-        startBufferedWriting(0);
+        startBufferedWriting(docFile, 0);
     }
     FPDF_BOOL success = FPDF_SaveAsCopy(docFile->pdfDocument, &writer, incremental?FPDF_INCREMENTAL:FPDF_NO_INCREMENTAL); // FPDF_INCREMENTAL FPDF_NO_INCREMENTAL
     //FPDF_BOOL success = FPDF_SaveWithVersion(docFile->pdfDocument, &writer, incremental?FPDF_INCREMENTAL:FPDF_NO_INCREMENTAL, 14); // FPDF_INCREMENTAL FPDF_NO_INCREMENTAL

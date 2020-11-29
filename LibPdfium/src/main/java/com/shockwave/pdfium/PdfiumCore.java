@@ -307,13 +307,13 @@ public class PdfiumCore {
     public void closeDocument(PdfDocument doc) {
         synchronized (lock) {
 			if(doc.mNativeDocPtr!=0) {
-				doc.mNativeDocPtr = 0;
 				nativeCloseDocument(doc.mNativeDocPtr);
 				try {
 					doc.parcelFileDescriptor.close();
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
+				doc.mNativeDocPtr = 0;
 			}
 		}
     }

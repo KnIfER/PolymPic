@@ -76,7 +76,7 @@ public class PDocument {
 			Uri urlWriter = url;
 			//File path = new File(url);
 			//incremental = true; //debug inc
-			//path = new File(path.getParentFile(), "tmp2.pdf"); //debug save
+			//urlWriter = Uri.fromFile(new File(new File(urlWriter.getPath()).getParent(), "tmp2.pdf")); //debug save
 			//try (ParcelFileDescriptor fd = ParcelFileDescriptor.open(path, ParcelFileDescriptor.MODE_WRITE_ONLY|ParcelFileDescriptor.MODE_CREATE)) {
 			ContentResolver contentResolver = a.getContentResolver();
 			Uri tmp = FU.buildContentUrl(a, url.getPath());
