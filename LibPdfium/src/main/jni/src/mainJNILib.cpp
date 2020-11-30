@@ -177,9 +177,6 @@ void rgbBitmapTo565(void *source, int sourceStride, void *dest, AndroidBitmapInf
     }
 }
 
-extern long readBufSt;
-extern long readBufEd;
-
 extern "C" { //For JNI support
 
 // custom getBlock. called every scroll. 
@@ -187,12 +184,12 @@ static int getBlock(void* param, unsigned long position, unsigned char* outBuffe
         unsigned long size) {
     //const int fd = reinterpret_cast<intptr_t>(param);
     DocumentFile* doc = (DocumentFile*)param;
-    if(doc->readBuf && position>=readBufSt && position<readBufEd) {
-        int readBufLen = readBufEd-position;
+    if(doc->readBuf && position>=doc->readBufSt && position<doc->readBufEd) {
+        int readBufLen = doc->readBufEd-position;
         if(readBufLen>size) {
             readBufLen = size;
         }
-        memcpy(outBuffer, doc->readBuf+position-readBufSt, readBufLen);
+        memcpy(outBuffer, doc->readBuf+position-doc->readBufSt, readBufLen);
         position += readBufLen;
         size -= readBufLen;
     }
@@ -208,7 +205,7 @@ static int getBlock(void* param, unsigned long position, unsigned char* outBuffe
 }
 
 // open pdf from fileDescriptor
-JNI_FUNC(jlong, PdfiumCore, nativeOpenDocument)(JNI_ARGS, jint fd, jstring password){
+JNI_FUNC(jlong, PdfiumCore, nativeOpenDocument)(JNI_ARGS, jint fd, jstring password, jint largeFileTheta){
 
     size_t fileLength = (size_t)getFileSize(fd);
     if(fileLength <= 0) {
@@ -255,7 +252,7 @@ JNI_FUNC(jlong, PdfiumCore, nativeOpenDocument)(JNI_ARGS, jint fd, jstring passw
         return -1;
     }
 
-    if(1) {
+    if(fileLength<=largeFileTheta) {
         docFile->readBuf = new char[fileLength];
         size_t remainingBytes = fileLength;
         char *writeBuffer = docFile->readBuf;
@@ -270,6 +267,8 @@ JNI_FUNC(jlong, PdfiumCore, nativeOpenDocument)(JNI_ARGS, jint fd, jstring passw
             remainingBytes -= readCount;
             writeBuffer += readCount;
         }
+        docFile->readBufSt=0;
+        docFile->readBufEd=fileLength;
         docFile->responsibleForReadBuf = true;
     }
 
@@ -1080,6 +1079,11 @@ JNI_FUNC(void, PdfiumCore, nativeSaveAsCopy)(JNI_ARGS, jlong docPtr, jint fd, jb
     } else {
         flushBuffer(fd);
     }
+}
+
+JNI_FUNC(jboolean, PdfiumCore, nativeHasReadBuf)(JNI_ARGS, jlong docPtr) {
+    DocumentFile* docFile = (DocumentFile*)docPtr;
+    return docFile && docFile->readBuf && docFile->responsibleForReadBuf;
 }
 
 }//extern C

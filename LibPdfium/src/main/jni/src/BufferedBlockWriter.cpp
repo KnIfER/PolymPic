@@ -48,17 +48,15 @@ static char* buf = new char[buf_length*2];
 static size_t count;
 
 long bufWriteHead;
-long readBufSt;
-long readBufEd;
 
 DocumentFile* docFile;
 
 int error = 0;
 
 bool writeAndBackupAllBytes(const int fd, const void *buffer, const size_t byteCount) {
-    //readBufSt = lseek(fd, 0, SEEK_CUR);
-    //readBufEd = readBufSt + pread(docFile->fileFd, docFile->readBuf, buf_length, readBufSt);
-    LOGE("fatal writeAndBackupAllBytes readBufSt=%ld  readBufEd=%ld  byteCount=%ld", readBufSt, readBufEd, byteCount);
+    //docFile->readBufSt = lseek(fd, 0, SEEK_CUR);
+    //docFile->readBufEd = docFile->readBufSt + pread(docFile->fileFd, docFile->readBuf, buf_length, docFile->readBufSt);
+    LOGE("fatal writeAndBackupAllBytes readBufSt=%ld  readBufEd=%ld  byteCount=%ld", docFile->readBufSt, docFile->readBufEd, byteCount);
     if(!writeAllBytes(fd, buffer, byteCount)) {
         error = 1;
         return false;
@@ -108,16 +106,10 @@ int writeBlockBuffered(FPDF_FILEWRITE* owner, const void* buffer, unsigned long 
 
 void startBufferedWriting(DocumentFile* doc, size_t buffer_size) {
     count = 0;
-    readBufSt = 0;
-    readBufEd = 0;
-    bufWriteHead = 0;
     docFile = doc;
-    if(doc->responsibleForReadBuf) {
-        readBufSt = doc->readBufSt;
-        readBufEd = doc->readBufEd;
-    } else {
+    if(!doc->responsibleForReadBuf) {
         doc->readBuf = buf+buf_length;
-        readBufSt = 0;
-        readBufEd = readBufSt + pread(docFile->fileFd, docFile->readBuf, buf_length, readBufSt);
+        doc->readBufSt = 0;
+        doc->readBufEd = doc->readBufSt + pread(docFile->fileFd, docFile->readBuf, buf_length, doc->readBufSt);
     }
 }

@@ -24,6 +24,8 @@ public class PdfiumCore {
     private static final String TAG = PdfiumCore.class.getName();
     private static final Class FD_CLASS = FileDescriptor.class;
     private static final String FD_FIELD_NAME = "descriptor";
+	
+	public static int largeFileTheta = 500*1024*1024;
 
     static {
         try {
@@ -32,8 +34,8 @@ public class PdfiumCore {
             Log.e(TAG, "Native libraries failed to load - " + e);
         }
     }
-
-    private native long nativeOpenDocument(int fd, String password);
+	
+	private native long nativeOpenDocument(int fd, String password, int lfTheta);
 
     private native long nativeOpenMemDocument(byte[] data, String password);
 
@@ -152,7 +154,7 @@ public class PdfiumCore {
         PdfDocument document = new PdfDocument();
         document.parcelFileDescriptor = fd;
         synchronized (lock) {
-            document.mNativeDocPtr = nativeOpenDocument(getNumFd(fd), password);
+            document.mNativeDocPtr = nativeOpenDocument(getNumFd(fd), password, largeFileTheta);
         }
 
         return document;
@@ -396,4 +398,6 @@ public class PdfiumCore {
 	}
 	
 	public native void nativeSaveAsCopy(long docPtr, int fd, boolean incremental);
+	
+	public native boolean nativeHasReadBuf(long docPtr);
 }

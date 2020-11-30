@@ -68,10 +68,15 @@ public class PDocument {
 	public int bmCount;
 	public boolean isClosed;
 	
+	/** 策略：小于500MB统一加载到内存，允许保存。大于500MB在关闭文件时询问是否保存。 */
 	public void saveDocAsCopy(Context a, Uri url, boolean incremental, boolean reload) {
 		if(isDirty) {
 			if(url==null) {
 				url=path;
+			}
+			boolean abort = reload && !pdfiumCore.nativeHasReadBuf(pdfDocument.mNativeDocPtr);
+			if(abort) {
+				return;
 			}
 			Uri urlWriter = url;
 			//File path = new File(url);
@@ -89,7 +94,7 @@ public class PDocument {
 				CMN.rt();
 				//pdfDocument.closeFile();
 				pdfiumCore.SaveAsCopy(pdfDocument.mNativeDocPtr, fd.getFd(), incremental);
-				if(reload) {
+				if(abort) {
 					close();
 					//pdfDocument = pdfiumCore.newDocument(ParcelFileDescriptor.open(path, ParcelFileDescriptor.MODE_READ_ONLY));
 					pdfDocument = pdfiumCore.newDocument(contentResolver.openFileDescriptor(url, "r"));
