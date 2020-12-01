@@ -272,6 +272,9 @@ public class PDocView extends View {
 	
 	public RecyclerViewPagerAdapter.PageScope pageScoper;
 	
+	private OnPageChangeListener mOnPageChangeListener;
+	private int lastMiddlePage;
+	
 	public boolean tryClearSelection() {
 		if(draggingHandle==null && hasSelection || hasAnnotSelction) {
 			clearSelection();
@@ -294,6 +297,28 @@ public class PDocView extends View {
 	
 	public int pages() {
 		return pdoc==null?0:pdoc._num_entries;
+	}
+	
+	public void setOnPageChangeListener(OnPageChangeListener onPageChangeListener) {
+		mOnPageChangeListener = onPageChangeListener;
+	}
+	
+	public void goToPageCentered(int position) {
+		if(pdoc!=null && position!=lastMiddlePage && position>=0 && position<pdoc._num_entries) {
+			OnPageChangeListener tmpPCL = mOnPageChangeListener;
+			mOnPageChangeListener = null;
+			boolean horizon = pdoc.isHorizontalView();
+			float SO = horizon?stoffX:stoff;
+			SO = SO-pdoc.mPDocPages[lastMiddlePage].OffsetAlongScrollAxis+pdoc.mPDocPages[position].OffsetAlongScrollAxis;
+			SO*=-scale;
+			if(horizon) {
+				vTranslate.x = SO;
+			} else {
+				vTranslate.y = SO;
+			}
+			refreshRequiredTiles(true);
+			mOnPageChangeListener = tmpPCL;
+		}
 	}
 	
 	public interface ImageReadyListener { void ImageReady(); }
@@ -2196,16 +2221,30 @@ public class PDocView extends View {
 		//CMN.Log("screen_scoped_src_is...", stoff, edoff);
 		boolean horizon = pdoc.isHorizontalView();
 		float EO = horizon ? edoffX : edoff;
+		float MO = horizon ? (edoffX+stoffX)/2 : (edoff+stoff)/2;
+		boolean seekMiddlePage = true;
+		int pageMiddle = -1;
 		while (logiLayoutSz < logicLayout.length
 				&& logiLayoutSt+logiLayoutSz <pdoc.mPDocPages.length) {
 			//CMN.Log("第几...", pdoc.mPDocPages[logiLayoutSt+logiLayoutSz].OffsetAlongScrollAxis);
-			if(pdoc.mPDocPages[logiLayoutSt+logiLayoutSz].OffsetAlongScrollAxis<EO) {
+			PDocument.PDocPage page = pdoc.mPDocPages[logiLayoutSt + logiLayoutSz];
+			if(page.OffsetAlongScrollAxis<EO) {
 				//stoff += (logiLayoutSz>0?pdoc.mPDocPages[logiLayoutSt+logiLayoutSz-1].size.getHeight()+0:0);
 				logicLayout[logiLayoutSz] = pdoc.mPDocPages[logiLayoutSt+logiLayoutSz].OffsetAlongScrollAxis;
+				if(seekMiddlePage && page.OffsetAlongScrollAxis+(horizon?pdoc.gap+page.size.getWidth():page.size.getHeight())>MO) {
+					pageMiddle = logiLayoutSt+logiLayoutSz;
+					seekMiddlePage = false;
+				}
 				logiLayoutSz++;
 			} else {
 				break;
 			}
+		}
+		if(pageMiddle>=0 && pageMiddle!=lastMiddlePage) {
+			if(mOnPageChangeListener!=null) {
+				mOnPageChangeListener.OnPageChange(lastMiddlePage, pageMiddle);
+			}
+			lastMiddlePage = pageMiddle;
 		}
 		TileLoadingTask task = null;
 		if(logiLayoutSz>0) {

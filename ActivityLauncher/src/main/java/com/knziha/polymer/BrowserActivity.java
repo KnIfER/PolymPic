@@ -1067,7 +1067,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	public static class ViewDataHolder<T extends ViewDataBinding> extends RecyclerView.ViewHolder{
 		public T data;
 		public int position;
-		ViewDataHolder(T data){
+		public ViewDataHolder(T data){
 			super(data.getRoot());
 			itemView.setTag(this);
 			this.data = data;

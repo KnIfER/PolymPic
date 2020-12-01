@@ -6,7 +6,8 @@
 		android:layout_width="50dp"
 		android:layout_height="65dp"
 		android:elevation="6dp"
-		android:background="#00f"
+		android:background="#fff"
+		android:clipChildren="false"
 		>
 
 		<ImageView
@@ -19,12 +20,18 @@
 
 		<TextView
 			android:id="@+id/tv"
-			android:layout_width="match_parent"
-			android:layout_height="match_parent"
-			android:textColor="#666666"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:textColor="#aa565666"
 			tools:text="123"
 			android:textSize="20sp"
 			android:gravity="center"
+
+			android:shadowColor="#aaffffff"
+			android:shadowRadius="8"
+			android:shadowDx="2"
+			android:shadowDy="1"
+			android:layout_gravity="center"
 			/>
 	</FrameLayout>
 </layout>

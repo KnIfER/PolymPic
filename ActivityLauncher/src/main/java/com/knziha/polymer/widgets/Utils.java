@@ -498,4 +498,12 @@ public class Utils {
 		}
 		return false;
 	}
+	
+	public static boolean addViewToParent(View view2Add, ViewGroup parent) {
+		if(removeIfParentBeOrNotBe(view2Add, parent, false)) {
+			parent.addView(view2Add);
+			return true;
+		}
+		return false;
+	}
 }

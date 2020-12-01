@@ -17,12 +17,12 @@ import com.knziha.polymer.widgets.SpacesItemDecoration;
  * @since 2020/12/02 下午1:16
  */
 public abstract class RecyclerViewPagerAdapter<VH extends RecyclerView.ViewHolder> extends RecyclerView.Adapter<VH> implements View.OnClickListener, RecyclerView.OnScrollChangedListener {
-	private final RecyclerViewPager mViewPager;
+	protected final RecyclerViewPager mViewPager;
 	private final CenterLinearLayoutManager layoutManager;
 	public final PageScope pageScoper = new PageScope();
 	public int headViewSize = 1;
 	
-	public RecyclerViewPagerAdapter(Context context, RecyclerViewPager recyclerViewPager, ItemTouchHelper.Callback rvpSwipeCb) {
+	public RecyclerViewPagerAdapter(Context context, RecyclerViewPager recyclerViewPager, ItemTouchHelper.Callback rvpSwipeCb, int itemPad, int itemWidth) {
 		mViewPager = recyclerViewPager;
 		
 		recyclerViewPager.setHasFixedSize(true);
@@ -35,6 +35,9 @@ public abstract class RecyclerViewPagerAdapter<VH extends RecyclerView.ViewHolde
 		
 		layoutManager = new CenterLinearLayoutManager(context);
 		layoutManager.setOrientation(LinearLayoutManager.HORIZONTAL);
+		
+		recyclerViewPager.itemPad = itemPad;
+		recyclerViewPager.mItemWidth = itemWidth;
 		
 		recyclerViewPager.setLayoutManager(layoutManager);
 		recyclerViewPager.addItemDecoration(new SpacesItemDecoration(recyclerViewPager.itemPad));

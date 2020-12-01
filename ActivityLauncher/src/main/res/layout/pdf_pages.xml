@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:id="@+id/viewpager_parent"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	android:clipChildren="false"
+	android:visibility="gone"
+	tools:visibility="visible">
+	<com.knziha.polymer.webslideshow.RecyclerViewPager
+		xmlns:widget="http://schemas.android.com/apk/res-auto"
+		android:id="@+id/viewpager"
+		android:layout_width="match_parent"
+		android:layout_height="65dp"
+		android:divider="#878787"
+		widget:dividerWidth="2dp"
+		android:padding="0dp"
+		android:clipChildren="false"
+
+		android:orientation="horizontal"
+		android:layout_gravity="bottom"
+		android:visibility="visible"
+		android:layout_marginBottom="65dp"
+		/>
+	<TextView
+		android:id="@+id/pageIndicator"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:text=" 1/522 "
+		android:textSize="18sp"
+		android:textColor="#fff"
+
+		android:shadowColor="#80333333"
+		android:shadowRadius="3"
+		android:shadowDx="2"
+		android:shadowDy="1"
+
+		android:paddingStart="1dp"
+		android:paddingEnd="1dp"
+		android:paddingTop="2dp"
+		android:paddingBottom="2dp"
+		android:layout_gravity="bottom"
+		android:background="@drawable/gradient_left_btn_bg"
+		android:layout_marginBottom="65dp"
+		android:clickable="true"
+		android:focusable="true"
+		/>
+</FrameLayout>
