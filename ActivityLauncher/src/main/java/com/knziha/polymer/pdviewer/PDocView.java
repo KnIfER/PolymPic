@@ -316,7 +316,9 @@ public class PDocView extends View {
 			} else {
 				vTranslate.y = SO;
 			}
-			refreshRequiredTiles(true);
+			if(!refreshRequiredTiles(true)) {
+				invalidate();
+			}
 			mOnPageChangeListener = tmpPCL;
 		}
 	}
@@ -2205,9 +2207,9 @@ public class PDocView extends View {
 		return null;
 	}
 	
-	private void refreshRequiredTiles(boolean load) {
+	private boolean refreshRequiredTiles(boolean load) {
 		//CMN.Log("refreshRequiredTiles", pdoc);
-		if (pdoc==null || pdoc.isClosed) { return; }
+		if (pdoc==null || pdoc.isClosed) { return false; }
 		stoff = (long) (-vTranslate.y/scale);
 		edoff = stoff+getScreenHeight()/scale;
 		stoffX = (long) (-vTranslate.x/scale);
@@ -2432,10 +2434,10 @@ public class PDocView extends View {
 			task.dequire();
 			task.startIfNeeded();
 			//if(tickCheckLoRThumbsIter>0) CMN.Log("bitmap_assignment::", tickCheckLoRThumbsIter);
-			
+			return true;
 		}
 		//CMN.Log("logicalLayout:: ", logiLayoutSt, logiLayoutSz, Arrays.toString(Arrays.copyOfRange(logicLayout, 0, logiLayoutSz)));
-		
+		return false;
 		
 	}
 	

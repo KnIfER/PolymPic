@@ -61,7 +61,7 @@ public abstract class RecyclerViewPagerAdapter<VH extends RecyclerView.ViewHolde
 		}
 	
 		public boolean pageInScope(int pageIdx) {
-			CMN.Log("pageInScope", scopeStart, scopeEnd);
+			//CMN.Log("pageInScope", scopeStart, scopeEnd);
 			return pageIdx>=scopeStart && scopeStart<=scopeEnd;
 		}
 	
