@@ -1,76 +1,85 @@
 package com.knziha.polymer.webslideshow;
 
+import android.content.Context;
 import android.view.View;
-import android.view.ViewGroup;
 
+import androidx.recyclerview.widget.ItemTouchHelper;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.knziha.polymer.Utils.CMN;
+import com.knziha.polymer.widgets.SpacesItemDecoration;
 
 /**
  * RecyclerViewPagerAdapter </br>
- * Adapter wrapper. Use to add margin at first and last itemView.
  *
- * @author Green
- * @since 2015/1/20 下午2:17
+ * @author KnIfER
+ * @since 2020/12/02 下午1:16
  */
-public class RecyclerViewPagerAdapter<VH extends RecyclerView.ViewHolder> extends RecyclerView.Adapter<VH> {
-    private final RecyclerViewPager mViewPager;
-    RecyclerView.Adapter<VH> mAdapter;
-
-
-    public RecyclerViewPagerAdapter(RecyclerViewPager viewPager, RecyclerView.Adapter<VH> adapter) {
-        mAdapter = adapter;
-        mViewPager = viewPager;
-        setHasStableIds(mAdapter.hasStableIds());
-    }
-
-    @Override
-    public VH onCreateViewHolder(ViewGroup parent, int viewType) {
-        return mAdapter.onCreateViewHolder(parent, viewType);
-    }
-
-    @Override
-    public void registerAdapterDataObserver(RecyclerView.AdapterDataObserver observer) {
-        super.registerAdapterDataObserver(observer);
-        mAdapter.registerAdapterDataObserver(observer);
-    }
-
-    @Override
-    public void unregisterAdapterDataObserver(RecyclerView.AdapterDataObserver observer) {
-        super.unregisterAdapterDataObserver(observer);
-        mAdapter.unregisterAdapterDataObserver(observer);
-    }
-
-    @Override
-    public void onBindViewHolder(VH holder, int position) {
-        mAdapter.onBindViewHolder(holder, position);
-        final View itemView = holder.itemView;
-        ViewGroup.LayoutParams lp = itemView.getLayoutParams() == null ? new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT) : itemView.getLayoutParams();
-        //if (mViewPager.getLayoutManager().canScrollHorizontally()) {
-        //    lp.width = mViewPager.getWidth() - mViewPager.getPaddingLeft() - mViewPager.getPaddingRight();
-        //} else {
-        //    lp.height = mViewPager.getHeight() - mViewPager.getPaddingTop() - mViewPager.getPaddingBottom();
-        //}
-        itemView.setLayoutParams(lp);
-    }
-
-    @Override
-    public void setHasStableIds(boolean hasStableIds) {
-        super.setHasStableIds(hasStableIds);
-        mAdapter.setHasStableIds(hasStableIds);
-    }
-
-    @Override
+public abstract class RecyclerViewPagerAdapter<VH extends RecyclerView.ViewHolder> extends RecyclerView.Adapter<VH> implements View.OnClickListener, RecyclerView.OnScrollChangedListener {
+	private final RecyclerViewPager mViewPager;
+	private final CenterLinearLayoutManager layoutManager;
+	public final PageScope pageScoper = new PageScope();
+	public int headViewSize = 1;
+	
+	public RecyclerViewPagerAdapter(Context context, RecyclerViewPager recyclerViewPager, ItemTouchHelper.Callback rvpSwipeCb) {
+		mViewPager = recyclerViewPager;
+		
+		recyclerViewPager.setHasFixedSize(true);
+		
+		recyclerViewPager.setFlingFactor(0.175f);
+		recyclerViewPager.setTriggerOffset(0.125f);
+		
+		setHasStableIds(true);
+		recyclerViewPager.setAdapter(this);
+		
+		layoutManager = new CenterLinearLayoutManager(context);
+		layoutManager.setOrientation(LinearLayoutManager.HORIZONTAL);
+		
+		recyclerViewPager.setLayoutManager(layoutManager);
+		recyclerViewPager.addItemDecoration(new SpacesItemDecoration(recyclerViewPager.itemPad));
+		
+		if(rvpSwipeCb!=null) {
+			ItemTouchHelper itemTouchHelper=new ItemTouchHelper(rvpSwipeCb);
+			itemTouchHelper.attachToRecyclerView(recyclerViewPager);
+		}
+	}
+	
+	@Override
     public int getItemCount() {
-        return mAdapter.getItemCount();
+        return 0;
     }
-
-    @Override
-    public int getItemViewType(int position) {
-        return mAdapter.getItemViewType(position);
-    }
-
-    @Override
-    public long getItemId(int position) {
-        return mAdapter.getItemId(position);
-    }
+    
+    public class PageScope {
+		public int scopeStart;
+		public int scopeEnd;
+		public void notifyItemChanged(Object obj, int position) {
+			mViewPager.post(() -> updateItemAt(obj, position));
+		}
+	
+		public boolean pageInScope(int pageIdx) {
+			CMN.Log("pageInScope", scopeStart, scopeEnd);
+			return pageIdx>=scopeStart && scopeStart<=scopeEnd;
+		}
+	
+		public boolean recalcScope() {
+			View ca = mViewPager.getChildAt(0);
+			int scopeStart, scopeEnd;
+			if(ca!=null) {
+				scopeStart = mViewPager.getChildAdapterPosition(ca)-headViewSize;
+				ca = mViewPager.getChildAt(mViewPager.getChildCount()-1);
+				scopeEnd = mViewPager.getChildAdapterPosition(ca)-headViewSize;
+				if(scopeStart!=this.scopeStart || scopeEnd!=this.scopeEnd) {
+					this.scopeStart = scopeStart;
+					this.scopeEnd = scopeEnd;
+					return true;
+				}
+			}
+			return false;
+		}
+	}
+	
+	protected void updateItemAt(Object obj, int position) {
+	
+	}
 }

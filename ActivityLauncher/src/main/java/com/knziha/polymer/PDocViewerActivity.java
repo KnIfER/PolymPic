@@ -11,6 +11,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Build;
@@ -29,13 +30,18 @@ import android.view.WindowManager;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.BaseAdapter;
 import android.widget.GridView;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.GlobalOptions;
 import androidx.appcompat.view.menu.MenuBuilder;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.databinding.DataBindingUtil;
+import androidx.recyclerview.widget.ItemTouchHelper;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.jess.ui.TwoWayAdapterView;
@@ -44,13 +50,21 @@ import com.knziha.filepicker.utils.FU;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.Options;
 import com.knziha.polymer.databinding.ActivityPdfviewerBinding;
+import com.knziha.polymer.databinding.DocPageItemBinding;
+import com.knziha.polymer.databinding.WebPageItemBinding;
 import com.knziha.polymer.pdviewer.PDFPageParms;
 import com.knziha.polymer.pdviewer.PDocView;
 import com.knziha.polymer.pdviewer.PDocument;
 import com.knziha.polymer.pdviewer.bookmarks.BookMarksFragment;
+import com.knziha.polymer.webslideshow.CenterLinearLayoutManager;
+import com.knziha.polymer.webslideshow.RecyclerViewPager;
+import com.knziha.polymer.webslideshow.RecyclerViewPagerAdapter;
+import com.knziha.polymer.webslideshow.ViewPagerTouchHelper;
 import com.knziha.polymer.widgets.AppIconsAdapter;
 import com.knziha.polymer.widgets.DescriptiveImageView;
+import com.knziha.polymer.widgets.SpacesItemDecoration;
 import com.knziha.polymer.widgets.Utils;
+import com.knziha.polymer.widgets.WebViewmy;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -68,6 +82,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 	protected boolean this_instanceof_PDocMainViewer;
 	private TextPaint menu_grid_painter;
 	private boolean MainMenuListVis;
+	RecyclerViewPager recyclerView;
 	
 	ArrayList<String> menuList = new ArrayList<>();
 	
@@ -77,6 +92,9 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 	private boolean isSingleInst;
 	private int BST;
 	private boolean hasNoPermission;
+	private RecyclerViewPagerAdapter<BrowserActivity.ViewDataHolder<DocPageItemBinding>> adaptermy;
+	private CenterLinearLayoutManager layoutManager;
+	private int mItemWidth;
 	
 	
 	@Override
@@ -114,6 +132,100 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		UIData = DataBindingUtil.setContentView(this, R.layout.activity_pdfviewer);
 		root=UIData.root;
 		currentViewer = UIData.wdv;
+		
+		RecyclerViewPager recyclerViewPager = UIData.viewpager;
+		recyclerView = recyclerViewPager;
+		
+		recyclerView.mItemWidth = mItemWidth = (int) (GlobalOptions.density*50);
+		recyclerViewPager.itemPad = itemPad = (int) (getResources().getDimension(R.dimen._35_)/5);
+		
+		adaptermy = new RecyclerViewPagerAdapter<BrowserActivity.ViewDataHolder<DocPageItemBinding>>(this, recyclerViewPager, null) {
+			SparseArray<BrowserActivity.ViewDataHolder<DocPageItemBinding>> vh_pool = new SparseArray<>(64);
+			public int getItemCount() { return 2+currentViewer.pages(); }
+			public long getItemId(int position) { return position; }
+			@Override
+			public void onScrollChange(View v, int scrollX, int scrollY, int oldScrollX, int oldScrollY) {
+				boolean changed = pageScoper.recalcScope();
+				if(changed) {
+					currentViewer.resetLoRThumbnailTick();
+					for (int position = pageScoper.scopeStart; position <= pageScoper.scopeEnd; position++) {
+						DocPageItemBinding vh = ((BrowserActivity.ViewDataHolder<DocPageItemBinding>) recyclerViewPager.getChildAt(position-pageScoper.scopeStart).getTag()).data;
+						resideThumbnailToAdapterView(vh, position);
+					}
+				}
+			}
+			
+			private void resideThumbnailToAdapterView(DocPageItemBinding vh, int position) {
+				Bitmap bitmap=currentViewer.getLoRThumbnailForPageAt(position);
+				if(vh.iv.getTag()!=bitmap) {
+					vh.iv.setImageBitmap(bitmap);
+					vh.iv.setTag(bitmap);
+				}
+				if(bitmap==null) {
+					currentViewer.requestLoRThumbnailForPageAt(position);
+				}
+			}
+			@Override public void onClick(View v) {
+				BrowserActivity.ViewDataHolder<?> vh = (BrowserActivity.ViewDataHolder<?>) v.getTag();
+				recyclerViewPager.smoothScrollToPosition(recyclerViewPager.getChildAdapterPosition(vh.itemView));
+			}
+			@NonNull @Override
+			public BrowserActivity.ViewDataHolder<DocPageItemBinding> onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+				BrowserActivity.ViewDataHolder<DocPageItemBinding> vh = new BrowserActivity.ViewDataHolder<>(DocPageItemBinding.inflate(getLayoutInflater(), parent, false));
+				vh.itemView.setOnClickListener(this);
+				return vh;
+			}
+			@Override
+			public void onBindViewHolder(@NonNull BrowserActivity.ViewDataHolder<DocPageItemBinding> viewHolder, int position) {
+				DocPageItemBinding vh = viewHolder.data;
+				ImageView iv = vh.iv;
+				position-=1;
+				viewHolder.position=position;
+				View itemView = viewHolder.itemView;
+				vh.tv.setText(""+position);
+				//iv.setImageBitmap(Pages.get(position).getBitmap());
+				iv.getLayoutParams().height=ViewGroup.LayoutParams.MATCH_PARENT;
+				if(targetIsPage(position)) {
+					vh_pool.put(position, viewHolder);
+					itemView.getLayoutParams().width=mItemWidth;
+					resideThumbnailToAdapterView(vh, position);
+					itemView.setVisibility(View.VISIBLE);
+				}
+				else {
+					iv.setTag(R.id.home, null);
+					iv.setImageBitmap(null);
+					itemView.getLayoutParams().width=(root.getWidth()-mItemWidth)/2-3*itemPad;
+					itemView.setVisibility(View.INVISIBLE);
+				}
+			}
+			@Override
+			protected void updateItemAt(Object obj, int position) {
+				//pageScoper.recalcScope();
+				BrowserActivity.ViewDataHolder<DocPageItemBinding> viewHolder = vh_pool.get(position);
+				
+				if(false)
+				if(viewHolder!=null && viewHolder.position==position) {
+					Bitmap bm = ((PDocView)obj).getLoRThumbnailForPageAt(position);
+					viewHolder.data.iv.setImageBitmap(bm);
+				}
+				
+				//if(pageScoper.pageInScope(position))
+				{
+					//RecyclerViewPagerAdapter.this.notifyItemChanged(position+headViewSize, null);
+					View ca = recyclerViewPager.getChildAt(position - pageScoper.scopeStart);
+					CMN.Log("notifyItemChanged", position, ca);
+					CMN.Log("notifyItemChanged scope", pageScoper.scopeStart, pageScoper.scopeEnd);
+					if(ca!=null) {
+						Bitmap bm = ((PDocView)obj).getLoRThumbnailForPageAt(position);
+						((BrowserActivity.ViewDataHolder<DocPageItemBinding>)ca.getTag()).data.iv.setImageBitmap(bm);
+					}
+				}
+			}
+		};
+		
+		recyclerViewPager.setOnScrollChangedListener(adaptermy);
+		
+		currentViewer.pageScoper = adaptermy.pageScoper;
 		
 		try {
 			currentViewer.dm=dm;
@@ -156,15 +268,11 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 			
 			Utils.setOnClickListenersOneDepth(UIData.bottombar2, this, 1, null);
 			
-			if(transit){
-				currentViewer.setImageReadyListener(() -> {
-					root.post(this::closeSplashScreen);
-					currentViewer.setImageReadyListener(null);
-				});
-			}
-			
 			currentViewer.setImageReadyListener(() -> {
-				root.post(() -> UIData.mainProgressBar.setVisibility(View.GONE));
+				root.post(() -> {
+					UIData.mainProgressBar.setVisibility(View.GONE);
+					adaptermy.notifyDataSetChanged();
+				});
 				currentViewer.setImageReadyListener(null);
 			});
 		} catch (Exception e) {
@@ -224,6 +332,13 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		processBST(getIntent());
 		
 		systemIntialized = true;
+	}
+	private int padWidth;
+	private int itemPad;
+	private int _45_;
+	
+	private boolean targetIsPage(int target) {
+		return target>=0;
 	}
 	
 	@Override

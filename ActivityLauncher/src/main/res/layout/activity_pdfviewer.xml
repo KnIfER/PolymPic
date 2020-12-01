@@ -109,5 +109,23 @@
 				android:clickable="true"
 				android:src="@drawable/ic_menu_black_24dp" />
 		</com.knziha.polymer.widgets.LineaSlidog>
+
+
+		<com.knziha.polymer.webslideshow.RecyclerViewPager
+			xmlns:widget="http://schemas.android.com/apk/res-auto"
+			android:id="@+id/viewpager"
+			android:layout_width="match_parent"
+			android:layout_height="65dp"
+			android:divider="#878787"
+			widget:dividerWidth="2dp"
+			android:padding="0dp"
+			android:clipToPadding="false"
+
+			android:orientation="horizontal"
+			android:layout_gravity="bottom"
+			android:layout_marginBottom="80dp"
+			android:background="#ff8f8f8f"
+			android:visibility="visible"
+			/>
 	</FrameLayout>
 </layout>

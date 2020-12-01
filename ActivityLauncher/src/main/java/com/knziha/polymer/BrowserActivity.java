@@ -1064,9 +1064,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		return UIData.searchbar.getVisibility()==View.VISIBLE;
 	}
 	
-	static class ViewDataHolder<T extends ViewDataBinding> extends RecyclerView.ViewHolder{
-		T data;
-		int position;
+	public static class ViewDataHolder<T extends ViewDataBinding> extends RecyclerView.ViewHolder{
+		public T data;
+		public int position;
 		ViewDataHolder(T data){
 			super(data.getRoot());
 			itemView.setTag(this);
@@ -1178,7 +1178,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			}
 			//CMN.Log("首发", C0==null, target);
 			recyclerViewPager.scrollBy(target,0);
-			layoutManager.targetPos = ViewUtils.getCenterXChildPosition(recyclerViewPager);
+			layoutManager.targetPos = ViewUtils.getCenterXChildPositionV1(recyclerViewPager);
 		};
 		recyclerViewPager.setFlingFactor(0.175f);
 		recyclerViewPager.setTriggerOffset(0.125f);

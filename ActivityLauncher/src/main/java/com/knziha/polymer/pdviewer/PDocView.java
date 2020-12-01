@@ -62,6 +62,7 @@ import com.knziha.polymer.slideshow.ImageViewState;
 import com.knziha.polymer.slideshow.OverScroller;
 import com.knziha.polymer.slideshow.decoder.ImageDecoder;
 import com.knziha.polymer.slideshow.decoder.ImageRegionDecoder;
+import com.knziha.polymer.webslideshow.RecyclerViewPagerAdapter;
 import com.knziha.polymer.widgets.Utils;
 import com.shockwave.pdfium.bookmarks.BookMarkEntry;
 
@@ -269,6 +270,8 @@ public class PDocView extends View {
 	private TilesInitTask loadingTask;
 	private boolean treatNxtUpAsSingle;
 	
+	public RecyclerViewPagerAdapter.PageScope pageScoper;
+	
 	public boolean tryClearSelection() {
 		if(draggingHandle==null && hasSelection || hasAnnotSelction) {
 			clearSelection();
@@ -287,6 +290,10 @@ public class PDocView extends View {
 		}
 		vTranslate.set(0, -(page.OffsetAlongScrollAxis+pageParms.offsetY)*scale);
 		refreshRequiredTiles(true);
+	}
+	
+	public int pages() {
+		return pdoc==null?0:pdoc._num_entries;
 	}
 	
 	public interface ImageReadyListener { void ImageReady(); }
@@ -2094,7 +2101,7 @@ public class PDocView extends View {
 	Tile[] LowThumbs = new Tile[1024];
 	int RTLIMIT=48*2;
 	RegionTile[] regionTiles = new RegionTile[RTLIMIT];
-	private Tile tickCheckLoRThumbnails() {
+	public Tile tickCheckLoRThumbnails() {
 		for (; tickCheckLoRThumbsIter < 1024; tickCheckLoRThumbsIter++) {
 			Tile ltI = LowThumbs[tickCheckLoRThumbsIter];
 			if(ltI==null) {
@@ -2102,11 +2109,43 @@ public class PDocView extends View {
 				ltI.bitmap=DummyBitmap;
 				return ltI;
 			}
-			if(ltI.currentOwner==null || ltI.resetIfOutside(this, 5)) {
+			int pageIdx = ltI.currentOwner == null ? -1 : ltI.currentOwner.pageIdx;
+			if(pageIdx==-1 || (pageScoper==null||pageIdx<pageScoper.scopeStart||pageIdx>pageScoper.scopeEnd) && ltI.resetIfOutside(this, 5)) {
 				return ltI;
 			}
 		}
 		return null;
+	}
+	
+	public void resetLoRThumbnailTick() {
+		tickCheckLoRThumbsIter = 0;
+	}
+	
+	public Bitmap getLoRThumbnailForPageAt(int pageIdx) {
+		if(pdoc!=null && pageIdx>=0 && pageIdx<pdoc.mPDocPages.length) {
+			Tile tI = pdoc.mPDocPages[pageIdx].tile;
+			if(tI!=null) {
+				return tI.bitmap;
+			}
+		}
+		return null;
+	}
+	
+	public void requestLoRThumbnailForPageAt(int pageIdx) {
+		if(pdoc!=null && pageIdx>=0 && pageIdx<pdoc.mPDocPages.length) {
+			PDocument.PDocPage page = pdoc.mPDocPages[pageIdx];
+			Tile tI = page.tile;
+			if(tI==null) {
+				tI = tickCheckLoRThumbnails();
+				if(tI!=null) {
+					tickCheckLoRThumbsIter++;
+					TileLoadingTask task = acquireFreeTask();
+					tI.assignToAsAlterThumbnail(task, page, pdoc.ThumbsLoResFactor);
+					task.dequire();
+					task.startIfNeeded();
+				}
+			}
+		}
 	}
 	
 	private Tile tickCheckHIRThumbnails() {
@@ -2187,7 +2226,7 @@ public class PDocView extends View {
 						|| horizon&&vTranslate.x+(page.OffsetAlongScrollAxis+page.size.getWidth()/2)*scale>0 /*半入法眼*/
 						);
 				//CMN.Log("HiRes", HiRes);
-				//HiRes = false;
+				HiRes = false;
 				NoTile=page.tile==null;
 				if(NoTile || HiRes && !page.tile.HiRes) {
 					if(HiRes) {
@@ -3171,6 +3210,7 @@ public class PDocView extends View {
 		final AtomicBoolean abort=new AtomicBoolean();
 		final AtomicBoolean startedLoading=new AtomicBoolean();
 		public boolean loading=true;
+		public boolean isTaskForThisView = true;
 		
 		public TaskToken(Tile tile, float s) {
 			this.tile = tile;
@@ -3218,12 +3258,14 @@ public class PDocView extends View {
 		}
 		@Override
 		public void run() {
-//			if(ended.get()) {
-//
-//				return;
-//			}
+			if(ended.get()) {
+
+				return;
+			}
 			PDocView piv = iv.get();
 			try {
+				boolean seekingTaskForWho = true;
+				boolean isTaskForThisView = false;
 				while((listSz=list.size())>0 || acquired.get()) {
 					if(listSz>0 && piv!=null) {
 						TaskToken task = list.remove(listSz-1);
@@ -3236,6 +3278,17 @@ public class PDocView extends View {
 									piv.decodeRegionAt((RegionTile)tile, task.scale);
 								} else {
 									piv.decodeThumbAt(tile, task.scale);
+								}
+								if(seekingTaskForWho) {
+									if(isTaskForThisView |= task.isTaskForThisView) {
+										seekingTaskForWho = false;
+									}
+								}
+								if(piv.pageScoper!=null) {
+									PDocument.PDocPage page = tile.currentOwner;
+									if(page!=null && piv.pageScoper.pageInScope(page.pageIdx)) {
+										piv.pageScoper.notifyItemChanged(piv, page.pageIdx);
+									}
 								}
 								task.loading=false;
 							}
@@ -3475,6 +3528,15 @@ public class PDocView extends View {
 			taskToken.abort.set(true);
 			currentOwner=page;
 			taskThread.addTask(taskToken=new TaskToken(this, v));
+			page.tile=this;
+		}
+		
+		public void assignToAsAlterThumbnail(TileLoadingTask taskThread, PDocument.PDocPage page, float v) {
+			taskToken.abort.set(true);
+			currentOwner=page;
+			taskToken=new TaskToken(this, v);
+			taskToken.isTaskForThisView = false;
+			taskThread.addTask(taskToken);
 			page.tile=this;
 		}
 	}
@@ -4715,6 +4777,6 @@ public class PDocView extends View {
 			pdoc.saveDocAsCopy(a, null, incremental, reload);
 	}
 	
-	
+
 	
 }
