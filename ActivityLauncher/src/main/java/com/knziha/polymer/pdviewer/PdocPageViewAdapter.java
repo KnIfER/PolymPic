@@ -6,22 +6,37 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CheckedTextView;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.GlobalOptions;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.ItemTouchHelper;
+import androidx.recyclerview.widget.RecyclerView;
 
+import com.knziha.filepicker.widget.HorizontalNumberPicker;
 import com.knziha.polymer.BrowserActivity;
 import com.knziha.polymer.PDocViewerActivity;
 import com.knziha.polymer.R;
+import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.databinding.DocPageItemBinding;
 import com.knziha.polymer.webslideshow.RecyclerViewPager;
 import com.knziha.polymer.webslideshow.RecyclerViewPagerAdapter;
 import com.knziha.polymer.widgets.Utils;
 
-public class PdocPageViewAdapter extends RecyclerViewPagerAdapter<BrowserActivity.ViewDataHolder<DocPageItemBinding>> implements View.OnTouchListener, OnPageChangeListener {
+import java.lang.ref.WeakReference;
+
+public class PdocPageViewAdapter extends RecyclerViewPagerAdapter<BrowserActivity.ViewDataHolder<DocPageItemBinding>> implements View.OnTouchListener, RecyclerViewPager.OnPageChangedListener {
 	private final PDocViewerActivity a;
 	private final ViewGroup viewpagerParent;
+	private final TextView pageIndicator;
+	private final RecyclerView.RecycledViewPool recyclerViewPool;
+	private final GridLayoutManager gridLayoutManager;
+	private TextView lastSelTv;
+	private boolean tapping;
 	
 	public PdocPageViewAdapter(Context context, ViewGroup vg, RecyclerViewPager recyclerViewPager
 			, ItemTouchHelper.Callback rvpSwipeCb, PDocViewerActivity a
@@ -29,13 +44,19 @@ public class PdocPageViewAdapter extends RecyclerViewPagerAdapter<BrowserActivit
 		super(context, recyclerViewPager, rvpSwipeCb, itemPad, itemWidth);
 		this.a = a;
 		this.viewpagerParent = vg;
+		layoutManager.setInitialPrefetchItemCount(8);
 		recyclerViewPager.setOnScrollChangedListener(this);
 		recyclerViewPager.setClipChildren(true);
 		recyclerViewPager.setOnTouchListener(this);
+		pageIndicator = vg.findViewById(R.id.pageIndicator);
+		pageIndicator.setOnClickListener(this);
+		recyclerViewPool = Utils.MaxRecyclerPool(64);
+		recyclerViewPager.setRecycledViewPool(recyclerViewPool);
+		gridLayoutManager = new GridLayoutManager(a, 6);
 	}
 	
 	public int getItemCount() {
-		return 2+a.currentViewer.pages();
+		return headViewSize*2+a.currentViewer.pages();
 	}
 	
 	public long getItemId(int position) {
@@ -46,6 +67,7 @@ public class PdocPageViewAdapter extends RecyclerViewPagerAdapter<BrowserActivit
 	public void onScrollChange(View v, int scrollX, int scrollY, int oldScrollX, int oldScrollY) {
 		boolean changed = pageScoper.recalcScope();
 		if(changed) {
+			//CMN.Log("onScrollChange",  pageScoper.scopeStart, pageScoper.scopeEnd);
 			a.currentViewer.resetLoRThumbnailTick();
 			for (int position = pageScoper.scopeStart; position <= pageScoper.scopeEnd; position++) {
 				DocPageItemBinding vh = ((BrowserActivity.ViewDataHolder<DocPageItemBinding>) mViewPager.getChildAt(position-pageScoper.scopeStart).getTag()).data;
@@ -61,15 +83,94 @@ public class PdocPageViewAdapter extends RecyclerViewPagerAdapter<BrowserActivit
 			vh.iv.setTag(bitmap);
 		}
 		if(bitmap==null) {
+			//CMN.Log("requestLoRThumbnailForPageAt", position);
 			a.currentViewer.requestLoRThumbnailForPageAt(position);
 		}
 	}
 	
 	@Override
 	public void onClick(View v) {
-		BrowserActivity.ViewDataHolder<?> vh = (BrowserActivity.ViewDataHolder<?>) v.getTag();
-		mViewPager.smoothScrollToPosition(mViewPager.getChildAdapterPosition(vh.itemView));
-		a.currentViewer.goToPageCentered(vh.position);
+		int id = v.getId();
+		if(id ==R.id.pageIndicator || id ==R.id.grid) {
+			WeakReference<AlertDialog> dlg = (WeakReference<AlertDialog>) pageIndicator.getTag();
+			AlertDialog d = null;
+			if(dlg!=null) {
+				d = dlg.get();
+			}
+			if(id ==R.id.grid) {
+				CheckedTextView checkGrid = (CheckedTextView) v;
+				checkGrid.toggle();
+				setGridView(checkGrid.isChecked());
+				if(d!=null) {
+					d.dismiss();
+				}
+			} else {
+				if(d==null) {
+					View view = a.getLayoutInflater().inflate(R.layout.doc_jump_dlg, null);
+					HorizontalNumberPicker numberpicker = view.findViewById(R.id.numberpicker);
+					numberpicker.setMinValue(1);
+					numberpicker.setMaxValue(a.currentViewer.getPageCount());
+					numberpicker.setValue(mViewPager.getCurrentPosition()-headViewSize);
+					numberpicker.setOnValueChangedListener((picker, oldVal, newVal) -> {
+						newVal--;
+						numberpicker.setTag(newVal);
+						if(false) {
+							int newPos = newVal+headViewSize;
+							mViewPager.scrollToPosition(newPos);
+							mViewPager.smoothScrollToPosition(newPos);
+						}
+					});
+					CheckedTextView checkGrid = view.findViewById(R.id.grid);
+					checkGrid.setOnClickListener(this);
+					checkGrid.setChecked(mViewPager.isGridView());
+					d = new AlertDialog.Builder(a)
+							.setView(view)
+							.create();
+					d.setOnDismissListener(dialog -> {
+						Object tag = numberpicker.getTag();
+						if(tag instanceof Integer) {
+							a.currentViewer.goToPageCentered((int) tag, false);
+							numberpicker.setTag(null);
+						}
+					});
+					v.setTag(new WeakReference<>(d));
+				}
+				d.show();
+			}
+		} else {
+			BrowserActivity.ViewDataHolder<?> vh = (BrowserActivity.ViewDataHolder<?>) v.getTag();
+			if(a.targetIsPage(vh.position)) {
+				tapping = true;
+				updateIndicatorAndCircle(vh.position);
+				mViewPager.smoothScrollToPosition(mViewPager.getChildAdapterPosition(vh.itemView));
+				a.currentViewer.goToPageCentered(vh.position, true);
+				tapping = false;
+			}
+		}
+	}
+	
+	private void setGridView(boolean gridify) {
+		int position = a.currentViewer.getCurrentPageOnScreen();
+		if(gridify) {
+			// 网格化显示
+			mViewPager.getLayoutParams().height = (int) (GlobalOptions.density*65*6);
+			headViewSize = 0;
+			viewpagerParent.setClipChildren(true);
+			mViewPager.setLayoutManager(gridLayoutManager);
+			mViewPager.setPadding(0, (int) (GlobalOptions.density*10), 0, 0);
+		} else {
+			// 卷轴显示
+			mViewPager.getLayoutParams().height = (int) (GlobalOptions.density*65*1);
+			headViewSize = 1;
+			viewpagerParent.setClipChildren(false);
+			mViewPager.setLayoutManager(layoutManager);
+			mViewPager.setPadding(0, 0, 0, 0);
+		}
+		mViewPager.setItemAnimator(null);
+		position+=headViewSize;
+		notifyDataSetChanged();
+		mViewPager.scrollToPosition(position);
+		mViewPager.smoothScrollToPosition(position);
 	}
 	
 	@NonNull
@@ -78,6 +179,7 @@ public class PdocPageViewAdapter extends RecyclerViewPagerAdapter<BrowserActivit
 		BrowserActivity.ViewDataHolder<DocPageItemBinding> vh = new BrowserActivity.ViewDataHolder<>(DocPageItemBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false));
 		vh.itemView.setOnClickListener(this);
 		vh.itemView.setOnTouchListener(this);
+		CMN.Log("onCreateViewHolder");
 		return vh;
 	}
 	
@@ -85,7 +187,7 @@ public class PdocPageViewAdapter extends RecyclerViewPagerAdapter<BrowserActivit
 	public void onBindViewHolder(@NonNull BrowserActivity.ViewDataHolder<DocPageItemBinding> viewHolder, int position) {
 		DocPageItemBinding vh = viewHolder.data;
 		ImageView iv = vh.iv;
-		position-=1;
+		position-=headViewSize;
 		viewHolder.position=position;
 		View itemView = viewHolder.itemView;
 		vh.tv.setText(String.valueOf(position));
@@ -94,6 +196,12 @@ public class PdocPageViewAdapter extends RecyclerViewPagerAdapter<BrowserActivit
 			itemView.getLayoutParams().width=mViewPager.mItemWidth;
 			resideThumbnailToAdapterView(vh, position);
 			itemView.setVisibility(View.VISIBLE);
+			if(position==a.currentViewer.getCurrentPageOnScreen()) {
+				lastSelTv = vh.tv;
+				lastSelTv.setBackgroundResource(R.drawable.circle);
+			} else {
+				vh.tv.setBackgroundResource(0);
+			}
 		}
 		else {
 			iv.setTag(R.id.home, null);
@@ -147,10 +255,30 @@ public class PdocPageViewAdapter extends RecyclerViewPagerAdapter<BrowserActivit
 	}
 	
 	@Override
-	public void OnPageChange(int oldPage, int newPage) {
-		newPage++;
-		mViewPager.scrollToPosition(newPage);
-		mViewPager.smoothScrollToPosition(newPage);
+	public void OnPageChanged(int oldPosition, int newPage) {
+		int finalNewPage = newPage+headViewSize;
+		mViewPager.scrollToPosition(finalNewPage);
+		if(tapping) {
+			mViewPager.smoothScrollToPosition(finalNewPage);
+		} else {
+			mViewPager.post(() -> {
+				mViewPager.scrollToPosition(finalNewPage);
+				mViewPager.smoothScrollToPosition(finalNewPage);
+			});
+		}
+		updateIndicatorAndCircle(newPage);
+	}
+	
+	private void updateIndicatorAndCircle(int newPage) {
+		pageIndicator.setText(" "+(newPage+1)+"/"+a.currentViewer.getPageCount()+" ");
+		View ca = mViewPager.getChildAt(newPage - pageScoper.scopeStart);
+		if(lastSelTv!=null) {
+			lastSelTv.setBackgroundResource(0);
+		}
+		if(ca!=null) {
+			lastSelTv = ((BrowserActivity.ViewDataHolder<DocPageItemBinding>)ca.getTag()).data.tv;
+			lastSelTv.setBackgroundResource(R.drawable.circle);
+		}
 	}
 	
 	public boolean togglePagesVisibility() {

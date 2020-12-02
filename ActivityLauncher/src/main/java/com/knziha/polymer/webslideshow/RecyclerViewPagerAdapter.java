@@ -18,7 +18,7 @@ import com.knziha.polymer.widgets.SpacesItemDecoration;
  */
 public abstract class RecyclerViewPagerAdapter<VH extends RecyclerView.ViewHolder> extends RecyclerView.Adapter<VH> implements View.OnClickListener, RecyclerView.OnScrollChangedListener {
 	protected final RecyclerViewPager mViewPager;
-	private final CenterLinearLayoutManager layoutManager;
+	protected final CenterLinearLayoutManager layoutManager;
 	public final PageScope pageScoper = new PageScope();
 	public int headViewSize = 1;
 	

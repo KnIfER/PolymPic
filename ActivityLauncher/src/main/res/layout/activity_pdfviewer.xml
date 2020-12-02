@@ -114,7 +114,7 @@
 			android:id="@+id/viewpager_parent"
 			android:layout_width="match_parent"
 			android:layout_height="match_parent"
-			android:layout="@layout/pdf_pages"
+			android:layout="@layout/doc_pages"
 			/>
 
 	</FrameLayout>

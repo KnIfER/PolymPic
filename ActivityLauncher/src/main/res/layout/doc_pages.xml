@@ -15,7 +15,7 @@
 		android:divider="#878787"
 		widget:dividerWidth="2dp"
 		android:padding="0dp"
-		android:clipChildren="false"
+		android:clipToPadding="false"
 
 		android:orientation="horizontal"
 		android:layout_gravity="bottom"

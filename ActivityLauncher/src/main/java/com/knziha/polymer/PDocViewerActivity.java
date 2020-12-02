@@ -120,8 +120,6 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		root=UIData.root;
 		currentViewer = UIData.wdv;
 		
-		//togglePagesView();
-		
 		try {
 			currentViewer.dm=dm;
 			
@@ -171,6 +169,12 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 					}
 				});
 				currentViewer.setImageReadyListener(null);
+			});
+			
+			currentViewer.setDocListener(() -> {
+				if(adaptermy!=null) {
+					adaptermy.notifyDataSetChanged();
+				}
 			});
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -230,12 +234,15 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		processBST(getIntent());
 		
 		systemIntialized = true;
+		
+		//tg
+		//togglePagesView();
 	}
 	private int padWidth;
 	private int _45_;
 	
 	public boolean targetIsPage(int target) {
-		return target>=0;
+		return target>=0 && target<currentViewer.getPageCount();
 	}
 	
 	@Override

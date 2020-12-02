@@ -27,6 +27,8 @@ import android.view.MotionEvent;
 import android.view.View;
 
 
+import androidx.annotation.Nullable;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -60,6 +62,7 @@ public class RecyclerViewPager extends RecyclerView {
 	int mMaxTopWhenDragging = Integer.MIN_VALUE;
 	int mMinTopWhenDragging = Integer.MAX_VALUE;
 	public boolean bFromIdle;
+	private boolean isGridView = false;
 	
 	public RecyclerViewPager(Context context) {
 		this(context, null);
@@ -122,6 +125,7 @@ public class RecyclerViewPager extends RecyclerView {
 	
 	@Override
 	public boolean fling(int velocityX, int velocityY) {
+		if(isGridView) return super.fling(velocityX, velocityY);
 		boolean flinging = super.fling((int) (velocityX * mFlingFactor), (int) (velocityY * mFlingFactor));
 		if (flinging) {
 			if (getLayoutManager().canScrollHorizontally()) {
@@ -259,6 +263,7 @@ public class RecyclerViewPager extends RecyclerView {
 	@Override
 	public void onScrollStateChanged(int state) {
 		super.onScrollStateChanged(state);
+		if(isGridView) return;
 		if (state == SCROLL_STATE_DRAGGING) {
 			mNeedAdjust = true;
 			mCurView = getLayoutManager().canScrollHorizontally() ? ViewUtils.getCenterXChildV1(this) :
@@ -349,12 +354,17 @@ public class RecyclerViewPager extends RecyclerView {
 		return position;
 	}
 	
-	public interface OnPageChangedListener {
-		void OnPageChanged(int oldPosition, int newPosition);
+	@Override
+	public void setLayoutManager(@Nullable LayoutManager layout) {
+		isGridView = layout instanceof GridLayoutManager;
+		super.setLayoutManager(layout);
 	}
 	
-	@Override
-	public int getPaddingTop() {
-		return super.getPaddingTop();
+	public boolean isGridView() {
+		return isGridView;
+	}
+	
+	public interface OnPageChangedListener {
+		void OnPageChanged(int oldPosition, int newPosition);
 	}
 }

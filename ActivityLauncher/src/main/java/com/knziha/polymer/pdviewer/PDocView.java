@@ -62,12 +62,11 @@ import com.knziha.polymer.slideshow.ImageViewState;
 import com.knziha.polymer.slideshow.OverScroller;
 import com.knziha.polymer.slideshow.decoder.ImageDecoder;
 import com.knziha.polymer.slideshow.decoder.ImageRegionDecoder;
+import com.knziha.polymer.webslideshow.RecyclerViewPager.OnPageChangedListener;
 import com.knziha.polymer.webslideshow.RecyclerViewPagerAdapter;
 import com.knziha.polymer.widgets.Utils;
-import com.shockwave.pdfium.bookmarks.BookMarkEntry;
 
 import java.io.File;
-import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -272,8 +271,17 @@ public class PDocView extends View {
 	
 	public RecyclerViewPagerAdapter.PageScope pageScoper;
 	
-	private OnPageChangeListener mOnPageChangeListener;
+	private OnPageChangedListener mOnPageChangeListener;
+	
 	private int lastMiddlePage;
+	
+	public int getCurrentPageOnScreen() {
+		return lastMiddlePage;
+	}
+	
+	public int getPageCount() {
+		return pdoc==null?0:pdoc._num_entries;
+	}
 	
 	public boolean tryClearSelection() {
 		if(draggingHandle==null && hasSelection || hasAnnotSelction) {
@@ -299,14 +307,17 @@ public class PDocView extends View {
 		return pdoc==null?0:pdoc._num_entries;
 	}
 	
-	public void setOnPageChangeListener(OnPageChangeListener onPageChangeListener) {
+	public void setOnPageChangeListener(OnPageChangedListener onPageChangeListener) {
 		mOnPageChangeListener = onPageChangeListener;
 	}
 	
-	public void goToPageCentered(int position) {
+	public void goToPageCentered(int position, boolean still) {
 		if(pdoc!=null && position!=lastMiddlePage && position>=0 && position<pdoc._num_entries) {
-			OnPageChangeListener tmpPCL = mOnPageChangeListener;
-			mOnPageChangeListener = null;
+			OnPageChangedListener tmpPCL = null;
+			if(still) {
+				tmpPCL = mOnPageChangeListener;
+				mOnPageChangeListener = null;
+			}
 			boolean horizon = pdoc.isHorizontalView();
 			float SO = horizon?stoffX:stoff;
 			SO = SO-pdoc.mPDocPages[lastMiddlePage].OffsetAlongScrollAxis+pdoc.mPDocPages[position].OffsetAlongScrollAxis;
@@ -319,13 +330,19 @@ public class PDocView extends View {
 			if(!refreshRequiredTiles(true)) {
 				invalidate();
 			}
-			mOnPageChangeListener = tmpPCL;
+			if(still) {
+				mOnPageChangeListener = tmpPCL;
+			}
 		}
 	}
 	
 	public interface ImageReadyListener { void ImageReady(); }
 	
+	public interface DocListener { void NewDocOpened(); }
+	
 	ImageReadyListener mImageReadyListener;
+	
+	DocListener mDocListener;
 	
 	ArrayList<PDocument.AnnotShape> mAnnotBucket = new ArrayList<>(8);
 	
@@ -909,6 +926,10 @@ public class PDocView extends View {
 	
 	public void setImageReadyListener(ImageReadyListener imageReadyListener) {
 		mImageReadyListener = imageReadyListener;
+	}
+	
+	public void setDocListener(DocListener docListener) {
+		mDocListener = docListener;
 	}
 	
 	/**
@@ -2151,7 +2172,7 @@ public class PDocView extends View {
 	public Bitmap getLoRThumbnailForPageAt(int pageIdx) {
 		if(pdoc!=null && pageIdx>=0 && pageIdx<pdoc.mPDocPages.length) {
 			Tile tI = pdoc.mPDocPages[pageIdx].tile;
-			if(tI!=null) {
+			if(tI!=null && !tI.taskToken.loading) {
 				return tI.bitmap;
 			}
 		}
@@ -2244,7 +2265,7 @@ public class PDocView extends View {
 		}
 		if(pageMiddle>=0 && pageMiddle!=lastMiddlePage) {
 			if(mOnPageChangeListener!=null) {
-				mOnPageChangeListener.OnPageChange(lastMiddlePage, pageMiddle);
+				mOnPageChangeListener.OnPageChanged(lastMiddlePage, pageMiddle);
 			}
 			lastMiddlePage = pageMiddle;
 		}
@@ -3218,6 +3239,9 @@ public class PDocView extends View {
 		
 		preDraw2(new PointF(sWidth *1.0f/2, sHeight *1.0f/2),scale);
 		
+		if(mDocListener!=null) {
+			mDocListener.NewDocOpened();
+		}
 //		ViewGroup.LayoutParams lp = view_to_paint.getLayoutParams();
 //		lp.width=(int) (sWidth*scale);
 //		lp.height=(int) (sHeight*scale);
