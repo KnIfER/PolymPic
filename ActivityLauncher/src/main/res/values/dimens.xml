@@ -8,7 +8,8 @@
     <dimen name="dtcover">25dp</dimen>
     <dimen name="dtcoverL">2dp</dimen>
 	<dimen name="framew">10dp</dimen>
-    
+	<dimen name="framew1">6dp</dimen>
+
     <dimen name="section_div_height">0dp</dimen>
     
     <dimen name="design_snackbar_padding_vertical">4dp</dimen>

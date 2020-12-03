@@ -166,7 +166,7 @@ public class PDocument {
 			int foundIdx = pdfiumCore.nativeFindTextPage(page.tid, key, flag);
 			SearchRecord ret = foundIdx==-1?null:new SearchRecord(pageIdx, foundIdx);
 			if(shouldClose) {
-				page.close();
+				//page.close();
 			}
 			return ret;
 		}

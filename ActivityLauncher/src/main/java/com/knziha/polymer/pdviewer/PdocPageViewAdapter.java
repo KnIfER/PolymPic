@@ -26,6 +26,7 @@ import com.knziha.polymer.databinding.DocPageItemBinding;
 import com.knziha.polymer.webslideshow.RecyclerViewPager;
 import com.knziha.polymer.webslideshow.RecyclerViewPagerAdapter;
 import com.knziha.polymer.widgets.Utils;
+import com.knziha.polymer.widgets.WaveView;
 import com.shockwave.pdfium.SearchRecord;
 
 import java.lang.ref.WeakReference;
@@ -33,7 +34,7 @@ import java.util.ArrayList;
 
 public class PDocPageViewAdapter extends RecyclerViewPagerAdapter<BrowserActivity.ViewDataHolder<DocPageItemBinding>> implements View.OnTouchListener, RecyclerViewPager.OnPageChangedListener {
 	private final PDocViewerActivity a;
-	private final ViewGroup viewpagerParent;
+	final ViewGroup viewpagerParent;
 	private final TextView pageIndicator;
 	private final RecyclerView.RecycledViewPool recyclerViewPool;
 	private final GridLayoutManager gridLayoutManager;

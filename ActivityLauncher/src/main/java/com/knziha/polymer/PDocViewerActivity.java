@@ -83,7 +83,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 	private boolean isSingleInst;
 	private int BST;
 	private boolean hasNoPermission;
-	private PDocPageViewAdapter adaptermy;
+	public PDocPageViewAdapter adaptermy;
 	private PDocSearchHandler searchHandler;
 	
 	
@@ -298,7 +298,16 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		adaptermy.setSearchResults(arr);
 	}
 	
-	public void notifyItemAdded(PDocSearchTask pDocSearchTask, ArrayList<SearchRecord> arr, SearchRecord schRecord) {
+	public void startSearch(ArrayList<SearchRecord> arr) {
+		adaptermy.setSearchResults(arr);
+		searchHandler.startSearch();
+	}
+	
+	public void endSearch() {
+		searchHandler.endSearch();
+	}
+	
+	public void notifyItemAdded(PDocSearchTask pDocSearchTask, ArrayList<SearchRecord> arr, SearchRecord schRecord, int itemCount) {
 		arr.add(schRecord);
 		root.post(new Runnable() {
 			@Override
@@ -307,7 +316,17 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 					int sz = arr.size()-1;
 					//adaptermy.notifyItemRangeInserted(sz, 1);
 					adaptermy.notifyDataSetChanged();
+					searchHandler.setProgress(itemCount);
 				}
+			}
+		});
+	}
+	
+	public void notifyProgress(int itemCount) {
+		root.post(new Runnable() {
+			@Override
+			public void run() {
+				searchHandler.setProgress(itemCount);
 			}
 		});
 	}

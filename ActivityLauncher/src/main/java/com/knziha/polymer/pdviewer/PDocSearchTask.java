@@ -33,6 +33,7 @@ public class PDocSearchTask implements Runnable{
 		if(finished) {
 			//a.setSearchResults(arr);
 			//a.showT("findAllTest_Time : "+(System.currentTimeMillis()-CMN.ststrt)+" sz="+arr.size());
+			a.endSearch();
 		} else {
 			CMN.rt();
 			PDocument pdoc = this.pdoc.get();
@@ -44,7 +45,9 @@ public class PDocSearchTask implements Runnable{
 					}
 					schRecord = pdoc.findPageCached(key, i, 0);
 					if(schRecord!=null) {
-						a.notifyItemAdded(this, arr, schRecord);
+						a.notifyItemAdded(this, arr, schRecord, i);
+					} else {
+						a.notifyProgress(i);
 					}
 				}
 			}
@@ -57,7 +60,7 @@ public class PDocSearchTask implements Runnable{
 		if(t==null) {
 			PDocViewerActivity a = this.a.get();
 			if(a!=null) {
-				a.setSearchResults(arr);
+				a.startSearch(arr);
 			}
 			t=new Thread(this);
 			t.start();
