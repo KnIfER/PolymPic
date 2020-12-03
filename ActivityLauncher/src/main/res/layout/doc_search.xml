@@ -12,7 +12,10 @@
 	app:contentInsetStartWithNavigation="0dp"
 	android:background="#8f8f8f"
 	app:elevation="5dp"
-	app:layout_scrollFlags="scroll|enterAlways|snap">
+	app:layout_scrollFlags="scroll|enterAlways|snap"
+	android:visibility="invisible"
+	tools:visibility="visible"
+	>
 	<LinearLayout
 		android:layout_width="match_parent"
 		android:layout_height="match_parent"

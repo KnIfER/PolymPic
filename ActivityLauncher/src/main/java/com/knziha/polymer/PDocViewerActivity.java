@@ -12,6 +12,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -118,6 +119,8 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		//getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN|WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
 		win.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN|WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
+		
+		setStatusBarColor(win);
 		
 		boolean transit = Options.getTransitSplashScreen();
 		if(!transit) setTheme(R.style.AppThemeRaw);
@@ -502,8 +505,10 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 			case R.id.browser_widget9: {
 				if(searchHandler==null) {
 					searchHandler = new PDocSearchHandler(this, (ViewGroup) UIData.searchToolbar.getViewStub().inflate());
+					searchHandler.postInit();
+				} else {
+					searchHandler.toggleVisibility();
 				}
-
 //				CMN.rt();
 //				ArrayList<SearchRecord> arr = new ArrayList<>();
 //				currentViewer.pdoc.findAll("l-system\0", 0, arr);
@@ -725,5 +730,18 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 			}
 		}
 		processBST(intent);
+	}
+	private void setStatusBarColor(Window window){
+		window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS
+				| WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
+		window.getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+				
+				| View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+			window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+		if(Build.VERSION.SDK_INT>=21) {
+			window.setStatusBarColor(Color.TRANSPARENT);
+			//window.setNavigationBarColor(Color.TRANSPARENT);
+		}
 	}
 }
