@@ -1,10 +1,7 @@
 package com.knziha.polymer.widgets;
 
-import android.content.Context;
-import android.graphics.BlendModeColorFilter;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
-import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.DrawableWrapper;
 import android.os.Build;

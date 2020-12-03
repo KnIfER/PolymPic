@@ -2158,7 +2158,7 @@ public class PDocView extends View {
 				return ltI;
 			}
 			int pageIdx = ltI.currentOwner == null ? -1 : ltI.currentOwner.pageIdx;
-			if(pageIdx==-1 || (pageScoper==null||pageIdx<pageScoper.scopeStart||pageIdx>pageScoper.scopeEnd) && ltI.resetIfOutside(this, 5)) {
+			if(pageIdx==-1 || (pageScoper==null||!pageScoper.pageInScope(pageIdx)) && ltI.resetIfOutside(this, 5)) {
 				return ltI;
 			}
 		}

@@ -39,6 +39,7 @@ import androidx.appcompat.widget.Toolbar;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.Options;
+import com.knziha.polymer.pdviewer.PDocSearchTask;
 import com.knziha.polymer.widgets.AppIconsAdapter;
 import com.knziha.polymer.widgets.EditTextmy;
 import com.knziha.polymer.widgets.SimpleTextNotifier;
@@ -103,6 +104,10 @@ public class Toastable_Activity extends AppCompatActivity {
 	
 	protected WeakReference[] WeakReferencePool = new WeakReference[WeakReferenceHelper.poolSize];
 	protected boolean requireStorage;
+	
+	public void post(Runnable runnable) {
+		root.post(runnable);
+	}
 	
 	static class BaseHandler extends Handler {
 		float animator = 0.1f;

@@ -116,7 +116,8 @@ public class PdfiumCore {
 	public native long nativeGetAnnot(long pagePtr, int index);
 	
     /* synchronize native methods */
-    private static final Object lock = new Object();
+    public static final Object lock = new Object();
+    public static final Object searchLock = new Object();
     private static Field mFdField = null;
     private int mCurrentDpi;
 
@@ -396,6 +397,12 @@ public class PdfiumCore {
 			nativeSaveAsCopy(docPtr, fd, incremental);
 		}
 	}
+	
+	public native void nativeFindAll(long mNativeDocPtr, int pages, String key, int flag, ArrayList<SearchRecord> arr);
+	
+	public native SearchRecord nativeFindPage(long mNativeDocPtr, String key, int pageIdx, int flag);
+	
+	public native int nativeFindTextPage(long pagePtr, String key, int flag);
 	
 	public native void nativeSaveAsCopy(long docPtr, int fd, boolean incremental);
 	

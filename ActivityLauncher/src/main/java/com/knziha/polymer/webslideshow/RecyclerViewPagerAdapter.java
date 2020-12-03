@@ -7,7 +7,6 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.widgets.SpacesItemDecoration;
 
 /**
@@ -19,8 +18,10 @@ import com.knziha.polymer.widgets.SpacesItemDecoration;
 public abstract class RecyclerViewPagerAdapter<VH extends RecyclerView.ViewHolder> extends RecyclerView.Adapter<VH> implements View.OnClickListener, RecyclerView.OnScrollChangedListener {
 	protected final RecyclerViewPager mViewPager;
 	protected final CenterLinearLayoutManager layoutManager;
-	public final PageScope pageScoper = new PageScope();
-	public int headViewSize = 1;
+	protected final PageScope pageScoper = new PageScope();
+	protected int headViewSize = 1;
+	
+	protected RecyclerViewPagerSubsetProvider resultsProvider;
 	
 	public RecyclerViewPagerAdapter(Context context, RecyclerViewPager recyclerViewPager, ItemTouchHelper.Callback rvpSwipeCb, int itemPad, int itemWidth) {
 		mViewPager = recyclerViewPager;
@@ -52,8 +53,12 @@ public abstract class RecyclerViewPagerAdapter<VH extends RecyclerView.ViewHolde
     public int getItemCount() {
         return 0;
     }
-    
-    public class PageScope {
+	
+	public int getHeadViewSize() {
+		return headViewSize;
+	}
+	
+	public class PageScope {
 		public int scopeStart;
 		public int scopeEnd;
 		public void notifyItemChanged(Object obj, int position) {
@@ -61,8 +66,15 @@ public abstract class RecyclerViewPagerAdapter<VH extends RecyclerView.ViewHolde
 		}
 	
 		public boolean pageInScope(int pageIdx) {
-			//CMN.Log("pageInScope", scopeStart, scopeEnd);
-			return pageIdx>=scopeStart && scopeStart<=scopeEnd;
+			if(resultsProvider!=null) {
+				int position = resultsProvider.queryPositionForActualPage(pageIdx);
+				//CMN.Log("pageInScope???", pageIdx, position);
+				if(position<0) {
+					return false;
+				}
+				pageIdx = position;
+			}
+			return pageIdx>=scopeStart && pageIdx<=scopeEnd;
 		}
 	
 		public boolean recalcScope() {

@@ -46,13 +46,16 @@ import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.Options;
 import com.knziha.polymer.databinding.ActivityPdfviewerBinding;
 import com.knziha.polymer.pdviewer.PDFPageParms;
+import com.knziha.polymer.pdviewer.PDocSearchHandler;
+import com.knziha.polymer.pdviewer.PDocSearchTask;
 import com.knziha.polymer.pdviewer.PDocView;
 import com.knziha.polymer.pdviewer.PDocument;
-import com.knziha.polymer.pdviewer.PdocPageViewAdapter;
+import com.knziha.polymer.pdviewer.PDocPageViewAdapter;
 import com.knziha.polymer.pdviewer.bookmarks.BookMarksFragment;
 import com.knziha.polymer.widgets.AppIconsAdapter;
 import com.knziha.polymer.widgets.DescriptiveImageView;
 import com.knziha.polymer.widgets.Utils;
+import com.shockwave.pdfium.SearchRecord;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -80,8 +83,8 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 	private boolean isSingleInst;
 	private int BST;
 	private boolean hasNoPermission;
-	private PdocPageViewAdapter adaptermy;
-
+	private PDocPageViewAdapter adaptermy;
+	private PDocSearchHandler searchHandler;
 	
 	
 	@Override
@@ -97,6 +100,9 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 			if(isSingleInst) {
 				//showT("单例");
 				singleInstCout=0;
+			}
+			if(searchHandler!=null) {
+				searchHandler.close();
 			}
 			super.onBackPressed();
 		}
@@ -236,14 +242,10 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		systemIntialized = true;
 		
 		//tg
-		//togglePagesView();
+		togglePagesView();
 	}
 	private int padWidth;
 	private int _45_;
-	
-	public boolean targetIsPage(int target) {
-		return target>=0 && target<currentViewer.getPageCount();
-	}
 	
 	@Override
 	protected void further_loading(Bundle savedInstanceState) {
@@ -290,6 +292,24 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 				.translationY(TargetTransY)
 				.setDuration(220)
 				.start();
+	}
+	
+	public void setSearchResults(ArrayList<SearchRecord> arr) {
+		adaptermy.setSearchResults(arr);
+	}
+	
+	public void notifyItemAdded(PDocSearchTask pDocSearchTask, ArrayList<SearchRecord> arr, SearchRecord schRecord) {
+		arr.add(schRecord);
+		root.post(new Runnable() {
+			@Override
+			public void run() {
+				if(!pDocSearchTask.isAborted()) {
+					int sz = arr.size()-1;
+					//adaptermy.notifyItemRangeInserted(sz, 1);
+					adaptermy.notifyDataSetChanged();
+				}
+			}
+		});
 	}
 	
 	static class MenuItemViewHolder {
@@ -460,6 +480,17 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 	@Override
 	public void onClick(View v) {
 		switch (v.getId()) {
+			case R.id.browser_widget9: {
+				if(searchHandler==null) {
+					searchHandler = new PDocSearchHandler(this, (ViewGroup) UIData.searchToolbar.getViewStub().inflate());
+				}
+
+//				CMN.rt();
+//				ArrayList<SearchRecord> arr = new ArrayList<>();
+//				currentViewer.pdoc.findAll("l-system\0", 0, arr);
+//				showT("findAllTest_Time : "+(System.currentTimeMillis()-CMN.ststrt)+" sz="+arr.size());
+//				adaptermy.setSearchResults(arr);
+			} break;
 			case R.id.browser_widget10: {
 				if(InvalidSate()) break;
 				int id = WeakReferenceHelper.top_menu;
@@ -487,7 +518,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 	private void togglePagesView() {
 		if(adaptermy==null) {
 			ViewGroup vg = (ViewGroup) UIData.viewpagerParent.getViewStub().inflate();
-			adaptermy = new PdocPageViewAdapter(this, vg
+			adaptermy = new PDocPageViewAdapter(this, vg
 					, vg.findViewById(R.id.viewpager), null, this
 					, (int) (getResources().getDimension(R.dimen._35_)/5)
 					, (int) (GlobalOptions.density*50));

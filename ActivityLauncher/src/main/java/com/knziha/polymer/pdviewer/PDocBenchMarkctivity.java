@@ -10,6 +10,7 @@ import com.knziha.polymer.Utils.CMN;
 import java.io.File;
 import java.io.IOException;
 
+@Deprecated
 public class PDocBenchMarkctivity extends Toastable_Activity {
 	
 	

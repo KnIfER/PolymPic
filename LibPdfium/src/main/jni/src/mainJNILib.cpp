@@ -178,7 +178,6 @@ void rgbBitmapTo565(void *source, int sourceStride, void *dest, AndroidBitmapInf
 }
 
 extern "C" { //For JNI support
-
 // custom getBlock. called every scroll. 
 static int getBlock(void* param, unsigned long position, unsigned char* outBuffer,
         unsigned long size) {
@@ -195,7 +194,7 @@ static int getBlock(void* param, unsigned long position, unsigned char* outBuffe
     }
     if(size) {
         int readCount = pread(doc->fileFd, outBuffer, size, position);
-        LOGE("fatal getBlock position=%ld size=%ld", position, size);
+        //LOGE("fatal getBlock position=%ld size=%ld", position, size);
         if (readCount < 0) {
             LOGE("Cannot read from file descriptor. Error:%d", errno);
             return 0;
@@ -206,7 +205,6 @@ static int getBlock(void* param, unsigned long position, unsigned char* outBuffe
 
 // open pdf from fileDescriptor
 JNI_FUNC(jlong, PdfiumCore, nativeOpenDocument)(JNI_ARGS, jint fd, jstring password, jint largeFileTheta){
-
     size_t fileLength = (size_t)getFileSize(fd);
     if(fileLength <= 0) {
         jniThrowException(env, "java/io/IOException", "File is empty");
@@ -1084,6 +1082,89 @@ JNI_FUNC(void, PdfiumCore, nativeSaveAsCopy)(JNI_ARGS, jlong docPtr, jint fd, jb
 JNI_FUNC(jboolean, PdfiumCore, nativeHasReadBuf)(JNI_ARGS, jlong docPtr) {
     DocumentFile* docFile = (DocumentFile*)docPtr;
     return docFile && docFile->readBuf && docFile->responsibleForReadBuf;
+}
+
+JNI_FUNC(void, PdfiumCore, nativeFindAll)(JNI_ARGS, jlong docPtr, jint pages, jstring key, jint flag, jobject arr) {
+    jclass arrList = env->FindClass("java/util/ArrayList");
+    jmethodID arrList_add = env->GetMethodID(arrList,"add","(Ljava/lang/Object;)Z");
+    jclass SchRecord = env->FindClass("com/shockwave/pdfium/SearchRecord");
+    jmethodID SchRecordInit = env->GetMethodID(SchRecord, "<init>", "(II)V");
+
+    DocumentFile* docFile = (DocumentFile*)docPtr;
+    FPDF_DOCUMENT pdfDoc = docFile->pdfDocument;
+    if(pdfDoc){
+        const unsigned short * keyStr = env->GetStringChars(key, 0);
+        for(int i=0;i<pages;i++) {
+            FPDF_PAGE page = FPDF_LoadPage(pdfDoc, i);
+            if(page) {
+                FPDF_TEXTPAGE text = FPDFText_LoadPage(page);
+                if(text) {
+                    FPDF_SCHHANDLE findHandle = FPDFText_FindStart(text, keyStr, flag, 0);
+
+                    bool ret = FPDFText_FindNext(findHandle);
+                    if(ret) {
+                        //LOGE("fatal 被你找到啦 %d", i);
+                        //env->CallBooleanMethod(arr
+                        //    , arrList_add
+                        //    , i );
+                        env->CallBooleanMethod(arr
+                            , arrList_add
+                            , env->NewObject(SchRecord, SchRecordInit, i, 0) );
+                    }
+
+                    FPDFText_FindClose(findHandle);
+
+                    FPDFText_ClosePage(text);
+                }
+                FPDF_ClosePage(page);
+            }
+        }
+        env->ReleaseStringChars(key, keyStr);
+    }
+
+}
+
+JNI_FUNC(jobject, PdfiumCore, nativeFindPage)(JNI_ARGS, jlong docPtr, jstring key, jint pageIdx, jint flag) {
+    jclass SchRecord = env->FindClass("com/shockwave/pdfium/SearchRecord");
+    jmethodID SchRecordInit = env->GetMethodID(SchRecord, "<init>", "(II)V");
+    DocumentFile* docFile = (DocumentFile*)docPtr;
+    FPDF_DOCUMENT pdfDoc = docFile->pdfDocument;
+    jobject record = nullptr;
+    if(pdfDoc){
+        const unsigned short * keyStr = env->GetStringChars(key, 0);
+        FPDF_PAGE page = FPDF_LoadPage(pdfDoc, pageIdx);
+        if(page) {
+            FPDF_TEXTPAGE text = FPDFText_LoadPage(page);
+            if(text) {
+                FPDF_SCHHANDLE findHandle = FPDFText_FindStart(text, keyStr, flag, 0);
+                bool ret = FPDFText_FindNext(findHandle);
+                if(ret) {
+                   record = env->NewObject(SchRecord, SchRecordInit, pageIdx, 0);
+                }
+                FPDFText_FindClose(findHandle);
+                FPDFText_ClosePage(text);
+            }
+            FPDF_ClosePage(page);
+        }
+        env->ReleaseStringChars(key, keyStr);
+    }
+    return record;
+}
+
+JNI_FUNC(jint, PdfiumCore, nativeFindTextPage)(JNI_ARGS, jlong textPtr, jstring key, jint flag) {
+    const unsigned short * keyStr = env->GetStringChars(key, 0);
+    FPDF_TEXTPAGE text = (FPDF_TEXTPAGE)textPtr;
+    int foundIdx=-1;
+    if(text) {
+        FPDF_SCHHANDLE findHandle = FPDFText_FindStart(text, keyStr, flag, 0);
+        bool ret = FPDFText_FindNext(findHandle);
+        if(ret) {
+           foundIdx = 10;
+        }
+        FPDFText_FindClose(findHandle);
+    }
+    env->ReleaseStringChars(key, keyStr);
+    return foundIdx;
 }
 
 }//extern C

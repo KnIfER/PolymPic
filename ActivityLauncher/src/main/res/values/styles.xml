@@ -40,9 +40,9 @@
 		<item name="android:windowBackground">#fff</item>
 		<item name="ic_launch">@mipmap/ic_launcher</item>
 
-		<item name="android:textSelectHandleLeft">@drawable/drawable_handle_selection_l</item>
-		<item name="android:textSelectHandleRight">@drawable/drawable_handle_selection_r</item>
-		<item name="android:textSelectHandle">@drawable/drawable_handle_selection_m</item>
+<!--		<item name="android:textSelectHandleLeft">@drawable/drawable_handle_selection_l</item>-->
+<!--		<item name="android:textSelectHandleRight">@drawable/drawable_handle_selection_r</item>-->
+<!--		<item name="android:textSelectHandle">@drawable/drawable_handle_selection_m</item>-->
 
 		<item name="android:textSelectHandleWindowStyle">@style/no_animation_th_window</item>
 	</style>

@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@Deprecated
 public class BookMarkActivity extends AppCompatActivity {
 
     private RecyclerView rv;

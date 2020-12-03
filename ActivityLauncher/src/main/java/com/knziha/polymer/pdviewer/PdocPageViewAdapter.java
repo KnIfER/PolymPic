@@ -26,10 +26,12 @@ import com.knziha.polymer.databinding.DocPageItemBinding;
 import com.knziha.polymer.webslideshow.RecyclerViewPager;
 import com.knziha.polymer.webslideshow.RecyclerViewPagerAdapter;
 import com.knziha.polymer.widgets.Utils;
+import com.shockwave.pdfium.SearchRecord;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 
-public class PdocPageViewAdapter extends RecyclerViewPagerAdapter<BrowserActivity.ViewDataHolder<DocPageItemBinding>> implements View.OnTouchListener, RecyclerViewPager.OnPageChangedListener {
+public class PDocPageViewAdapter extends RecyclerViewPagerAdapter<BrowserActivity.ViewDataHolder<DocPageItemBinding>> implements View.OnTouchListener, RecyclerViewPager.OnPageChangedListener {
 	private final PDocViewerActivity a;
 	private final ViewGroup viewpagerParent;
 	private final TextView pageIndicator;
@@ -38,7 +40,7 @@ public class PdocPageViewAdapter extends RecyclerViewPagerAdapter<BrowserActivit
 	private TextView lastSelTv;
 	private boolean tapping;
 	
-	public PdocPageViewAdapter(Context context, ViewGroup vg, RecyclerViewPager recyclerViewPager
+	public PDocPageViewAdapter(Context context, ViewGroup vg, RecyclerViewPager recyclerViewPager
 			, ItemTouchHelper.Callback rvpSwipeCb, PDocViewerActivity a
 			, int itemPad, int itemWidth) {
 		super(context, recyclerViewPager, rvpSwipeCb, itemPad, itemWidth);
@@ -56,7 +58,7 @@ public class PdocPageViewAdapter extends RecyclerViewPagerAdapter<BrowserActivit
 	}
 	
 	public int getItemCount() {
-		return headViewSize*2+a.currentViewer.pages();
+		return headViewSize*2+(resultsProvider==null?a.currentViewer.pages():resultsProvider.getResultCount());
 	}
 	
 	public long getItemId(int position) {
@@ -71,7 +73,7 @@ public class PdocPageViewAdapter extends RecyclerViewPagerAdapter<BrowserActivit
 			a.currentViewer.resetLoRThumbnailTick();
 			for (int position = pageScoper.scopeStart; position <= pageScoper.scopeEnd; position++) {
 				DocPageItemBinding vh = ((BrowserActivity.ViewDataHolder<DocPageItemBinding>) mViewPager.getChildAt(position-pageScoper.scopeStart).getTag()).data;
-				resideThumbnailToAdapterView(vh, position);
+				resideThumbnailToAdapterView(vh, resultsProvider==null?position:resultsProvider.getActualPageAtPosition(position));
 			}
 		}
 	}
@@ -110,7 +112,7 @@ public class PdocPageViewAdapter extends RecyclerViewPagerAdapter<BrowserActivit
 					HorizontalNumberPicker numberpicker = view.findViewById(R.id.numberpicker);
 					numberpicker.setMinValue(1);
 					numberpicker.setMaxValue(a.currentViewer.getPageCount());
-					numberpicker.setValue(mViewPager.getCurrentPosition()-headViewSize);
+					numberpicker.setValue(mViewPager.getCurrentPosition()-headViewSize+1);
 					numberpicker.setOnValueChangedListener((picker, oldVal, newVal) -> {
 						newVal--;
 						numberpicker.setTag(newVal);
@@ -139,14 +141,19 @@ public class PdocPageViewAdapter extends RecyclerViewPagerAdapter<BrowserActivit
 			}
 		} else {
 			BrowserActivity.ViewDataHolder<?> vh = (BrowserActivity.ViewDataHolder<?>) v.getTag();
-			if(a.targetIsPage(vh.position)) {
+			int position = vh.position;
+			if(targetIsPage(position)) {
 				tapping = true;
-				updateIndicatorAndCircle(vh.position);
+				updateIndicatorAndCircle(position);
 				mViewPager.smoothScrollToPosition(mViewPager.getChildAdapterPosition(vh.itemView));
-				a.currentViewer.goToPageCentered(vh.position, true);
+				a.currentViewer.goToPageCentered(resultsProvider==null?position:resultsProvider.getActualPageAtPosition(position), true);
 				tapping = false;
 			}
 		}
+	}
+	
+	private boolean targetIsPage(int position) {
+		return position>=0 && position<(resultsProvider==null?a.currentViewer.pages():resultsProvider.getResultCount());
 	}
 	
 	private void setGridView(boolean gridify) {
@@ -190,9 +197,10 @@ public class PdocPageViewAdapter extends RecyclerViewPagerAdapter<BrowserActivit
 		position-=headViewSize;
 		viewHolder.position=position;
 		View itemView = viewHolder.itemView;
-		vh.tv.setText(String.valueOf(position));
 		iv.getLayoutParams().height=ViewGroup.LayoutParams.MATCH_PARENT;
-		if(a.targetIsPage(position)) {
+		if(targetIsPage(position)) {
+			if(resultsProvider!=null) position = resultsProvider.getActualPageAtPosition(position);
+			vh.tv.setText(String.valueOf(position+1));
 			itemView.getLayoutParams().width=mViewPager.mItemWidth;
 			resideThumbnailToAdapterView(vh, position);
 			itemView.setVisibility(View.VISIBLE);
@@ -211,11 +219,14 @@ public class PdocPageViewAdapter extends RecyclerViewPagerAdapter<BrowserActivit
 		}
 	}
 	
+	/** @param position index of the actual page.
+	 *  Must be called on the main thread. */
 	@Override
 	protected void updateItemAt(Object obj, int position) {
 		if(pageScoper.pageInScope(position))
 		{
-			View ca = mViewPager.getChildAt(position - pageScoper.scopeStart);
+			//CMN.Log("updateItemAt...", position, resultsProvider.getLastQuery());
+			View ca = mViewPager.getChildAt((resultsProvider==null?position:resultsProvider.getLastQuery()) - pageScoper.scopeStart);
 			if(ca!=null) {
 				Bitmap bm = ((PDocView)obj).getLoRThumbnailForPageAt(position);
 				((BrowserActivity.ViewDataHolder<DocPageItemBinding>)ca.getTag()).data.iv.setImageBitmap(bm);
@@ -223,6 +234,7 @@ public class PdocPageViewAdapter extends RecyclerViewPagerAdapter<BrowserActivit
 		}
 	}
 	
+	/** Alter Z-order of the viewpager */
 	@Override
 	public boolean onTouch(View v, MotionEvent event) {
 		if(a.MainMenuListVis && event.getActionMasked()==MotionEvent.ACTION_DOWN) {
@@ -231,32 +243,46 @@ public class PdocPageViewAdapter extends RecyclerViewPagerAdapter<BrowserActivit
 		return false;
 	}
 	
+	/** Alter Z-order of the viewpager */
 	public void reorderToBackIfVis() {
 		if(viewpagerParent.getVisibility()==View.VISIBLE) {
 			reorderViewPager(false);
 		}
 	}
 	
+	/** Alter Z-order of the viewpager */
 	public void reorderViewPager(boolean front) {
 		ViewGroup rootiumPageView = a.root;
 		int cc = rootiumPageView.getChildCount();
-		View ca = rootiumPageView.getChildAt(cc - 1);
+		int delta = 2;
+		View ca = rootiumPageView.getChildAt(cc - delta);
 		if(front) {
 			if(ca!=viewpagerParent) {
 				Utils.removeIfParentBeOrNotBe(viewpagerParent, null, false);
-				rootiumPageView.addView(viewpagerParent, cc-1);
+				rootiumPageView.addView(viewpagerParent, cc-delta);
 			}
 		} else {
 			if(ca==viewpagerParent) {
 				Utils.removeIfParentBeOrNotBe(viewpagerParent, null, false);
-				rootiumPageView.addView(viewpagerParent, cc-3);
+				rootiumPageView.addView(viewpagerParent, cc-2-delta);
 			}
 		}
 	}
 	
+	/** @param newPage index of the new page */
 	@Override
 	public void OnPageChanged(int oldPosition, int newPage) {
+		//if(!targetIsPage(newPage)) return;
+		boolean updateInc=true;
+		if(resultsProvider!=null) {
+			newPage = resultsProvider.queryPositionForActualPage(newPage);
+			if(newPage<0) {
+				newPage=-newPage-1;
+				updateInc = false;
+			}
+		}
 		int finalNewPage = newPage+headViewSize;
+		// A little cumbersome but necessary.
 		mViewPager.scrollToPosition(finalNewPage);
 		if(tapping) {
 			mViewPager.smoothScrollToPosition(finalNewPage);
@@ -266,11 +292,14 @@ public class PdocPageViewAdapter extends RecyclerViewPagerAdapter<BrowserActivit
 				mViewPager.smoothScrollToPosition(finalNewPage);
 			});
 		}
-		updateIndicatorAndCircle(newPage);
+		if(updateInc) {
+			updateIndicatorAndCircle(newPage);
+		}
 	}
 	
+	/** @param newPage position in the adapter without headerview */
 	private void updateIndicatorAndCircle(int newPage) {
-		pageIndicator.setText(" "+(newPage+1)+"/"+a.currentViewer.getPageCount()+" ");
+		pageIndicator.setText(" "+(newPage+1)+"/"+(resultsProvider==null?a.currentViewer.getPageCount():resultsProvider.getResultCount())+" ");
 		View ca = mViewPager.getChildAt(newPage - pageScoper.scopeStart);
 		if(lastSelTv!=null) {
 			lastSelTv.setBackgroundResource(0);
@@ -294,5 +323,10 @@ public class PdocPageViewAdapter extends RecyclerViewPagerAdapter<BrowserActivit
 			reorderViewPager(true);
 		}
 		return vis;
+	}
+	
+	public void setSearchResults(ArrayList<SearchRecord> arr) {
+		resultsProvider = new PDocPageResultsProvider(arr);
+		notifyDataSetChanged();
 	}
 }

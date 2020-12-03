@@ -2,37 +2,29 @@ package com.knziha.polymer.pdviewer;
 
 import android.content.ContentResolver;
 import android.content.Context;
-import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.PointF;
 import android.graphics.RectF;
 import android.net.Uri;
-import android.os.Binder;
 import android.os.ParcelFileDescriptor;
 import android.util.DisplayMetrics;
 import android.util.SparseArray;
 
-import androidx.documentfile.provider.DocumentFile;
-
 import com.knziha.filepicker.utils.FU;
-import com.knziha.polymer.Toastable_Activity;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.text.BreakIteratorHelper;
 import com.knziha.polymer.widgets.Utils;
 import com.shockwave.pdfium.PdfDocument;
 import com.shockwave.pdfium.PdfiumCore;
+import com.shockwave.pdfium.SearchRecord;
 import com.shockwave.pdfium.bookmarks.BookMarkEntry;
 import com.shockwave.pdfium.bookmarks.BookMarkNode;
-import com.shockwave.pdfium.treeview.TreeViewNode;
 import com.shockwave.pdfium.util.Size;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -155,6 +147,31 @@ public class PDocument {
 		}
 	}
 	
+	public void findAll(String key, int flag, ArrayList<SearchRecord> arr) {
+		pdfiumCore.nativeFindAll(pdfDocument.mNativeDocPtr, _num_entries, key, flag, arr);
+	}
+	
+	public SearchRecord findPage(String key, int pageIdx, int flag) {
+		synchronized (PdfiumCore.searchLock)
+		{
+			return pdfiumCore.nativeFindPage(pdfDocument.mNativeDocPtr, key, pageIdx, flag);
+		}
+	}
+	
+	public SearchRecord findPageCached(String key, int pageIdx, int flag) {
+		PDocPage page = mPDocPages[pageIdx];
+		synchronized (page.pid)
+		{
+			boolean shouldClose = page.loadText();
+			int foundIdx = pdfiumCore.nativeFindTextPage(page.tid, key, flag);
+			SearchRecord ret = foundIdx==-1?null:new SearchRecord(pageIdx, foundIdx);
+			if(shouldClose) {
+				page.close();
+			}
+			return ret;
+		}
+	}
+	
 	class PDocPage {
 		final int pageIdx;
 		final Size size;
@@ -177,15 +194,19 @@ public class PDocument {
 			this.size = size;
 		}
 		
-		public void open() {
+		public boolean open() {
 			if(pid.get()==0) {
 				synchronized(pid) {
 					if(pid.get()==0) {
+						//CMN.rt();
 						pid.set(pdfiumCore.openPage(pdfDocument, pageIdx));
 						mPageOpenedRecord.add(pageIdx);
+						//CMN.pt("页面打开时间：");
+						return true;
 					}
 				}
 			}
+			return false;
 		}
 		
 		public void close() {
@@ -199,10 +220,19 @@ public class PDocument {
 			}
 		}
 		
+		public boolean loadText() {
+			synchronized (pid) {
+				boolean shouldClose = open();
+				if (tid == 0) {
+					tid = pdfiumCore.openText(pid.get());
+				}
+				return shouldClose;
+			}
+		}
+		
 		public void prepareText() {
-			open();
-			if(tid==0) {
-				tid = pdfiumCore.openText(pid.get());
+			loadText();
+			if(allText==null) {
 				allText = pdfiumCore.nativeGetText(tid);
 				if(pageBreakIterator==null) {
 					pageBreakIterator = new BreakIteratorHelper();
