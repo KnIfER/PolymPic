@@ -2,6 +2,7 @@ package com.knziha.polymer.pdviewer;
 
 import com.knziha.polymer.PDocViewerActivity;
 import com.knziha.polymer.Utils.CMN;
+import com.shockwave.pdfium.PdfiumCore;
 import com.shockwave.pdfium.SearchRecord;
 
 import java.lang.ref.WeakReference;
@@ -15,6 +16,7 @@ public class PDocSearchTask implements Runnable{
 	public final AtomicBoolean abort = new AtomicBoolean();
 	private final String key;
 	private Thread t;
+	private final int flag=0;
 	
 	private boolean finished;
 	
@@ -33,7 +35,7 @@ public class PDocSearchTask implements Runnable{
 		if(finished) {
 			//a.setSearchResults(arr);
 			//a.showT("findAllTest_Time : "+(System.currentTimeMillis()-CMN.ststrt)+" sz="+arr.size());
-			a.endSearch();
+			a.endSearch(arr);
 		} else {
 			CMN.rt();
 			PDocument pdoc = this.pdoc.get();
@@ -52,15 +54,19 @@ public class PDocSearchTask implements Runnable{
 				}
 			}
 			finished = true;
+			t=null;
 			a.post(this);
 		}
 	}
 	
 	public void start() {
+		if(finished) {
+			return;
+		}
 		if(t==null) {
 			PDocViewerActivity a = this.a.get();
 			if(a!=null) {
-				a.startSearch(arr);
+				a.startSearch(arr, key, flag);
 			}
 			t=new Thread(this);
 			t.start();

@@ -2,11 +2,15 @@ package com.knziha.polymer.pdviewer;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BlendMode;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PointF;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffColorFilter;
+import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -18,6 +22,8 @@ import androidx.annotation.Nullable;
 
 import com.knziha.polymer.R;
 import com.knziha.polymer.Utils.CMN;
+import com.knziha.polymer.pdviewer.searchdata.SearchRecordItem;
+import com.shockwave.pdfium.SearchRecord;
 
 import java.util.ArrayList;
 
@@ -30,6 +36,7 @@ public class PDocSelection extends View {
 	float drawableDeltaW = drawableWidth / 4;
 	Paint rectPaint;
 	Paint rectFramePaint;
+	Paint rectHighlightPaint;
 	/** Small Canvas for magnifier.
 	 * {@link Canvas#clipPath ClipPath} fails if the canvas it too high.
 	 * see <a href="https://issuetracker.google.com/issues/132402784">issuetracker</a>) */
@@ -57,6 +64,8 @@ public class PDocSelection extends View {
 	private float magdraw_stoffX;
 	private float magdraw_edoffX;
 	
+	public PDocPageResultsProvider searchCtx;
+	
 	public PDocSelection(Context context) {
 		super(context);
 		init();
@@ -75,6 +84,11 @@ public class PDocSelection extends View {
 	private void init() {
 		rectPaint = new Paint();
 		rectPaint.setColor(0x66109afe);
+		//rectPaint.setColor(0xffffff00);
+		rectHighlightPaint = new Paint();
+		rectHighlightPaint.setColor(0xffffff00);
+		rectPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DARKEN));
+		rectHighlightPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DARKEN));
 		rectFramePaint = new Paint();
 		rectFramePaint.setColor(0xccc7ab21);
 		rectFramePaint.setStyle(Paint.Style.STROKE);
@@ -184,11 +198,46 @@ public class PDocSelection extends View {
 	
 	@Override
 	protected void onDraw(Canvas canvas) {
-		if(pDocView!=null)
+		if(pDocView==null) {
+			return;
+		}
+		RectF VR = tmpPosRct;
+		Matrix matrix = pDocView.matrix;
+		if(searchCtx!=null) {
+			// 绘制搜索高亮
+			for (int i = 0; i < pDocView.logiLayoutSz; i++) {
+				int pageIdx = pDocView.logiLayoutSt+i;
+				SearchRecord record = searchCtx.getRecordForActualPage(pageIdx);
+				if(record!=null) {
+					PDocument.PDocPage page = pDocView.pdoc.mPDocPages[pageIdx];
+					page.getAllSearchedHighlightRects(record, searchCtx);
+					ArrayList<SearchRecordItem> data = (ArrayList<SearchRecordItem>) record.data;
+					for (int j = 0, len=data.size(); j < len; j++) {
+						RectF[] rects = data.get(j).rects;
+						if(rects!=null) {
+							for(RectF rI:rects) {
+								pDocView.sourceToViewRectFF(rI, VR);
+								matrix.reset();
+								int bmWidth = (int) rI.width();
+								int bmHeight = (int) rI.height();
+								pDocView.setMatrixArray(pDocView.srcArray, 0, 0, bmWidth, 0, bmWidth, bmHeight, 0, bmHeight);
+								pDocView.setMatrixArray(pDocView.dstArray, VR.left, VR.top, VR.right, VR.top, VR.right, VR.bottom, VR.left, VR.bottom);
+								
+								matrix.setPolyToPoly(pDocView.srcArray, 0, pDocView.dstArray, 0, 4);
+								matrix.postRotate(0, pDocView.getScreenWidth(), pDocView.getSHeight());
+								
+								canvas.save();
+								canvas.concat(matrix);
+								VR.set(0, 0, bmWidth, bmHeight);
+								canvas.drawRect(VR, rectHighlightPaint);
+								canvas.restore();
+							}
+						}
+					}
+				}
+			}
+		}
 		if(pDocView.hasSelection) {
-			RectF VR = tmpPosRct;
-			Matrix matrix = pDocView.matrix;
-			
 			pDocView.sourceToViewRectFF(pDocView.handleLeftPos, VR);
 			float left = VR.left+drawableDeltaW;
 			pDocView.handleLeft.setBounds((int)(left-drawableWidth), (int)VR.bottom, (int)left, (int)(VR.bottom+drawableHeight));
@@ -332,8 +381,6 @@ public class PDocSelection extends View {
 		else if(pDocView.hasAnnotSelction) {
 			// 绘制高亮选择框
 			RectF rI=pDocView.annotSelRect;
-			RectF VR = tmpPosRct;
-			Matrix matrix = pDocView.matrix;
 			
 			pDocView.sourceToViewRectFF(rI, VR);
 			matrix.reset();

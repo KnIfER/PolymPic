@@ -407,4 +407,24 @@ public class PdfiumCore {
 	public native void nativeSaveAsCopy(long docPtr, int fd, boolean incremental);
 	
 	public native boolean nativeHasReadBuf(long docPtr);
+	
+	public native boolean nativeTestSetFields(RectF rect);
+	public native boolean nativeTestCallSetFields(RectF rect);
+	public native void nativeTestLoopAdd(ArrayList<Integer> arr, int size);
+	public native int nativeTestAdd(int t);
+	
+	public static native long nativeGetStringChars(String key);
+	public static native void nativeReleaseStringChars(String key, long keyStr);
+	
+	public native long nativeFindTextPageStart(long textPtr, long keyStr, int flag, int startIdx);
+	public native boolean nativeFindTextPageNext(long searchPtr);
+	public native void nativeFindTextPageEnd(long searchPtr);
+	public native int nativeGetFindIdx(long searchPtr);
+	public native int nativeGetFindLength(long searchPtr);
+	
+	public native int nativeCountRects(long textPtr, int st, int ed);
+	public native boolean nativeGetRect(long pagePtr, int offsetY, int offsetX, int width, int height, long textPtr, RectF rect, int idx);
+	
+	
+	
 }

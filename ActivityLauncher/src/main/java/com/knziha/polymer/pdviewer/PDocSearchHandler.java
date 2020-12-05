@@ -15,6 +15,10 @@ import com.knziha.polymer.PDocViewerActivity;
 import com.knziha.polymer.R;
 import com.knziha.polymer.widgets.Utils;
 import com.knziha.polymer.widgets.WaveView;
+import com.shockwave.pdfium.SearchRecord;
+
+import java.util.ArrayList;
+import java.util.Currency;
 
 public class PDocSearchHandler implements View.OnClickListener {
 	final PDocViewerActivity a;
@@ -46,9 +50,6 @@ public class PDocSearchHandler implements View.OnClickListener {
 		drawableAbort.setBounds(drawableSearch.getBounds());
 		
 		etSearch.setText("l-system");
-		
-		waveView = a.adaptermy.viewpagerParent.findViewById(R.id.wave);
-		
 	}
 	
 	@SuppressLint("NonConstantResourceId")
@@ -107,7 +108,14 @@ public class PDocSearchHandler implements View.OnClickListener {
 		task = null;
 	}
 	
-	public void startSearch() {
+	public void startSearch(ArrayList<SearchRecord> arr, String key, int flag) {
+		if(!a.isPagesViewVis()) {
+			a.togglePagesView();
+		}
+		a.setSearchResults(arr, key, flag);
+		if(waveView==null) {
+			waveView = a.adaptermy.viewpagerParent.findViewById(R.id.wave);
+		}
 		searchBtn.setCompoundDrawables(drawableAbort, null, null, null);
 		searchBtn.setText("取消");
 		waveView.setVisibility(View.VISIBLE);
@@ -116,10 +124,14 @@ public class PDocSearchHandler implements View.OnClickListener {
 		waveView.setMax(a.currentViewer.pdoc._num_entries);
 	}
 	
-	public void endSearch() {
+	public void endSearch(ArrayList<SearchRecord> arr) {
 		searchBtn.setCompoundDrawables(drawableSearch, null, null, null);
 		searchBtn.setText("搜索");
 		waveView.setProgressVis(false);
+		if(arr.size()==0) {
+			a.setSearchResults(null, null, 0);
+			waveView.setVisibility(View.GONE);
+		}
 		task = null;
 	}
 	

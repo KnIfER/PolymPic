@@ -333,6 +333,9 @@ public class PDocView extends View {
 			if(still) {
 				mOnPageChangeListener = tmpPCL;
 			}
+			if(shouldDrawSelection()||selectionPaintView.searchCtx!=null) {
+				redrawSel();
+			}
 		}
 	}
 	
@@ -479,7 +482,7 @@ public class PDocView extends View {
 						posY -= pageI.OffsetAlongScrollAxis;
 						posX -= pageI.getLateralOffset();
 					}
-					charIdx = pageI.getCharIdxAtPos(PDocView.this, posX, posY-lineHeight);
+					charIdx = pageI.getCharIdxAtPos(posX, posY-lineHeight);
 					break;
 				}
 			}
@@ -709,35 +712,8 @@ public class PDocView extends View {
 			ArrayList<RectF> selRects = selectionPaintView.rectPool.get(0);
 			PDocument.PDocPage page = pdoc.mPDocPages[selPageSt];
 			if(selRects.size()>0) { //sanity check
-				RectF tmp = new RectF();
-				ArrayList<RectF> selLineRects = new ArrayList<>(selRects.size());
 				RectF box = new RectF(selRects.get(0));
-				RectF currentLineRect=null;
-				for(RectF rI:selRects) {
-					//CMN.Log("RectF rI:selRects", rI);
-					if(currentLineRect!=null&&Math.abs((currentLineRect.top+currentLineRect.bottom)-(rI.top+rI.bottom))<currentLineRect.bottom-currentLineRect.top) {
-						currentLineRect.left = Math.min(currentLineRect.left, rI.left);
-						currentLineRect.right = Math.max(currentLineRect.right, rI.right);
-						currentLineRect.top = Math.min(currentLineRect.top, rI.top);
-						currentLineRect.bottom = Math.max(currentLineRect.bottom, rI.bottom);
-					} else {
-						currentLineRect=new RectF();
-						currentLineRect.set(rI);
-						selLineRects.add(currentLineRect);
-						int cid = page.getCharIdxAtPos(this, rI.left + 1, rI.top + rI.height() / 2);
-						if(cid>0) {
-							page.getCharLoosePos(tmp, cid);
-							currentLineRect.left = Math.min(currentLineRect.left, tmp.left);
-							currentLineRect.right = Math.max(currentLineRect.right, tmp.right);
-							currentLineRect.top = Math.min(currentLineRect.top, tmp.top);
-							currentLineRect.bottom = Math.max(currentLineRect.bottom, tmp.bottom);
-						}
-					}
-					box.left = Math.min(box.left, currentLineRect.left);
-					box.right = Math.max(box.right, currentLineRect.right);
-					box.top = Math.min(box.top, currentLineRect.top);
-					box.bottom = Math.max(box.bottom, currentLineRect.bottom);
-				}
+				ArrayList<RectF> selLineRects = page.mergeLineRects(selRects, box);
 				page.createHighlight(box, selLineRects);
 				invalidateTiles(page, box);
 				clearSelection();
@@ -825,20 +801,20 @@ public class PDocView extends View {
 			for (int i = 0; i < len; i++) {
 				PDocument.QuadShape qI = annotSelection.attachPts[i];
 				setCenterPoint(p, qI.p1, qI.p3);
-				charIdx = annotSelPage.getCharIdxAtPos(this, p.x, p.y);
+				charIdx = annotSelPage.getCharIdxAtPos(p.x, p.y);
 				if(charIdx>=0) {
 					selAnnotSt = Math.min(selAnnotSt, charIdx);
 				}
 				setCenterPoint(p, qI.p2, qI.p4);
-				charIdx = annotSelPage.getCharIdxAtPos(this, p.x, p.y);
+				charIdx = annotSelPage.getCharIdxAtPos(p.x, p.y);
 				if(charIdx>=0) {
 					selAnnotEd = Math.max(selAnnotEd, charIdx+1);
 				}
 			}
 		} else {
 			RectF rect = annotSelection.box;
-			selAnnotSt = annotSelPage.getCharIdxAtPos(this, rect.left, rect.top);
-			selAnnotEd = annotSelPage.getCharIdxAtPos(this, rect.right, rect.bottom);
+			selAnnotSt = annotSelPage.getCharIdxAtPos(rect.left, rect.top);
+			selAnnotEd = annotSelPage.getCharIdxAtPos(rect.right, rect.bottom);
 		}
 	}
 	
@@ -908,7 +884,7 @@ public class PDocView extends View {
 		return charAt<=' ';
 	}
 	
-	final static char[] paragraphSepChars = new char[]{'.', '。', '!', '！'/*, '\'', '”'*/, '?', '？'};
+	final static char[] paragraphSepChars = new char[]{'.', '。', '!', '！'/*, '\'', '”'*/, '?', '？', '”', '“', ':', '：', '\''};
 	
 	private boolean isParagraphSepChar(char charAt) {
 		//CMN.Log("isParagraphSepChar : "+charAt, charAt=='\r', charAt=='\n', charAt==' ');
@@ -1987,7 +1963,7 @@ public class PDocView extends View {
 	}
 	
 	private void handle_proxy_simul(float scaleStamp, PointF translationStamp, float rotationStamp) {
-		if(shouldDrawSelection()) {
+		if(shouldDrawSelection()||selectionPaintView.searchCtx!=null) {
 			redrawSel();
 		}
 //		if (view_to_guard != null) {

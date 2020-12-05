@@ -25,8 +25,8 @@ import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.databinding.DocPageItemBinding;
 import com.knziha.polymer.webslideshow.RecyclerViewPager;
 import com.knziha.polymer.webslideshow.RecyclerViewPagerAdapter;
+import com.knziha.polymer.webslideshow.RecyclerViewPagerSubsetProvider;
 import com.knziha.polymer.widgets.Utils;
-import com.knziha.polymer.widgets.WaveView;
 import com.shockwave.pdfium.SearchRecord;
 
 import java.lang.ref.WeakReference;
@@ -73,7 +73,11 @@ public class PDocPageViewAdapter extends RecyclerViewPagerAdapter<BrowserActivit
 			//CMN.Log("onScrollChange",  pageScoper.scopeStart, pageScoper.scopeEnd);
 			a.currentViewer.resetLoRThumbnailTick();
 			for (int position = pageScoper.scopeStart; position <= pageScoper.scopeEnd; position++) {
-				DocPageItemBinding vh = ((BrowserActivity.ViewDataHolder<DocPageItemBinding>) mViewPager.getChildAt(position-pageScoper.scopeStart).getTag()).data;
+				View ca = mViewPager.getChildAt(position - pageScoper.scopeStart);
+				if(ca==null) {
+					continue;
+				}
+				DocPageItemBinding vh = ((BrowserActivity.ViewDataHolder<DocPageItemBinding>) ca.getTag()).data;
 				resideThumbnailToAdapterView(vh, resultsProvider==null?position:resultsProvider.getActualPageAtPosition(position));
 			}
 		}
@@ -311,6 +315,18 @@ public class PDocPageViewAdapter extends RecyclerViewPagerAdapter<BrowserActivit
 		}
 	}
 	
+	public void refreshIndicator() {
+		int newPage = a.currentViewer.getCurrentPageOnScreen();
+		RecyclerViewPagerSubsetProvider resultsProvider = this.resultsProvider;
+		if(resultsProvider!=null) {
+			newPage = resultsProvider.queryPositionForActualPage(newPage);
+			if(newPage<0) {
+				newPage=-newPage-1;
+			}
+		}
+		pageIndicator.setText(" "+(newPage+1)+"/"+(resultsProvider==null?a.currentViewer.getPageCount():resultsProvider.getResultCount())+" ");
+	}
+	
 	public boolean togglePagesVisibility() {
 		boolean vis = viewpagerParent.getVisibility()==View.VISIBLE;
 		if(vis) {
@@ -326,8 +342,21 @@ public class PDocPageViewAdapter extends RecyclerViewPagerAdapter<BrowserActivit
 		return vis;
 	}
 	
-	public void setSearchResults(ArrayList<SearchRecord> arr) {
-		resultsProvider = new PDocPageResultsProvider(arr);
+	public void setSearchResults(ArrayList<SearchRecord> arr, String key, int flag) {
+		resultsProvider = arr==null?null:new PDocPageResultsProvider(arr, key, flag);
 		notifyDataSetChanged();
+		if(arr==null) {
+			OnPageChanged(0, a.currentViewer.getCurrentPageOnScreen());
+		} else {
+			refreshIndicator();
+		}
+	}
+	
+	public boolean getVisibility() {
+		return viewpagerParent.getVisibility()==View.VISIBLE;
+	}
+	
+	public PDocPageResultsProvider getSearchProvider() {
+		return (PDocPageResultsProvider)resultsProvider;
 	}
 }

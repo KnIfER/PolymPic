@@ -245,7 +245,8 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		systemIntialized = true;
 		
 		//tg
-		togglePagesView();
+		//togglePagesView();
+		
 	}
 	private int padWidth;
 	private int _45_;
@@ -297,17 +298,17 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 				.start();
 	}
 	
-	public void setSearchResults(ArrayList<SearchRecord> arr) {
-		adaptermy.setSearchResults(arr);
+	public void setSearchResults(ArrayList<SearchRecord> arr, String key, int flag) {
+		adaptermy.setSearchResults(arr, key, flag);
+		currentViewer.selectionPaintView.searchCtx = adaptermy.getSearchProvider();
 	}
 	
-	public void startSearch(ArrayList<SearchRecord> arr) {
-		adaptermy.setSearchResults(arr);
-		searchHandler.startSearch();
+	public void startSearch(ArrayList<SearchRecord> arr, String key, int flag) {
+		searchHandler.startSearch(arr, key, flag);
 	}
 	
-	public void endSearch() {
-		searchHandler.endSearch();
+	public void endSearch(ArrayList<SearchRecord> arr) {
+		searchHandler.endSearch(arr);
 	}
 	
 	public void notifyItemAdded(PDocSearchTask pDocSearchTask, ArrayList<SearchRecord> arr, SearchRecord schRecord, int itemCount) {
@@ -319,6 +320,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 					int sz = arr.size()-1;
 					//adaptermy.notifyItemRangeInserted(sz, 1);
 					adaptermy.notifyDataSetChanged();
+					adaptermy.refreshIndicator();
 					searchHandler.setProgress(itemCount);
 				}
 			}
@@ -502,6 +504,12 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 	@Override
 	public void onClick(View v) {
 		switch (v.getId()) {
+			case R.id.browser_widget7: {
+				currentViewer.pdoc.test1();
+			} break;
+			case R.id.browser_widget8: {
+				currentViewer.pdoc.test2();
+			} break;
 			case R.id.browser_widget9: {
 				if(searchHandler==null) {
 					searchHandler = new PDocSearchHandler(this, (ViewGroup) UIData.searchToolbar.getViewStub().inflate());
@@ -539,7 +547,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 	/** Show/Hide Pages View of Small Thumbnails.
 	 *     切换缩略图卷轴/网格
 	 *  	*/
-	private void togglePagesView() {
+	public void togglePagesView() {
 		if(adaptermy==null) {
 			ViewGroup vg = (ViewGroup) UIData.viewpagerParent.getViewStub().inflate();
 			adaptermy = new PDocPageViewAdapter(this, vg
@@ -551,6 +559,10 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		if(MainMenuListVis) {
 			toggleMainMenuList();
 		}
+	}
+	
+	public boolean isPagesViewVis() {
+		return adaptermy!=null && adaptermy.getVisibility();
 	}
 	
 	private boolean InvalidSate() {
@@ -636,7 +648,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 			word = getSelection();
 		}
 		if(word!=null) {
-			if(false) {
+			if(true) {
 				Intent intent = new Intent("colordict.intent.action.SEARCH");
 				intent.putExtra("EXTRA_QUERY", word);
 				//hidingContextMenu=true;

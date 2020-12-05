@@ -13,6 +13,7 @@ import android.util.SparseArray;
 
 import com.knziha.filepicker.utils.FU;
 import com.knziha.polymer.Utils.CMN;
+import com.knziha.polymer.pdviewer.searchdata.SearchRecordItem;
 import com.knziha.polymer.text.BreakIteratorHelper;
 import com.knziha.polymer.widgets.Utils;
 import com.shockwave.pdfium.PdfDocument;
@@ -24,7 +25,9 @@ import com.shockwave.pdfium.util.Size;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -318,7 +321,7 @@ public class PDocument {
 		 * @posX position X in the page coordinate<br/>
 		 * @posY position Y in the page coordinate<br/>
 		 * */
-		public int getCharIdxAtPos(PDocView view, float posX, float posY) {
+		public int getCharIdxAtPos(float posX, float posY) {
 			prepareText();
 			if(tid!=0) {
 				return pdfiumCore.nativeGetCharIndexAtCoord(pid.get(), size.getWidth(), size.getHeight(), tid
@@ -488,6 +491,83 @@ public class PDocument {
 				mAnnotRects=null;
 			}
 		}
+		
+		public void getAllSearchedHighlightRects(SearchRecord record, PDocPageResultsProvider searchCtx) {
+			prepareText();
+			//if(record.data==null)
+			{
+				CMN.rt();
+				ArrayList<SearchRecordItem> data = new ArrayList<>();
+				record.data = data;
+				long keyStr = searchCtx.getKeyStr();
+				if(keyStr!=0) {
+					long searchHandle = pdfiumCore.nativeFindTextPageStart(tid, keyStr, searchCtx.flag, record.findStart);
+					if(searchHandle!=0) {
+						while(pdfiumCore.nativeFindTextPageNext(searchHandle)) {
+							int st = pdfiumCore.nativeGetFindIdx(searchHandle);
+							int ed = pdfiumCore.nativeGetFindLength(searchHandle);
+							getHighlightRectsForRecord(data, st, ed);
+						}
+						pdfiumCore.nativeFindTextPageEnd(searchHandle);
+					}
+				}
+				CMN.pt("getAllSearchedHighlightRects：");
+			}
+		}
+		
+		private void getHighlightRectsForRecord(ArrayList<SearchRecordItem> data, int st, int ed) {
+			if(st>=0&&ed>0) {
+				int  rectCount = pdfiumCore.nativeCountRects(tid, st, ed);
+				if(rectCount>0) {
+					RectF[] rects = new RectF[rectCount];
+					for (int i = 0; i < rectCount; i++) {
+						RectF rI = new RectF();
+						pdfiumCore.nativeGetRect(pid.get()
+								, isHorizontalView?getLateralOffset():(int)OffsetAlongScrollAxis
+								, isHorizontalView?(int)OffsetAlongScrollAxis:getLateralOffset()
+								, size.getWidth(), size.getHeight()
+								,tid, rI, i);
+						rects[i]=rI;
+					}
+					rects = mergeLineRects(Arrays.asList(rects), null).toArray(new RectF[0]);
+					data.add(new SearchRecordItem(st, ed, rects));
+				}
+			}
+		}
+		
+		public ArrayList<RectF> mergeLineRects(List<RectF> selRects, RectF box) {
+			RectF tmp = new RectF();
+			ArrayList<RectF> selLineRects = new ArrayList<>(selRects.size());
+			RectF currentLineRect=null;
+			for(RectF rI:selRects) {
+				//CMN.Log("RectF rI:selRects", rI);
+				if(currentLineRect!=null&&Math.abs((currentLineRect.top+currentLineRect.bottom)-(rI.top+rI.bottom))<currentLineRect.bottom-currentLineRect.top) {
+					currentLineRect.left = Math.min(currentLineRect.left, rI.left);
+					currentLineRect.right = Math.max(currentLineRect.right, rI.right);
+					currentLineRect.top = Math.min(currentLineRect.top, rI.top);
+					currentLineRect.bottom = Math.max(currentLineRect.bottom, rI.bottom);
+				} else {
+					currentLineRect=new RectF();
+					currentLineRect.set(rI);
+					selLineRects.add(currentLineRect);
+					int cid = getCharIdxAtPos(rI.left + 1, rI.top + rI.height() / 2);
+					if(cid>0) {
+						getCharLoosePos(tmp, cid);
+						currentLineRect.left = Math.min(currentLineRect.left, tmp.left);
+						currentLineRect.right = Math.max(currentLineRect.right, tmp.right);
+						currentLineRect.top = Math.min(currentLineRect.top, tmp.top);
+						currentLineRect.bottom = Math.max(currentLineRect.bottom, tmp.bottom);
+					}
+				}
+				if(box!=null) {
+					box.left = Math.min(box.left, currentLineRect.left);
+					box.right = Math.max(box.right, currentLineRect.right);
+					box.top = Math.min(box.top, currentLineRect.top);
+					box.bottom = Math.max(box.bottom, currentLineRect.bottom);
+				}
+			}
+			return selLineRects;
+		}
 	}
 	
 	// https://www.cnblogs.com/fangsmile/p/9306510.html
@@ -625,5 +705,45 @@ public class PDocument {
 		return "PDocument{" +
 				"isClosed=" + isClosed +
 				'}';
+	}
+	
+	public void test() {
+		ArrayList<Integer> arr = new ArrayList<>();
+		int sz = 2000;
+		
+		CMN.rt();
+		for (int i = 0; i < sz*2; i++) {
+			pdfiumCore.nativeTestAdd(i);
+		}
+		CMN.pt("nativeTestLoopAdd_1：");
+		
+		CMN.rt();
+		pdfiumCore.nativeTestLoopAdd(arr, sz);
+		CMN.pt("nativeTestLoopAdd_0：");
+	}
+	public void test1() {
+		CMN.rt();
+		CMN.Log("nativeGetStringChars 1", pdfiumCore.nativeGetStringChars("happy"));
+		CMN.Log("nativeGetStringChars 2", pdfiumCore.nativeGetStringChars("happy"));
+		CMN.pt("nativeGetStringChars：");
+	}
+	public void test2() {
+		int sz = 2000;
+		
+		
+		CMN.rt();
+		for (int i = 0; i < sz; i++) {
+			RectF rect = new RectF();
+			pdfiumCore.nativeTestCallSetFields(rect);
+		}
+		CMN.pt("nativeTestCallSetFields call：");
+		
+		
+		CMN.rt();
+		for (int i = 0; i < sz; i++) {
+			RectF rect = new RectF();
+			pdfiumCore.nativeTestSetFields(rect);
+		}
+		CMN.pt("nativeTestCallSetFields set：");
 	}
 }

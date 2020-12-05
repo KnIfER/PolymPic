@@ -2,7 +2,10 @@ package com.knziha.polymer.pdviewer;
 
 import android.os.Looper;
 
+import androidx.annotation.NonNull;
+
 import com.knziha.polymer.webslideshow.RecyclerViewPagerSubsetProvider;
+import com.shockwave.pdfium.PdfiumCore;
 import com.shockwave.pdfium.SearchRecord;
 
 import java.util.ArrayList;
@@ -12,9 +15,18 @@ public class PDocPageResultsProvider extends RecyclerViewPagerSubsetProvider {
 	final ArrayList<SearchRecord> results;
 	private int lastQuery;
 	
-	/** @param results the sorted array of matched page index along with the first match index. */
-	public PDocPageResultsProvider(ArrayList<SearchRecord> results) {
+	public final String key;
+	public final int flag;
+	private long keyStr;
+	
+	/**
+	 * @param results the sorted array of matched page index along with the first match index.
+	 * @param key search pattern from the search task
+	 * @param flag search flag from the search task */
+	public PDocPageResultsProvider(@NonNull ArrayList<SearchRecord> results, String key, int flag) {
 		this.results = results;
+		this.key = key;
+		this.flag = flag;
 	}
 	
 	public int getResultCount() {
@@ -65,5 +77,26 @@ public class PDocPageResultsProvider extends RecyclerViewPagerSubsetProvider {
 	
 	public int getLastQuery() {
 		return lastQuery;
+	}
+	
+	public void release() {
+		if(keyStr!=0) {
+			PdfiumCore.nativeReleaseStringChars(key, keyStr);
+		}
+	}
+	
+	public long getKeyStr() {
+		if(keyStr==0) {
+			keyStr = PdfiumCore.nativeGetStringChars(key);
+		}
+		return keyStr;
+	}
+	
+	public SearchRecord getRecordForActualPage(int page) {
+		int idx = queryPositionForActualPage(page);
+		if(idx>=0 && idx<results.size()) {
+			return results.get(idx);
+		}
+		return null;
 	}
 }
