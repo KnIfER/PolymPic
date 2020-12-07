@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PdfiumCore {
-    private static final String TAG = PdfiumCore.class.getName();
     private static final Class FD_CLASS = FileDescriptor.class;
     private static final String FD_FIELD_NAME = "descriptor";
 	
@@ -26,9 +25,11 @@ public class PdfiumCore {
 
     static {
         try {
-            System.loadLibrary("pdfium-lib");
+			//System.loadLibrary("c++_shared");
+			//System.loadLibrary("pdfium");
+			System.loadLibrary("pdfium-lib");
         } catch (UnsatisfiedLinkError e) {
-            Log.e(TAG, "Native libraries failed to load - " + e);
+            Log.e("Fatal", "Native libraries failed to load - " + e);
         }
     }
 	
@@ -139,7 +140,7 @@ public class PdfiumCore {
     /** Context needed to get screen density */
     public PdfiumCore(Context ctx) {
         mCurrentDpi = ctx.getResources().getDisplayMetrics().densityDpi;
-        Log.d(TAG, "Starting PdfiumAndroid " + BuildConfig.VERSION_NAME);
+        Log.d("Fatal", "Starting PdfiumAndroid " + BuildConfig.VERSION_NAME);
     }
 
     /** Create new document from file */
@@ -259,10 +260,10 @@ public class PdfiumCore {
                 nativeRenderPage(pagePtr, surface, mCurrentDpi,
                         startX, startY, drawSizeX, drawSizeY, renderAnnot);
             } catch (NullPointerException e) {
-                Log.e(TAG, "mContext may be null");
+                Log.e("Fatal", "mContext may be null");
                 e.printStackTrace();
             } catch (Exception e) {
-                Log.e(TAG, "Exception throw from native");
+                Log.e("Fatal", "Exception throw from native");
                 e.printStackTrace();
             }
         }
@@ -297,7 +298,7 @@ public class PdfiumCore {
                 nativeRenderPageBitmap(doc.mNativeDocPtr, pagePtr, bitmap, mCurrentDpi,
                         startX, startY, drawSizeX, drawSizeY, renderAnnot);
             } catch (Exception e) {
-                Log.e(TAG, "Exception throw from native");
+                Log.e("Fatal", "Exception throw from native");
                 e.printStackTrace();
             }
         }

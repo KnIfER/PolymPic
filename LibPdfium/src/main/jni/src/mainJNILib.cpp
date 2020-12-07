@@ -32,13 +32,12 @@ static void initLibraryIfNeed(){
     Mutex::Autolock lock(sLibraryLock);
     if(sLibraryReferenceCount == 0){
         LOGD("Init FPDF library");
-        //FPDF_InitLibrary();
+        FPDF_InitLibrary();
         FPDF_LIBRARY_CONFIG config;
         config.version = 2;
         config.m_pUserFontPaths = nullptr;
         config.m_pIsolate = nullptr;
         config.m_v8EmbedderSlot = 0;
-
         FPDF_InitLibraryWithConfig(&config);
     }
     sLibraryReferenceCount++;
@@ -902,7 +901,7 @@ JNI_FUNC(jint, PdfiumCore, nativeCountAttachmentPoints)(JNI_ARGS, jlong annotPtr
     return FPDFAnnot_CountAttachmentPoints((FPDF_ANNOTATION)annotPtr);
 }
 
-JNI_FUNC(jboolean, PdfiumCore, nativeGetAttachmentPoints)(JNI_ARGS, jlong pagePtr, jlong annotPtr, jlong idx, jint width, jint height, jobject p1, jobject p2, jobject p3, jobject p4) {
+JNI_FUNC(jboolean, PdfiumCore, nativeGetAttachmentPoints)(JNI_ARGS, jlong pagePtr, jlong annotPtr, jint idx, jint width, jint height, jobject p1, jobject p2, jobject p3, jobject p4) {
 	jclass point = env->FindClass("android/graphics/PointF");
     jmethodID point_set = env->GetMethodID(point,"set","(FF)V");
 

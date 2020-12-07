@@ -7,6 +7,7 @@ import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.ClipData;
 import android.content.ClipboardManager;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -467,7 +468,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 					}
 					// or open the history activity.
 					else {
-						
+					
 					}
 				}
 			}
@@ -536,7 +537,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		fadeInContents.addListener(new Animator.AnimatorListener() {
 			@Override public void onAnimationStart(Animator animation) { }
 			@Override public void onAnimationEnd(Animator animation) {
-				getWindow().setBackgroundDrawable(null);
+				//getWindow().setBackgroundDrawable(null);
 			}
 			@Override public void onAnimationCancel(Animator animation) { }
 			@Override public void onAnimationRepeat(Animator animation) { }
@@ -729,9 +730,17 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 			Intent intent = new Intent(Action);
 			intent.setType("text/plain");
 			try {
-				intent.setPackage(GoogleTranslate);
+				//intent.setPackage(GoogleTranslate);
+				intent.setClassName(GoogleTranslate, "com.google.android.apps.translate.TranslateActivity");
 				intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+				intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
 				intent.putExtra(Extra, phrase);
+//				intent.putExtra("key_text_input", "hello");
+//				intent.putExtra("key_text_output", "");
+//				intent.putExtra("key_language_from", "en");
+//				intent.putExtra("key_language_to", "mal");
+//				intent.putExtra("key_suggest_translation", "");
+				intent.putExtra("key_from_floating_window", true);
 				startActivity(intent);
 			} catch (Exception e) {
 				showT(R.string.gt_no_inst);

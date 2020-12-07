@@ -16,6 +16,7 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.database.Cursor;
@@ -78,6 +79,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.GlobalOptions;
 import androidx.appcompat.widget.ListPopupWindow;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
+import androidx.core.content.ContextCompat;
 import androidx.core.content.pm.ShortcutInfoCompat;
 import androidx.core.content.pm.ShortcutManagerCompat;
 import androidx.core.graphics.drawable.IconCompat;
@@ -315,7 +317,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			fadeInContents.addListener(new Animator.AnimatorListener() {
 				@Override public void onAnimationStart(Animator animation) { }
 				@Override public void onAnimationEnd(Animator animation) {
-					win.setBackgroundDrawable(null);
+					//win.setBackgroundDrawable(new ColorDrawable(0));
 				}
 				@Override public void onAnimationCancel(Animator animation) { }
 				@Override public void onAnimationRepeat(Animator animation) { }
@@ -2213,7 +2215,11 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	}
 	
 	private void AddPDFViewerShortCut(Context context) {
+		//showT("啦啦啦"+(ContextCompat.checkSelfPermission(context, "com.android.launcher.permission.INSTALL_SHORTCUT")
+		//		!= PackageManager.PERMISSION_GRANTED));
 		if (ShortcutManagerCompat.isRequestPinShortcutSupported(context)) {
+			showT("啦啦啦");
+			
 			Intent intent = new Intent(Intent.ACTION_MAIN);
 			intent.setClassName("com.knziha.polymer", "com.knziha.polymer.PDocShortCutActivity");
 			intent.putExtra("main", true);

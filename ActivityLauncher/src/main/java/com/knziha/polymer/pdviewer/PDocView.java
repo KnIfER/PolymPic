@@ -284,6 +284,7 @@ public class PDocView extends View {
 	private boolean downFlinging;
 	private boolean abortNextDoubleTapZoom;
 	private MotionEvent wastedEvent;
+	private static boolean stdFling = !Utils.littleCake;
 	
 	public int getCurrentPageOnScreen() {
 		return lastMiddlePage;
@@ -399,7 +400,9 @@ public class PDocView extends View {
 					invalidate();
 					//postInvalidate();
 				}
-				//viewPoster.post(this);
+				if(!stdFling) {
+					post(this);
+				}
 			} else {
 				isFlinging = false;
 				if(freefling && shouldDrawSelection()) {
@@ -983,7 +986,7 @@ public class PDocView extends View {
 		
 		public void start() {
 			if(t==null) {
-				t=new Thread(this);
+				t=new Thread(this, "PDocInit");
 				t.start();
 			}
 		}
@@ -1054,7 +1057,7 @@ public class PDocView extends View {
 				//if(false)
 				if (panEnabled && (readySent||isProxy)
 						//&& (Math.abs(e1.getX() - e2.getX()) > 50 || Math.abs(e1.getY() - e2.getY()) > 50)
-						&& (Math.abs(velocityX) > 500 || Math.abs(velocityY) > 500)
+						//&& (Math.abs(velocityX) > 500 || Math.abs(velocityY) > 500)
 						&& !isZooming) {
 					
 					float vxDelta = vTranslate.x;
@@ -1123,7 +1126,7 @@ public class PDocView extends View {
 							distanceX = minX >= 0 ? 0 : (int) (vX > 0 ? Math.abs(vxDelta) : vxDelta - widthDelta);
 							distanceY = minY >= 0 ? 0 : (int) (vY > 0 ? Math.abs(vyDelta) : vyDelta - heightDelta);
 						}
-						CMN.Log("fling 初始参数(vs, vy, distX, distY)", flingVx, flingVy, distanceX, distanceY);
+						CMN.Log("fling 初始参数(vx, vy, distX, distY)", flingVx, flingVy, distanceX, distanceY);
 						
 						vX = Math.abs(vX);
 						vY = Math.abs(vY);
@@ -1138,14 +1141,15 @@ public class PDocView extends View {
 						if (velocityY == 0) distanceY = 0;
 
 						mLastFlingY = mLastFlingX = 0;
-						CMN.Log("fling 最终参数(vs, vy, distX, distY)", flingVx, flingVy, distanceX, distanceY);
-
+						CMN.Log("fling 最终参数(vx, vy, distX, distY)", flingVx, flingVy, distanceX, distanceY);
+						
 						flingScroller.fling(mLastFlingX, mLastFlingY, (int) vX, (int) vY,
 								0, distanceX, 0, distanceY, overX, overY, SameDir);
-						
 						isFlinging = true;
-						//viewPoster.post(flingRunnable);
-						return true;
+						if(!stdFling) {
+							post(flingRunnable);
+						}
+						return false;
 					}
 				}
 				return super.onFling(e1, e2, velocityX, velocityY);
@@ -2598,7 +2602,7 @@ public class PDocView extends View {
 //		if (anim != null) {
 //			handle_animation();
 //		} else
-		if(isFlinging) {
+		if(stdFling && isFlinging) {
 			flingRunnable.run();
 		}
 	}
@@ -3322,10 +3326,14 @@ public class PDocView extends View {
 	}
 	
 	TileLoadingTask[] threadPool = new TileLoadingTask[8];
+	int threadIter=0;
 	
 	public TileLoadingTask acquireFreeTask() {
 		TileLoadingTask tI = null;
-		for (int i = 0; i < 3; i++) {
+		boolean wildMan = true;
+		int i = wildMan?0:++threadIter;
+		for (int iter = 0; iter < 3; iter++) {
+			i = (i+iter)%3;
 			tI = threadPool[i];
 			if(tI!=null) {
 				tI.acquire();
@@ -3333,14 +3341,21 @@ public class PDocView extends View {
 					tI.dequire();
 					threadPool[i]=null;
 				} else {
-					//CMN.Log("reusing…………");
-					break;
+					//CMN.Log("TileLoadingTask reusing…………");
+					if(!wildMan)
+					return tI;
 				}
 			}
+			if(wildMan) continue;
+			//CMN.Log("TileLoadingTask new task…………");
+			threadPool[i] = tI = new TileLoadingTask(this);
+			tI.acquire();
+			return tI;
 		}
-		for (int i = 0; i < 8; i++) {
-			if(threadPool[i]==null) {
-				threadPool[i] = tI = new TileLoadingTask(this);
+		if(wildMan)
+		for (int j = 0; j < 8; j++) {
+			if(threadPool[j]==null) {
+				threadPool[j] = tI = new TileLoadingTask(this);
 				tI.acquire();
 				//CMN.Log("New Thread!!!…………", i);
 				break;
@@ -3356,6 +3371,8 @@ public class PDocView extends View {
 		public final AtomicBoolean acquired=new AtomicBoolean();
 		final List<TaskToken> list = Collections.synchronizedList(new ArrayList<>(32));
 		int listSz;
+		private boolean sleeping;
+		
 		public TileLoadingTask(PDocView piv) {
 			this.iv = new WeakReference<>(piv);
 		}
@@ -3367,6 +3384,7 @@ public class PDocView extends View {
 			}
 			PDocView piv = iv.get();
 			try {
+				while(true) {
 				boolean seekingTaskForWho = true;
 				boolean isTaskForThisView = false;
 				while((listSz=list.size())>0 || acquired.get()) {
@@ -3398,12 +3416,29 @@ public class PDocView extends View {
 						}
 						//else CMN.Log("aborted");
 					}
+					else {
+						try {
+							sleeping=true;
+							Thread.sleep(200);
+						} catch (InterruptedException e) {
+							sleeping=false;
+						}
+					}
 				}
 				if(piv.flingScroller.isFinished())
 					piv.postInvalidate();
 				if(piv.imageLoading && piv.mImageReadyListener!=null) {
 					piv.mImageReadyListener.ImageReady();
 					piv.imageLoading = false;
+				}
+				try {
+					sleeping=true;
+					Thread.sleep(5000);
+				} catch (InterruptedException e) {
+					sleeping=false;
+					continue;
+				}
+				break;
 				}
 			} catch (Exception e) {
 				CMN.Log(e);
@@ -3432,8 +3467,11 @@ public class PDocView extends View {
 		
 		public void startIfNeeded() {
 			if(t==null&&list.size()>0) {
-				t = new Thread(this);
+				t = new Thread(this, "PDocDcd");
 				t.start();
+			}
+			if(sleeping) {
+				t.interrupt();
 			}
 		}
 	}

@@ -14,6 +14,7 @@ import androidx.core.content.res.ResourcesCompat;
 
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.pdviewer.PDFPageParms;
+import com.knziha.polymer.widgets.Utils;
 
 import java.io.File;
 import java.util.HashSet;
@@ -53,7 +54,9 @@ public class PDocShortCutActivity extends Activity {
 		
 		super.onCreate(savedInstanceState);
 		
-		//finish();
+		if(Utils.littleCat) {
+			finish();
+		}
 		
 //		overridePendingTransition(0, 0);
 	}
