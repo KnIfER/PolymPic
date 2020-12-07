@@ -697,7 +697,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 			if(true) {
 				Intent intent = new Intent("colordict.intent.action.SEARCH");
 				intent.putExtra("EXTRA_QUERY", word);
-				//hidingContextMenu=true;
+				hidingContextMenu=true;
 				startActivity(intent);
 			} else {
 				translateSelection(word, true);

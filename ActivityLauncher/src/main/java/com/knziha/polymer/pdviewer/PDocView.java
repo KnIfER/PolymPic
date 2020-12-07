@@ -1044,6 +1044,7 @@ public class PDocView extends View {
 			
 			@Override
 			public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+				CMN.Log("onFling");
 				onFlingDetected =true;
 				if(isQuickScaling||scale < minScale() || scale>maxScale || draggingHandle!=null){
 					return true;
@@ -1201,7 +1202,7 @@ public class PDocView extends View {
 						wastedClickTime = e.getDownTime();
 					}
 					
-					if(true && singleTapSel) {
+					if(true /*&& singleTapSel*/) {
 						// select annotation
 						PDocument.AnnotShape annot = pageI.selAnnotAtPos(PDocView.this, posX, posY);
 						if(annot!=null) {
@@ -1226,6 +1227,8 @@ public class PDocView extends View {
 			
 			@Override
 			public boolean onDoubleTapEvent(MotionEvent e) {
+				// remove this to enable quickScaling after dismissed selection.
+				if(!abortNextDoubleTapZoom)
 				if(treatNxtUpAsSingle && e.getActionMasked()==MotionEvent.ACTION_UP) {
 					onSingleTapUp(e);
 				}
@@ -1238,6 +1241,11 @@ public class PDocView extends View {
 						wastedClickTime = 0;
 						abortNextDoubleTapZoom=false;
 					}
+				}
+				// remove this to enable quickScaling after dismissed selection.
+				if(abortNextDoubleTapZoom) {
+					setGestureDetector(getContext());
+					return false;
 				}
 				if (zoomEnabled && (readySent||isProxy) && e.getActionMasked()==MotionEvent.ACTION_DOWN) {
 					CMN.Log("kiam 双击");
@@ -2477,7 +2485,7 @@ public class PDocView extends View {
 					}
 				}
 			}
-			
+			//CMN.Log("这一轮更新", tickCheckHiResRgnsItSt, tickCheckHiResRgnsIter);
 			tickCheckHiResRgnsItSt = (tickCheckHiResRgnsItSt+tickCheckHiResRgnsIter)%RTLIMIT;
 			tastSize = task==null?0:task.list.size()-tastSize;
 			//if(tastSize>0) CMN.Log("region_bitmap_assignment::", tastSize);
