@@ -16,13 +16,13 @@ import com.knziha.filepicker.model.GlideCacheModule;
 import com.knziha.filepicker.settings.FilePickerOptions;
 import com.knziha.filepicker.utils.CMNF;
 import com.knziha.polymer.BrowserActivity;
+import com.knziha.polymer.pdviewer.bookdata.BookOptions;
 import com.knziha.polymer.widgets.XYTouchRecorder;
 
 import org.adrianwalker.multilinestring.Multiline;
 
 //@SuppressWarnings("ALL")
-public class Options implements WebOptions
-{
+public class Options implements WebOptions, BookOptions {
 	
 	private final SharedPreferences defaultReader;
 	public DisplayMetrics dm;
@@ -255,5 +255,23 @@ public class Options implements WebOptions
 				ThirdFlag=val;
 			break;
 		}
+	}
+	
+	public long getLastOpendPDocID() {
+		return defaultReader.getLong("docId", -1);
+	}
+	
+	public void putLastOpendPDocID(long rowID) {
+		defaultReader.edit().putLong("docId", rowID).apply();
+	}
+	
+	@Override
+	public boolean getSingleTapSelWord() {
+		return true;
+	}
+	
+	@Override
+	public boolean getSingleTapClearSel() {
+		return true;
 	}
 }

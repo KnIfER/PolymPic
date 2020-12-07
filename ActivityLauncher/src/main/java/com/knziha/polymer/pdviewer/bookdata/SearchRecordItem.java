@@ -1,4 +1,4 @@
-package com.knziha.polymer.pdviewer.searchdata;
+package com.knziha.polymer.pdviewer.bookdata;
 
 import android.graphics.RectF;
 

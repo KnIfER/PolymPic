@@ -20,7 +20,7 @@ import androidx.annotation.Nullable;
 
 import com.knziha.polymer.R;
 import com.knziha.polymer.Utils.CMN;
-import com.knziha.polymer.pdviewer.searchdata.SearchRecordItem;
+import com.knziha.polymer.pdviewer.bookdata.SearchRecordItem;
 import com.shockwave.pdfium.SearchRecord;
 
 import java.util.ArrayList;

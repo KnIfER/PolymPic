@@ -56,7 +56,7 @@ import com.knziha.polymer.pdviewer.PDocView;
 import com.knziha.polymer.pdviewer.PDocument;
 import com.knziha.polymer.pdviewer.PDocPageViewAdapter;
 import com.knziha.polymer.pdviewer.bookmarks.BookMarksFragment;
-import com.knziha.polymer.pdviewer.searchdata.PDocBookInfo;
+import com.knziha.polymer.pdviewer.bookdata.PDocBookInfo;
 import com.knziha.polymer.widgets.AppIconsAdapter;
 import com.knziha.polymer.widgets.DescriptiveImageView;
 import com.knziha.polymer.widgets.Utils;
@@ -137,6 +137,8 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		
 		try {
 			currentViewer.dm=dm;
+			
+			currentViewer.opt=opt;
 			
 			currentViewer.a=this;
 			
@@ -220,6 +222,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 				public void saveBookInfo(PDocBookInfo bookInfo) {
 					CMN.Log("saveBookInfo…");
 					historyCon.savePDocInfo(bookInfo);
+					opt.putLastOpendPDocID(bookInfo.rowID);
 				}
 			});
 		} catch (Exception e) {
@@ -446,9 +449,32 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 	
 	private void processIntent(Intent intent, boolean 人生若只如初见, boolean 不如不见) {
 		Uri uri = intent.getData();
+		if(uri==null) {
+			// Url is empty. Either it is the newly launched main viewer or some bug exists.
+			if(intent.hasExtra("main")) {
+				if(currentViewer.pdoc==null) {
+					// restore latest doc from the database.
+					if(true) {
+						//showT("restore latest doc");
+						long docID = opt.getLastOpendPDocID();
+						if(docID!=-1) {
+							uri = historyCon.getDocUrlForID(docID);
+						}
+						if(uri==null) {
+							uri = Uri.fromFile(Utils.preparePDFGuide(this));
+						}
+						intent.setData(uri);
+					}
+					// or open the history activity.
+					else {
+						
+					}
+				}
+			}
+		}
 		if(uri!=null && !currentViewer.isDocTheSame(uri)) {
 			if(!不如不见) {
-				uri = Utils.getSimplifiedUrl(this, intent.getData());
+				uri = Utils.getSimplifiedUrl(this, uri);
 			}
 			CMN.Log("processIntent", intent, uri);
 			if(uri!=null) {
@@ -470,18 +496,6 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 									getTheme()));
 					setTaskDescription(taskDesc);
 				}
-			} else { //tg
-				//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/Gpu Pro 1.pdf");
-				
-				//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/YotaSpec02.pdf"); // √
-				//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/sample.pdf");
-				//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/sig-notes.pdf");
-				//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/sig-notes-new-txt.pdf");
-				
-				//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/sig-notes-t.pdf");
-				//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/tmp.pdf");
-				//currentViewer.setDocumentPath("/storage/emulated/0/myFolder/sig-notes-new-txt-page0.pdf");
-				currentViewer.setDocumentPath("/storage/emulated/0/myFolder/1.pdf");
 			}
 		}
 		PDFPageParms pageParms = parsePDFPageParms(intent);

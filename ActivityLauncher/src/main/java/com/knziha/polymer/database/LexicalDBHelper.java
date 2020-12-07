@@ -12,8 +12,7 @@ import android.text.TextUtils;
 import android.util.SparseArray;
 
 import com.knziha.polymer.Utils.CMN;
-import com.knziha.polymer.pdviewer.searchdata.PDocBookInfo;
-import com.knziha.polymer.widgets.Utils;
+import com.knziha.polymer.pdviewer.bookdata.PDocBookInfo;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -459,5 +458,20 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 		}
 		CMN.Log("大概保存了吧……");
 		return bookInfo.count;
+	}
+	
+	public Uri getDocUrlForID(long val) {
+		try {
+			String sql = "select url from pdoc where id=?";
+			Cursor cursor = database.rawQuery(sql, new String[]{Long.toString(val)});
+			String ret = null;
+			if(cursor.getCount()>0 && cursor.moveToFirst()) {
+				ret = cursor.getString(0);
+			}
+			if(ret!=null) {
+				return Uri.parse(ret);
+			}
+		} catch (Exception e) { CMN.Log(e); }
+		return null;
 	}
 }

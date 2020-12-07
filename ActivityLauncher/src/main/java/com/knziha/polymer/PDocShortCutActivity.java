@@ -23,9 +23,12 @@ public class PDocShortCutActivity extends Activity {
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
-		CMN.Log("PDocShortCutActivity", getIntent(), getIntent().hasExtra("ASD"));
+		CMN.Log("PDocShortCutActivity", getIntent(), getIntent().hasExtra("ASD"), getIntent().getData());
 		
-		Intent popup = new Intent(Intent.ACTION_VIEW).setData(Uri.fromFile(new File("/storage/emulated/0/myFolder/Gpu Pro 1.pdf")));
+		Intent popup = new Intent(Intent.ACTION_VIEW);
+		
+		//popup.setData(Uri.fromFile(new File("/storage/emulated/0/myFolder/Gpu Pro 1.pdf")));
+		
 		popup.setClassName("com.knziha.polymer", "com.knziha.polymer.PDocViewerActivity");
 		popup.setFlags(0);
 		popup.putExtra("sin", true);
@@ -33,6 +36,8 @@ public class PDocShortCutActivity extends Activity {
 		popup.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
 		popup.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 		boolean bStatic = PDocViewerActivity.singleInstCout==0;
+		
+		popup.putExtras(getIntent().getExtras());
 		
 //		overridePendingTransition(0, 0);
 		

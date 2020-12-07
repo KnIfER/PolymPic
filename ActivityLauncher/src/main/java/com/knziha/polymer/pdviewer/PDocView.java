@@ -59,7 +59,8 @@ import androidx.appcompat.app.GlobalOptions;
 import com.knziha.polymer.R;
 import com.knziha.polymer.Toastable_Activity;
 import com.knziha.polymer.Utils.CMN;
-import com.knziha.polymer.pdviewer.searchdata.PDocBookInfo;
+import com.knziha.polymer.pdviewer.bookdata.BookOptions;
+import com.knziha.polymer.pdviewer.bookdata.PDocBookInfo;
 import com.knziha.polymer.slideshow.ImageViewState;
 import com.knziha.polymer.slideshow.OverScroller;
 import com.knziha.polymer.slideshow.decoder.ImageDecoder;
@@ -255,6 +256,7 @@ public class PDocView extends View {
 	// A global preference for bitmap format, available to decoder classes that respect it
 	private static Bitmap.Config preferredBitmapConfig;
 	public DisplayMetrics dm;
+	public BookOptions opt;
 	public boolean isProxy;
 	public String ImgSrc =null;
 	private Runnable mAnimationRunnable = this::handle_animation;
@@ -281,6 +283,7 @@ public class PDocView extends View {
 	private boolean showContextMenu;
 	private boolean downFlinging;
 	private boolean abortNextDoubleTapZoom;
+	private MotionEvent wastedEvent;
 	
 	public int getCurrentPageOnScreen() {
 		return lastMiddlePage;
@@ -1035,13 +1038,12 @@ public class PDocView extends View {
 	
 	int mLastFlingX;
 	int mLastFlingY;
+	private long wastedClickTime;
 	private boolean onFlingDetected;
 	private int MAX_FLING_OVER_SCROLL = (int) (30*getContext().getResources().getDisplayMetrics().density);
 	@SuppressWarnings("SuspiciousNameCombination")
 	private void setGestureDetector(final Context context) {
 		this.flingdetector = new GestureDetector(context, new GestureDetector.SimpleOnGestureListener() {
-			private long wastedClickTime;
-			
 			@Override
 			public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
 				CMN.Log("onFling");
@@ -1192,14 +1194,16 @@ public class PDocView extends View {
 					// disable single click selecting if was flinging
 					if(downFlinging) {
 						wastedClickTime = e.getDownTime();
+						wastedEvent = e;
 						return true;
 					}
 					
 					boolean singleTapSel = true;
-					if(true && shouldDrawSelection()) {
+					if(opt.getSingleTapClearSel() && shouldDrawSelection()) {
 						clearSelection();
 						singleTapSel = false;
 						wastedClickTime = e.getDownTime();
+						wastedEvent = e;
 					}
 					
 					if(true /*&& singleTapSel*/) {
@@ -1212,7 +1216,7 @@ public class PDocView extends View {
 						}
 					}
 					
-					if(true && singleTapSel) {
+					if(opt.getSingleTapSelWord() && singleTapSel) {
 						// select text
 						if(!pageI.selWordAtPos(PDocView.this, posX, posY, 1.5f)) {
 							clearSelection();
@@ -1232,13 +1236,14 @@ public class PDocView extends View {
 				if(treatNxtUpAsSingle && e.getActionMasked()==MotionEvent.ACTION_UP) {
 					onSingleTapUp(e);
 				}
-				if(wastedClickTime!=0) {
-					if(e.getDownTime()-wastedClickTime<450) {
+				if(abortNextDoubleTapZoom||wastedClickTime!=0) {
+					if(e.getDownTime()-wastedClickTime<350) {
 						treatNxtUpAsSingle = true;
-						//return true;
 						abortNextDoubleTapZoom=true;
+						//return true;
 					} else {
 						wastedClickTime = 0;
+						treatNxtUpAsSingle = false;
 						abortNextDoubleTapZoom=false;
 					}
 				}
@@ -1776,6 +1781,10 @@ public class PDocView extends View {
 				if(shouldDrawSelection() && anim==null && !isFlinging) {
 					postRelocateContextMenuView();
 				}
+//				if(event!=wastedEvent) {
+//					abortNextDoubleTapZoom=false;
+//					wastedClickTime=0;
+//				}
 			}
 			case MotionEvent.ACTION_POINTER_UP:{
 				if(draggingHandle!=null) {

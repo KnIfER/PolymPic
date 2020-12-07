@@ -301,7 +301,7 @@ public class Utils {
 		}
 	}
 	
-	private static File preparePDFGuide(Activity a) {
+	public static File preparePDFGuide(Activity a) {
 		final String name = "indir.pdf";
 		File guide = new File(a.getExternalFilesDir(null), name);
 		if(!guide.exists()) {

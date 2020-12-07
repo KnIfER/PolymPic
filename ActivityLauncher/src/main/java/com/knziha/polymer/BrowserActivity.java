@@ -2216,8 +2216,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		if (ShortcutManagerCompat.isRequestPinShortcutSupported(context)) {
 			Intent intent = new Intent(Intent.ACTION_MAIN);
 			intent.setClassName("com.knziha.polymer", "com.knziha.polymer.PDocShortCutActivity");
-			//intent.putExtra("ASD", "dsa");
-			intent.putExtra("ASD", 123);
+			intent.putExtra("main", true);
 			
 			intent.setData(Uri.fromFile(new File("123345")));
 			

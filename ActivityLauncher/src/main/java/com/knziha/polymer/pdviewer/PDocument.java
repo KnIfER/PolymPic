@@ -8,14 +8,13 @@ import android.graphics.PointF;
 import android.graphics.RectF;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
-import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.SparseArray;
 
 import com.knziha.filepicker.utils.FU;
 import com.knziha.polymer.Utils.CMN;
-import com.knziha.polymer.pdviewer.searchdata.PDocBookInfo;
-import com.knziha.polymer.pdviewer.searchdata.SearchRecordItem;
+import com.knziha.polymer.pdviewer.bookdata.PDocBookInfo;
+import com.knziha.polymer.pdviewer.bookdata.SearchRecordItem;
 import com.knziha.polymer.text.BreakIteratorHelper;
 import com.knziha.polymer.widgets.Utils;
 import com.shockwave.pdfium.PdfDocument;
