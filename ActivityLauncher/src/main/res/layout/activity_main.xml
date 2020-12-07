@@ -264,5 +264,7 @@
 			android:layout_gravity="bottom"
 			android:layout_marginBottom="@dimen/_45_"
 			/>
+
+		<include layout="@layout/launch_tutorials"/>
 	</FrameLayout>
 </layout>

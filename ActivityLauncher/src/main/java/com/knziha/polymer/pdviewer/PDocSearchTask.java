@@ -2,7 +2,6 @@ package com.knziha.polymer.pdviewer;
 
 import com.knziha.polymer.PDocViewerActivity;
 import com.knziha.polymer.Utils.CMN;
-import com.shockwave.pdfium.PdfiumCore;
 import com.shockwave.pdfium.SearchRecord;
 
 import java.lang.ref.WeakReference;

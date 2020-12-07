@@ -11,6 +11,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.database.Cursor;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.net.Uri;
@@ -45,14 +46,17 @@ import com.jess.ui.TwoWayGridView;
 import com.knziha.filepicker.utils.FU;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.Options;
+import com.knziha.polymer.database.LexicalDBHelper;
 import com.knziha.polymer.databinding.ActivityPdfviewerBinding;
 import com.knziha.polymer.pdviewer.PDFPageParms;
+import com.knziha.polymer.pdviewer.PDocHistoryActivity;
 import com.knziha.polymer.pdviewer.PDocSearchHandler;
 import com.knziha.polymer.pdviewer.PDocSearchTask;
 import com.knziha.polymer.pdviewer.PDocView;
 import com.knziha.polymer.pdviewer.PDocument;
 import com.knziha.polymer.pdviewer.PDocPageViewAdapter;
 import com.knziha.polymer.pdviewer.bookmarks.BookMarksFragment;
+import com.knziha.polymer.pdviewer.searchdata.PDocBookInfo;
 import com.knziha.polymer.widgets.AppIconsAdapter;
 import com.knziha.polymer.widgets.DescriptiveImageView;
 import com.knziha.polymer.widgets.Utils;
@@ -86,6 +90,8 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 	private boolean hasNoPermission;
 	public PDocPageViewAdapter adaptermy;
 	private PDocSearchHandler searchHandler;
+	private LexicalDBHelper historyCon;
+	private boolean splashing = true;
 	
 	
 	@Override
@@ -113,7 +119,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		
+		//if(true) { finish(); return; }
 		Window win = getWindow();
 		//getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN|WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
 		//getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN|WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
@@ -135,6 +141,8 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 			currentViewer.a=this;
 			
 			currentViewer.setContextMenuView(UIData.contextMenu);
+			
+			UIData.contextMenu.getBackground().setAlpha(128);
 			
 			if(transit){
 				//root.setAlpha(0);
@@ -170,19 +178,48 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 			
 			Utils.setOnClickListenersOneDepth(UIData.bottombar2, this, 1, null);
 			
-			currentViewer.setImageReadyListener(() -> {
-				root.post(() -> {
-					UIData.mainProgressBar.setVisibility(View.GONE);
+			currentViewer.setImageReadyListener(new PDocView.ImageReadyListener() {
+				@Override
+				public void ImageReady() {
+					if(splashing) {
+						root.post(() -> {
+							UIData.mainProgressBar.setVisibility(View.GONE);
+							if(adaptermy!=null) {
+								adaptermy.notifyDataSetChanged();
+							}
+						});
+						splashing=false;
+					}
+				}
+				
+				@Override
+				public PDocBookInfo onDocOpened(PDocView view, Uri url) {
+					String name = new File(Utils.getRunTimePath(url)).getName();
+					try {
+						if(!TextUtils.isEmpty(name)) {
+							CMN.Log("onDocOpened ！", name, url);
+							Cursor cursor = historyCon.queryPDoc(name);
+							if(cursor!=null && cursor.getCount()>0) {
+								CMN.Log("has Cursor ！", name, url);
+								cursor.moveToFirst();
+								return new PDocBookInfo(name, cursor);
+							}
+						}
+					} catch (Exception e) { CMN.Log(e); }
+					return new PDocBookInfo(name);
+				}
+				
+				@Override
+				public void NewDocOpened() {
 					if(adaptermy!=null) {
 						adaptermy.notifyDataSetChanged();
 					}
-				});
-				currentViewer.setImageReadyListener(null);
-			});
-			
-			currentViewer.setDocListener(() -> {
-				if(adaptermy!=null) {
-					adaptermy.notifyDataSetChanged();
+				}
+				
+				@Override
+				public void saveBookInfo(PDocBookInfo bookInfo) {
+					CMN.Log("saveBookInfo…");
+					historyCon.savePDocInfo(bookInfo);
 				}
 			});
 		} catch (Exception e) {
@@ -254,6 +291,9 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 	@Override
 	protected void further_loading(Bundle savedInstanceState) {
 		super.further_loading(savedInstanceState);
+		if(historyCon==null) {
+			historyCon = LexicalDBHelper.connectInstance(this);
+		}
 		processIntent(getIntent(), true, hasNoPermission);
 	}
 	
@@ -302,7 +342,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		adaptermy.setSearchResults(arr, key, flag);
 		currentViewer.selectionPaintView.searchCtx = adaptermy.getSearchProvider();
 	}
-	
+	int lastSz=0;
 	public void startSearch(ArrayList<SearchRecord> arr, String key, int flag) {
 		searchHandler.startSearch(arr, key, flag);
 	}
@@ -317,8 +357,9 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 			@Override
 			public void run() {
 				if(!pDocSearchTask.isAborted()) {
-					int sz = arr.size()-1;
-					//adaptermy.notifyItemRangeInserted(sz, 1);
+//					int sz = arr.size();
+//					adaptermy.notifyItemRangeInserted(lastSz, sz-lastSz);
+//					lastSz = sz;
 					adaptermy.notifyDataSetChanged();
 					adaptermy.refreshIndicator();
 					searchHandler.setProgress(itemCount);
@@ -505,7 +546,9 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 	public void onClick(View v) {
 		switch (v.getId()) {
 			case R.id.browser_widget7: {
-				currentViewer.pdoc.test1();
+				//currentViewer.pdoc.test1();
+				Intent intent = new Intent(this, PDocHistoryActivity.class);
+				startActivity(intent);
 			} break;
 			case R.id.browser_widget8: {
 				currentViewer.pdoc.test2();
@@ -583,7 +626,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		if(!this_instanceof_PDocMainViewer) {
 			PDFPageParms pageParms = parsePDFPageParms(null);
 			if(pageParms!=null) {
-				currentViewer.navigateTo(pageParms);
+				currentViewer.navigateTo(pageParms, true);
 			}
 		}
 	}
@@ -602,12 +645,15 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
-		if(PDocument.SavingScheme==PDocument.SavingScheme_SaveOnClose) {
-			currentViewer.checkDoc(this, false, false);
-		}
-		currentViewer.setDocumentUri(null);
-		if(isSingleInst) {
-			singleInstCout=0;
+		if(systemIntialized) {
+			if(PDocument.SavingScheme==PDocument.SavingScheme_SaveOnClose) {
+				currentViewer.checkDoc(this, false, false);
+			}
+			currentViewer.setDocumentUri(null);
+			if(isSingleInst) {
+				singleInstCout=0;
+			}
+			historyCon.try_close();
 		}
 	}
 	

@@ -59,6 +59,7 @@
 			android:configChanges="orientation|keyboardHidden|screenSize|smallestScreenSize|screenLayout|uiMode|locale|layoutDirection"
 			android:theme="@style/ActivityTheme"
 			android:launchMode="singleInstance"
+			android:taskAffinity=""
 			>
 			<intent-filter>
 				<action android:name="android.intent.action.MAIN" />
@@ -87,6 +88,12 @@
 <!--				<action android:name="android.intent.action.MAIN" />-->
 <!--				<category android:name="android.intent.category.LAUNCHER" />-->
 <!--			</intent-filter>-->
+		</activity>
+
+		<activity
+			android:name=".pdviewer.PDocHistoryActivity"
+			android:theme="@style/ActivityTheme"
+			>
 		</activity>
 
 		<activity

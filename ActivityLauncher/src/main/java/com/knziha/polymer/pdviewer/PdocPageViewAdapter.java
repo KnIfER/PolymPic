@@ -32,13 +32,22 @@ import com.shockwave.pdfium.SearchRecord;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 
+/** This class is used for displaying small thumbnails of all pages or
+ * 		only matching pages ( provided via {@link RecyclerViewPagerAdapter#resultsProvider} ) in a search action.  */
 public class PDocPageViewAdapter extends RecyclerViewPagerAdapter<BrowserActivity.ViewDataHolder<DocPageItemBinding>> implements View.OnTouchListener, RecyclerViewPager.OnPageChangedListener {
+	/** Spec Activity. */
 	private final PDocViewerActivity a;
+	/** The Parent View Group. */
 	final ViewGroup viewpagerParent;
+	/** Indicates the page number. */
 	private final TextView pageIndicator;
+	/** The Pool for Recycler View. */
 	private final RecyclerView.RecycledViewPool recyclerViewPool;
+	/** Turn horizontal view to grid view. */
 	private final GridLayoutManager gridLayoutManager;
+	/** Putting red circle in selected textView*/
 	private TextView lastSelTv;
+	/** Whether by scrolling or clicking the user've changed the current page. */
 	private boolean tapping;
 	
 	public PDocPageViewAdapter(Context context, ViewGroup vg, RecyclerViewPager recyclerViewPager

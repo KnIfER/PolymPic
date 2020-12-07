@@ -32,9 +32,16 @@
 			android:layout_height="wrap_content"
 			android:background="@drawable/context_menu_frame"
 			android:textColor="#fff"
-			android:elevation="6dp"
+			android:elevation="4dp"
 			android:lineSpacingExtra="5dp"
 			android:translationY="-200dp"
+
+			android:shadowColor="#80333333"
+			android:shadowRadius="3"
+			android:shadowDx="2"
+			android:shadowDy="1"
+
+			tools:translationY="200dp"
 			/>
 
 		<ProgressBar
@@ -54,6 +61,7 @@
 			tools:translationY="1110dp"
 			tools:layout_marginBottom="@dimen/_45_"
 			android:background="#ff8f8f8f"
+			android:elevation="5dp"
 			/>
 
 		<com.knziha.polymer.widgets.LineaSlidog
@@ -66,7 +74,7 @@
 			android:layout_gravity="bottom"
 			android:gravity="bottom|center_vertical|fill_horizontal"
 			app:layout_behavior="com.knziha.polymer.widgets.BottomNavigationBehavior"
-			android:elevation="5dp"
+			android:elevation="6dp"
 			>
 			<android.widget.ImageView
 				android:id="@+id/browser_widget7"

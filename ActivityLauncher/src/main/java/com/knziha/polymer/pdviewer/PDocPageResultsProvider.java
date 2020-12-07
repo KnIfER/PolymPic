@@ -79,12 +79,14 @@ public class PDocPageResultsProvider extends RecyclerViewPagerSubsetProvider {
 		return lastQuery;
 	}
 	
+	/** Release buffered jchar* */
 	public void release() {
 		if(keyStr!=0) {
 			PdfiumCore.nativeReleaseStringChars(key, keyStr);
 		}
 	}
 	
+	/** Buffer the jstring into jchar* */
 	public long getKeyStr() {
 		if(keyStr==0) {
 			keyStr = PdfiumCore.nativeGetStringChars(key);
@@ -92,6 +94,7 @@ public class PDocPageResultsProvider extends RecyclerViewPagerSubsetProvider {
 		return keyStr;
 	}
 	
+	/** Find whether selected page has any matched item on it */
 	public SearchRecord getRecordForActualPage(int page) {
 		int idx = queryPositionForActualPage(page);
 		if(idx>=0 && idx<results.size()) {

@@ -2,16 +2,13 @@ package com.shockwave.pdfium;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.RectF;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
 import android.view.Surface;
 
-import com.shockwave.pdfium.bookmarks.BookMarkEntry;
 import com.shockwave.pdfium.bookmarks.BookMarkNode;
-import com.shockwave.pdfium.treeview.TreeViewNode;
 import com.shockwave.pdfium.util.Size;
 
 import java.io.FileDescriptor;

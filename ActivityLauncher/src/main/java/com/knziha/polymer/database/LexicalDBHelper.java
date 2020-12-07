@@ -1,4 +1,4 @@
-package com.knziha.polymer.Utils;
+package com.knziha.polymer.database;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -6,8 +6,14 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteStatement;
+import android.net.Uri;
 import android.os.CancellationSignal;
+import android.text.TextUtils;
 import android.util.SparseArray;
+
+import com.knziha.polymer.Utils.CMN;
+import com.knziha.polymer.pdviewer.searchdata.PDocBookInfo;
+import com.knziha.polymer.widgets.Utils;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -23,7 +29,9 @@ import static com.knziha.polymer.widgets.Utils.EmptyCursor;
  */
 
 public class LexicalDBHelper extends SQLiteOpenHelper {
-    public final String DATABASE;
+	private static LexicalDBHelper INSTANCE;
+	private static int INSTANCE_COUNT;
+	public final String DATABASE;
 	private SQLiteDatabase database;
 	private boolean history_active_updated;
 	private boolean history_empty_updated;
@@ -33,7 +41,53 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 	private boolean search_empty_updated;
 	private List<Cursor> cursors_to_close = Collections.synchronizedList(new ArrayList<>());
 	
-	public SQLiteDatabase getDB(){return database;}
+	public static LexicalDBHelper connectInstance(Context context) {
+		if(INSTANCE==null) {
+			INSTANCE = new LexicalDBHelper(context.getApplicationContext());
+		}
+		INSTANCE_COUNT++;
+		return INSTANCE;
+	}
+	
+	public static long getLong(Cursor cursor, int i) {
+		try {
+			return cursor.getLong(i);
+		} catch (Exception e) {
+			CMN.Log(e);
+			return 0;
+		}
+	}
+	
+	public static int getInt(Cursor cursor, int i) {
+		try {
+			return cursor.getInt(i);
+		} catch (Exception e) {
+			CMN.Log(e);
+			return 0;
+		}
+	}
+	
+	public static String getString(Cursor cursor, int i) {
+		try {
+			return cursor.getString(i);
+		} catch (Exception e) {
+			CMN.Log(e);
+			return null;
+		}
+	}
+	
+	public void try_close() {
+		if(--INSTANCE_COUNT<=0) {
+			close();
+			INSTANCE=null;
+			INSTANCE_COUNT=0;
+			CMN.Log("关闭数据库……");
+		}
+	}
+	
+	public SQLiteDatabase getDB(){
+		return database;
+	}
     
     public static final String HISTORY_SEARCH = "t1";
 
@@ -43,7 +97,7 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
     public String pathName;
 
 	/** 创建历史纪录数据库 */
-	public LexicalDBHelper(Context context, Options opt) {
+	public LexicalDBHelper(Context context) {
 		super(context, new File(context.getExternalFilesDir(null), "history.sql").getPath(), null, CMN.dbVersionCode);
 		DATABASE="history.sql";
 		onConfigure();
@@ -58,36 +112,68 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 	@Override
     public void onCreate(SQLiteDatabase db) {
 		CMN.Log("onDbCreate");
-		final String createhistory = "create table if not exists urls(" +
+		
+		// browse history.
+		final String createHistoryTable = "create table if not exists urls(" +
 				"id INTEGER PRIMARY KEY AUTOINCREMENT," +
 				"url LONGVARCHAR," +
 				"title LONGVARCHAR," +
 				"visit_count INTEGER DEFAULT 0 NOT NULL," +
 				"note_id INTEGER DEFAULT -1 NOT NULL,"+
+				"creation_time INTEGER NOT NULL,"+
 				"last_visit_time INTEGER NOT NULL)";
-        db.execSQL(createhistory);
+        db.execSQL(createHistoryTable);
 		
-		final String createsearch = "create table if not exists \"keyword_search_terms\" ("+
+		// search history.
+		final String createSearchTable = "create table if not exists \"keyword_search_terms\" ("+
 				"id INTEGER PRIMARY KEY AUTOINCREMENT," +
 				"term LONGVARCHAR NOT NULL,"+
+				"creation_time INTEGER NOT NULL,"+
 				"last_visit_time INTEGER NOT NULL)";
 		
-		db.execSQL(createsearch);
+		db.execSQL(createSearchTable);
 		
-		final String createnote = "create table if not exists \"annots\" ("+
+		// web annotations.
+		final String createNotesTable = "create table if not exists \"annots\" ("+
 				"id INTEGER PRIMARY KEY AUTOINCREMENT," +
 				"url LONGVARCHAR," +
 				"notes LONGVARCHAR,"+
 				"texts LONGVARCHAR,"+
 				"url_id INTEGER DEFAULT -1 NOT NULL,"+
+				"flag INTEGER DEFAULT -1 NOT NULL,"+
 				"creation_time INTEGER DEFAULT 0 NOT NULL," +
 				"last_visit_time INTEGER NOT NULL)";
 		
-		db.execSQL(createnote);
+		db.execSQL(createNotesTable);
+		
+		// pdoc history.
+		final String createPDocTable = "create table if not exists \"pdoc\" ("+
+				"id INTEGER PRIMARY KEY AUTOINCREMENT," + // 0
+				"name TEXT NOT NULL," + // 1
+				"url TEXT NOT NULL," + // 2
+				"page_info TEXT," + // 3
+				"zoom_info TEXT," + // 4
+				"bookmarks TEXT," + // 5
+				"toc TEXT," +  // 6
+				"note TEXT," + // 7
+				"thumbnail BLOB," + // 8
+				"ext1 TEXT,"+ // 9
+				"ext2 TEXT,"+ // 10
+				"f1 INTEGER DEFAULT 0 NOT NULL," + // 11
+				"f2 INTEGER DEFAULT 0 NOT NULL," + // 12
+				"f3 INTEGER DEFAULT 0 NOT NULL," + // 13
+				"note_id INTEGER DEFAULT -1 NOT NULL,"+ // 14
+				"creation_time INTEGER DEFAULT 0 NOT NULL," + // 15
+				"last_visit_time INTEGER NOT NULL)"; // 16
+		
+		db.execSQL(createPDocTable);
 		
 		db.execSQL("CREATE INDEX if not exists urls_url_index ON urls (url)");
 		db.execSQL("CREATE INDEX if not exists annots_url_index ON annots (url)");
 		db.execSQL("CREATE INDEX if not exists keyword_search_terms_index3 ON keyword_search_terms (term)");
+		db.execSQL("CREATE INDEX if not exists pdoc_name_index ON pdoc (name)");
+		//db.execSQL("CREATE INDEX if not exists pdoc_url_index ON pdoc (url)");
+		
 		
 		CMN.Log("onDbCreate..done");
     }
@@ -195,7 +281,7 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 		LastSearchTerm = url_key;
 	}
 	
-	public long insertUpdate (String lex, String tile) {
+	public long insertUpdateBrowserUrl(String lex, String tile) {
 		history_empty_updated=history_active_updated=true;
     	int count=-1;
 		int id=-1;
@@ -288,10 +374,7 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 		}
 	}
 	
-	@Override
-	public void close(){
-		super.close();
-		CMN.Log("onDbClose");
+	public void close_for_browser(){
 		if(preparedSelectExecutor!=null)
 			preparedSelectExecutor.close();
 		if(ActiveSearchCursor!=null)
@@ -335,5 +418,46 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 	
 	public boolean isOpen() {
 		return database.isOpen();
+	}
+	
+	public Cursor queryPDoc(String name_key) {
+		String sql = "select * from pdoc where name=?";
+		return database.rawQuery(sql, new String[]{name_key});
+	}
+	
+	public int savePDocInfo(PDocBookInfo bookInfo) {
+		final String tabelName = "pdoc";
+		String name = bookInfo.name;
+		if(TextUtils.isEmpty(name)) {
+			return 0;
+		}
+		int count=bookInfo.count;
+		long id=bookInfo.rowID;
+		
+		boolean notUpdateHistory=false;
+		if(count>0&&notUpdateHistory) {
+			return 1;
+		}
+		
+		ContentValues values = new ContentValues();
+		values.put("name", name);
+		values.put("url", bookInfo.url.toString());
+		values.put("page_info", bookInfo.parms.toString());
+		//values.put("visit_count", ++count);
+		values.put("f1", bookInfo.firstflag);
+		values.put("last_visit_time", System.currentTimeMillis());
+		
+		if(count>0) {
+			values.put("id", id);
+			bookInfo.rowID = database.insertWithOnConflict(tabelName, null, values, SQLiteDatabase.CONFLICT_REPLACE);
+		} else {
+			CMN.Log("新建");
+			bookInfo.rowID = database.insert(tabelName, null, values);
+			if(bookInfo.rowID!=-1) {
+				bookInfo.count++;
+			}
+		}
+		CMN.Log("大概保存了吧……");
+		return bookInfo.count;
 	}
 }

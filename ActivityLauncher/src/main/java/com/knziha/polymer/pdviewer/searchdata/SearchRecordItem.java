@@ -2,7 +2,8 @@ package com.knziha.polymer.pdviewer.searchdata;
 
 import android.graphics.RectF;
 
-/** stores an searched highlight result of a page */
+/** Stores the highlight rects and start-end index
+ *  	of one matching item on a page */
 public class SearchRecordItem{
 	public final int st;
 	public final int ed;

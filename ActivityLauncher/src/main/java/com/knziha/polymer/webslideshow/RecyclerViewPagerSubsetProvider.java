@@ -1,10 +1,5 @@
 package com.knziha.polymer.webslideshow;
 
-import android.os.Looper;
-
-import java.util.ArrayList;
-
-
 public abstract class RecyclerViewPagerSubsetProvider {
 	public abstract int getResultCount();
 	

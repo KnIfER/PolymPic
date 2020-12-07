@@ -4,10 +4,6 @@ import android.content.res.Resources;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.appcompat.widget.AppCompatDrawableManager;
-
-import com.bumptech.glide.load.engine.Resource;
-
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.Arrays;
@@ -44,6 +40,7 @@ public class CMN {
 	public static long stst_add;
 	public static boolean testing;
 	public static Resources mResource;
+	public static int browserTaskId;
 	
 	public static void rt(Object... o) {
 		ststrt = System.currentTimeMillis();

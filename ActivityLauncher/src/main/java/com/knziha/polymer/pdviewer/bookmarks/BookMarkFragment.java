@@ -9,8 +9,6 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
-import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -28,11 +26,9 @@ import com.knziha.polymer.pdviewer.PDFPageParms;
 import com.knziha.polymer.pdviewer.PDocument;
 import com.knziha.polymer.widgets.Utils;
 import com.shockwave.pdfium.bookmarks.BookMarkEntry;
-import com.shockwave.pdfium.bookmarks.BookMarkNode;
 import com.shockwave.pdfium.treeview.TreeViewAdapter;
 import com.shockwave.pdfium.treeview.TreeViewNode;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -119,7 +115,7 @@ public class BookMarkFragment extends Fragment {
 	private void onJumpToBookMark(BookMarkEntry bkmk) {
 		PDocViewerActivity a = (PDocViewerActivity) getActivity();
 		if(a!=null) {
-			a.currentViewer.navigateTo(new PDFPageParms(bkmk.page, 0, 0, -1));
+			a.currentViewer.navigateTo(new PDFPageParms(bkmk.page, 0, 0, -1), true);
 			((DialogFragment)getParentFragment()).dismiss();
 		}
 	}

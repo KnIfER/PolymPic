@@ -50,6 +50,7 @@ public class PDocSearchHandler implements View.OnClickListener {
 		drawableAbort.setBounds(drawableSearch.getBounds());
 		
 		etSearch.setText("l-system");
+		etSearch.setText("buffer");
 	}
 	
 	@SuppressLint("NonConstantResourceId")

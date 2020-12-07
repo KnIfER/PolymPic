@@ -8,11 +8,13 @@ import android.graphics.PointF;
 import android.graphics.RectF;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
+import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.SparseArray;
 
 import com.knziha.filepicker.utils.FU;
 import com.knziha.polymer.Utils.CMN;
+import com.knziha.polymer.pdviewer.searchdata.PDocBookInfo;
 import com.knziha.polymer.pdviewer.searchdata.SearchRecordItem;
 import com.knziha.polymer.text.BreakIteratorHelper;
 import com.knziha.polymer.widgets.Utils;
@@ -62,6 +64,7 @@ public class PDocument {
 	public BookMarkNode bmRoot;
 	public int bmCount;
 	public boolean isClosed;
+	PDocBookInfo bookInfo;
 	
 	/** 策略：小于500MB统一加载到内存，允许保存。大于500MB在关闭文件时询问是否保存。 */
 	public void saveDocAsCopy(Context a, Uri url, boolean incremental, boolean reload) {
@@ -169,10 +172,21 @@ public class PDocument {
 			int foundIdx = pdfiumCore.nativeFindTextPage(page.tid, key, flag);
 			SearchRecord ret = foundIdx==-1?null:new SearchRecord(pageIdx, foundIdx);
 			if(shouldClose) {
-				//page.close();
+				page.close();
 			}
 			return ret;
 		}
+	}
+	
+	public void setBookInfo(PDocBookInfo bookInfo) {
+		if(bookInfo!=null) {
+			bookInfo.url = path;
+			this.bookInfo = bookInfo;
+		}
+	}
+	
+	public boolean isBookInfoDirty() {
+		return bookInfo!=null && bookInfo.isDirty;
 	}
 	
 	class PDocPage {
@@ -309,6 +323,10 @@ public class PDocument {
 				if(charIdx>=0) {
 					int ed=pageBreakIterator.following(charIdx);
 					int st=pageBreakIterator.previous();
+					CMN.Log("st, ed", st, ed);
+					if(st+1>=ed) {
+						//return false;
+					}
 					view.setSelectionAtPage(pageIdx, st, ed);
 					//CMN.Log("selWordAtPos", charIdx, allText.substring(st, ed+1)+"...");
 					return true;
@@ -318,8 +336,8 @@ public class PDocument {
 		}
 		
 		/** Get the char index at a page position
-		 * @posX position X in the page coordinate<br/>
-		 * @posY position Y in the page coordinate<br/>
+		 * @param posX position X in the page coordinate<br/>
+		 * @param posY position Y in the page coordinate<br/>
 		 * */
 		public int getCharIdxAtPos(float posX, float posY) {
 			prepareText();
@@ -466,11 +484,11 @@ public class PDocument {
 			}
 		}
 		
-		public void createHighlight(RectF box, ArrayList<RectF> selLineRects) {
+		public void createHighlight(int colorInt, RectF box, ArrayList<RectF> selLineRects) {
 			open();
 			long antTmp = pdfiumCore.nativeCreateAnnot(pid.get(), 9);
 			if(antTmp!=0) {
-				CMN.Log("nativeCreateAnnot", antTmp);
+				// 5CMN.Log("nativeCreateAnnot", antTmp);
 				int offset1, offset2;
 				if(isHorizontalView) {
 					offset1 = getLateralOffset();
@@ -480,7 +498,7 @@ public class PDocument {
 					offset2 = getLateralOffset();
 				}
 				double width = size.getWidth(), height = size.getHeight();
-				//pdfiumCore.nativeSetAnnotColor(antTmp, 0, 0, 25, 128);
+				pdfiumCore.nativeSetAnnotColor(antTmp, colorInt>>16&0xff, colorInt>>8&0xff, colorInt&0xff, colorInt>>24&0xff);
 				pdfiumCore.nativeSetAnnotRect(pid.get(), antTmp, box.left-offset2, box.top-offset1, box.right-offset2, box.bottom-offset1, width, height);
 				//pdfiumCore.nativeAppendAnnotPoints(pid.get(), antTmp, box.left-offset2, box.top-offset1, box.right-offset2, box.bottom-offset1, width, height);
 				//pdfiumCore.nativeAppendAnnotPoints(pid.get(), antTmp, 0, size.getHeight()-100, 100, size.getHeight(), width, height);
@@ -492,11 +510,11 @@ public class PDocument {
 			}
 		}
 		
-		public void getAllSearchedHighlightRects(SearchRecord record, PDocPageResultsProvider searchCtx) {
+		public void getAllMatchOnPage(SearchRecord record, PDocPageResultsProvider searchCtx) {
 			prepareText();
-			//if(record.data==null)
+			if(record.data==null)
 			{
-				CMN.rt();
+				//CMN.rt();
 				ArrayList<SearchRecordItem> data = new ArrayList<>();
 				record.data = data;
 				long keyStr = searchCtx.getKeyStr();
@@ -506,16 +524,16 @@ public class PDocument {
 						while(pdfiumCore.nativeFindTextPageNext(searchHandle)) {
 							int st = pdfiumCore.nativeGetFindIdx(searchHandle);
 							int ed = pdfiumCore.nativeGetFindLength(searchHandle);
-							getHighlightRectsForRecord(data, st, ed);
+							getRectsForRecordItem(data, st, ed);
 						}
 						pdfiumCore.nativeFindTextPageEnd(searchHandle);
 					}
 				}
-				CMN.pt("getAllSearchedHighlightRects：");
+				//CMN.pt("getAllSearchedHighlightRects：");
 			}
 		}
 		
-		private void getHighlightRectsForRecord(ArrayList<SearchRecordItem> data, int st, int ed) {
+		private void getRectsForRecordItem(ArrayList<SearchRecordItem> data, int st, int ed) {
 			if(st>=0&&ed>0) {
 				int  rectCount = pdfiumCore.nativeCountRects(tid, st, ed);
 				if(rectCount>0) {

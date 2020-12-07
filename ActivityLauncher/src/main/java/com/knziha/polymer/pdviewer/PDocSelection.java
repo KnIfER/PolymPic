@@ -2,14 +2,12 @@ package com.knziha.polymer.pdviewer;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BlendMode;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PointF;
 import android.graphics.PorterDuff;
-import android.graphics.PorterDuffColorFilter;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
 import android.graphics.drawable.BitmapDrawable;
@@ -27,7 +25,7 @@ import com.shockwave.pdfium.SearchRecord;
 
 import java.util.ArrayList;
 
-/** A View to paint PDF selections */
+/** A View to paint PDF selections, [magnifier] and search highlights */
 public class PDocSelection extends View {
 	public boolean supressRecalcInval;
 	PDocView pDocView;
@@ -38,7 +36,7 @@ public class PDocSelection extends View {
 	Paint rectFramePaint;
 	Paint rectHighlightPaint;
 	/** Small Canvas for magnifier.
-	 * {@link Canvas#clipPath ClipPath} fails if the canvas it too high.
+	 * {@link Canvas#clipPath ClipPath} fails if the canvas it too high. ( will never happen in this project. )
 	 * see <a href="https://issuetracker.google.com/issues/132402784">issuetracker</a>) */
 	Canvas cc;
 	Bitmap PageCache;
@@ -210,7 +208,7 @@ public class PDocSelection extends View {
 				SearchRecord record = searchCtx.getRecordForActualPage(pageIdx);
 				if(record!=null) {
 					PDocument.PDocPage page = pDocView.pdoc.mPDocPages[pageIdx];
-					page.getAllSearchedHighlightRects(record, searchCtx);
+					page.getAllMatchOnPage(record, searchCtx);
 					ArrayList<SearchRecordItem> data = (ArrayList<SearchRecordItem>) record.data;
 					for (int j = 0, len=data.size(); j < len; j++) {
 						RectF[] rects = data.get(j).rects;

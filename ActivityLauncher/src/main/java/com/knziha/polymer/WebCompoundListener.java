@@ -6,7 +6,6 @@ import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.net.Uri;
 import android.net.http.SslError;
 import android.os.Build;
 import android.os.Message;
@@ -45,9 +44,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLConnection;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -526,7 +522,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 				mWebView.clearHistroyRequested=false;
 			}
 			CMN.rt();
-			a.historyCon.insertUpdate(url, title);
+			a.historyCon.insertUpdateBrowserUrl(url, title);
 			CMN.pt("历史插入时间：");
 			if(mWebView.holder.getLuxury()) {
 				int idx = mWebView.getThisIdx();

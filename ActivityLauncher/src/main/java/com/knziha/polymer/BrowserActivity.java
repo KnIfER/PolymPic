@@ -8,6 +8,7 @@ import android.animation.ObjectAnimator;
 import android.animation.PropertyValuesHolder;
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.Dialog;
 import android.app.DownloadManager;
 import android.app.PendingIntent;
@@ -15,8 +16,6 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.ShortcutInfo;
-import android.content.pm.ShortcutManager;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.database.Cursor;
@@ -26,7 +25,6 @@ import android.graphics.PorterDuff;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
-import android.graphics.drawable.Icon;
 import android.graphics.drawable.LayerDrawable;
 import android.graphics.drawable.RotateDrawable;
 import android.net.Uri;
@@ -35,8 +33,6 @@ import android.os.Bundle;
 import android.os.CancellationSignal;
 import android.os.Environment;
 import android.os.Message;
-import android.print.PrintAttributes;
-import android.print.PrintManager;
 import android.text.Editable;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
@@ -92,9 +88,13 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.knziha.filepicker.model.DialogConfigs;
+import com.knziha.filepicker.model.DialogProperties;
+import com.knziha.filepicker.model.DialogSelectionListener;
+import com.knziha.filepicker.view.FilePickerDialog;
 import com.knziha.polymer.Utils.BufferedReader;
 import com.knziha.polymer.Utils.CMN;
-import com.knziha.polymer.Utils.LexicalDBHelper;
+import com.knziha.polymer.database.LexicalDBHelper;
 import com.knziha.polymer.Utils.MyReceiver;
 import com.knziha.polymer.Utils.OptionProcessor;
 import com.knziha.polymer.Utils.Options;
@@ -143,6 +143,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -271,6 +272,10 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	
 	@Override
 	public void onBackPressed() {
+		if(!systemIntialized) {
+			super.onBackPressed();
+			return;
+		}
 		if(checkWebSelection()) {
 		
 		} else if(searchEnginePopup!=null && searchEnginePopup.isShowing()) {
@@ -360,7 +365,77 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		setStatusBarColor(getWindow());
 		WebView.setWebContentsDebuggingEnabled(true);
 		mHandler = new MyHandler(this);
+		CMN.browserTaskId = getTaskId();
 		Utils.PadWindow(root);
+	}
+	
+	protected void checkLog(Bundle savedInstanceState){
+		if(true) { // show tutorials
+			ViewGroup tutorialsView = root.findViewById(R.id.tutorials);
+			View.OnClickListener tutClicker = new View.OnClickListener() {
+				private File filepickernow;
+				@SuppressLint("NonConstantResourceId")
+				@Override
+				public void onClick(View v) {
+					int id = v.getId();
+					switch (id) {
+						case R.id.tut_open_pdf_internal:
+							//CMN.Log(fileChooserParams.getAcceptTypes());
+							DialogProperties properties = new DialogProperties();
+							properties.selection_mode = DialogConfigs.SINGLE_MODE;
+							properties.selection_type = DialogConfigs.FILE_SELECT;
+							properties.root = new File("/");
+							properties.error_dir = Environment.getExternalStorageDirectory();
+							properties.offset = filepickernow!=null?filepickernow:getExternalFilesDir(null);
+							properties.opt_dir=new File(getExternalFilesDir(null), "favorite_dirs");
+							properties.opt_dir.mkdirs();
+							properties.extensions = new HashSet<>();
+							properties.extensions.add(".pdf");
+							properties.title_id = R.string.pdf_internal_open;
+							properties.isDark = AppWhite==Color.BLACK;
+							FilePickerDialog dialog = new FilePickerDialog(BrowserActivity.this, properties);
+							dialog.setDialogSelectionListener(new DialogSelectionListener() {
+								@Override
+								public void onSelectedFilePaths(String[] files, String currentPath) {
+									filepickernow=new File(currentPath);
+									if(files.length>0) {
+										startActivity(new Intent(BrowserActivity.this, PolyShareActivity.class).setData(Uri.fromFile(new File(files[0]))));
+									}
+								}
+								@Override
+								public void onEnterSlideShow(Window win, int delay) { }
+								@Override
+								public void onExitSlideShow() { }
+								@Override
+								public Activity getDialogActivity() {
+									return BrowserActivity.this;
+								}
+								@Override
+								public void onDismiss() { }
+							});
+							dialog.show();
+							dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
+							break;
+						case R.id.tut_open_pdf_system:
+							Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+							intent.setType("application/pdf");
+							intent.addCategory(Intent.CATEGORY_OPENABLE);
+							startActivityForResult(intent, 795);
+						break;
+						case R.id.tut_create_shortcut:
+							AddPDFViewerShortCut(getApplicationContext());
+						break;
+						case R.id.tut_continue:
+							BrowserActivity.super.checkLog(savedInstanceState);
+							Utils.removeIfParentBeOrNotBe(tutorialsView, null, false);
+						break;
+					}
+				}
+			};
+			Utils.setOnClickListenersOneDepth(tutorialsView, tutClicker, 3, null);
+		} else {
+			super.checkLog(savedInstanceState);
+		}
 	}
 	
 	private Drawable bottombar2Background() {
@@ -387,7 +462,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	
 	@Override
 	protected void further_loading(Bundle savedInstanceState) {
-		historyCon = new LexicalDBHelper(this, opt);
+		if(historyCon==null) {
+			historyCon = LexicalDBHelper.connectInstance(this);
+		}
 		CheckGlideJournal();
 		checkMargin(this);
 		_45_ = (int) mResource.getDimension(R.dimen._45_);
@@ -2974,7 +3051,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			}
 			id_table.clear();
 			CMN.Log("关闭历史记录...");
-			historyCon.close();
+			historyCon.close_for_browser();
+			historyCon.try_close();
 		}
 	}
 	
@@ -3470,6 +3548,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				execBrowserGoTo(text);
 			}
 			//etSearch.setText(data.getStringExtra(Intent.EXTRA_TEXT));
+		}
+		if(795==requestCode && resultCode==RESULT_OK && data!=null) { // tutorial showing how to open pdf using the system file picker.
+			startActivity(new Intent(this, PolyShareActivity.class).setData(data.getData()));
 		}
 		super.onActivityResult(requestCode, resultCode, data);
 	}

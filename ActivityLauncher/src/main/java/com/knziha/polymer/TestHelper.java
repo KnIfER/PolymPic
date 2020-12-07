@@ -1,7 +1,7 @@
 package com.knziha.polymer;
 
 import com.knziha.polymer.Utils.CMN;
-import com.knziha.polymer.Utils.LexicalDBHelper;
+import com.knziha.polymer.database.LexicalDBHelper;
 import com.knziha.polymer.toolkits.Utils.BU;
 
 import java.io.IOException;
@@ -94,7 +94,7 @@ public class TestHelper {
 			//System.out.println(title);
 			String url = convolute(rand, builder, rand.nextInt(255));
 			//System.out.println(url);
-			con.insertUpdate(url, title);
+			con.insertUpdateBrowserUrl(url, title);
 		}
 	}
 	

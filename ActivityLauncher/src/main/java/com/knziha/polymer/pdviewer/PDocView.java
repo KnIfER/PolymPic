@@ -1,4 +1,5 @@
 /*
+Copyright 2020 KnIfER
 Copyright 2013-2015 David Morrissey
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -58,6 +59,7 @@ import androidx.appcompat.app.GlobalOptions;
 import com.knziha.polymer.R;
 import com.knziha.polymer.Toastable_Activity;
 import com.knziha.polymer.Utils.CMN;
+import com.knziha.polymer.pdviewer.searchdata.PDocBookInfo;
 import com.knziha.polymer.slideshow.ImageViewState;
 import com.knziha.polymer.slideshow.OverScroller;
 import com.knziha.polymer.slideshow.decoder.ImageDecoder;
@@ -83,6 +85,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * 		v2.0 选择、高亮文本
  * 		v3.0 保存
  *
+ * 备注：或许应抽离布局相关代码，实现 LinearLayout、HorizontalLinearLayout、甚至 GridLayout布局，然时间、成本受限，就这样一股脑的吧。
  */
 @SuppressWarnings({"unused", "IntegerDivisionInFloatingPointContext"})
 public class PDocView extends View {
@@ -224,7 +227,7 @@ public class PDocView extends View {
 	// Whether a ready notification has been sent to subclasses
 	private boolean readySent;
 	// Whether a base layer loaded notification has been sent to subclasses
-	private boolean imageLoadedSent;
+	private boolean imageLoading = true;
 	
 	// Long click listener
 	private OnLongClickListener onLongClickListener;
@@ -274,6 +277,10 @@ public class PDocView extends View {
 	private OnPageChangedListener mOnPageChangeListener;
 	
 	private int lastMiddlePage;
+	private boolean hideContextMenu;
+	private boolean showContextMenu;
+	private boolean downFlinging;
+	private boolean abortNextDoubleTapZoom;
 	
 	public int getCurrentPageOnScreen() {
 		return lastMiddlePage;
@@ -291,16 +298,19 @@ public class PDocView extends View {
 		return false;
 	}
 	
-	public void navigateTo(PDFPageParms pageParms) {
+	public void navigateTo(PDFPageParms pageParms, boolean invalid) {
+		CMN.Log("navigateTo", pageParms);
 		int pageIdx = Math.max(0, Math.min(pageParms.pageIdx, pdoc._num_entries));
 		PDocument.PDocPage page = pdoc.mPDocPages[pageIdx];
 		float newScale = pageParms.scale;
 		if(newScale>0) {
-			newScale = Math.min(currentMinScale()*Math.max(0.01f, newScale), maxScale);
+			newScale = Math.min(Math.max(currentMinScale(), newScale), maxScale);
 			scale = newScale;
 		}
-		vTranslate.set(0, -(page.OffsetAlongScrollAxis+pageParms.offsetY)*scale);
-		refreshRequiredTiles(true);
+		vTranslate.set((page.getLateralOffset()+pageParms.offsetX)*scale, -(page.OffsetAlongScrollAxis+pageParms.offsetY)*scale);
+		if(invalid) {
+			refreshRequiredTiles(true);
+		}
 	}
 	
 	public int pages() {
@@ -311,6 +321,7 @@ public class PDocView extends View {
 		mOnPageChangeListener = onPageChangeListener;
 	}
 	
+	/** Navigate to certain page. Inspired by the ezpdfreader. */
 	public void goToPageCentered(int position, boolean still) {
 		if(pdoc!=null && position!=lastMiddlePage && position>=0 && position<pdoc._num_entries) {
 			OnPageChangedListener tmpPCL = null;
@@ -339,13 +350,14 @@ public class PDocView extends View {
 		}
 	}
 	
-	public interface ImageReadyListener { void ImageReady(); }
-	
-	public interface DocListener { void NewDocOpened(); }
+	public interface ImageReadyListener {
+		void ImageReady();
+		PDocBookInfo onDocOpened(PDocView view, Uri url);
+		void NewDocOpened();
+		void saveBookInfo(PDocBookInfo bookInfo);
+	}
 	
 	ImageReadyListener mImageReadyListener;
-	
-	DocListener mDocListener;
 	
 	ArrayList<PDocument.AnnotShape> mAnnotBucket = new ArrayList<>(8);
 	
@@ -714,7 +726,7 @@ public class PDocView extends View {
 			if(selRects.size()>0) { //sanity check
 				RectF box = new RectF(selRects.get(0));
 				ArrayList<RectF> selLineRects = page.mergeLineRects(selRects, box);
-				page.createHighlight(box, selLineRects);
+				page.createHighlight(0xffffff00, box, selLineRects);
 				invalidateTiles(page, box);
 				clearSelection();
 				pdoc.isDirty=true;
@@ -904,16 +916,10 @@ public class PDocView extends View {
 		mImageReadyListener = imageReadyListener;
 	}
 	
-	public void setDocListener(DocListener docListener) {
-		mDocListener = docListener;
-	}
-	
-	/**
-	 * Async task used to get image details without blocking the UI thread.
-	 */
-	
+	/** Stores all loaded files in a static map. */
 	public final static ConcurrentHashMap<String, PDocument> books = new ConcurrentHashMap<>(12);
 	
+	/** Async loading of one pdf file. */
 	private static class TilesInitTask implements Runnable {
 		private final Uri url;
 		private final AtomicBoolean abort = new AtomicBoolean();
@@ -951,12 +957,17 @@ public class PDocView extends View {
 						if(!abort.get()) {
 							finished.set(true);
 							result = doc;
-							view.post(this);
 							if(responsibleForThisBook) {
 								books.put(path, doc);
+								if(view.mImageReadyListener!=null) {
+									// pre-fetch the bookInfo so that it could be used.
+									PDocBookInfo bookInfo = view.mImageReadyListener.onDocOpened(view, url);
+									doc.setBookInfo(bookInfo);
+								}
 							} else {
 								doc.referenceCount.incrementAndGet();
 							}
+							view.post(this);
 						} else if(responsibleForThisBook) {
 							doc.close();
 						}
@@ -1000,7 +1011,7 @@ public class PDocView extends View {
 			sHeight = 0;
 			sOrientation = 0;
 			readySent = false;
-			imageLoadedSent = false;
+			imageLoading = true;
 		}
 	}
 
@@ -1172,6 +1183,17 @@ public class PDocView extends View {
 						}
 					}
 					
+					// disable single click selecting if last touch participate in quick zooming
+					if(quickScaleMoved) {
+						return true;
+					}
+					
+					// disable single click selecting if was flinging
+					if(downFlinging) {
+						wastedClickTime = e.getDownTime();
+						return true;
+					}
+					
 					boolean singleTapSel = true;
 					if(true && shouldDrawSelection()) {
 						clearSelection();
@@ -1180,16 +1202,21 @@ public class PDocView extends View {
 					}
 					
 					if(true && singleTapSel) {
+						// select annotation
 						PDocument.AnnotShape annot = pageI.selAnnotAtPos(PDocView.this, posX, posY);
 						if(annot!=null) {
 							//a.showT("annotIdx::"+annotIdx);
+							doRelocateContextMenuView();
 							return true;
 						}
 					}
 					
 					if(true && singleTapSel) {
+						// select text
 						if(!pageI.selWordAtPos(PDocView.this, posX, posY, 1.5f)) {
 							clearSelection();
+						} else {
+							doRelocateContextMenuView();
 						}
 					}
 				}
@@ -1205,9 +1232,11 @@ public class PDocView extends View {
 				if(wastedClickTime!=0) {
 					if(e.getDownTime()-wastedClickTime<450) {
 						treatNxtUpAsSingle = true;
-						return true;
+						//return true;
+						abortNextDoubleTapZoom=true;
 					} else {
 						wastedClickTime = 0;
+						abortNextDoubleTapZoom=false;
 					}
 				}
 				if (zoomEnabled && (readySent||isProxy) && e.getActionMasked()==MotionEvent.ACTION_DOWN) {
@@ -1374,9 +1403,6 @@ public class PDocView extends View {
 				isRotating = false;
 				orgX=view_pager_toguard_lastX=lastX;
 				orgY=view_pager_toguard_lastY=lastY;
-				if(shouldDrawSelection()) {
-					hideContextMenuView();
-				}
 				if(hasSelection) {
 					if (handleLeft.getBounds().contains((int) orgX, (int) orgY)) {
 						startInDrag = true;
@@ -1388,6 +1414,10 @@ public class PDocView extends View {
 						sCursorPosStart.set(handleRightPos.right, handleRightPos.bottom);
 					}
 				}
+				if(shouldDrawSelection() && (hideContextMenu||draggingHandle!=null)) {
+					hideContextMenuView();
+				}
+				downFlinging = isFlinging;
 			}
 			case MotionEvent.ACTION_POINTER_DOWN:{
 				CMN.Log("ACTION_DOWN", touchCount);
@@ -1837,11 +1867,12 @@ public class PDocView extends View {
 				if (isQuickScaling) {
 					isQuickScaling=false;
 					if (!quickScaleMoved) {
+						if(!abortNextDoubleTapZoom)
 						doubleTapZoom(quickScaleSCenter/*, vCenterStart*/);
 					}
 				}
 				
-				if (maxTouchCount > 0 && (isZooming || isPanning) || touch_partisheet.size()==1) {
+				if (maxTouchCount > 0 && (isZooming || isPanning) || touch_partisheet.size()==1 || quickScaleMoved) {
 					if (isZooming && touchCount == 2 || touch_partisheet.size()==1) {
 						// Convert from zoom to pan with remaining touch
 //						isPanning = true;
@@ -1883,60 +1914,81 @@ public class PDocView extends View {
 	public void showContextMenuView() {
 		if(contextView!=null&&!bSupressingUpdatCtxMenu) {
 			contextView.setVisibility(View.VISIBLE);
+			showContextMenu = true;
 		}
 	}
 	
 	public void hideContextMenuView() {
 		if(contextView!=null&&!bSupressingUpdatCtxMenu) {
 			contextView.setVisibility(View.GONE);
+			showContextMenu = false;
 		}
 	}
 	
 	Runnable relocateCMRunnable = this::relocateContextMenuView;
 	
 	public void postRelocateContextMenuView() {
-		removeCallbacks(relocateCMRunnable);
-		postDelayed(relocateCMRunnable, 280);
+		if(hideContextMenu) {
+			removeCallbacks(relocateCMRunnable);
+			postDelayed(relocateCMRunnable, 280);
+		} else {
+			doRelocateContextMenuView();
+		}
 	}
 	
 	public void relocateContextMenuView() {
 		if(contextView!=null && !isDown && !bSupressingUpdatCtxMenu) {
-			if(hasSelection ||hasAnnotSelction) {
-				int height = contextView.getMeasuredHeight();
-				float top1, top2;
-				float lh=0;
-				if(hasSelection) {
-					lh = Math.max(handleLeftPos.height(), handleRightPos.height());
-					top1 = sourceToViewY(handleLeftPos.top);
-					top2 = sourceToViewY(handleRightPos.top);
-					if(top1>top2) {
-						float tmp = top2;
-						top2=top1;
-						top1=tmp;
-					}
+			doRelocateContextMenuView();
+		}
+	}
+	
+	private void doRelocateContextMenuView() {
+		if(hasSelection ||hasAnnotSelction) {
+			int height = contextView.getMeasuredHeight();
+			float top1, top2;
+			float left1;
+			float lh=0;
+			if(hasSelection) {
+				lh = Math.max(handleLeftPos.height(), handleRightPos.height());
+				top1 = sourceToViewY(handleLeftPos.top);
+				top2 = sourceToViewY(handleRightPos.top);
+				if(top1>top2) {
+					float tmp = top2;
+					top2=top1;
+					top1=tmp;
+					//left1 = sourceToViewX(handleRightPos.centerX());
+				} else {
+					//left1 = sourceToViewX(handleLeftPos.centerX());
 				}
-				else {
-					top1 = sourceToViewY(annotSelRect.top);
-					top2 = sourceToViewY(annotSelRect.bottom);
-				}
-				top1 += -height-lh*2*scale;
-				top2 += selectionPaintView.drawableHeight + lh*scale;
-				float top=top1;
-				if(top<0) { // 没入顶端
-					top = top2;
-					if(top+height>getHeight()) { // 溢出底部
-						float center = (top1 + top2) / 2;
-						if(center>0&&center<getHeight()) {
-							top = (getHeight()-height)/2;
-						}
-					}
-				}
-				if(true) {
-					top = Math.min(Math.max(0, top), getHeight()-height);
-				}
-				contextView.setTranslationY(top);
-				contextView.setVisibility(View.VISIBLE);
+				left1 = sourceToViewX((handleLeftPos.centerX()+handleRightPos.centerX())/2);
 			}
+			else {
+				top1 = sourceToViewY(annotSelRect.top);
+				top2 = sourceToViewY(annotSelRect.bottom);
+				left1 = sourceToViewX(annotSelRect.centerX());
+			}
+			top1 += -height-lh*2*scale;
+			top2 += selectionPaintView.drawableHeight + lh*scale;
+			float top=top1;
+			if(false)
+			if(top<0) { // 没入顶端
+				top = top2;
+				if(top+height>getHeight()) { // 溢出底部
+					float center = (top1 + top2) / 2;
+					if(center>0&&center<getHeight()) {
+						top = (getHeight()-height)/2;
+					}
+				}
+			}
+			if(true)
+			if(false){
+				top = Math.min(Math.max(0, top), getHeight()-height);
+			}
+			contextView.setTranslationY(top);
+			
+			contextView.setTranslationX(left1-contextView.getWidth()/2);
+			contextView.setVisibility(View.VISIBLE);
+			showContextMenu = true;
 		}
 	}
 	
@@ -1965,6 +2017,9 @@ public class PDocView extends View {
 	private void handle_proxy_simul(float scaleStamp, PointF translationStamp, float rotationStamp) {
 		if(shouldDrawSelection()||selectionPaintView.searchCtx!=null) {
 			redrawSel();
+		}
+		if(showContextMenu && contextView!=null && !hideContextMenu) {
+			doRelocateContextMenuView();
 		}
 //		if (view_to_guard != null) {
 //			if(false) {
@@ -2868,21 +2923,6 @@ public class PDocView extends View {
 	}
 	
 	/**
-	 * Check whether either the full size bitmap or base layer tiles are loaded. First time, send image
-	 * loaded event to listener.
-	 */
-	private boolean checkImageLoaded() {
-		boolean imageLoaded = isBaseLayerReady();
-		if (!imageLoadedSent && imageLoaded) {
-			preDraw();
-			imageLoadedSent = true;
-			onImageLoaded();
-			//if (onImageEventListener != null) onImageEventListener.onImageLoaded();
-		}
-		return imageLoaded;
-	}
-	
-	/**
 	 * Creates Paint objects once when first needed.
 	 */
 	private void createPaints() {
@@ -2992,16 +3032,20 @@ public class PDocView extends View {
 		
 		// If waiting to translate to new center position, set translate now
 		if (_sPendingCenter != null && _pendingScale != null) {
-			scale = getMinScale();
+			scale = _pendingScale;//getMinScale();
 			//pendingScale = scale;
 			//sPendingCenter = _sPendingCenter;
 			Log.e("fatal","kiam preDraw2 scale="+scale+"  getWidth="+getScreenWidth()+"  getHeight="+getScreenHeight()+" width="+getWidth());
-			if(pdoc.isHorizontalView()) {
-				vTranslate.x = 0;
-				vTranslate.y = (getScreenHeight()*1.0f/2) - (scale * _sPendingCenter.y);
+			if(pdoc.bookInfo!=null) {
+				navigateTo(pdoc.bookInfo.parms, false);
 			} else {
-				vTranslate.x = (getScreenWidth()*1.0f/2) - (scale * _sPendingCenter.x);
-				vTranslate.y = 0;//(getScreenHeight()*1.0f/2) - (scale * _sPendingCenter.y);
+				if(pdoc.isHorizontalView()) {
+					vTranslate.x = 0;
+					vTranslate.y = (getScreenHeight()*1.0f/2) - (scale * _sPendingCenter.y);
+				} else {
+					vTranslate.x = (getScreenWidth()*1.0f/2) - (scale * _sPendingCenter.x);
+					vTranslate.y = 0;//(getScreenHeight()*1.0f/2) - (scale * _sPendingCenter.y);
+				}
 			}
 			vTranslateOrg.set(vTranslate);
 			//Log.e("fatal poison", ""+getScreenWidth()+" x "+getScreenHeight());
@@ -3182,6 +3226,7 @@ public class PDocView extends View {
 			currentDoc.tryClose(a.getTaskId());
 		}
 		if(path!=null) {
+			imageLoading = true;
 			loadingTask = new TilesInitTask(this, path);
 			loadingTask.start();
 		} else {
@@ -3199,10 +3244,10 @@ public class PDocView extends View {
 		_pdoc.aid = a.getTaskId();
 		removeCallbacks(mAnimationRunnable);
 		long time = System.currentTimeMillis();
-		sWidth = pdoc.getWidth();
-		sHeight = pdoc.getHeight();
+		sWidth = _pdoc.getWidth();
+		sHeight = _pdoc.getHeight();
 		//sOrientation = 0;
-		ImgSrc = Utils.getRunTimePath(pdoc.path);
+		ImgSrc = Utils.getRunTimePath(_pdoc.path);
 		sOrientation = getExifOrientation(getContext(), ImgSrc);
 		rotation = (float) Math.toRadians(sOrientation);
 		CMN.Log("setProxy getExifOrientation", sOrientation, rotation, ImgSrc);
@@ -3213,10 +3258,10 @@ public class PDocView extends View {
 		//minScale = getMinScale();
 		maxScale = scale*10;
 		
-		preDraw2(new PointF(sWidth *1.0f/2, sHeight *1.0f/2),scale);
+		preDraw2(new PointF(sWidth *1.0f/2, sHeight *1.0f/2), scale);
 		
-		if(mDocListener!=null) {
-			mDocListener.NewDocOpened();
+		if(mImageReadyListener!=null) {
+			mImageReadyListener.NewDocOpened();
 		}
 //		ViewGroup.LayoutParams lp = view_to_paint.getLayoutParams();
 //		lp.width=(int) (sWidth*scale);
@@ -3339,8 +3384,9 @@ public class PDocView extends View {
 				}
 				if(piv.flingScroller.isFinished())
 					piv.postInvalidate();
-				if(piv.mImageReadyListener!=null) {
+				if(piv.imageLoading && piv.mImageReadyListener!=null) {
 					piv.mImageReadyListener.ImageReady();
+					piv.imageLoading = false;
 				}
 			} catch (Exception e) {
 				CMN.Log(e);
@@ -4388,15 +4434,6 @@ public class PDocView extends View {
 	}
 	
 	/**
-	 * Call to find whether the main image (base layer tiles where relevant) have been loaded. Before
-	 * this event the view is blank unless a preview was provided.
-	 * @return true if the main image (not the preview) has been loaded and is ready to display.
-	 */
-	public final boolean isImageLoaded() {
-		return imageLoadedSent;
-	}
-	
-	/**
 	 * Called once when the full size image or its base layer tiles have been loaded.
 	 */
 	@SuppressWarnings("EmptyMethod")
@@ -4814,8 +4851,20 @@ public class PDocView extends View {
 	
 	
 	public void checkDoc(Context a, boolean incremental, boolean reload) {
-		if(pdoc!=null && pdoc.isDirty)
-			pdoc.saveDocAsCopy(a, null, incremental, reload);
+		if(pdoc!=null) { //syncstats
+			if(mImageReadyListener!=null && pdoc.bookInfo!=null && (pdoc.isBookInfoDirty()||true)) {
+				int pageIdx = getCurrentPageOnScreen();
+				PDocument.PDocPage page = pdoc.mPDocPages[pageIdx];
+				int offsetX, offsetY;
+				offsetX = (int) (vTranslate.x/scale - page.getLateralOffset());
+				offsetY = (int) (-vTranslate.y/scale - page.OffsetAlongScrollAxis);
+				pdoc.bookInfo.parms.set(pageIdx, offsetX, offsetY, scale);
+				mImageReadyListener.saveBookInfo(pdoc.bookInfo);
+			}
+			if(pdoc.isDirty) {
+				pdoc.saveDocAsCopy(a, null, incremental, reload);
+			}
+		}
 	}
 	
 
