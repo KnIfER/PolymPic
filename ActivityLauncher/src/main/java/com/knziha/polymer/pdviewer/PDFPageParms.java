@@ -6,7 +6,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.knziha.polymer.Utils.CMN;
 
 public class PDFPageParms {
-	int pageIdx;
+	public int pageIdx;
 	int offsetX;
 	int offsetY;
 	float scale;
@@ -29,6 +29,14 @@ public class PDFPageParms {
 		offsetX=x;
 		offsetY=y;
 		scale=s;
+	}
+	
+	public boolean setIfNotEqual(int p, int x, int y, float s) {
+		if(this.pageIdx!=p||this.offsetX!=x||this.offsetY!=y||this.scale!=s) {
+			set(p, x, y, s);
+			return true;
+		}
+		return false;
 	}
 	
 	@NonNull

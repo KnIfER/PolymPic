@@ -3,6 +3,7 @@ package com.knziha.polymer.database;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteStatement;
@@ -45,6 +46,10 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 			INSTANCE = new LexicalDBHelper(context.getApplicationContext());
 		}
 		INSTANCE_COUNT++;
+		return INSTANCE;
+	}
+	
+	public static LexicalDBHelper getInstance() {
 		return INSTANCE;
 	}
 	
@@ -425,7 +430,7 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 	}
 	
 	public int savePDocInfo(PDocBookInfo bookInfo) {
-		final String tabelName = "pdoc";
+		final String tableName = "pdoc";
 		String name = bookInfo.name;
 		if(TextUtils.isEmpty(name)) {
 			return 0;
@@ -448,14 +453,15 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 		
 		if(count>0) {
 			values.put("id", id);
-			bookInfo.rowID = database.insertWithOnConflict(tabelName, null, values, SQLiteDatabase.CONFLICT_REPLACE);
+			bookInfo.rowID = database.insertWithOnConflict(tableName, null, values, SQLiteDatabase.CONFLICT_REPLACE);
 		} else {
 			CMN.Log("新建");
-			bookInfo.rowID = database.insert(tabelName, null, values);
+			bookInfo.rowID = database.insert(tableName, null, values);
 			if(bookInfo.rowID!=-1) {
 				bookInfo.count++;
 			}
 		}
+		
 		CMN.Log("大概保存了吧……");
 		return bookInfo.count;
 	}
@@ -473,5 +479,38 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 			}
 		} catch (Exception e) { CMN.Log(e); }
 		return null;
+	}
+	
+	/** 做标注时，将页面位置、文本索引、文本片段储存在数据库。 */
+	public boolean connectPagesTable(String name) {
+		SQLiteDatabase db = getDB();
+		if(db==null) {
+			return false;
+		}
+		//db.execSQL("drop table "+name);
+		
+		// page info.
+		final String createPagesTable = "create table if not exists \""+name+"\" ("+
+				"id INTEGER PRIMARY KEY AUTOINCREMENT," + // 0
+				"pid INTEGER NOT NULL," + // 1
+				"type INTEGER NOT NULL," + // 1
+				"favor INTEGER DEFAULT 0 NOT NULL," + // 2
+				"text TEXT," + // 3
+				"parms TEXT,"+ // 4
+				"thumbnail BLOB," + // 5
+				"ext1 TEXT,"+ // 6
+				"f1 INTEGER DEFAULT 0 NOT NULL," + // 7
+				"creation_time INTEGER DEFAULT 0 NOT NULL" + // 8
+				")";
+		
+		try {
+			db.execSQL(createPagesTable);
+			db.execSQL("CREATE INDEX if not exists page_index ON "+name+" (pid)");
+			db.execSQL("CREATE INDEX if not exists favor_index ON "+name+" (favor)");
+			db.execSQL("CREATE INDEX if not exists type_index ON "+name+" (type)");
+			return true;
+		} catch (SQLException e) { CMN.Log(e); }
+		
+		return false;
 	}
 }

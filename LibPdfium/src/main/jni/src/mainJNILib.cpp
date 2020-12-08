@@ -32,7 +32,7 @@ static void initLibraryIfNeed(){
     Mutex::Autolock lock(sLibraryLock);
     if(sLibraryReferenceCount == 0){
         LOGD("Init FPDF library");
-        FPDF_InitLibrary();
+        //FPDF_InitLibrary();
         FPDF_LIBRARY_CONFIG config;
         config.version = 2;
         config.m_pUserFontPaths = nullptr;

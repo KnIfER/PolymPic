@@ -88,11 +88,11 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 	public static int singleInstCout;
 	private boolean isSingleInst;
 	private int BST;
-	private boolean hasNoPermission;
 	public PDocPageViewAdapter adaptermy;
 	private PDocSearchHandler searchHandler;
 	private LexicalDBHelper historyCon;
 	private boolean splashing = true;
+	private boolean exiting;
 	
 	
 	@Override
@@ -112,6 +112,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 			if(searchHandler!=null) {
 				searchHandler.close();
 			}
+			exiting = true;
 			super.onBackPressed();
 		}
 	}
@@ -223,7 +224,10 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 				public void saveBookInfo(PDocBookInfo bookInfo) {
 					CMN.Log("saveBookInfo…");
 					historyCon.savePDocInfo(bookInfo);
-					opt.putLastOpendPDocID(bookInfo.rowID);
+					if(exiting) {
+						opt.putLastOpendPDocID(bookInfo.rowID);
+					}
+					bookInfo.isDirty = false;
 				}
 			});
 		} catch (Exception e) {
@@ -298,7 +302,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		if(historyCon==null) {
 			historyCon = LexicalDBHelper.connectInstance(this);
 		}
-		processIntent(getIntent(), true, hasNoPermission);
+		processIntent(getIntent(), true, currentViewer.hasNoPermission);
 	}
 	
 	private void processBST(Intent intent) {
@@ -487,6 +491,8 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 						return;
 					}
 					CMN.Log("人生若只如初见", file_path, ret);
+				} else {
+					currentViewer.hasNoPermission = false;
 				}
 				if(currentViewer.setDocumentUri(uri))
 				if (!this_instanceof_PDocMainViewer && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
@@ -524,7 +530,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 	public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
 		super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 		if (requestCode==321) {
-			hasNoPermission = grantResults[0] != PackageManager.PERMISSION_GRANTED;
+			currentViewer.hasNoPermission = grantResults[0] != PackageManager.PERMISSION_GRANTED;
 			further_loading(null);
 		}
 	}

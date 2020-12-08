@@ -483,7 +483,8 @@ public class PDocument {
 			}
 		}
 		
-		public void createHighlight(int colorInt, RectF box, ArrayList<RectF> selLineRects) {
+		/** Create a highlight annotation on this page. */
+		public void createHighlight(PDocView pDocView, int colorInt, int selSt, int selEd, RectF box, ArrayList<RectF> selLineRects) {
 			open();
 			long antTmp = pdfiumCore.nativeCreateAnnot(pid.get(), 9);
 			if(antTmp!=0) {
@@ -505,6 +506,19 @@ public class PDocument {
 					pdfiumCore.nativeAppendAnnotPoints(pid.get(), antTmp, rI.left-offset2, rI.top-offset1, rI.right-offset2, rI.bottom-offset1, width, height);
 				}
 				pdfiumCore.nativeCloseAnnot(antTmp);
+				
+				if(true) {
+					int selStart = Math.min(selSt, selEd);
+					int selEnd = selStart+Math.abs(selEd-selSt);
+					String text = null;
+					if(true) {
+						prepareText();
+						text = allText.substring(selStart, selEnd);
+					}
+					bookInfo.appendAnnotRecord(pDocView.getCurrentPageParmsOnScreen(), colorInt, selStart, selEnd, text, getWritable()&&!pDocView.hasNoPermission);
+				}
+				
+				// todo add the new newly created annot directly to the list
 				mAnnotRects=null;
 			}
 		}
@@ -585,6 +599,10 @@ public class PDocument {
 			}
 			return selLineRects;
 		}
+	}
+	
+	private boolean getWritable() {
+		return true;
 	}
 	
 	// https://www.cnblogs.com/fangsmile/p/9306510.html

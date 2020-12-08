@@ -285,9 +285,20 @@ public class PDocView extends View {
 	private boolean abortNextDoubleTapZoom;
 	private MotionEvent wastedEvent;
 	private static boolean stdFling = !Utils.littleCake;
+	private GestureDetector.SimpleOnGestureListener flinglistener;
+	public boolean hasNoPermission;
 	
 	public int getCurrentPageOnScreen() {
 		return lastMiddlePage;
+	}
+	
+	public PDFPageParms getCurrentPageParmsOnScreen() {
+		int pageIdx = getCurrentPageOnScreen();
+		PDocument.PDocPage page = pdoc.mPDocPages[pageIdx];
+		int offsetX, offsetY;
+		offsetX = (int) (vTranslate.x/scale - page.getLateralOffset());
+		offsetY = (int) (-vTranslate.y/scale - page.OffsetAlongScrollAxis);
+		return new PDFPageParms(pageIdx, offsetX, offsetY, scale);
 	}
 	
 	public int getPageCount() {
@@ -732,7 +743,7 @@ public class PDocView extends View {
 			if(selRects.size()>0) { //sanity check
 				RectF box = new RectF(selRects.get(0));
 				ArrayList<RectF> selLineRects = page.mergeLineRects(selRects, box);
-				page.createHighlight(0xffffff00, box, selLineRects);
+				page.createHighlight(this, 0xffffff00, selStart, selEnd, box, selLineRects);
 				invalidateTiles(page, box);
 				clearSelection();
 				pdoc.isDirty=true;
@@ -1046,7 +1057,7 @@ public class PDocView extends View {
 	private int MAX_FLING_OVER_SCROLL = (int) (30*getContext().getResources().getDisplayMetrics().density);
 	@SuppressWarnings("SuspiciousNameCombination")
 	private void setGestureDetector(final Context context) {
-		this.flingdetector = new GestureDetector(context, new GestureDetector.SimpleOnGestureListener() {
+		this.flingdetector = new GestureDetector(context, flinglistener=new GestureDetector.SimpleOnGestureListener() {
 			@Override
 			public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
 				CMN.Log("onFling");
@@ -1236,7 +1247,7 @@ public class PDocView extends View {
 			@Override
 			public boolean onDoubleTapEvent(MotionEvent e) {
 				// remove this to enable quickScaling after dismissed selection.
-				if(!abortNextDoubleTapZoom)
+				//if(!abortNextDoubleTapZoom)
 				if(treatNxtUpAsSingle && e.getActionMasked()==MotionEvent.ACTION_UP) {
 					onSingleTapUp(e);
 				}
@@ -1253,6 +1264,8 @@ public class PDocView extends View {
 				}
 				// remove this to enable quickScaling after dismissed selection.
 				if(abortNextDoubleTapZoom) {
+					if(e.getActionMasked()==MotionEvent.ACTION_DOWN)
+					treatNxtUpAsSingle = true;
 					setGestureDetector(getContext());
 					return false;
 				}
@@ -1784,6 +1797,11 @@ public class PDocView extends View {
 				isZooming=false;
 				if(shouldDrawSelection() && anim==null && !isFlinging) {
 					postRelocateContextMenuView();
+				}
+				if(treatNxtUpAsSingle) {
+					treatNxtUpAsSingle=false;
+					if(!isPanning)
+					flinglistener.onSingleTapUp(event);
 				}
 //				if(event!=wastedEvent) {
 //					abortNextDoubleTapZoom=false;
@@ -4913,8 +4931,10 @@ public class PDocView extends View {
 				int offsetX, offsetY;
 				offsetX = (int) (vTranslate.x/scale - page.getLateralOffset());
 				offsetY = (int) (-vTranslate.y/scale - page.OffsetAlongScrollAxis);
-				pdoc.bookInfo.parms.set(pageIdx, offsetX, offsetY, scale);
-				mImageReadyListener.saveBookInfo(pdoc.bookInfo);
+				pdoc.bookInfo.setParms(pageIdx, offsetX, offsetY, scale);
+				if(pdoc.bookInfo.isDirty) {
+					mImageReadyListener.saveBookInfo(pdoc.bookInfo);
+				}
 			}
 			if(pdoc.isDirty) {
 				pdoc.saveDocAsCopy(a, null, incremental, reload);
