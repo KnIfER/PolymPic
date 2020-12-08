@@ -2,7 +2,6 @@ package com.knziha.filepicker.model;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.graphics.Bitmap;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
@@ -15,7 +14,6 @@ import com.bumptech.glide.annotation.GlideModule;
 import com.bumptech.glide.load.engine.cache.DiskCache;
 import com.bumptech.glide.load.engine.cache.DiskLruCacheFactory;
 import com.bumptech.glide.module.AppGlideModule;
-import com.knziha.filepicker.utils.CMNF;
 
 import java.io.File;
 import java.io.InputStream;
@@ -43,7 +41,16 @@ public class GlideCacheModule extends AppGlideModule {
 		String path = defaultReader.getString("cache_p", DEFAULT_GLIDE_PATH==null?context.getExternalCacheDir().getAbsolutePath()+"/thumnails/":DEFAULT_GLIDE_PATH);
 		boolean bUseLruDiskCache = false;//(defaultReader.getLong("MSF", 0) & 0x100) == 0;
 		//CMNF.Log("applyOptions", bUseLruDiskCache + " : " + path);
-        builder.setDiskCache(bUseLruDiskCache?
+	
+		//MemorySizeCalculator calculator = new MemorySizeCalculator.Builder(context).build();
+		//int defaultMemoryCacheSize = calculator.getMemoryCacheSize();
+		//int defaultBitmapPoolSize = calculator.getBitmapPoolSize();
+		//int customMemoryCacheSize = (int) (1.2 * defaultMemoryCacheSize);
+		//int customBitmapPoolSize = (int) (1.2 * defaultBitmapPoolSize);
+		//builder.setMemoryCache(new LruResourceCache(customMemoryCacheSize));
+		//builder.setBitmapPool(new LruBitmapPool(customBitmapPoolSize));
+		
+		builder.setDiskCache(bUseLruDiskCache?
                 new GoodDiskCacheFactory(path, defaultReader.getInt("cache_s", 256) * 1024 * 1024)://300*1024 DiskCache.Factory.DEFAULT_DISK_CACHE_SIZE
                 new GoodDiskCacheFactoryForever(path));
         builder.setLogLevel(Log.VERBOSE);

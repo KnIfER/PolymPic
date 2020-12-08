@@ -53,6 +53,10 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 		return INSTANCE;
 	}
 	
+	public static SQLiteDatabase getInstancedDb() {
+		return INSTANCE==null?null:INSTANCE.database;
+	}
+	
 	public static long getLong(Cursor cursor, int i) {
 		try {
 			return cursor.getLong(i);
@@ -512,5 +516,10 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 		} catch (SQLException e) { CMN.Log(e); }
 		
 		return false;
+	}
+	
+	public Cursor queryPdocHistory() {
+		String sql = "select * from pdoc";
+		return database.rawQuery(sql, null);
 	}
 }

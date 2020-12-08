@@ -968,7 +968,7 @@ public class PDocView extends View {
 						boolean responsibleForThisBook=false;
 						PDocument doc = books.get(path);
 						if(doc==null) {
-							doc = new PDocument(view.getContext(), url, view.dm, Looper.myLooper() == Looper.getMainLooper() ? null : abort);
+							doc = new PDocument(view.getContext().getContentResolver(), url, view.dm, Looper.myLooper() == Looper.getMainLooper() ? null : abort);
 							responsibleForThisBook=true;
 						}
 						if(!abort.get()) {

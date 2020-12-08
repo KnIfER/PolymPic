@@ -34,8 +34,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.knziha.polymer.pdviewer.PDocView.books;
+import static com.shockwave.pdfium.PdfiumCore.LargeFileTheta;
 
 public class PDocument {
+	public final static AtomicBoolean initFlag = new AtomicBoolean(true);
 	public final Uri path;
 	public final AtomicInteger referenceCount;
 	final DisplayMetrics dm;
@@ -188,9 +190,9 @@ public class PDocument {
 		return bookInfo!=null && bookInfo.isDirty;
 	}
 	
-	class PDocPage {
+	public class PDocPage {
 		final int pageIdx;
-		final Size size;
+		public final Size size;
 		public PDocView.Tile tile;
 		public PDocView.Tile tileBk;
 		public int startY = 0;
@@ -615,18 +617,18 @@ public class PDocument {
 		return GetCross(p1, p2, p) * GetCross(p3, p4, p) >= 0 && GetCross(p2, p3, p) * GetCross(p4, p1, p) >= 0;
 	}
 	
-	public PDocument(Context c, Uri path, DisplayMetrics dm, AtomicBoolean abort) throws IOException {
+	public PDocument(ContentResolver contentResolver, Uri path, DisplayMetrics dm, AtomicBoolean abort) throws IOException {
 		this.path = path;
 		this.referenceCount = new AtomicInteger(1);
 		this.dm = dm;
 		if(pdfiumCore==null) {
-			pdfiumCore = new PdfiumCore(c);
+			pdfiumCore = new PdfiumCore();
 		}
 		//File f = new File(path);
 		//ParcelFileDescriptor pfd = ParcelFileDescriptor.open(f, ParcelFileDescriptor.MODE_READ_ONLY);
-		ParcelFileDescriptor pfd = c.getContentResolver().openFileDescriptor(path, "r");
+		ParcelFileDescriptor pfd = contentResolver.openFileDescriptor(path, "r");
 		//CMN.Log("ParcelFileDescriptor", pfd.getFd());
-		pdfDocument = pdfiumCore.newDocument(pfd);
+		pdfDocument = pdfiumCore.newDocument(pfd, abort==initFlag?0:LargeFileTheta);
 		_num_entries = pdfiumCore.getPageCount(pdfDocument);
 		mPDocPages = new PDocPage[_num_entries];
 		LengthAlongScrollAxis=0;

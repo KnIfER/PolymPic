@@ -1,12 +1,13 @@
 package com.shockwave.pdfium;
 
-import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.PointF;
 import android.graphics.RectF;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
 import android.view.Surface;
+
+import androidx.appcompat.app.GlobalOptions;
 
 import com.shockwave.pdfium.bookmarks.BookMarkNode;
 import com.shockwave.pdfium.util.Size;
@@ -21,7 +22,7 @@ public class PdfiumCore {
     private static final Class FD_CLASS = FileDescriptor.class;
     private static final String FD_FIELD_NAME = "descriptor";
 	
-	public static int largeFileTheta = 500*1024*1024;
+	public static int LargeFileTheta = 500*1024*1024;
 
     static {
         try {
@@ -138,18 +139,22 @@ public class PdfiumCore {
 
 
     /** Context needed to get screen density */
-    public PdfiumCore(Context ctx) {
-        mCurrentDpi = ctx.getResources().getDisplayMetrics().densityDpi;
+    public PdfiumCore() {
+        mCurrentDpi = (int) GlobalOptions.densityDpi;
         Log.d("Fatal", "Starting PdfiumAndroid " + BuildConfig.VERSION_NAME);
     }
 
     /** Create new document from file */
-    public PdfDocument newDocument(ParcelFileDescriptor fd) throws IOException {
-        return newDocument(fd, null);
+	public PdfDocument newDocument(ParcelFileDescriptor fd) throws IOException {
+		return newDocument(fd, null, LargeFileTheta);
+	}
+	
+    public PdfDocument newDocument(ParcelFileDescriptor fd, int largeFileTheta) throws IOException {
+        return newDocument(fd, null, largeFileTheta);
     }
 
     /** Create new document from file with password */
-    public PdfDocument newDocument(ParcelFileDescriptor fd, String password) throws IOException {
+    public PdfDocument newDocument(ParcelFileDescriptor fd, String password, int largeFileTheta) throws IOException {
         PdfDocument document = new PdfDocument();
         document.parcelFileDescriptor = fd;
         synchronized (lock) {

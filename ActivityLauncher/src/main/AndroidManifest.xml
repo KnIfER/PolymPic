@@ -103,7 +103,7 @@
 
 		<activity
 			android:name=".pdviewer.PDocHistoryActivity"
-			android:theme="@style/ActivityTheme"
+			android:theme="@style/AppTheme"
 			>
 		</activity>
 
