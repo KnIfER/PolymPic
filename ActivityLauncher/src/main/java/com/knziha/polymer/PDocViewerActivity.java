@@ -239,6 +239,11 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 					if(adaptermy!=null) {
 						adaptermy.notifyDataSetChanged();
 					}
+					int pageId = getIntent().getIntExtra("page", -1)-1;
+					//CMN.Log("pageId", pageId);
+					if(pageId>=0) {
+						currentViewer.goToPageCentered(pageId, false);
+					}
 				}
 				
 				@Override
@@ -472,7 +477,8 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 					togglePagesView();
 				} break;
 				case 4: {
-				
+					Intent intent = new Intent(PDocViewerActivity.this, PDocHistoryActivity.class);
+					startActivityForResult(intent, 211);
 				} break;
 			}
 		}
@@ -616,8 +622,6 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		switch (v.getId()) {
 			case R.id.browser_widget7: {
 				//currentViewer.pdoc.test1();
-				Intent intent = new Intent(this, PDocHistoryActivity.class);
-				startActivityForResult(intent, 211);
 			} break;
 			case R.id.browser_widget8: {
 				currentViewer.pdoc.test2();
@@ -694,8 +698,16 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		}
 		if(!this_instanceof_PDocMainViewer) {
 			PDFPageParms pageParms = parsePDFPageParms(null);
-			if(pageParms!=null) {
-				currentViewer.navigateTo(pageParms, true);
+			if(pageParms != null) {
+				int pageIdx = pageParms.pageIdx;
+				if (pageIdx >=0 && pageIdx < currentViewer.getPageCount()) {
+					if (pageParms.scale > 0) {
+						currentViewer.navigateTo(pageParms, true);
+					} else {
+						currentViewer.goToPageCentered(pageIdx, false);
+					}
+					getIntent().putExtra("page", pageIdx);
+				}
 			}
 		}
 	}
@@ -842,11 +854,18 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 	}
 	
 	static PDFPageParms parsePDFPageParmsFromIntent(Intent intent) {
-		if(intent!=null && intent.hasExtra("PPP")) {
-			return new PDFPageParms( intent.getIntExtra("p", 0)
-					, intent.getIntExtra("x", 0)
-					, intent.getIntExtra("y", 0)
-					, intent.getFloatExtra("s", 0) );
+		if(intent!=null) {
+			if(intent.hasExtra("PPP")) {
+				return new PDFPageParms( intent.getIntExtra("p", 0)
+						, intent.getIntExtra("x", 0)
+						, intent.getIntExtra("y", 0)
+						, intent.getFloatExtra("s", 0) );
+			} else if(intent.hasExtra("page")) {
+				return new PDFPageParms( intent.getIntExtra("page", 0)
+						, intent.getIntExtra("x", 0)
+						, intent.getIntExtra("y", 0)
+						, intent.getFloatExtra("s", 0) );
+			}
 		}
 		return null;
 	}

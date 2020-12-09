@@ -9,7 +9,7 @@ public class PDFPageParms {
 	public int pageIdx;
 	int offsetX;
 	int offsetY;
-	float scale;
+	public float scale;
 	public PDFPageParms(String val) {
 		if(val!=null) {
 			try {

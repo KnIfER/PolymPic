@@ -1507,6 +1507,7 @@ public class PDocView extends View {
 					// Start one-finger pan
 					vCenterStart.set(event.getX(), event.getY());
 					
+					if(!downFlinging)
 					// Start long click timer
 					handler.sendEmptyMessageDelayed(MESSAGE_LONG_CLICK, 600);
 				}

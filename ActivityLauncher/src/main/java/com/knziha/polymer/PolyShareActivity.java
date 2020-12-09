@@ -4,11 +4,8 @@ import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.net.Uri;
-import android.os.Binder;
 import android.os.Bundle;
-import android.util.SparseArray;
 import android.view.Window;
 
 import com.knziha.polymer.Utils.CMN;
@@ -16,8 +13,6 @@ import com.knziha.polymer.pdviewer.PDFPageParms;
 import com.knziha.polymer.pdviewer.PDocView;
 import com.knziha.polymer.pdviewer.PDocument;
 import com.knziha.polymer.widgets.Utils;
-
-import java.util.HashMap;
 
 import static com.knziha.polymer.PDocViewerActivity.MultiInstMode;
 import static com.knziha.polymer.PDocViewerActivity.PDFPageParmsMap;
@@ -64,6 +59,7 @@ public class PolyShareActivity extends Activity {
 							popup.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 							popup.putExtra("sin", true); // you are single, remove dead history
 						}
+						popup.putExtras(intent.getExtras());
 						getApplicationContext().startActivity(popup);
 					} else {
 						int aid = doc.aid;
