@@ -494,6 +494,9 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 	}
 	
 	private void processIntent(Intent intent, boolean 人生若只如初见, boolean 不如不见) {
+		if(intent==null) {
+			return;
+		}
 		Uri uri = intent.getData();
 		if(uri==null) {
 			// Url is empty. Either it is the newly launched main viewer or some bug exists.
@@ -565,6 +568,9 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 			}
 			processIntent(getIntent(), false, false);
 		}
+		if(requestCode==211) {
+			processIntent(data, true, false);
+		}
 	}
 	
 	@Override
@@ -611,7 +617,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 			case R.id.browser_widget7: {
 				//currentViewer.pdoc.test1();
 				Intent intent = new Intent(this, PDocHistoryActivity.class);
-				startActivity(intent);
+				startActivityForResult(intent, 211);
 			} break;
 			case R.id.browser_widget8: {
 				currentViewer.pdoc.test2();
@@ -875,11 +881,27 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		}
 	}
 	
+	@Override
+	public void onWindowFocusChanged(boolean hasFocus) {
+		super.onWindowFocusChanged(hasFocus);
+		if(hasFocus && isImmersiveModeEnabled) {
+			//toggleImmersiveMode(2);
+			Window window = getWindow();
+			View decorView = window.getDecorView();
+			int uiOptions = decorView.getSystemUiVisibility()
+					| View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+					| View.SYSTEM_UI_FLAG_FULLSCREEN
+					;
+			decorView.setSystemUiVisibility(uiOptions);
+		}
+	}
+	
 	/** 单击切换沉浸模式
 	 * @param immersive 0=toggle; 1=normal;*/
 	public void toggleImmersiveMode(int immersive) {
 		Window window = getWindow();
-		int uiOptions = window.getDecorView().getSystemUiVisibility();
+		View decorView = window.getDecorView();
+		int uiOptions = decorView.getSystemUiVisibility();
 		int newUiOptions = uiOptions;
 		
 		isImmersiveModeEnabled = immersive==0?
@@ -904,7 +926,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		ViewPropertyAnimator anima = bottombar_immersive.animate();
 		if (isImmersiveModeEnabled) {
 			// 归位
-			CMN.Log("Normal mode. ");
+			//CMN.Log("Normal mode. ");
 			if(Build.VERSION.SDK_INT>=21) {
 				window.setStatusBarColor(0xff6f6f6f);
 				window.setNavigationBarColor(0xff000000);
@@ -915,7 +937,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 			newUiOptions |= WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION;
 			newUiOptions &= ~Flag;
 		} else {
-			CMN.Log("Turning immersive mode mode on.");
+			//CMN.Log("Turning immersive mode mode on.");
 			if(Build.VERSION.SDK_INT>=21) {
 				window.setStatusBarColor(Color.TRANSPARENT);
 				window.setNavigationBarColor(Color.TRANSPARENT);
@@ -934,7 +956,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		
 		isImmersiveModeEnabled = !isImmersiveModeEnabled;
 		
-		window.getDecorView().setSystemUiVisibility(newUiOptions);
+		decorView.setSystemUiVisibility(newUiOptions);
 		
 		anima.start();
 	}

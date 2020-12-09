@@ -146,6 +146,7 @@
 	</style>
 
 	<style name="toolbarBaseTheme" parent="AppTheme">
+		<item name="colorControlNormal">#fff</item>
 		<item name="android:textColorSecondary">@android:color/white</item>
 		<item name="colorAccent">@color/colorHeaderBlue</item>
 		<item name="actionOverflowMenuStyle">@style/OverflowMenuStyle</item>

@@ -11,7 +11,7 @@
 		android:padding="0dp"
 		android:alpha="1"
 		tools:alpha="1"
-		android:background="#8f8f8f"
+		tools:background="#8f8f8f"
 		>
 
 		<com.knziha.polymer.pdviewer.PDocView

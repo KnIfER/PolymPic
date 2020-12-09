@@ -2683,7 +2683,7 @@ public class PDocView extends View {
 				}
 			}
 			
-			//if(missingTile||isZooming||isFlinging||anim!=null)
+			//if(missingTile||isZooming/*||isFlinging*/||anim!=null)
 			//if(false)
 			{
 				// 绘制缩略图

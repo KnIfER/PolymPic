@@ -39,4 +39,5 @@ Donec feugiat ac nunc vel laoreet. In laoreet pretium fringilla. Suspendisse pot
 	<string name="pdf_try">I want to try the browser......</string>
 	<string name="pdf_app">The main body of this APP is a web browser, but it has not yet been completed. The completed function is the PDF reading/annotating part. </string>
 	<string name="pdf_hint">Note: If you use the system file manager to call PolymPic to invoke the PDF document, you can use it without storage permission. </string>
+	<string name="history">History</string>
 </resources>

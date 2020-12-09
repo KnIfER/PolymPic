@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout>
+<layout xmlns:app="http://schemas.android.com/apk/res-auto">
 	<LinearLayout
 		xmlns:android="http://schemas.android.com/apk/res/android"
 		android:id="@+id/root"
 		android:orientation="vertical"
 		android:layout_width="match_parent"
 		android:layout_height="match_parent"
-		android:background="#8f8f8f"
 		android:fitsSystemWindows="true"
 		>
 
@@ -16,6 +15,10 @@
 			android:layout_height="50dp"
 			android:background="#8f8f8f"
 			android:paddingTop="2dp"
+			app:title="@string/history"
+			app:titleTextColor="#fff"
+			android:theme="@style/toolbarBaseTheme"
+			android:paddingEnd="8dp"
 			/>
 
 		<androidx.recyclerview.widget.RecyclerView
