@@ -287,6 +287,7 @@ public class PDocView extends View {
 	private static boolean stdFling = !Utils.littleCake;
 	private GestureDetector.SimpleOnGestureListener flinglistener;
 	public boolean hasNoPermission;
+	private boolean ignoreNxtClick;
 	
 	public int getCurrentPageOnScreen() {
 		return lastMiddlePage;
@@ -1168,13 +1169,17 @@ public class PDocView extends View {
 			
 			@Override
 			public boolean onSingleTapConfirmed(MotionEvent e) {
-				//performClick();
-				return true;
+				if(!ignoreNxtClick) {
+					performClick();
+					return true;
+				}
+				return false;
 			}
 			
 			@Override
 			public boolean onSingleTapUp(MotionEvent e) {
 				if(draggingHandle!=null) {
+					ignoreNxtClick = true;
 					return true;
 				}
 				//performClick();
@@ -1197,6 +1202,7 @@ public class PDocView extends View {
 						if(lnkPtr!=0) {
 							String lnkTgt = pageI.getLinkTarget(lnkPtr);
 							//a.showT("LINK::"+lnkTgt);
+							ignoreNxtClick = true;
 							return true;
 						}
 					}
@@ -1210,6 +1216,7 @@ public class PDocView extends View {
 					if(downFlinging) {
 						wastedClickTime = e.getDownTime();
 						wastedEvent = e;
+						ignoreNxtClick = true;
 						return true;
 					}
 					
@@ -1219,6 +1226,7 @@ public class PDocView extends View {
 						singleTapSel = false;
 						wastedClickTime = e.getDownTime();
 						wastedEvent = e;
+						ignoreNxtClick = true;
 					}
 					
 					if(true /*&& singleTapSel*/) {
@@ -1227,6 +1235,7 @@ public class PDocView extends View {
 						if(annot!=null) {
 							//a.showT("annotIdx::"+annotIdx);
 							doRelocateContextMenuView();
+							ignoreNxtClick = true;
 							return true;
 						}
 					}
@@ -1237,7 +1246,9 @@ public class PDocView extends View {
 							clearSelection();
 						} else {
 							doRelocateContextMenuView();
+							ignoreNxtClick = true;
 						}
+						return true;
 					}
 				}
 				
@@ -1428,6 +1439,7 @@ public class PDocView extends View {
 		lastY = event.getY();
 		switch (touch_type) {
 			case MotionEvent.ACTION_DOWN:{
+				ignoreNxtClick=false;
 				isDown = true;
 				touch_partisheet.clear();
 				isRotating = false;
@@ -3348,7 +3360,7 @@ public class PDocView extends View {
 	
 	public TileLoadingTask acquireFreeTask() {
 		TileLoadingTask tI = null;
-		boolean wildMan = true;
+		boolean wildMan = false;
 		int i = wildMan?0:++threadIter;
 		for (int iter = 0; iter < 3; iter++) {
 			i = (i+iter)%3;

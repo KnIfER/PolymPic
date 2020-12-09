@@ -6,13 +6,23 @@
 		android:orientation="vertical"
 		android:layout_width="match_parent"
 		android:layout_height="match_parent"
-		android:background="#fff"
+		android:background="#8f8f8f"
+		android:fitsSystemWindows="true"
 		>
+
+		<androidx.appcompat.widget.Toolbar
+			android:id="@+id/toolbar"
+			android:layout_width="match_parent"
+			android:layout_height="50dp"
+			android:background="#8f8f8f"
+			android:paddingTop="2dp"
+			/>
 
 		<androidx.recyclerview.widget.RecyclerView
 			android:id="@+id/rv"
 			android:layout_width="match_parent"
 			android:layout_height="match_parent"
+			android:background="#fff"
 			/>
 
 

@@ -7,7 +7,6 @@ import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.ClipData;
 import android.content.ClipboardManager;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -15,6 +14,7 @@ import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -27,6 +27,7 @@ import android.util.SparseArray;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewPropertyAnimator;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.animation.AccelerateDecelerateInterpolator;
@@ -51,17 +52,19 @@ import com.knziha.polymer.database.LexicalDBHelper;
 import com.knziha.polymer.databinding.ActivityPdfviewerBinding;
 import com.knziha.polymer.pdviewer.PDFPageParms;
 import com.knziha.polymer.pdviewer.PDocHistoryActivity;
+import com.knziha.polymer.pdviewer.PDocPageViewAdapter;
 import com.knziha.polymer.pdviewer.PDocSearchHandler;
 import com.knziha.polymer.pdviewer.PDocSearchTask;
 import com.knziha.polymer.pdviewer.PDocView;
 import com.knziha.polymer.pdviewer.PDocument;
-import com.knziha.polymer.pdviewer.PDocPageViewAdapter;
-import com.knziha.polymer.pdviewer.bookmarks.BookMarksFragment;
 import com.knziha.polymer.pdviewer.bookdata.PDocBookInfo;
+import com.knziha.polymer.pdviewer.bookmarks.BookMarksFragment;
 import com.knziha.polymer.widgets.AppIconsAdapter;
 import com.knziha.polymer.widgets.DescriptiveImageView;
 import com.knziha.polymer.widgets.Utils;
 import com.shockwave.pdfium.SearchRecord;
+
+import org.adrianwalker.multilinestring.Multiline;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -93,6 +96,9 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 	private LexicalDBHelper historyCon;
 	private boolean splashing = true;
 	private boolean exiting;
+	private boolean isImmersiveModeEnabled;
+	
+	long runtimeFlag;
 	
 	
 	@Override
@@ -136,6 +142,21 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		UIData = DataBindingUtil.setContentView(this, R.layout.activity_pdfviewer);
 		root=UIData.root;
 		currentViewer = UIData.wdv;
+		
+		currentViewer.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				if(getPDocImmersive()) {
+					toggleImmersiveMode(0);
+				}
+			}
+		});
+		
+		runtimeFlag = opt.getFourthFlag();
+		
+		if(!getPDocImmersive()) {
+			root.setFitsSystemWindows(true);
+		}
 		
 		try {
 			currentViewer.dm=dm;
@@ -241,6 +262,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		menuList.add("选段翻译");
 		menuList.add("高亮查词");
 		menuList.add("缩略图");
+		menuList.add("历史记录");
 		
 		TwoWayGridView mainMenuLst = UIData.mainMenuLst;
 		mainMenuLst.setHorizontalSpacing(0);
@@ -338,6 +360,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		} else { // 显示
 			MainMenuListVis=true;
 			UIData.mainMenuLst.setVisibility(View.VISIBLE);
+			//UIData.bottombar.getLayoutParams().height = UIData.mainMenuLst.getHeight()+UIData.bottombar2.getHeight();
 		}
 		UIData.mainMenuLst
 				.animate()
@@ -448,7 +471,25 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 				case 3: {
 					togglePagesView();
 				} break;
+				case 4: {
+				
+				} break;
 			}
+		}
+	}
+	
+	private void enablePDocImmersiveMode(boolean enable) {
+		if(enable) {
+			setPDocImmersive(true);
+			opt.setPDocImmersive(true);
+			root.setFitsSystemWindows(false);
+			toggleImmersiveMode(2);
+		} else {
+			// 关闭沉静模式
+			setPDocImmersive(false);
+			opt.setPDocImmersive(false);
+			root.setFitsSystemWindows(true);
+			toggleImmersiveMode(1);
 		}
 	}
 	
@@ -544,6 +585,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 			@Override public void onAnimationStart(Animator animation) { }
 			@Override public void onAnimationEnd(Animator animation) {
 				//getWindow().setBackgroundDrawable(null);
+				getWindow().setBackgroundDrawable(new ColorDrawable(0xff000000));
 			}
 			@Override public void onAnimationCancel(Animator animation) { }
 			@Override public void onAnimationRepeat(Animator animation) { }
@@ -818,17 +860,88 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		}
 		processBST(intent);
 	}
-	private void setStatusBarColor(Window window){
+	
+	void setStatusBarColor(Window window){
 		window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS
 				| WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
 		window.getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-				
+
 				| View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
 			window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
 		if(Build.VERSION.SDK_INT>=21) {
-			window.setStatusBarColor(Color.TRANSPARENT);
+			window.setStatusBarColor(0xff6f6f6f);
 			//window.setNavigationBarColor(Color.TRANSPARENT);
 		}
 	}
+	
+	/** 单击切换沉浸模式
+	 * @param immersive 0=toggle; 1=normal;*/
+	public void toggleImmersiveMode(int immersive) {
+		Window window = getWindow();
+		int uiOptions = window.getDecorView().getSystemUiVisibility();
+		int newUiOptions = uiOptions;
+		
+		isImmersiveModeEnabled = immersive==0?
+				((uiOptions | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY) == uiOptions)
+				:immersive==1;
+		
+		ViewGroup bottombar_immersive = UIData.bottombar;
+		
+		// Navigation bar hiding:  Backwards compatible to ICS.
+		int Flag = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+		// Status bar hiding: Backwards compatible to Jellybean
+		| View.SYSTEM_UI_FLAG_FULLSCREEN
+		// Immersive mode: Backward compatible to KitKat.
+		// Note that this flag doesn't do anything by itself, it only augments the behavior
+		// of HIDE_NAVIGATION and FLAG_FULLSCREEN.  For the purposes of this sample
+		// all three flags are being toggled together.
+		// Note that there are two immersive mode UI flags, one of which is referred to as "sticky".
+		// Sticky immersive mode differs in that it makes the navigation and status bars
+		// semi-transparent, and the UI flag does not get cleared when the user interacts with
+		// the screen.
+		| View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
+		ViewPropertyAnimator anima = bottombar_immersive.animate();
+		if (isImmersiveModeEnabled) {
+			// 归位
+			CMN.Log("Normal mode. ");
+			if(Build.VERSION.SDK_INT>=21) {
+				window.setStatusBarColor(0xff6f6f6f);
+				window.setNavigationBarColor(0xff000000);
+			}
+			anima//.setDuration(220)
+					.translationY(0);
+			bottombar_immersive.setVisibility(View.VISIBLE);
+			newUiOptions |= WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION;
+			newUiOptions &= ~Flag;
+		} else {
+			CMN.Log("Turning immersive mode mode on.");
+			if(Build.VERSION.SDK_INT>=21) {
+				window.setStatusBarColor(Color.TRANSPARENT);
+				window.setNavigationBarColor(Color.TRANSPARENT);
+			}
+			int tY = UIData.bottombar2.getHeight();
+			if(MainMenuListVis)
+			{
+				tY += UIData.mainMenuLst.getHeight();
+			}
+			//anima.translationY(tY);
+			bottombar_immersive.setVisibility(View.GONE);
+			bottombar_immersive.setTranslationY(tY);
+			newUiOptions &= ~WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION;
+			newUiOptions |= Flag;
+		}
+		
+		isImmersiveModeEnabled = !isImmersiveModeEnabled;
+		
+		window.getDecorView().setSystemUiVisibility(newUiOptions);
+		
+		anima.start();
+	}
+	
+	
+	@Multiline(flagPos=0, shift=1) public boolean getPDocImmersive(){ runtimeFlag=runtimeFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=0, shift=1) public void setPDocImmersive(boolean val){ runtimeFlag=runtimeFlag; throw new IllegalArgumentException(); }
+	
+	
 }

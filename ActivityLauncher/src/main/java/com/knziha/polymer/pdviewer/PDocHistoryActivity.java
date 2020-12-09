@@ -1,12 +1,18 @@
 package com.knziha.polymer.pdviewer;
 
 import android.database.Cursor;
+import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
+import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.widget.Toolbar;
 import androidx.databinding.DataBindingUtil;
-import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
@@ -31,16 +37,42 @@ public class PDocHistoryActivity extends Toastable_Activity {
 	
 	Cursor historyCursor;
 	
+	void setStatusBarColor(Window window){
+		window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS
+				| WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
+		window.getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+				
+				| View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+			window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+		if(Build.VERSION.SDK_INT>=21) {
+			window.setStatusBarColor(Color.TRANSPARENT);
+			//window.setNavigationBarColor(Color.TRANSPARENT);
+		}
+	}
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		
+		Window win = getWindow();
+		win.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN|WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
+		requestWindowFeature(Window.FEATURE_NO_TITLE);
+		
+		setStatusBarColor(win);
+		
 		historyCon = LexicalDBHelper.connectInstance(this);
 		
 		UIData = DataBindingUtil.setContentView(this, R.layout.activity_pdoc_history);
 		
+		Toolbar mToolbar = UIData.toolbar;
+		
+		mToolbar.inflateMenu(R.menu.bookmark_tools);
+		
 		RecyclerView rv = UIData.rv;
 		
-		rv.setLayoutManager(new LinearLayoutManager(this));
+		//rv.setLayoutManager(new LinearLayoutManager(this));
+		rv.setLayoutManager(new GridLayoutManager(this, 6));
 		
 		historyCursor = historyCon.queryPdocHistory();
 		

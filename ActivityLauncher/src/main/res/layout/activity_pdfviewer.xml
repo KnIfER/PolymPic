@@ -7,7 +7,7 @@
 		android:id="@+id/root"
 		android:layout_width="match_parent"
 		android:layout_height="match_parent"
-		android:fitsSystemWindows="true"
+		android:fitsSystemWindows="false"
 		android:padding="0dp"
 		android:alpha="1"
 		tools:alpha="1"
@@ -51,73 +51,80 @@
 			android:layout_gravity="center_vertical|center_horizontal"
 			/>
 
-		<com.jess.ui.TwoWayGridView
-			android:id="@+id/main_menu_lst"
+		<FrameLayout
+			android:id="@+id/bottombar"
 			android:layout_width="match_parent"
-			android:layout_height="65dp"
-			android:orientation="horizontal"
+			android:layout_height="match_parent"
 			android:layout_gravity="bottom"
-			android:translationY="500dp"
-			tools:translationY="1110dp"
-			tools:layout_marginBottom="@dimen/_45_"
-			android:background="#ff8f8f8f"
-			android:elevation="5dp"
-			/>
-
-		<com.knziha.polymer.widgets.LineaSlidog
-			android:id="@+id/bottombar2"
-			android:layout_width="match_parent"
-			android:layout_height="@dimen/_45_"
-			android:orientation="horizontal"
-			android:background="#ff8f8f8f"
-			android:theme="@style/AppTheme"
-			android:layout_gravity="bottom"
-			android:gravity="bottom|center_vertical|fill_horizontal"
-			app:layout_behavior="com.knziha.polymer.widgets.BottomNavigationBehavior"
-			android:elevation="6dp"
 			>
-			<android.widget.ImageView
-				android:id="@+id/browser_widget7"
-				android:layout_width="0dp"
-				android:layout_height="match_parent"
-				android:layout_weight="1"
-				android:background="@drawable/surrtrip1"
-				android:clickable="true"
-				android:src="@drawable/chevron_recess" />
-			<android.widget.ImageView
-				android:id="@+id/browser_widget8"
-				android:layout_width="0dp"
-				android:layout_height="match_parent"
-				android:layout_weight="1"
-				android:background="@drawable/surrtrip1"
-				android:clickable="true"
-				android:src="@drawable/chevron_forward" />
-			<android.widget.ImageView
-				android:id="@+id/browser_widget9"
-				android:layout_width="0dp"
-				android:layout_height="match_parent"
-				android:layout_weight="1"
-				android:clickable="true"
-				android:background="@drawable/surrtrip1"
-				android:src="@drawable/ic_baseline_search_24_bottombar" />
-			<com.knziha.polymer.widgets.DescriptiveImageView
-				android:id="@+id/browser_widget10"
-				android:layout_width="0dp"
-				android:layout_height="match_parent"
-				android:layout_weight="1"
-				android:background="@drawable/surrtrip1"
-				android:clickable="true"
-				android:layout_y="-1px"
-				android:src="@drawable/ic_baseline_book_24" />
-			<android.widget.ImageView
-				android:id="@+id/browser_widget11"
-				android:layout_width="0dp"
-				android:layout_weight="1"
-				android:layout_height="match_parent"
-				android:background="@drawable/surrtrip1"
-				android:clickable="true"
-				android:src="@drawable/ic_menu_black_24dp" />
-		</com.knziha.polymer.widgets.LineaSlidog>
+			<com.jess.ui.TwoWayGridView
+				android:id="@+id/main_menu_lst"
+				android:layout_width="match_parent"
+				android:layout_height="65dp"
+				android:orientation="horizontal"
+				android:layout_gravity="bottom"
+				android:translationY="500dp"
+				tools:translationY="1110dp"
+				tools:layout_marginBottom="@dimen/_45_"
+				android:background="#ff8f8f8f"
+				android:elevation="5dp"
+				/>
+
+			<com.knziha.polymer.widgets.LineaSlidog
+				android:id="@+id/bottombar2"
+				android:layout_width="match_parent"
+				android:layout_height="@dimen/_45_"
+				android:orientation="horizontal"
+				android:background="#ff8f8f8f"
+				android:theme="@style/AppTheme"
+				android:layout_gravity="bottom"
+				android:gravity="bottom|center_vertical|fill_horizontal"
+				app:layout_behavior="com.knziha.polymer.widgets.BottomNavigationBehavior"
+				android:elevation="6dp"
+				>
+				<android.widget.ImageView
+					android:id="@+id/browser_widget7"
+					android:layout_width="0dp"
+					android:layout_height="match_parent"
+					android:layout_weight="1"
+					android:background="@drawable/surrtrip1"
+					android:clickable="true"
+					android:src="@drawable/chevron_recess" />
+				<android.widget.ImageView
+					android:id="@+id/browser_widget8"
+					android:layout_width="0dp"
+					android:layout_height="match_parent"
+					android:layout_weight="1"
+					android:background="@drawable/surrtrip1"
+					android:clickable="true"
+					android:src="@drawable/chevron_forward" />
+				<android.widget.ImageView
+					android:id="@+id/browser_widget9"
+					android:layout_width="0dp"
+					android:layout_height="match_parent"
+					android:layout_weight="1"
+					android:clickable="true"
+					android:background="@drawable/surrtrip1"
+					android:src="@drawable/ic_baseline_search_24_bottombar" />
+				<com.knziha.polymer.widgets.DescriptiveImageView
+					android:id="@+id/browser_widget10"
+					android:layout_width="0dp"
+					android:layout_height="match_parent"
+					android:layout_weight="1"
+					android:background="@drawable/surrtrip1"
+					android:clickable="true"
+					android:layout_y="-1px"
+					android:src="@drawable/ic_baseline_book_24" />
+				<android.widget.ImageView
+					android:id="@+id/browser_widget11"
+					android:layout_width="0dp"
+					android:layout_weight="1"
+					android:layout_height="match_parent"
+					android:background="@drawable/surrtrip1"
+					android:clickable="true"
+					android:src="@drawable/ic_menu_black_24dp" />
+			</com.knziha.polymer.widgets.LineaSlidog>
+		</FrameLayout>
 
 		<ViewStub
 			android:id="@+id/viewpager_parent"

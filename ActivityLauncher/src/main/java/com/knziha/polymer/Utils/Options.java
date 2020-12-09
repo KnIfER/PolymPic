@@ -176,19 +176,10 @@ public class Options implements WebOptions, BookOptions {
 		if(ThirdFlag==null) {
 			return ThirdFlag=defaultReader.getLong("MTF",0);
 		}
-		return SecondFlag;
-	}
-	private void putThirdFlag(long val) {
-		defaultReader.edit().putLong("MTF",ThirdFlag=val).commit();
-	}
-	public void putThirdFlag() {
-		putThirdFlag(ThirdFlag);
+		return ThirdFlag;
 	}
 	public Long ThirdFlag() {
 		return ThirdFlag;
-	}
-	public static void ThirdFlag(long _SecondFlag) {
-		ThirdFlag=_SecondFlag;
 	}
 	
 	@Multiline(flagPos=2) public boolean getForbidLocalStorage(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
@@ -207,6 +198,26 @@ public class Options implements WebOptions, BookOptions {
 	@Multiline(flagPos=12) public boolean getForbitNetworkImage(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=13) public boolean getPremature(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
 	
+	
+	/////////////////////End Third Flag////////////////////////////////////
+	/////////////////////Start Fourth Flag////////////////////////////////////
+	public static Long FourthFlag=null;
+	public long getFourthFlag() {
+		if(FourthFlag==null) {
+			return FourthFlag=defaultReader.getLong("MQF",0);
+		}
+		return FourthFlag;
+	}
+	public Long FourthFlag() {
+		return FourthFlag;
+	}
+	
+	@Multiline(flagPos=0, shift=1) public void setPDocImmersive(boolean val){ FourthFlag=FourthFlag; throw new IllegalArgumentException(); }
+	
+	@Multiline(flagPos=1, shift=0) public void getPDocImmersiveAutoHideMenu(boolean val){ FourthFlag=FourthFlag; throw new IllegalArgumentException(); }
+	
+	
+	/////////////////////End Fourth Flag////////////////////////////////////
 	
 	static XYTouchRecorder xyt;
 	public static  XYTouchRecorder XYTouchRecorder() {
