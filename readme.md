@@ -1,6 +1,4 @@
-This is PolyiumPic, the (currently fully) opensource part of the professional project PolymPic 
-
-:)  
+This is PolyiumPic, the (currently fully) opensource part of the professional project PolymPic :) .   
 
 Just like the chrome browser, it is a fantastic web browser + a PDF viewer.  
 
@@ -17,7 +15,7 @@ Just like the chrome browser, it is a fantastic web browser + a PDF viewer.
 - Smooth scroll and fling handling.
 - Invoke **Colordict** or **Google Translate** for easy reading.
 
-> The PDF Viewer Support content URI and request permisison at runtime. You can still use it event when you deny the permission request, entering read-only mode. 
+> The PDF viewer supports content URI and will request permisison at runtime. You can still use it event when you deny it's permission requests, entering read-only mode. 
 
 ### How to invoke PolymPic to view PDFs at a specific page in your own project:
 1. Essential
