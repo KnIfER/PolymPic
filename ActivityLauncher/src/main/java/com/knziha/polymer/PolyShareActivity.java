@@ -8,6 +8,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.view.Window;
 
+import androidx.annotation.NonNull;
+
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.pdviewer.PDFPageParms;
 import com.knziha.polymer.pdviewer.PDocView;
@@ -33,7 +35,7 @@ public class PolyShareActivity extends Activity {
 		finish();
 	}
 
-	public void ProcessIntent(Intent intent) {
+	public void ProcessIntent(@NonNull Intent intent) {
 		Uri uri = intent.getData();
 		if(uri!=null) {
 			String path = Utils.getRunTimePath(uri);
@@ -59,7 +61,10 @@ public class PolyShareActivity extends Activity {
 							popup.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 							popup.putExtra("sin", true); // you are single, remove dead history
 						}
-						popup.putExtras(intent.getExtras());
+						Bundle ext = intent.getExtras();
+						if(ext!=null) {
+							popup.putExtras(ext);
+						}
 						getApplicationContext().startActivity(popup);
 					} else {
 						int aid = doc.aid;

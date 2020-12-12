@@ -56,6 +56,7 @@
 			android:layout_width="match_parent"
 			android:layout_height="match_parent"
 			android:layout_gravity="bottom"
+			android:elevation="5dp"
 			>
 			<com.jess.ui.TwoWayGridView
 				android:id="@+id/main_menu_lst"

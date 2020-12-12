@@ -267,9 +267,11 @@ public class PDocPageViewAdapter extends RecyclerViewPagerAdapter<BrowserActivit
 	/** Alter Z-order of the viewpager */
 	public void reorderViewPager(boolean front) {
 		ViewGroup rootiumPageView = a.root;
-		int cc = rootiumPageView.getChildCount();
-		int delta = 2;
+		int cc = rootiumPageView.getChildCount() - 1;
+		int delta = 1;
 		View ca = rootiumPageView.getChildAt(cc - delta);
+		CMN.Log("reorderViewPager", front, ca, viewpagerParent);
+		CMN.recurseLogCascade(rootiumPageView);
 		if(front) {
 			if(ca!=viewpagerParent) {
 				Utils.removeIfParentBeOrNotBe(viewpagerParent, null, false);
@@ -278,7 +280,7 @@ public class PDocPageViewAdapter extends RecyclerViewPagerAdapter<BrowserActivit
 		} else {
 			if(ca==viewpagerParent) {
 				Utils.removeIfParentBeOrNotBe(viewpagerParent, null, false);
-				rootiumPageView.addView(viewpagerParent, cc-2-delta);
+				rootiumPageView.addView(viewpagerParent, cc-1-delta);
 			}
 		}
 	}

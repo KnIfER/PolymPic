@@ -1,4 +1,4 @@
-Here is PolyiumPic, the (currently fully) opensourced part of our pro-project PolymPic :) .   
+Here is PolymiumPic, the currently fully opensourced part of our pro-project PolymPic.   
 
 Just like the chrome browser, it is a fantastic web browser + a PDF viewer.  
 

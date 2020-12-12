@@ -8,10 +8,10 @@ import java.util.Objects;
 public class PageCover {
 	final ContentResolver contentResolver;
 	public final String path;
-	final int rowID;
+	final long rowID;
 	final DisplayMetrics dm;
 	
-	public PageCover(ContentResolver contentResolver, String path, int rowID, DisplayMetrics dm) {
+	public PageCover(ContentResolver contentResolver, String path, long rowID, DisplayMetrics dm) {
 		this.contentResolver = contentResolver;
 		this.path = path;
 		this.rowID = rowID;

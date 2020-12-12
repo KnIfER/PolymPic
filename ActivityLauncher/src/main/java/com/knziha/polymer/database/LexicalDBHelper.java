@@ -154,25 +154,27 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 		
 		db.execSQL(createNotesTable);
 		
+		//db.execSQL("drop table pdoc");
 		// pdoc history.
 		final String createPDocTable = "create table if not exists \"pdoc\" ("+
 				"id INTEGER PRIMARY KEY AUTOINCREMENT," + // 0
 				"name TEXT NOT NULL," + // 1
 				"url TEXT NOT NULL," + // 2
-				"page_info TEXT," + // 3
-				"zoom_info TEXT," + // 4
-				"bookmarks TEXT," + // 5
-				"toc TEXT," +  // 6
-				"note TEXT," + // 7
-				"thumbnail BLOB," + // 8
-				"ext1 TEXT,"+ // 9
-				"ext2 TEXT,"+ // 10
-				"f1 INTEGER DEFAULT 0 NOT NULL," + // 11
-				"f2 INTEGER DEFAULT 0 NOT NULL," + // 12
-				"f3 INTEGER DEFAULT 0 NOT NULL," + // 13
-				"note_id INTEGER DEFAULT -1 NOT NULL,"+ // 14
+				"page_info TEXT," + // 3 页面位置的记忆
+				"zoom_info TEXT," + // 4 缩放信息
+				"bookmarks BLOB," + // 5 书签id
+				"toc BLOB," +  // 6 toc expand / collapse states
+				"thumbnail BLOB," + // 7
+				"ext1 TEXT,"+ // 8
+				"f1 INTEGER DEFAULT 0 NOT NULL," + // 9
+				"f2 INTEGER DEFAULT 0 NOT NULL," +  // 10
+				"favor INTEGER DEFAULT 0 NOT NULL," +  // 11 喜爱等级
+				"pages INTEGER DEFAULT 0 NOT NULL," + // 12 页面总数
+				"progress INTEGER DEFAULT 0 NOT NULL," + // 13 (0~10000) 阅读进度
+				"visit_count INTEGER DEFAULT 0 NOT NULL,"+ // 14
 				"creation_time INTEGER DEFAULT 0 NOT NULL," + // 15
-				"last_visit_time INTEGER NOT NULL)"; // 16
+				"last_visit_time INTEGER NOT NULL" + // 16
+				")";
 		
 		db.execSQL(createPDocTable);
 		
@@ -180,6 +182,13 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 		db.execSQL("CREATE INDEX if not exists annots_url_index ON annots (url)");
 		db.execSQL("CREATE INDEX if not exists keyword_search_terms_index3 ON keyword_search_terms (term)");
 		db.execSQL("CREATE INDEX if not exists pdoc_name_index ON pdoc (name)");
+		db.execSQL("CREATE INDEX if not exists pdoc_time_index ON pdoc (last_visit_time)");
+		if(false) {
+			db.execSQL("CREATE INDEX if not exists pdoc_visit_index ON pdoc (visit_count)");
+			db.execSQL("CREATE INDEX if not exists pdoc_time1_index ON pdoc (creation_time)");
+			db.execSQL("CREATE INDEX if not exists pdoc_pages_index ON pdoc (pages)");
+			db.execSQL("CREATE INDEX if not exists pdoc_progress_index ON pdoc (progress)");
+		}
 		//db.execSQL("CREATE INDEX if not exists pdoc_url_index ON pdoc (url)");
 		
 		
@@ -451,19 +460,35 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 		values.put("name", name);
 		values.put("url", bookInfo.url.toString());
 		values.put("page_info", bookInfo.parms.toString());
-		//values.put("visit_count", ++count);
+		values.put("visit_count", ++count);
 		values.put("f1", bookInfo.firstflag);
 		values.put("last_visit_time", System.currentTimeMillis());
 		
-		if(count>0) {
+		boolean insert=true;
+		
+		if(id!=-1) {
 			values.put("id", id);
-			bookInfo.rowID = database.insertWithOnConflict(tableName, null, values, SQLiteDatabase.CONFLICT_REPLACE);
-		} else {
-			CMN.Log("新建");
-			bookInfo.rowID = database.insert(tableName, null, values);
-			if(bookInfo.rowID!=-1) {
-				bookInfo.count++;
+			if(database.update(tableName, values, "id=?", new String[]{String.valueOf(id)})>0) {
+				insert = false;
 			}
+		}
+		
+		if(insert) {
+			CMN.Log("新建 1");
+			values.remove("id");
+			id = database.insertWithOnConflict(tableName, null, values, SQLiteDatabase.CONFLICT_REPLACE);
+			if(id==-1) {
+				CMN.Log("新建 2");
+				id = database.insert(tableName, null, values);
+			}
+			if(id!=-1) {
+				insert = false;
+				bookInfo.rowID = id;
+			}
+		}
+		if(!insert)
+		{
+			bookInfo.count++;
 		}
 		
 		CMN.Log("大概保存了吧……");

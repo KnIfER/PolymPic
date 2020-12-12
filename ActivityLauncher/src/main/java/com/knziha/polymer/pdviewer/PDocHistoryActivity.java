@@ -104,7 +104,8 @@ public class PDocHistoryActivity extends Toastable_Activity implements Toolbar.O
 				historyCursor.moveToPosition(position);
 				
 				PageCover model = new PageCover(getContentResolver(), viewholder.path = historyCursor.getString(2)
-						, historyCursor.getInt(0), dm);
+						, viewholder.id = historyCursor.getLong(0)
+						, dm);
 				
 				ActivityPdocHistoryItemBinding itemData = viewholder.itemData;
 				itemData.tv.setText(historyCursor.getString(1));
@@ -166,6 +167,7 @@ public class PDocHistoryActivity extends Toastable_Activity implements Toolbar.O
 	static class ViewHolder extends RecyclerView.ViewHolder {
 		final ActivityPdocHistoryItemBinding itemData;
 		public String path;
+		public long id;
 		
 		public ViewHolder(ActivityPdocHistoryItemBinding itemData, View.OnClickListener listener) {
 			super(itemData.v);
