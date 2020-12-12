@@ -13,6 +13,7 @@ import android.text.TextUtils;
 import android.util.SparseArray;
 
 import com.knziha.polymer.Utils.CMN;
+import com.knziha.polymer.pdviewer.PDocument;
 import com.knziha.polymer.pdviewer.bookdata.PDocBookInfo;
 
 import org.apache.commons.lang3.StringUtils;
@@ -161,14 +162,14 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 				"name TEXT NOT NULL," + // 1
 				"url TEXT NOT NULL," + // 2
 				"page_info TEXT," + // 3 页面位置的记忆
-				"zoom_info TEXT," + // 4 缩放信息
-				"bookmarks BLOB," + // 5 书签id
-				"toc BLOB," +  // 6 toc expand / collapse states
+				"zoom_info TEXT," + // 4 缩放信息 TODO
+				"bookmarks BLOB," + // 5 书签id TODO
+				"toc BLOB," +  // 6 toc expand / collapse states TODO
 				"thumbnail BLOB," + // 7
 				"ext1 TEXT,"+ // 8
 				"f1 INTEGER DEFAULT 0 NOT NULL," + // 9
 				"f2 INTEGER DEFAULT 0 NOT NULL," +  // 10
-				"favor INTEGER DEFAULT 0 NOT NULL," +  // 11 喜爱等级
+				"favor INTEGER DEFAULT 0 NOT NULL," +  // 11 喜爱等级 TODO
 				"pages INTEGER DEFAULT 0 NOT NULL," + // 12 页面总数
 				"progress INTEGER DEFAULT 0 NOT NULL," + // 13 (0~10000) 阅读进度
 				"visit_count INTEGER DEFAULT 0 NOT NULL,"+ // 14
@@ -442,7 +443,7 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 		return database.rawQuery(sql, new String[]{name_key});
 	}
 	
-	public int savePDocInfo(PDocBookInfo bookInfo) {
+	public int savePDocInfo(PDocument pdoc, PDocBookInfo bookInfo) {
 		final String tableName = "pdoc";
 		String name = bookInfo.name;
 		if(TextUtils.isEmpty(name)) {
@@ -462,6 +463,9 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 		values.put("page_info", bookInfo.parms.toString());
 		values.put("visit_count", ++count);
 		values.put("f1", bookInfo.firstflag);
+		values.put("pages", pdoc._num_entries);
+		values.put("progress", bookInfo.parms.pageIdx*10000/pdoc._num_entries);
+		
 		values.put("last_visit_time", System.currentTimeMillis());
 		
 		boolean insert=true;

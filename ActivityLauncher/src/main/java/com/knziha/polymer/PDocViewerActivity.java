@@ -247,13 +247,14 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 				}
 				
 				@Override
-				public void saveBookInfo(PDocBookInfo bookInfo) {
+				public void saveBookInfo(PDocument pdoc) {
 					CMN.Log("saveBookInfo…");
-					historyCon.savePDocInfo(bookInfo);
+					PDocBookInfo info = pdoc.bookInfo;
+					historyCon.savePDocInfo(pdoc, info);
 					if(exiting) {
-						opt.putLastOpendPDocID(bookInfo.rowID);
+						opt.putLastOpendPDocID(info.rowID);
 					}
-					bookInfo.isDirty = false;
+					info.isDirty = false;
 				}
 			});
 		} catch (Exception e) {

@@ -370,7 +370,7 @@ public class PDocView extends View {
 		void ImageReady();
 		PDocBookInfo onDocOpened(PDocView view, Uri url);
 		void NewDocOpened();
-		void saveBookInfo(PDocBookInfo bookInfo);
+		void saveBookInfo(PDocument bookInfo);
 	}
 	
 	ImageReadyListener mImageReadyListener;
@@ -755,7 +755,9 @@ public class PDocView extends View {
 	private void invalidateTiles(PDocument.PDocPage page, RectF box) {
 		if(page.tile!=null) {
 			page.tile.reset();
-			page.tileBk=page.tile;
+		}
+		if(page.tileHiRes!=null) {
+			page.tileHiRes.reset();
 		}
 		for(RegionTile rtI:regionTiles) {
 			if(rtI!=null && rtI.currentOwner!=null && isRectOverlap(rtI.sRect, box)) {
@@ -2226,6 +2228,22 @@ public class PDocView extends View {
 		}
 	}
 	
+	public void resetTilesCache() {
+		for(Tile tI:LowThumbs) {
+			if(tI!=null) {
+				tI.currentOwner=null;
+			}
+		}
+		for(Tile tI:regionTiles) {
+			if(tI!=null) {
+				tI.currentOwner=null;
+			}
+		}
+		refreshedBucket.clear();
+		drawingBucket.clear();
+		zoomingBucket.clear();
+	}
+	
 	int tickCheckLoRThumbsIter;
 	int tickCheckHIRThumbsIter;
 	int tickCheckHiResRgnsIter, tickCheckHiResRgnsItSt;
@@ -2366,32 +2384,33 @@ public class PDocView extends View {
 				if(logiLayoutSt + i<0||logiLayoutSt + i>=pdoc._num_entries)
 					continue ;
 				page = pdoc.mPDocPages[logiLayoutSt + i];
-				HiRes = i>=0 && i<=toHeavenSteps &&  (i>0 || logiLayoutSz<=2
+				HiRes = i>=0 && i<toHeavenSteps &&  (i>0 || logiLayoutSz<=2
 						|| !horizon&&vTranslate.y+(page.OffsetAlongScrollAxis+page.size.getHeight()/2)*scale>0 /*半入法眼*/
 						|| horizon&&vTranslate.x+(page.OffsetAlongScrollAxis+page.size.getWidth()/2)*scale>0 /*半入法眼*/
 						);
 				//CMN.Log("HiRes", HiRes);
-				HiRes = false;
-				NoTile=page.tile==null;
-				if(NoTile || HiRes && !page.tile.HiRes) {
-					if(HiRes) {
-						Tile tile = tickCheckHIRThumbnails();
-						if(tile!=null) {
-							if(task==null)task = acquireFreeTask();
-							if(!NoTile) page.sendTileToBackup();
-							tile.assignToAsThumbnail(task, page, pdoc.ThumbsHiResFactor);
-							continue ThumbnailsAssignment;
-						}
-					}
+				//HiRes = false;
+				boolean bNeedHiRes = HiRes && page.tileHiRes==null;
+				NoTile=page.tile==null&&!HiRes;
+				if(NoTile) {
 					// assign normal thumbnails.
 					//if(false)
-					if(page.tile==null && tickCheckLoRThumbsIter<1024) {
+					if(tickCheckLoRThumbsIter<1024) {
 						Tile tile = tickCheckLoRThumbnails();
 						if(tile!=null) {
 							tickCheckLoRThumbsIter++;
 							if(task==null)task = acquireFreeTask();
 							tile.assignToAsThumbnail(task, page, pdoc.ThumbsLoResFactor);
 						}
+					}
+				}
+				if(bNeedHiRes) {
+					Tile tile = tickCheckHIRThumbnails();
+					if(tile!=null) {
+						//CMN.Log("bNeedHiRes added", logiLayoutSt + i);
+						if(task==null)task = acquireFreeTask();
+						//if(!NoTile) page.sendTileToBackup();
+						tile.assignToAsThumbnail(task, page, pdoc.ThumbsHiResFactor);
 					}
 				}
 			}
@@ -2668,6 +2687,7 @@ public class PDocView extends View {
 			//collect
 			boolean missingTile=false;
 			drawingBucket.clear();
+			//if(scale>=minScale()*0.95)
 			for (int i = 0, len=refreshedBucket.size(); i < len; i++) {
 				RegionTile rgnTile = refreshedBucket.get(i);
 				if(rgnTile!=null && rgnTile.shouldDraw(this)) {
@@ -2690,22 +2710,28 @@ public class PDocView extends View {
 				// 绘制缩略图
 				for (int i = 0; i < logiLayoutSz; i++) {
 					PDocument.PDocPage page = pdoc.mPDocPages[logiLayoutSt + i];
-					Tile tile = page.tile;
+					Tile tile = page.tileHiRes;
+					if(tile==null||tile.stillLoading()) {
+						tile = page.tile;
+						if(tile==null||tile.stillLoading()) {
+							tile = null;
+						}
+					}
 					if (tile != null) {
 						Bitmap bm = tile.bitmap;
-						if (bm.isRecycled() || tile.taskToken.loading) {
-							bm = null;
-							if (page.tileBk != null) {
-								tile = page.tileBk;
-								bm = tile.bitmap;
-								if (bm.isRecycled() || tile.taskToken.loading) {
-									bm = null;
-								}
-							}
-						}
-						if (bm == null) {
-							continue;
-						}
+//						if (bm.isRecycled() || tile.taskToken.loading) {
+//							bm = null;
+//							if (page.tileHiRes != null) {
+//								tile = page.tileHiRes;
+//								bm = tile.bitmap;
+//								if (bm.isRecycled() || tile.taskToken.loading) {
+//									bm = null;
+//								}
+//							}
+//						}
+//						if (bm == null) {
+//							continue;
+//						}
 						
 						Rect VR = tile.vRect;
 						sourceToViewRectF(tile.sRect, VR);
@@ -3292,6 +3318,9 @@ public class PDocView extends View {
 	}
 	
 	public void setDocument(PDocument _pdoc) {
+		if(pdoc!=null) {
+			resetTilesCache();
+		}
 		pdoc = _pdoc;
 		_pdoc.aid = a.getTaskId();
 		removeCallbacks(mAnimationRunnable);
@@ -3692,7 +3721,7 @@ public class PDocView extends View {
 		public void reset() {
 			if(currentOwner!=null) {
 				if(currentOwner.tile==this)currentOwner.tile=null;
-				if(currentOwner.tileBk==this)currentOwner.tileBk=null;
+				if(currentOwner.tileHiRes==this)currentOwner.tileHiRes =null;
 				currentOwner=null;
 			}
 		}
@@ -3701,7 +3730,11 @@ public class PDocView extends View {
 			taskToken.abort.set(true);
 			currentOwner=page;
 			taskThread.addTask(taskToken=new TaskToken(this, v));
-			page.tile=this;
+			if(HiRes) {
+				page.tileHiRes=this;
+			} else {
+				page.tile=this;
+			}
 		}
 		
 		public void assignToAsAlterThumbnail(TileLoadingTask taskThread, PDocument.PDocPage page, float v) {
@@ -3711,6 +3744,10 @@ public class PDocView extends View {
 			taskToken.isTaskForThisView = false;
 			taskThread.addTask(taskToken);
 			page.tile=this;
+		}
+		
+		public boolean stillLoading() {
+			return bitmap.isRecycled() || taskToken.loading;
 		}
 	}
 	
@@ -4946,7 +4983,7 @@ public class PDocView extends View {
 				offsetY = (int) (-vTranslate.y/scale - page.OffsetAlongScrollAxis);
 				pdoc.bookInfo.setParms(pageIdx, offsetX, offsetY, scale);
 				if(pdoc.bookInfo.isDirty) {
-					mImageReadyListener.saveBookInfo(pdoc.bookInfo);
+					mImageReadyListener.saveBookInfo(pdoc);
 				}
 			}
 			if(pdoc.isDirty) {

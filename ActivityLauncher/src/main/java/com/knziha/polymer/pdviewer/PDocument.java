@@ -65,7 +65,7 @@ public class PDocument {
 	public BookMarkNode bmRoot;
 	public int bmCount;
 	public boolean isClosed;
-	PDocBookInfo bookInfo;
+	public PDocBookInfo bookInfo;
 	
 	/** 策略：小于500MB统一加载到内存，允许保存。大于500MB在关闭文件时询问是否保存。 */
 	public void saveDocAsCopy(Context a, Uri url, boolean incremental, boolean reload) {
@@ -194,7 +194,7 @@ public class PDocument {
 		final int pageIdx;
 		public final Size size;
 		public PDocView.Tile tile;
-		public PDocView.Tile tileBk;
+		public PDocView.Tile tileHiRes;
 		public int startY = 0;
 		public int startX = 0;
 		public int maxX;
@@ -261,8 +261,8 @@ public class PDocument {
 		
 		public void sendTileToBackup() {
 			if(tile!=null && !tile.HiRes) {
-				if(tileBk!=null) tileBk.reset();
-				tileBk = tile;
+				if(tileHiRes !=null) tileHiRes.reset();
+				tileHiRes = tile;
 			}
 		}
 		
