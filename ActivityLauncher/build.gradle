@@ -9,7 +9,7 @@ android {
         targetSdkVersion ver_aimsdk
         versionCode 1
         versionName "1.0"
-        vectorDrawables.generatedDensities = ['hdpi']
+        vectorDrawables.generatedDensities = ['hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi']
         ndk {
             abiFilters 'x86', 'x86_64', 'armeabi-v7a', 'arm64-v8a'
         }

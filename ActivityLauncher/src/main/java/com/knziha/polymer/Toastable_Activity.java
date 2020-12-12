@@ -26,7 +26,6 @@ import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -34,17 +33,13 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.GlobalOptions;
-import androidx.appcompat.widget.Toolbar;
 
-import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.bumptech.glide.load.engine.cache.DiskCache;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.Options;
-import com.knziha.polymer.pdviewer.PDocSearchTask;
-import com.knziha.polymer.widgets.AppIconsAdapter;
 import com.knziha.polymer.widgets.EditTextmy;
 import com.knziha.polymer.widgets.SimpleTextNotifier;
 import com.knziha.polymer.widgets.Utils;
-import com.bumptech.glide.load.engine.cache.DiskCache;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -149,6 +144,7 @@ public class Toastable_Activity extends AppCompatActivity {
 		imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
 
 		mConfiguration = new Configuration(getResources().getConfiguration());
+		GlobalOptions.isLarge = (mConfiguration.screenLayout & Configuration.SCREENLAYOUT_SIZE_MASK) >=3;
 		if(Build.VERSION.SDK_INT>=29){
 			GlobalOptions.isDark = (mConfiguration.uiMode & Configuration.UI_MODE_NIGHT_MASK)==Configuration.UI_MODE_NIGHT_YES;
 		}else

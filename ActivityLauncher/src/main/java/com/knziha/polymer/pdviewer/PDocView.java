@@ -1827,6 +1827,9 @@ public class PDocView extends View {
 				if(draggingHandle!=null) {
 					if(touchCount<=1) {
 						judgeClick();
+						if(selectionPaintView!=null) {
+							selectionPaintView.invalidMagnifier();
+						}
 					}
 					break;
 				}

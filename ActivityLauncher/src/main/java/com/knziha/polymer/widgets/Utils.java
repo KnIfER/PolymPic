@@ -84,6 +84,7 @@ public class Utils {
 	public static Rect rect = new Rect();
 	public static final boolean littleCat = Build.VERSION.SDK_INT<=Build.VERSION_CODES.KITKAT;
 	public static final boolean littleCake = Build.VERSION.SDK_INT<=21;
+	public static final boolean bigMountain = Build.VERSION.SDK_INT>21;
 	
 	/**
      * @param dp Desired size in dp (density-independent pixels)

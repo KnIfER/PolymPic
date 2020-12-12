@@ -54,8 +54,9 @@ public class PDocSearchHandler implements View.OnClickListener {
 		drawableAbort = a.getResources().getDrawable(R.drawable.ic_search_abort);
 		drawableAbort.setBounds(drawableSearch.getBounds());
 		
-		etSearch.setText("l-system");
+		//etSearch.setText("l-system");
 		//etSearch.setText("buffer");
+		//etSearch.setText("Outdoor");
 		etSearch.setOnEditorActionListener((v, actionId, event) -> {
 			if(actionId == EditorInfo.IME_ACTION_DONE ||actionId==EditorInfo.IME_ACTION_UNSPECIFIED) {
 				searchBtn.performClick();

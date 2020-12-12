@@ -166,7 +166,7 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 				"bookmarks BLOB," + // 5 书签id TODO
 				"toc BLOB," +  // 6 toc expand / collapse states TODO
 				"thumbnail BLOB," + // 7
-				"ext1 TEXT,"+ // 8
+				"ext1 TEXT,"+ // 8 comments
 				"f1 INTEGER DEFAULT 0 NOT NULL," + // 9
 				"f2 INTEGER DEFAULT 0 NOT NULL," +  // 10
 				"favor INTEGER DEFAULT 0 NOT NULL," +  // 11 喜爱等级 TODO
@@ -525,22 +525,25 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 		// page info.
 		final String createPagesTable = "create table if not exists \""+name+"\" ("+
 				"id INTEGER PRIMARY KEY AUTOINCREMENT," + // 0
-				"pid INTEGER NOT NULL," + // 1
-				"type INTEGER NOT NULL," + // 1
-				"favor INTEGER DEFAULT 0 NOT NULL," + // 2
-				"text TEXT," + // 3
-				"parms TEXT,"+ // 4
-				"thumbnail BLOB," + // 5
+				"pid INTEGER NOT NULL," + // 1 页码
+				"type INTEGER NOT NULL," + // 1 类型
+				"favor INTEGER DEFAULT 0 NOT NULL," + // 2 喜爱程度
+				"text TEXT," + // 3 文本内容
+				"parms TEXT,"+ // 4 页面位置
+				"thumbnail BLOB," + // 5 缩略图
 				"ext1 TEXT,"+ // 6
 				"f1 INTEGER DEFAULT 0 NOT NULL," + // 7
-				"creation_time INTEGER DEFAULT 0 NOT NULL" + // 8
+				"creation_time INTEGER DEFAULT 0 NOT NULL" + // 8 创建时间
 				")";
 		
 		try {
 			db.execSQL(createPagesTable);
-			db.execSQL("CREATE INDEX if not exists page_index ON "+name+" (pid)");
-			db.execSQL("CREATE INDEX if not exists favor_index ON "+name+" (favor)");
-			db.execSQL("CREATE INDEX if not exists type_index ON "+name+" (type)");
+			db.execSQL("CREATE INDEX if not exists "+name+"_time_index ON "+name+" (creation_time)");
+			if(false) {
+				db.execSQL("CREATE INDEX if not exists "+name+"_page_index ON "+name+" (pid)");
+				db.execSQL("CREATE INDEX if not exists "+name+"_favor_index ON "+name+" (favor)");
+				db.execSQL("CREATE INDEX if not exists "+name+"_type_index ON "+name+" (type)");
+			}
 			return true;
 		} catch (SQLException e) { CMN.Log(e); }
 		

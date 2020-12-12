@@ -61,7 +61,7 @@
 			<com.jess.ui.TwoWayGridView
 				android:id="@+id/main_menu_lst"
 				android:layout_width="match_parent"
-				android:layout_height="65dp"
+				android:layout_height="@dimen/_65_"
 				android:orientation="horizontal"
 				android:layout_gravity="bottom"
 				android:translationY="500dp"

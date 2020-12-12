@@ -21,6 +21,7 @@ import androidx.annotation.Nullable;
 import com.knziha.polymer.R;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.pdviewer.bookdata.SearchRecordItem;
+import com.knziha.polymer.widgets.Utils;
 import com.shockwave.pdfium.SearchRecord;
 
 import java.util.ArrayList;
@@ -84,7 +85,7 @@ public class PDocSelection extends View {
 		rectPaint.setColor(0x66109afe);
 		//rectPaint.setColor(0xffffff00);
 		rectHighlightPaint = new Paint();
-		rectHighlightPaint.setColor(0xffffff00);
+		rectHighlightPaint.setColor(Utils.bigMountain?0xffffff00:0x80ffff00);
 		rectPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DARKEN));
 		rectHighlightPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DARKEN));
 		rectFramePaint = new Paint();
@@ -413,5 +414,13 @@ public class PDocSelection extends View {
 				sRect.right * scale + vx,
 				sRect.bottom * scale + vy
 		);
+	}
+	
+	public void invalidMagnifier() {
+		if(Utils.bigMountain) {
+		
+		} else {
+			invalidate();
+		}
 	}
 }
