@@ -1,6 +1,6 @@
-Here is PolymiumPic, the currently fully opensourced part of our pro-project PolymPic.   
+Here is PolymiumPic, the currently fully opensourced part of the pro-project PolymPic.   
 
-Just like the chrome browser, it is a fantastic web browser + a PDF viewer.  
+Just like chrome, it is a fantastic web browser + a PDF viewer.  
 
 ### The Web Browser
 - WIP 75%
@@ -17,7 +17,24 @@ Just like the chrome browser, it is a fantastic web browser + a PDF viewer.
 
 > The PDF viewer supports content URI and will request permisison at runtime. You can still use it event when you deny it's permission requests, entering read-only mode. 
 
-### How to invoke PolymPic and view PDFs at a specific page in your own project:
+### Download
+
+The first Alpha version has been released. Check that and all feedbacks are welcomed.
+
+### How to Build:
+This is a complex project which consists of multiple gradle sub-modules. It's not recommended to compile by yourself. You need to download them manually from the following separate repos:
+1. https://github.com/KnIfER/AppPreference
+2. https://github.com/KnIfER/AweDesigner
+3. https://github.com/KnIfER/AwtRecyclerView
+4. https://github.com/KnIfER/AxtAppCompat
+5. https://github.com/KnIfER/GlideModule
+6. ( Some may be missing. )
+
+For some reason I've modified those 3rd party libaries but don't want to include them in my repo.    
+
+If you don't want to download them, then go and grab the current [archives](https://github.com/KnIfER/PolymPic/releases/tag/0.1.alpha1) exported directly from the Android Studio.
+
+### How to invoke PolymPic (the App) and view PDFs at a specific page in your own project:
 1. Essential
 ```
 	Intent it = new Intent(Intent.ACTION_VIEW)
