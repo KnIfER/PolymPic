@@ -13,6 +13,7 @@ import android.util.SparseArray;
 
 import com.knziha.filepicker.utils.FU;
 import com.knziha.polymer.Utils.CMN;
+import com.knziha.polymer.database.LexicalDBHelper;
 import com.knziha.polymer.pdviewer.bookdata.PDocBookInfo;
 import com.knziha.polymer.pdviewer.bookdata.SearchRecordItem;
 import com.knziha.polymer.text.BreakIteratorHelper;
@@ -517,7 +518,12 @@ public class PDocument {
 						prepareText();
 						text = allText.substring(selStart, selEnd);
 					}
-					bookInfo.appendAnnotRecord(pDocView.getCurrentPageParmsOnScreen(), colorInt, selStart, selEnd, text, getWritable()&&!pDocView.hasNoPermission);
+					PDFPageParms parm = pDocView.getCurrentPageParmsOnScreen();
+					if(bookInfo.rowID==-1) {
+						bookInfo.parms = parm;
+						LexicalDBHelper.getInstance().savePDocInfo(PDocument.this, bookInfo);
+					}
+					bookInfo.appendAnnotRecord(parm, colorInt, selStart, selEnd, text, getWritable()&&!pDocView.hasNoPermission);
 				}
 				
 				// todo add the new newly created annot directly to the list

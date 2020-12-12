@@ -155,7 +155,7 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 		
 		db.execSQL(createNotesTable);
 		
-		//db.execSQL("drop table pdoc");
+		//db.execSQL("drop table if exists pdoc");
 		// pdoc history.
 		final String createPDocTable = "create table if not exists \"pdoc\" ("+
 				"id INTEGER PRIMARY KEY AUTOINCREMENT," + // 0
@@ -520,27 +520,27 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 		if(db==null) {
 			return false;
 		}
-		//db.execSQL("drop table "+name);
-		
+		//db.execSQL("drop table if exists "+name);
 		// page info.
 		final String createPagesTable = "create table if not exists \""+name+"\" ("+
 				"id INTEGER PRIMARY KEY AUTOINCREMENT," + // 0
 				"pid INTEGER NOT NULL," + // 1 页码
-				"type INTEGER NOT NULL," + // 1 类型
-				"favor INTEGER DEFAULT 0 NOT NULL," + // 2 喜爱程度
-				"text TEXT," + // 3 文本内容
-				"parms TEXT,"+ // 4 页面位置
-				"thumbnail BLOB," + // 5 缩略图
-				"ext1 TEXT,"+ // 6
-				"f1 INTEGER DEFAULT 0 NOT NULL," + // 7
-				"creation_time INTEGER DEFAULT 0 NOT NULL" + // 8 创建时间
+				"type INTEGER NOT NULL," + // 2 类型
+				"favor INTEGER DEFAULT 0 NOT NULL," + // 3 喜爱程度
+				"text TEXT," + // 4 文本内容
+				"parms TEXT,"+ // 5 页面位置
+				"thumbnail BLOB," + // 6 缩略图
+				"ext1 TEXT,"+ // 7
+				"color INTEGER DEFAULT 0 NOT NULL," + // 8
+				"f1 INTEGER DEFAULT 0 NOT NULL," + // 9
+				"creation_time INTEGER DEFAULT 0 NOT NULL" + // 10 创建时间
 				")";
 		
 		try {
 			db.execSQL(createPagesTable);
-			db.execSQL("CREATE INDEX if not exists "+name+"_time_index ON "+name+" (creation_time)");
+			db.execSQL("CREATE INDEX if not exists "+name+"_time_index ON "+name+" (creation_time)"); // 时间索引
+			db.execSQL("CREATE INDEX if not exists "+name+"_page_index ON "+name+" (pid)"); // 页码索引
 			if(false) {
-				db.execSQL("CREATE INDEX if not exists "+name+"_page_index ON "+name+" (pid)");
 				db.execSQL("CREATE INDEX if not exists "+name+"_favor_index ON "+name+" (favor)");
 				db.execSQL("CREATE INDEX if not exists "+name+"_type_index ON "+name+" (type)");
 			}

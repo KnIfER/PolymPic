@@ -3,7 +3,6 @@ package com.knziha.polymer.pdviewer.bookmarks;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.Configuration;
-import android.content.res.Resources;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
@@ -41,6 +40,7 @@ import java.util.ArrayList;
 public class BookMarksFragment extends DialogFragment implements Toolbar.OnMenuItemClickListener {
 	private BookmarksBinding bmView;
 	private BookMarkFragment f1;
+	private AnnotListFragment f2;
 	private final DisplayMetrics dm;
 	
 	public int width=-1,height=-2,mMaxH=-1;
@@ -106,6 +106,7 @@ public class BookMarksFragment extends DialogFragment implements Toolbar.OnMenuI
 		if(bmView==null) {
 			GlobalOptions.shouldRecordMenuView = true;
 			bmView = BookmarksBinding.inflate(getLayoutInflater(), null, false);
+			fragments.add(f2 = new AnnotListFragment());
 			fragments.add(f1 = new BookMarkFragment());
 			ViewPager viewPager = bmView.viewpager;
 			TabLayout mTabLayout = bmView.mTabLayout;
@@ -115,7 +116,7 @@ public class BookMarksFragment extends DialogFragment implements Toolbar.OnMenuI
 			
 			viewPager.setAdapter(new FragAdapter(getChildFragmentManager(), fragments));
 			
-			String[] tabTitle = {"目录"};
+			String[] tabTitle = {"标记", "目录"};
 			for (String s : tabTitle) {
 				mTabLayout.addTab(mTabLayout.newTab().setText(s));
 			}
@@ -171,6 +172,7 @@ public class BookMarksFragment extends DialogFragment implements Toolbar.OnMenuI
 			if(lastUpdatedDoc!=CMN.id(doc)) {
 				refreshToc();
 			}
+			f2.setDocument(doc);
 		}
 	}
 	

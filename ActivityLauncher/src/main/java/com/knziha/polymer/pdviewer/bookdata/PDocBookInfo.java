@@ -4,14 +4,11 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
-import android.text.TextUtils;
 
 import com.alibaba.fastjson.JSONObject;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.database.LexicalDBHelper;
 import com.knziha.polymer.pdviewer.PDFPageParms;
-
-import java.sql.RowId;
 
 /** Represents a history record in the database */
 public class PDocBookInfo {
@@ -63,13 +60,25 @@ public class PDocBookInfo {
 	}
 	
 	public boolean connectPagesTable(LexicalDBHelper db) {
-		if(pagesTblName==null && rowID!=0 && db!=null) {
+		if(pagesTblName==null && rowID!=-1 && db!=null) {
 			String name = "pages_"+rowID;
 			if(db.connectPagesTable(name)) {
 				pagesTblName = name;
 			}
 		}
 		return pagesTblName != null;
+	}
+	
+	public String connectPagesTableIfExists(LexicalDBHelper db) {
+		if(rowID!=-1)
+		try{
+			String name = "pages_"+rowID;
+			db.getDB().rawQuery("select count(1) from "+name,null);
+			return connectPagesTable(db)?name:null;
+		} catch(Exception e){
+			CMN.Log(e);
+		}
+		return null;
 	}
 	
 	/** record and digest highlight annotation into the db.*/
@@ -87,11 +96,11 @@ public class PDocBookInfo {
 			JSONObject obj = JSONObject.parseObject(parms.toString());
 			obj.put("ss", selStart);
 			obj.put("se", selEnd);
-			obj.put("cc", colorInt);
 			
 			int flag=writeToFile?1:0;
 			values.put("type", 1);
 			values.put("f1", flag);
+			values.put("color", colorInt);
 			values.put("parms", obj.toString());
 			values.put("creation_time", System.currentTimeMillis());
 			
