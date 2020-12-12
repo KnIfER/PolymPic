@@ -19,6 +19,7 @@ package com.knziha.polymer.widgets;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
+import android.content.res.Resources;
 import android.database.AbstractWindowedCursor;
 import android.database.Cursor;
 import android.graphics.Matrix;
@@ -507,5 +508,20 @@ public class Utils {
 			return true;
 		}
 		return false;
+	}
+	
+	
+	static int resourceId;
+	public static int getStatusBarHeight(Resources resources) {
+		if(resourceId==0)
+			try {
+				resourceId = resources.getIdentifier("status_bar_height", "dimen", "android");
+			} catch (Exception e) {
+				resourceId=0;
+			}
+		if (resourceId > 0) {
+			return resources.getDimensionPixelSize(resourceId);
+		}
+		return 0;
 	}
 }

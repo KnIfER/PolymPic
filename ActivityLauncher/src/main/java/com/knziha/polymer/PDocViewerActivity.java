@@ -74,6 +74,7 @@ import java.util.List;
 import java.util.Set;
 
 import static com.knziha.polymer.BrowserActivity.GoogleTranslate;
+import static com.knziha.polymer.widgets.Utils.getStatusBarHeight;
 
 public class PDocViewerActivity extends Toastable_Activity implements View.OnClickListener {
 	public ActivityPdfviewerBinding UIData;
@@ -96,7 +97,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 	private LexicalDBHelper historyCon;
 	private boolean splashing = true;
 	private boolean exiting;
-	private boolean isImmersiveModeEnabled;
+	public boolean isImmersiveModeEnabled;
 	
 	long runtimeFlag;
 	
@@ -104,6 +105,10 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 	@Override
 	public void onBackPressed() {
 		if(currentViewer.tryClearSelection()) {
+		} else if(searchHandler!=null && searchHandler.vis){
+			searchHandler.toggleVisibility();
+		} else if(MainMenuListVis&&!isImmersiveModeEnabled){
+			toggleMainMenuList();
 		} else {
 			if(BST!=0) {
 				Activity act = PDocShortCutActivity.blackSmithStack.get(BST);
@@ -614,6 +619,9 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		if(mConfiguration.orientation!=newConfig.orientation) {
 		
 		}
+		if(searchHandler!=null) {
+			searchHandler.setPadHeight(getStatusBarHeight(getResources()));
+		}
 		mConfiguration.setTo(newConfig);
 	}
 	
@@ -931,7 +939,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		ViewGroup bottombar_immersive = UIData.bottombar;
 		
 		// Navigation bar hiding:  Backwards compatible to ICS.
-		int Flag = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+		final int Flag = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
 		// Status bar hiding: Backwards compatible to Jellybean
 		| View.SYSTEM_UI_FLAG_FULLSCREEN
 		// Immersive mode: Backward compatible to KitKat.
@@ -943,6 +951,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		// semi-transparent, and the UI flag does not get cleared when the user interacts with
 		// the screen.
 		| View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
+		final int F1ag = View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN|View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION;
 		ViewPropertyAnimator anima = bottombar_immersive.animate();
 		if (isImmersiveModeEnabled) {
 			// 归位
@@ -956,6 +965,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 			bottombar_immersive.setVisibility(View.VISIBLE);
 			newUiOptions |= WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION;
 			newUiOptions &= ~Flag;
+			newUiOptions &= ~View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION;
 		} else {
 			//CMN.Log("Turning immersive mode mode on.");
 			if(Build.VERSION.SDK_INT>=21) {
@@ -970,8 +980,14 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 			//anima.translationY(tY);
 			bottombar_immersive.setVisibility(View.GONE);
 			bottombar_immersive.setTranslationY(tY);
-			newUiOptions &= ~WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION;
 			newUiOptions |= Flag;
+			boolean preserveNavBar=false;
+			newUiOptions &= ~WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION;
+			if(preserveNavBar) {
+				newUiOptions &= ~View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
+				newUiOptions |= F1ag;
+				//window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+			}
 		}
 		
 		isImmersiveModeEnabled = !isImmersiveModeEnabled;
@@ -979,6 +995,10 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		decorView.setSystemUiVisibility(newUiOptions);
 		
 		anima.start();
+		
+		if(searchHandler!=null) {
+			searchHandler.onMenuImmersiveChanged(isImmersiveModeEnabled);
+		}
 	}
 	
 	

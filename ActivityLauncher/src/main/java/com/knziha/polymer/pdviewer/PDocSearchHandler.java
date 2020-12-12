@@ -18,19 +18,21 @@ import com.knziha.polymer.widgets.WaveView;
 import com.shockwave.pdfium.SearchRecord;
 
 import java.util.ArrayList;
-import java.util.Currency;
+
+import static com.knziha.polymer.widgets.Utils.getStatusBarHeight;
 
 public class PDocSearchHandler implements View.OnClickListener {
 	final PDocViewerActivity a;
 	private final ViewGroup searchView;
 	private final ViewGroup searchViewContent;
+	private final View padView;
 	private PDocSearchTask task;
 	private final EditText etSearch;
 	private final TextView searchBtn;
 	private final Drawable drawableSearch;
 	private final Drawable drawableAbort;
 	
-	boolean vis=false;
+	public boolean vis=false;
 	
 	WaveView waveView;
 	private boolean shouldShow;
@@ -39,11 +41,12 @@ public class PDocSearchHandler implements View.OnClickListener {
 		this.a = a;
 		this.searchView = vg;
 		searchViewContent = (ViewGroup) vg.getChildAt(0);
-		Object[] fetcher = new Object[]{R.id.etSearch, R.id.browser_widget5};
+		Object[] fetcher = new Object[]{R.id.etSearch, R.id.browser_widget5, R.id.padView};
 		Utils.setOnClickListenersOneDepth(searchViewContent, this, 3, fetcher);
 		
 		etSearch = (EditText)fetcher[0];
 		searchBtn = (TextView)fetcher[1];
+		padView = (View)fetcher[2];
 		
 		drawableSearch = searchBtn.getCompoundDrawables()[0];
 		drawableAbort = a.getResources().getDrawable(R.drawable.ic_search_abort);
@@ -51,6 +54,8 @@ public class PDocSearchHandler implements View.OnClickListener {
 		
 		etSearch.setText("l-system");
 		etSearch.setText("buffer");
+		
+		setPadHeight(getStatusBarHeight(a.getResources()));
 	}
 	
 	@SuppressLint("NonConstantResourceId")
@@ -172,7 +177,21 @@ public class PDocSearchHandler implements View.OnClickListener {
 		searchView.post(() -> {
 			searchView.setVisibility(View.VISIBLE);
 			searchView.setTranslationY(-searchView.getHeight());
+			onMenuImmersiveChanged(a.isImmersiveModeEnabled);
 			setVisibility(true);
 		});
+	}
+	
+	public void setPadHeight(int statusBarHeight) {
+		padView.getLayoutParams().height=statusBarHeight;
+	}
+	
+	public void onMenuImmersiveChanged(boolean immersive) {
+		padView.setVisibility(View.VISIBLE);
+		if(immersive) {
+			searchView.setTranslationY(-padView.getHeight());
+		} else {
+			searchView.animate().translationY(0).start();
+		}
 	}
 }
