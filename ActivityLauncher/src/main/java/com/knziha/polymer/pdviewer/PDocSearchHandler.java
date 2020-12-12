@@ -5,9 +5,11 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.graphics.drawable.Drawable;
+import android.text.TextUtils;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewPropertyAnimator;
+import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.TextView;
 
@@ -53,8 +55,14 @@ public class PDocSearchHandler implements View.OnClickListener {
 		drawableAbort.setBounds(drawableSearch.getBounds());
 		
 		etSearch.setText("l-system");
-		etSearch.setText("buffer");
-		
+		//etSearch.setText("buffer");
+		etSearch.setOnEditorActionListener((v, actionId, event) -> {
+			if(actionId == EditorInfo.IME_ACTION_DONE ||actionId==EditorInfo.IME_ACTION_UNSPECIFIED) {
+				searchBtn.performClick();
+				return true;
+			}
+			return false;
+		});
 		setPadHeight(getStatusBarHeight(a.getResources()));
 	}
 	
@@ -88,10 +96,26 @@ public class PDocSearchHandler implements View.OnClickListener {
 				if(task!=null) {
 					close();
 				} else {
-					task = new PDocSearchTask(a, a.currentViewer.pdoc, etSearch.getText().toString());
-					task.start();
+					String text = etSearch.getText().toString();
+					if(TextUtils.isEmpty(text)) {
+					
+					} else {
+						task = new PDocSearchTask(a, a.currentViewer.pdoc, text);
+						task.start();
+					}
+					if(true) {
+						toggleVisibility();
+					}
 				}
 				hideKeyBoard();
+			} break;
+			case R.id.wave:{
+				if(task!=null) {
+					close();
+				} else {
+					a.setSearchResults(null, null, 0);
+				}
+				waveView.setVisibility(View.GONE);
 			} break;
 		}
 	}
@@ -124,6 +148,7 @@ public class PDocSearchHandler implements View.OnClickListener {
 		}
 		searchBtn.setCompoundDrawables(drawableAbort, null, null, null);
 		searchBtn.setText("取消");
+		waveView.setOnClickListener(this);
 		waveView.setVisibility(View.VISIBLE);
 		waveView.setProgress(0);
 		waveView.setProgressVis(true);

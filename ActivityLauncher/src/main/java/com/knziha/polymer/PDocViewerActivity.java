@@ -996,7 +996,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		
 		anima.start();
 		
-		if(searchHandler!=null) {
+		if(searchHandler!=null && searchHandler.vis) {
 			searchHandler.onMenuImmersiveChanged(isImmersiveModeEnabled);
 		}
 	}
