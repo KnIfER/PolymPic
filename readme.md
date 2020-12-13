@@ -22,7 +22,7 @@ Just like chrome, it is a fantastic web browser + a PDF viewer.
 The first Alpha version has been released. Check that and all feedbacks are welcomed.
 
 ### How to Build:
-This is a complex project which consists of multiple gradle sub-modules. It's not recommended to compile by yourself. You need to download them manually from the following separate repos:
+This is a 'complex' project which consists of multiple gradle sub-modules. You need to download them manually from the following separate repos:
 1. https://github.com/KnIfER/AppPreference
 2. https://github.com/KnIfER/AweDesigner
 3. https://github.com/KnIfER/AwtRecyclerView
