@@ -12,7 +12,7 @@ Just like chrome, it is a fantastic web browser + a PDF viewer.
 ### The PDF Viewer
 - WIP 90% Based on PDFium.
 - Basic highlight annotatin support.
-- Smooth scrolling and flinging.
+- Smooth scrolling and flinging available even for android 4.4.
 - Make use of **Colordict** and **Google Translate** for easy reading.
 
 > The PDF viewer supports content URI and will request permisison at runtime. You can still use it event when you deny it's permission requests, entering read-only mode. 
