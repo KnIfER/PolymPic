@@ -14,6 +14,7 @@ import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -133,9 +134,9 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		super.onCreate(savedInstanceState);
 		//if(true) { finish(); return; }
 		Window win = getWindow();
-		//getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN|WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
-		//getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN|WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
-		win.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN|WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
+		win.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN|WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
+		//win.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN|WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
+		//win.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN|WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
 		
 		setStatusBarColor(win);
@@ -418,8 +419,8 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		});
 	}
 	
-	static class MenuItemViewHolder {
-		private final DescriptiveImageView tv;
+	public static class MenuItemViewHolder {
+		public final DescriptiveImageView tv;
 		public MenuItemViewHolder(View convertView) {
 			tv = convertView.findViewById(R.id.text);
 		}
@@ -598,11 +599,13 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 		ObjectAnimator fadeInContents = ObjectAnimator.ofFloat(root, "alpha", 0, 1);
 		fadeInContents.setInterpolator(new AccelerateDecelerateInterpolator());
 		fadeInContents.setDuration(350);
+		//@hide(10)
 		fadeInContents.addListener(new Animator.AnimatorListener() {
 			@Override public void onAnimationStart(Animator animation) { }
 			@Override public void onAnimationEnd(Animator animation) {
-				//getWindow().setBackgroundDrawable(null);
-				//getWindow().setBackgroundDrawable(new ColorDrawable(0xff000000));
+				if(Utils.bigMountain) {
+					getWindow().setBackgroundDrawable(new ColorDrawable(0xff000000));
+				}
 			}
 			@Override public void onAnimationCancel(Animator animation) { }
 			@Override public void onAnimationRepeat(Animator animation) { }

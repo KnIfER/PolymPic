@@ -68,6 +68,7 @@ import java.util.zip.ZipInputStream;
 import static com.knziha.polymer.Utils.IU.parseInt;
 
 public class Utils {
+	public static final int RequsetUrlFromCamera=1101;
 	public final static Matrix IDENTITYXIRTAM = new Matrix();
 	public final static Object DummyTransX = new Object(){
 		public void setTranslationX(float val) { }
@@ -84,7 +85,9 @@ public class Utils {
 	public static Rect rect = new Rect();
 	public static final boolean littleCat = Build.VERSION.SDK_INT<=Build.VERSION_CODES.KITKAT;
 	public static final boolean littleCake = Build.VERSION.SDK_INT<=21;
-	public static final boolean bigMountain = Build.VERSION.SDK_INT>21;
+	public static final boolean bigMountain = Build.VERSION.SDK_INT>22;
+	public static final boolean hugeHimalaya = Build.VERSION.SDK_INT>=Build.VERSION_CODES.P;
+	public static final boolean isHuawei = Build.MANUFACTURER.contains("HUAWEI");
 	
 	/**
      * @param dp Desired size in dp (density-independent pixels)
@@ -510,7 +513,6 @@ public class Utils {
 		}
 		return false;
 	}
-	
 	
 	static int resourceId;
 	public static int getStatusBarHeight(Resources resources) {

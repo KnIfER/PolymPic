@@ -12,7 +12,6 @@ import java.util.HashMap;
 
 //common
 public class CMN {
-	public static Options opt;
     public final static String replaceReg =  " |:|\\.|,|-|\'|(|)";
     public final static String emptyStr = "";
     public static final HashMap<String, String> AssetMap = new HashMap<>();

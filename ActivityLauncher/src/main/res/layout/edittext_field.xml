@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:orientation="vertical"
+	android:layout_width="match_parent"
+	android:layout_height="wrap_content"
+	android:layout_marginTop="20dp"
+	android:background="@drawable/popup_shadow_l"
+	>
+
+	<EditText
+		android:id="@+id/etField"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:layout_marginTop="2dp"
+		android:layout_marginStart="6dp"
+		android:layout_marginEnd="6dp"
+		android:theme="@style/toolbarBaseTheme"
+		/>
+
+	<com.knziha.polymer.widgets.LineaSlidog
+		android:layout_width="match_parent"
+		android:layout_height="@dimen/_35_"
+		android:background="@drawable/frame_bottom_rounded"
+		android:layout_marginTop="-2dp"
+		>
+		<TextView
+			android:id="@+id/browser_widget1"
+			android:text="返回"
+			android:drawableLeft="@drawable/ic_baseline_arrow_back_24"
+			style="@style/SearchbarMenuTextStyle"
+			/>
+		<TextView
+			android:id="@+id/browser_widget2"
+			android:text="复制"
+			android:drawableLeft="@drawable/ic_baseline_copy_24"
+			style="@style/SearchbarMenuTextStyle"
+			/>
+		<TextView
+			android:id="@+id/browser_widget3"
+			android:text="粘贴"
+			android:drawableLeft="@drawable/ic_baseline_paste_24"
+			style="@style/SearchbarMenuTextStyle"
+			/>
+		<TextView
+			android:id="@+id/browser_widget4"
+			android:text="清空"
+			android:drawableLeft="@drawable/ic_baseline_clear_24"
+			style="@style/SearchbarMenuTextStyle"
+			/>
+		<TextView
+			android:id="@+id/browser_widget5"
+			android:text="确认"
+			android:drawableLeft="@drawable/abc_ic_go_search_api_material"
+			style="@style/SearchbarMenuTextStyle"
+			/>
+	</com.knziha.polymer.widgets.LineaSlidog>
+
+</LinearLayout>

@@ -284,10 +284,12 @@ public class PDocView extends View {
 	private boolean downFlinging;
 	private boolean abortNextDoubleTapZoom;
 	private MotionEvent wastedEvent;
-	private static boolean stdFling = !Utils.littleCake;
+	private static boolean stdFling = true;//!Utils.littleCake;
+	private static boolean boostCompute = !Utils.hugeHimalaya;
 	private GestureDetector.SimpleOnGestureListener flinglistener;
 	public boolean hasNoPermission;
 	private boolean ignoreNxtClick;
+	private float moveSlop;
 	
 	public int getCurrentPageOnScreen() {
 		return lastMiddlePage;
@@ -324,8 +326,8 @@ public class PDocView extends View {
 			scale = newScale;
 		}
 		vTranslate.set((page.getLateralOffset()+pageParms.offsetX)*scale, -(page.OffsetAlongScrollAxis+pageParms.offsetY)*scale);
-		if(invalid) {
-			refreshRequiredTiles(true);
+		if(invalid && !refreshRequiredTiles(true)) {
+			invalidate();
 		}
 	}
 	
@@ -383,7 +385,7 @@ public class PDocView extends View {
 			if(flingScroller.computeScrollOffset()) {
 				int cfx = flingScroller.getCurrX();
 				int cfy = flingScroller.getCurrY();
-				//CMN.Log("fling...", cfx - mLastFlingX, cfy - mLastFlingY, flingScroller.getCurrVelocity());
+				CMN.Log("fling...", cfx - mLastFlingX, cfy - mLastFlingY, flingScroller.getCurrVelocity());
 				
 				float x = cfx - mLastFlingX;
 				float y = cfy - mLastFlingY;
@@ -592,6 +594,7 @@ public class PDocView extends View {
 		handleRight.setColorFilter(colorFilter);
 		handleLeft.setAlpha(200);
 		handleRight.setAlpha(200);
+		moveSlop = 1.6f*GlobalOptions.density;
 	}
 	
 	
@@ -1162,6 +1165,10 @@ public class PDocView extends View {
 						isFlinging = true;
 						if(!stdFling) {
 							post(flingRunnable);
+						} else {
+							if(boostCompute) {
+								computeScroll();
+							}
 						}
 						return false;
 					}
@@ -1464,8 +1471,9 @@ public class PDocView extends View {
 				downFlinging = isFlinging;
 			}
 			case MotionEvent.ACTION_POINTER_DOWN:{
-				CMN.Log("ACTION_DOWN", touchCount);
+				CMN.Log("ACTION_DOWN", touchCount, isFlinging);
 				doubleTapDetected=false;
+				isFlinging=false;
 				flingScroller.abortAnimation();
 				if(draggingHandle!=null) {
 					return true;
@@ -1561,7 +1569,7 @@ public class PDocView extends View {
 							}
 						}
 						
-						if (isPanning || distance(vCenterStart.x, vCenterEndX, vCenterStart.y, vCenterEndY) > 5 || Math.abs(vDistEnd - vDistStart) > 5) {
+						if (isPanning || distance(vCenterStart.x, vCenterEndX, vCenterStart.y, vCenterEndY) > moveSlop || Math.abs(vDistEnd - vDistStart) > moveSlop) {
 							isZooming = true;
 							isPanning = true;
 							consumed = true;
@@ -1684,8 +1692,8 @@ public class PDocView extends View {
 						// One finger pan - translate the image. We do this calculation even with pan disabled so click
 						// and long click behaviour is preserved.
 						
-						float offset = 0;//density * 5;
-						if (isPanning  || Math.abs(event.getY() - vCenterStart.y) > offset) {
+						float offset = moveSlop;//density * 5;
+						if (isPanning  || Math.abs(event.getY() - vCenterStart.y) > moveSlop) {
 							isPanning =
 							consumed = true;
 							
@@ -2655,6 +2663,7 @@ public class PDocView extends View {
 //		if (anim != null) {
 //			handle_animation();
 //		} else
+		//CMN.Log("computeScroll");
 		if(stdFling && isFlinging) {
 			flingRunnable.run();
 		}

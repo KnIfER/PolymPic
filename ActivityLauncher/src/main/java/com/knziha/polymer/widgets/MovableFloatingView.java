@@ -61,9 +61,7 @@ public class MovableFloatingView  {
 				LayoutParams.FLAG_FULLSCREEN|
 				LayoutParams.FLAG_LAYOUT_IN_SCREEN
 				,PixelFormat.RGB_565);
-
 		view.setTag(lp);
-
 		lp.gravity = Gravity.TOP | Gravity.START;
 		lp.x = 0;
 		lp.y = 0;

@@ -16,7 +16,6 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.database.Cursor;
@@ -79,7 +78,6 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.GlobalOptions;
 import androidx.appcompat.widget.ListPopupWindow;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
-import androidx.core.content.ContextCompat;
 import androidx.core.content.pm.ShortcutInfoCompat;
 import androidx.core.content.pm.ShortcutManagerCompat;
 import androidx.core.graphics.drawable.IconCompat;
@@ -90,17 +88,22 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
+import com.google.android.material.appbar.AppBarLayout;
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.google.android.material.math.MathUtils;
 import com.knziha.filepicker.model.DialogConfigs;
 import com.knziha.filepicker.model.DialogProperties;
 import com.knziha.filepicker.model.DialogSelectionListener;
 import com.knziha.filepicker.view.FilePickerDialog;
 import com.knziha.polymer.Utils.BufferedReader;
 import com.knziha.polymer.Utils.CMN;
-import com.knziha.polymer.database.LexicalDBHelper;
 import com.knziha.polymer.Utils.MyReceiver;
 import com.knziha.polymer.Utils.OptionProcessor;
 import com.knziha.polymer.Utils.Options;
 import com.knziha.polymer.Utils.WebOptions;
+import com.knziha.polymer.database.LexicalDBHelper;
 import com.knziha.polymer.databinding.ActivityMainBinding;
 import com.knziha.polymer.databinding.SearchHintsItemBinding;
 import com.knziha.polymer.databinding.WebPageItemBinding;
@@ -121,11 +124,6 @@ import com.knziha.polymer.widgets.TwoColumnAdapter;
 import com.knziha.polymer.widgets.Utils;
 import com.knziha.polymer.widgets.WebFrameLayout;
 import com.knziha.polymer.widgets.WebViewmy;
-import com.bumptech.glide.Glide;
-import com.google.android.material.appbar.AppBarLayout;
-import com.google.android.material.bottomsheet.BottomSheetBehavior;
-import com.google.android.material.bottomsheet.BottomSheetDialog;
-import com.google.android.material.math.MathUtils;
 
 import org.adrianwalker.multilinestring.Multiline;
 import org.apache.commons.lang3.StringUtils;
@@ -153,14 +151,16 @@ import java.util.regex.Pattern;
 import static androidx.appcompat.app.GlobalOptions.realWidth;
 import static com.knziha.polymer.Utils.Options.getLimitHints;
 import static com.knziha.polymer.Utils.Options.getTransitSearchHints;
+import static com.knziha.polymer.Utils.WebOptions.BackendSettings;
+import static com.knziha.polymer.Utils.WebOptions.StorageSettings;
 import static com.knziha.polymer.WeakReferenceHelper.topDomainNamesMap;
 import static com.knziha.polymer.WebCompoundListener.CustomViewHideTime;
 import static com.knziha.polymer.WebCompoundListener.PrintStartTime;
 import static com.knziha.polymer.WebCompoundListener.httpPattern;
 import static com.knziha.polymer.WebCompoundListener.requestPattern;
+import static com.knziha.polymer.widgets.Utils.RequsetUrlFromCamera;
 import static com.knziha.polymer.widgets.Utils.getViewItemByPath;
 import static com.knziha.polymer.widgets.Utils.indexOf;
-import static com.knziha.polymer.Utils.WebOptions.*;
 import static com.knziha.polymer.widgets.Utils.setOnClickListenersOneDepth;
 
 @SuppressWarnings({"rawtypes","ClickableViewAccessibility","IntegerDivisionInFloatingPointContext"})
@@ -245,7 +245,6 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	private Resources mResource;
 	private String lastUrlSet;
 	private boolean goToBarcodeScanner;
-	private final int RequsetUrlFromCamera=1101;
 	
 	@Override
 	public void onConfigurationChanged(@NonNull Configuration newConfig) {
@@ -309,7 +308,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		
 		mWebListener = new WebCompoundListener(this);
 		
-		if(transit){
+		if(transit) {
 			root.setAlpha(0);
 			ObjectAnimator fadeInContents = ObjectAnimator.ofFloat(root, "alpha", 0, 1);
 			fadeInContents.setInterpolator(new AccelerateDecelerateInterpolator());
@@ -372,14 +371,15 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	}
 	
 	protected void checkLog(Bundle savedInstanceState){
-		if(true) { // show tutorials
-			ViewGroup tutorialsView = root.findViewById(R.id.tutorials);
+		if(false) { // show tutorials
+			ViewGroup tutorialsView = (ViewGroup) UIData.tutorials.getViewStub().inflate();
 			View.OnClickListener tutClicker = new View.OnClickListener() {
 				private File filepickernow;
 				@SuppressLint("NonConstantResourceId")
 				@Override
 				public void onClick(View v) {
 					int id = v.getId();
+					final BrowserActivity context = BrowserActivity.this;
 					switch (id) {
 						case R.id.tut_open_pdf_internal:
 							//CMN.Log(fileChooserParams.getAcceptTypes());
@@ -395,13 +395,13 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 							properties.extensions.add(".pdf");
 							properties.title_id = R.string.pdf_internal_open;
 							properties.isDark = AppWhite==Color.BLACK;
-							FilePickerDialog dialog = new FilePickerDialog(BrowserActivity.this, properties);
+							FilePickerDialog dialog = new FilePickerDialog(context, properties);
 							dialog.setDialogSelectionListener(new DialogSelectionListener() {
 								@Override
 								public void onSelectedFilePaths(String[] files, String currentPath) {
 									filepickernow=new File(currentPath);
 									if(files.length>0) {
-										startActivity(new Intent(BrowserActivity.this, PolyShareActivity.class).setData(Uri.fromFile(new File(files[0]))));
+										startActivity(new Intent(context, PolyShareActivity.class).setData(Uri.fromFile(new File(files[0]))));
 									}
 								}
 								@Override
@@ -410,7 +410,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 								public void onExitSlideShow() { }
 								@Override
 								public Activity getDialogActivity() {
-									return BrowserActivity.this;
+									return context;
 								}
 								@Override
 								public void onDismiss() { }
@@ -431,11 +431,28 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 							BrowserActivity.super.checkLog(savedInstanceState);
 							Utils.removeIfParentBeOrNotBe(tutorialsView, null, false);
 						break;
+						case R.id.start:
+							Context act = getApplicationContext();
+							if (ShortcutManagerCompat.isRequestPinShortcutSupported(act)) {
+								showT("啦啦啦");
+								intent = new Intent(Intent.ACTION_MAIN);
+								//intent.setClassName("com.knziha.polymer", "com.knziha.polymer.LauncherActivity");
+								intent.setClassName("com.knziha.polymer", "com.knziha.polymer.browser.BrowseActivity");
+								ShortcutInfoCompat info = new ShortcutInfoCompat.Builder(act, "knziha.peruse1")
+										.setIcon(IconCompat.createWithResource(act, R.drawable.ic_launcher))
+										.setShortLabel("Peruse Viewer1")
+										.setIntent(intent)
+										.build();
+								PendingIntent shortcutCallbackIntent = PendingIntent.getBroadcast(act, 0, new Intent(context, MyReceiver.class), PendingIntent.FLAG_UPDATE_CURRENT);
+								ShortcutManagerCompat.requestPinShortcut(act, info, shortcutCallbackIntent.getIntentSender());
+							}
+						break;
 					}
 				}
 			};
-			Utils.setOnClickListenersOneDepth(tutorialsView, tutClicker, 3, null);
-		} else {
+			Utils.setOnClickListenersOneDepth(tutorialsView, tutClicker, 4, null);
+		}
+		else {
 			super.checkLog(savedInstanceState);
 		}
 	}

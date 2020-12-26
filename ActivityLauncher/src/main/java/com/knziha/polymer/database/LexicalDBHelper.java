@@ -179,6 +179,29 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 		
 		db.execSQL(createPDocTable);
 		
+		// web tabs.
+		final String createWebTable = "create table if not exists \"webtabs\" ("+
+				"id INTEGER PRIMARY KEY AUTOINCREMENT," + // 0
+				"title TEXT NOT NULL," + // 1
+				"url TEXT NOT NULL," + // 2
+				"page_info TEXT," + // 3 页面位置的记忆
+				"zoom_info TEXT," + // 4 缩放信息 TODO
+				"bookmarks BLOB," + // 5 书签id TODO
+				"toc BLOB," +  // 6 toc expand / collapse states TODO
+				"thumbnail BLOB," + // 7
+				"ext1 TEXT,"+ // 8 comments
+				"f1 INTEGER DEFAULT 0 NOT NULL," + // 9
+				"f2 INTEGER DEFAULT 0 NOT NULL," +  // 10
+				"favor INTEGER DEFAULT 0 NOT NULL," +  // 11 喜爱等级 TODO
+				"pages INTEGER DEFAULT 0 NOT NULL," + // 12 页面总数
+				"progress INTEGER DEFAULT 0 NOT NULL," + // 13 (0~10000) 阅读进度
+				"visit_count INTEGER DEFAULT 0 NOT NULL,"+ // 14
+				"creation_time INTEGER DEFAULT 0 NOT NULL," + // 15
+				"last_visit_time INTEGER NOT NULL" + // 16
+				")";
+		
+		//db.execSQL(createWebTable);
+		
 		db.execSQL("CREATE INDEX if not exists urls_url_index ON urls (url)");
 		db.execSQL("CREATE INDEX if not exists annots_url_index ON annots (url)");
 		db.execSQL("CREATE INDEX if not exists keyword_search_terms_index3 ON keyword_search_terms (term)");
@@ -326,6 +349,7 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 		values.put("title", tile);
 		values.put("visit_count", ++count);
 		values.put("last_visit_time", System.currentTimeMillis());
+		values.put("creation_time", System.currentTimeMillis());
 		
 		if(count>0) {
 			values.put("id", id);

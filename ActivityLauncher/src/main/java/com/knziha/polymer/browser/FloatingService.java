@@ -1,8 +1,11 @@
-package com.knziha.polymer;
+package com.knziha.polymer.browser;
 
 import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Intent;
+import android.os.Build;
 import android.os.IBinder;
 import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
@@ -12,37 +15,45 @@ import android.view.WindowManager;
 
 import androidx.core.app.NotificationCompat;
 
-import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.Options;
 import com.knziha.polymer.widgets.MovableFloatingView;
 
 public abstract class FloatingService extends Service implements OnTouchListener {
 	public MovableFloatingView mview;
-	private static int notificationId = 2;
+	private static int notificationId = 202342;
 	private static Notification notification;
+	
+	Options opt;
+	
 	@Override
 	public IBinder onBind(Intent intent) {
 		return null;
 	}
+	
 	@Override
 	public void onCreate() {
 		super.onCreate();
-
-		postCreate();
-	}
-
-	void postCreate() {
-		CMN.opt = new Options(this);
-		CMN.opt.dm = getResources().getDisplayMetrics();
-		mview = new MovableFloatingView(getFloatingView());
-		mview.init((WindowManager) getSystemService(WINDOW_SERVICE), (int) (59*CMN.opt.dm.heightPixels*1.0/64));
+		opt = new Options(this);
+		opt.dm = getResources().getDisplayMetrics();
+		opt.getSecondFlag();
+		opt.getThirdFlag();
+		mview = new MovableFloatingView(getContentView());
+		mview.init((WindowManager) getSystemService(WINDOW_SERVICE), (int) (59*opt.dm.heightPixels*1.0/64));
 		if (notification == null) {
-			NotificationCompat.Builder builder = new NotificationCompat.Builder(getApplicationContext());
+			String CHANNEL_ID = "com.knziha.proservis";
+			String CHANNEL_NAME = "vis";
+			if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.O){
+				NotificationChannel notificationChannel = new NotificationChannel(CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH);
+				NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+				notificationManager.createNotificationChannel(notificationChannel);
+			}
+			
+			NotificationCompat.Builder builder = new NotificationCompat.Builder(getApplicationContext(), CHANNEL_ID);
 			notification = builder.build();
 		}
 	}
-
-	protected abstract View getFloatingView();
+	
+	protected abstract View getContentView();
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
@@ -55,7 +66,9 @@ public abstract class FloatingService extends Service implements OnTouchListener
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
-		mview.removeView();
+		if(mview!=null) {
+			mview.removeView();
+		}
 	}
 
 	@Override

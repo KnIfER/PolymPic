@@ -15,7 +15,7 @@
 	<uses-permission android:name="android.permission.INTERNET" />
 	<uses-permission android:name="android.permission.READ_PHONE_STATE" />
 	<uses-permission android:name="android.permission.VIBRATE" />
-	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 	<uses-permission android:name="android.permission.WAKE_LOCK" />
 
 	<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
@@ -29,6 +29,8 @@
 	<uses-permission android:name="com.android.launcher.permission.UNINSTALL_SHORTCUT" /><!-- 移除快捷方式 -->
 	<uses-permission android:name="android.permission.INSTALL_SHORTCUT" />
 	<uses-permission android:name="android.permission.UNINSTALL_SHORTCUT" />
+
+	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
 
 	<!-- 查询快捷方式2.1以下 -->
@@ -93,6 +95,8 @@
 			android:label="@string/app_name"
 			android:theme="@style/ActivityTheme"
 			android:taskAffinity=""
+			android:configChanges="orientation|keyboardHidden|screenSize|smallestScreenSize|screenLayout|uiMode|locale|layoutDirection"
+
 			>
 <!--			<intent-filter>-->
 <!--				<action android:name="android.intent.action.MAIN" />-->
@@ -178,8 +182,21 @@
 			android:excludeFromRecents="false"
 			android:screenOrientation="portrait"
 			android:theme="@style/AppTheme"
+			android:process=":browser"
+			android:exported="true"
 			>
+				<intent-filter>
+					<action android:name="knziha.task" />
+					<category android:name="knziha.task" />
+				</intent-filter>
 		</activity>
+
+		<activity
+			android:name=".qrcode.QRActivityPlus"
+			android:theme="@style/AppThemeTranslucent"
+			android:configChanges="orientation|keyboardHidden|screenSize|smallestScreenSize|screenLayout|uiMode|locale|layoutDirection"
+			android:process=":browser"
+			/>
 
 		<activity android:name="com.knziha.polymer.flowtextview.sample.MainActivity"
 			android:label="@string/app_name"
@@ -219,10 +236,30 @@
 			android:configChanges="orientation|keyboardHidden|screenSize|smallestScreenSize|screenLayout|uiMode|locale|layoutDirection"
 			/>
 
-		<!--		<service-->
-<!--			android:name="com.knziha.polymer.SimpleService">-->
-<!--		</service>-->
+		<activity
+			android:name=".LauncherActivity"
+			android:label="@string/app_name"
+			android:launchMode="singleInstance"
+			android:configChanges="orientation|keyboardHidden|screenSize|uiMode|locale|layoutDirection"
+			android:excludeFromRecents="false"
+			android:theme="@style/ActivityTheme"
+			android:process=":knziha.peruse"
+			>
+			<!--            <intent-filter>-->
+			<!--                <action android:name="android.intent.action.MAIN" />-->
+			<!--                <category android:name="android.intent.category.LAUNCHER" />-->
+			<!--            </intent-filter>-->
+		</activity>
+
+		<service
+			android:name="com.knziha.polymer.browser.SimpleService"
+			android:process=":knziha.peruse"
+			>
+		</service>
+		<service android:name=".browser.ServiceEnhancer" />
+
 		<receiver android:name=".Utils.MyReceiver" />
+		<receiver android:name=".browser.BrowseReceiver" />
 	</application>
 
 </manifest>

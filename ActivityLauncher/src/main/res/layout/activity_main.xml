@@ -265,6 +265,11 @@
 			android:layout_marginBottom="@dimen/_45_"
 			/>
 
-		<include layout="@layout/launch_tutorials"/>
+		<ViewStub
+			android:id="@+id/tutorials"
+			android:layout="@layout/launch_tutorials"
+			android:layout_width="match_parent"
+			android:layout_height="match_parent"
+			/>
 	</FrameLayout>
 </layout>

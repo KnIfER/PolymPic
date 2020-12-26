@@ -90,7 +90,8 @@ public class PDocument {
 				CMN.Log("urlWriter", urlWriter);
 				//urlWriter = Uri.parse("content://com.android.externalstorage.documents/tree/2486-F9E1%3A/document/2486-F9E1%3ADownload%2F文件夹%2F文件夹%2Fcheat.pdf");
 			}
-			try (ParcelFileDescriptor fd = contentResolver.openFileDescriptor(urlWriter, "rw")) {
+			String mode = "rwt";
+			try (ParcelFileDescriptor fd = contentResolver.openFileDescriptor(urlWriter, mode)) {
 				CMN.rt();
 				//pdfDocument.closeFile();
 				pdfiumCore.SaveAsCopy(pdfDocument.mNativeDocPtr, fd.getFd(), incremental);
@@ -106,7 +107,7 @@ public class PDocument {
 				if(reload && String.valueOf(e.getMessage()).contains("Permission")) {
 					Utils.blameAndroidIfNeeded(a);
 				}
-				CMN.Log(e);
+				CMN.Log(urlWriter, e);
 			}
 		}
 	}

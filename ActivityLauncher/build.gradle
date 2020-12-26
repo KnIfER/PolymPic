@@ -43,12 +43,24 @@ android {
     lintOptions {
         abortOnError false
     }
-
+    packagingOptions {
+        exclude 'META-INF/DEPENDENCIES'
+        exclude 'META-INF/NOTICE'
+        exclude 'META-INF/LICENSE'
+        exclude 'META-INF/LICENSE.txt'
+        exclude 'META-INF/NOTICE.txt'
+    }
 }
 
 dependencies {
+    //noinspection DuplicatePlatformClasses
+    api 'org.apache.httpcomponents:httpclient:4.3.5'
+    api 'commons-io:commons-io:2.8.0'
+
     api 'com.alibaba:fastjson:1.2.72'
     api project(':GlideModule:glide')
+    implementation files('libs\\core-3.3.3.jar')
+    implementation files('libs\\tbs_sdk_thirdapp_v4.3.0.67_43967_sharewithdownloadwithfile_withoutGame_obfs_20200923_120452.jar')
     testImplementation 'junit:junit:4.13'
     //annotationProcessor libs_glide
     api project(':LibPdfium')

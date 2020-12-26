@@ -85,7 +85,7 @@ public class PDocSelection extends View {
 		rectPaint.setColor(0x66109afe);
 		//rectPaint.setColor(0xffffff00);
 		rectHighlightPaint = new Paint();
-		rectHighlightPaint.setColor(Utils.bigMountain?0xffffff00:0x80ffff00);
+		rectHighlightPaint.setColor(Utils.hugeHimalaya?0xffffff00:0x80ffff00);
 		rectPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DARKEN));
 		rectHighlightPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DARKEN));
 		rectFramePaint = new Paint();
@@ -417,8 +417,8 @@ public class PDocSelection extends View {
 	}
 	
 	public void invalidMagnifier() {
-		if(Utils.bigMountain) {
-		
+		if(Utils.hugeHimalaya) {
+			// 存疑
 		} else {
 			invalidate();
 		}

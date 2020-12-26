@@ -24,7 +24,7 @@ import org.adrianwalker.multilinestring.Multiline;
 //@SuppressWarnings("ALL")
 public class Options implements WebOptions, BookOptions {
 	
-	private final SharedPreferences defaultReader;
+	public final SharedPreferences defaultReader;
 	public DisplayMetrics dm;
 	public static boolean isLarge;
 	private static long FirstFlag;
@@ -140,7 +140,7 @@ public class Options implements WebOptions, BookOptions {
 		return SecondFlag;
 	}
 	private void putSecondFlag(long val) {
-		defaultReader.edit().putLong("MSF",SecondFlag=val).commit();
+		defaultReader.edit().putLong("MSF",SecondFlag=val).apply();
 	}
 	public void putSecondFlag() {
 		putSecondFlag(SecondFlag);
@@ -167,6 +167,9 @@ public class Options implements WebOptions, BookOptions {
 	
 	@Multiline(flagPos=53, debug=1) public static boolean getRebuildToast(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=55, shift=1) public static boolean getToastRoundedCorner(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
+	
+	@Multiline(flagPos=56) public boolean getLaunchView(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=56) public boolean toggleLaunchView(){ SecondFlag=SecondFlag; throw new IllegalArgumentException(); }
 	
 	
 	/////////////////////End Second Flag////////////////////////////////////

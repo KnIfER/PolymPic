@@ -199,7 +199,7 @@ public class FU {
                             }
                         }
                     }
-                } catch (Exception e) { e.printStackTrace(); }
+                } catch (Exception e) { CMNF.Log(e); }
             }
             if(!isPrimary){
                 if(uuid!=null) {
@@ -209,7 +209,8 @@ public class FU {
                     //url.append(filePath.replace("/","%2F"));
                     Uri uri_start = Uri.parse(url.toString());
                     DocumentFile doc = DocumentFile.fromSingleUri(context, uri_start);
-                    if(!doc.canWrite()) {
+                    if(!doc.canWrite())
+                    {
                         if(context instanceof Activity) {
                             Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
                             ((Activity) context).startActivityForResult(intent, code);
@@ -223,7 +224,7 @@ public class FU {
             }
             //return -4;
         } catch (Exception e) {
-            e.printStackTrace();
+			CMNF.Log(e);
         }
 		return 0;
 	}

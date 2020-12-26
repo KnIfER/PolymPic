@@ -1,23 +1,12 @@
 package com.knziha.polymer;
 
 import android.app.Activity;
-import android.app.ActivityManager;
 import android.content.Intent;
-import android.graphics.BitmapFactory;
-import android.net.Uri;
 import android.os.Bundle;
 import android.util.SparseArray;
-import android.util.SparseIntArray;
-
-import androidx.annotation.Nullable;
-import androidx.core.content.res.ResourcesCompat;
 
 import com.knziha.polymer.Utils.CMN;
-import com.knziha.polymer.pdviewer.PDFPageParms;
 import com.knziha.polymer.widgets.Utils;
-
-import java.io.File;
-import java.util.HashSet;
 
 public class PDocShortCutActivity extends Activity {
 	public static SparseArray<PDocShortCutActivity> blackSmithStack = new SparseArray<>();

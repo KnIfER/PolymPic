@@ -38,3 +38,4 @@ ODPlayer/src/main/jniLibs/x86/*.so
 *.d
 *.rar
 
+*.log

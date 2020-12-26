@@ -113,10 +113,11 @@ public class PDocSearchHandler implements View.OnClickListener {
 			case R.id.wave:{
 				if(task!=null) {
 					close();
+					waveView.setProgressVis(false);
 				} else {
 					a.setSearchResults(null, null, 0);
+					waveView.setVisibility(View.GONE);
 				}
-				waveView.setVisibility(View.GONE);
 			} break;
 		}
 	}

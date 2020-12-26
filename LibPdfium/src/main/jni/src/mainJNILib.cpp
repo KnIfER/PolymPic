@@ -32,13 +32,13 @@ static void initLibraryIfNeed(){
     Mutex::Autolock lock(sLibraryLock);
     if(sLibraryReferenceCount == 0){
         LOGD("Init FPDF library");
-        FPDF_InitLibrary();
-        //FPDF_LIBRARY_CONFIG config;
-        //config.version = 2;
-        //config.m_pUserFontPaths = nullptr;
-        //config.m_pIsolate = nullptr;
-        //config.m_v8EmbedderSlot = 0;
-        //FPDF_InitLibraryWithConfig(&config);
+        //FPDF_InitLibrary();
+        FPDF_LIBRARY_CONFIG config;
+        config.version = 2;
+        config.m_pUserFontPaths = nullptr;
+        config.m_pIsolate = nullptr;
+        config.m_v8EmbedderSlot = 0;
+        FPDF_InitLibraryWithConfig(&config);
     }
     sLibraryReferenceCount++;
 }
@@ -250,6 +250,7 @@ JNI_FUNC(jlong, PdfiumCore, nativeOpenDocument)(JNI_ARGS, jint fd, jstring passw
     }
 
     if(fileLength<=largeFileTheta) {
+        //LOGE("load to memory");
         docFile->readBuf = new char[fileLength];
         size_t remainingBytes = fileLength;
         char *writeBuffer = docFile->readBuf;
