@@ -16,19 +16,17 @@
 
 package com.knziha.polymer;
 
+import android.content.ContentValues;
 import android.content.Context;
+import android.database.Cursor;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcel;
 import android.view.MotionEvent;
 import android.view.ViewGroup;
-import android.view.textclassifier.TextClassifier;
 import android.webkit.WebBackForwardList;
 import android.webkit.WebSettings;
-import android.widget.PopupWindow;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.widget.AppCompatEditText;
 import androidx.core.view.MotionEventCompat;
 import androidx.core.view.NestedScrollingChild;
 import androidx.core.view.NestedScrollingChildHelper;
@@ -36,21 +34,17 @@ import androidx.core.view.ViewCompat;
 
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.WebOptions;
+import com.knziha.polymer.database.LexicalDBHelper;
 import com.knziha.polymer.toolkits.Utils.BU;
 import com.knziha.polymer.widgets.WebViewmy;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static com.knziha.polymer.Utils.WebOptions.*;
-
-import static androidx.appcompat.widget.AppCompatEditText.TextFucker;
+import static com.knziha.polymer.Utils.WebOptions.BackendSettings;
+import static com.knziha.polymer.Utils.WebOptions.StorageSettings;
 
 /** Advanced WebView For DuoJuLiuLanQi <br/>
  * 多聚浏览器 <br/>
@@ -264,46 +258,22 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 	
 	/** 从磁盘加载网页前进/回退栈 */
 	public boolean loadIfNeeded() {
+		CMN.Log("loadIfNeeded", holder.url);
 		if(holder.url!=null && !holder.url.equals(getTag())){
-			CMN.Log("loadIfNeeded");
-			if(stackpath==null) {
-				stackpath = new File(getContext().getExternalCacheDir(), "webstack"+holder.id);
-				CMN.Log("stackpath", stackpath.exists());
-				if(stackpath.exists()) {
-					Parcel parcel = Parcel.obtain();
-					byte[] data = BU.fileToByteArr(stackpath);
-					parcel.unmarshall(data, 0, data.length);
-					parcel.setDataPosition(0);
-					Bundle bundle = new Bundle();
-					bundle.readFromParcel(parcel);
-					parcel.recycle();
-					if(holder.getLuxury()) {
-						ArrayList<String> BackList = bundle.getStringArrayList("PBL");
-						CMN.Log("PBL", BackList);
-						if(BackList!=null) {
-							PolymerBackList.clear();
-							PolymerBackList.addAll(BackList);
-						}
-						for (int i = PolymerBackList.size()-1; i >= 0; i--) {
-							if(!isUrlValid(PolymerBackList.get(i))) {
-								PolymerBackList.remove(i);
-							}
-						}
-						int size = PolymerBackList.size()-1;
-						if(size>=0) {
-							CMN.Log("retrieving...", PolymerBackList);
-							loadUrl(PolymerBackList.get(size));
-							PolymerBackList.remove(size);
-							return true;
-						}
-					} else {
-						WebBackForwardList stacks = restoreState(bundle);
-						if(stacks!=null && stacks.getSize()>0) {
-							CMN.Log("复活……", stacks.getSize());
-							return true;
-						}
-					}
+			if(!stackloaded) {
+				stackloaded = true;
+				Cursor stackcursor = LexicalDBHelper.getInstancedDb()
+						.rawQuery("select webstack from webtabs where id=? limit 1"
+								, new String[]{""+holder.id});
+				if(stackcursor.moveToFirst()
+					&&parseBundleFromData(stackcursor.getBlob(0))) {
+					return true;
 				}
+//				stackpath = new File(getContext().getExternalCacheDir(), "webstack"+holder.id);
+//				CMN.Log("stackpath", stackpath.exists());
+//				if(stackpath.exists()) {
+//
+//				}
 			}
 			CMN.Log("再生……", holder.url);
 			loadUrl(holder.url);
@@ -312,11 +282,51 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 		return false;
 	}
 	
+	private boolean parseBundleFromData(byte[] data) {
+		if(data==null) {
+			return false;
+		}
+		Parcel parcel = Parcel.obtain();
+		parcel.unmarshall(data, 0, data.length);
+		parcel.setDataPosition(0);
+		Bundle bundle = new Bundle();
+		bundle.readFromParcel(parcel);
+		parcel.recycle();
+		if(holder.getLuxury()) {
+			ArrayList<String> BackList = bundle.getStringArrayList("PBL");
+			CMN.Log("PBL", BackList);
+			if(BackList!=null) {
+				PolymerBackList.clear();
+				PolymerBackList.addAll(BackList);
+			}
+			for (int i = PolymerBackList.size()-1; i >= 0; i--) {
+				if(!isUrlValid(PolymerBackList.get(i))) {
+					PolymerBackList.remove(i);
+				}
+			}
+			int size = PolymerBackList.size()-1;
+			if(size>=0) {
+				CMN.Log("retrieving...", PolymerBackList);
+				loadUrl(PolymerBackList.get(size));
+				PolymerBackList.remove(size);
+				return true;
+			}
+		}
+		else {
+			WebBackForwardList stacks = restoreState(bundle);
+			if(stacks!=null && stacks.getSize()>0) {
+				CMN.Log("复活……", stacks.getSize());
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	/** 持久化保存网页前进/回退栈 */
 	public void saveIfNeeded() { //WEBVIEW_CHROMIUM_STATE
-		if((true/*version>1*/) && stackpath!=null) {
+		if((true/*version>1*/) && stackloaded) {
 			Bundle bundle = new Bundle();
-			
+			CMN.Log("saveIfNeeded", holder.getLuxury());
 //			int stacksCount=0;
 //			for (int i = 0; i < layout.getChildCount(); i++) {
 //				WebBackForwardList stacks = ((AdvancedNestScrollWebView)layout.getChildAt(i)).saveState(bundle);
@@ -340,7 +350,8 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 				bundle.putStringArrayList("PBL", PolymerBackList);
 				//PolymerBackList.subList(preserve, PolymerBackList.size()).clear();
 				NeedSave = true;
-			} else {
+			}
+			else {
 				WebBackForwardList stacks = saveState(bundle);
 				//WebBackForwardList stacks = saveState(bundle);
 				if(stacks!=null&&stacks.getSize()>0) {
@@ -354,9 +365,12 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 				Parcel parcel = Parcel.obtain();
 				parcel.setDataPosition(0);
 				bundle.writeToParcel(parcel, 0);
-				byte[] bytes = parcel.marshall();
+				byte[] data = parcel.marshall();
 				parcel.recycle();
-				BU.printFile(bytes, stackpath.getPath());
+				//BU.printFile(data, stackpath.getPath());
+				ContentValues values = new ContentValues();
+				values.put("webstack", data);
+				LexicalDBHelper.getInstancedDb().update("webtabs", values, "id=?", new String[]{""+holder.id});
 				if(preserve>=0) {
 					PolymerBackList.subList(preserve, PolymerBackList.size()).clear();
 				}

@@ -139,7 +139,6 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 				"term LONGVARCHAR NOT NULL,"+
 				"creation_time INTEGER NOT NULL,"+
 				"last_visit_time INTEGER NOT NULL)";
-		
 		db.execSQL(createSearchTable);
 		
 		// web annotations.
@@ -152,11 +151,10 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 				"flag INTEGER DEFAULT -1 NOT NULL,"+
 				"creation_time INTEGER DEFAULT 0 NOT NULL," +
 				"last_visit_time INTEGER NOT NULL)";
-		
 		db.execSQL(createNotesTable);
 		
-		//db.execSQL("drop table if exists pdoc");
 		// pdoc history.
+		//db.execSQL("drop table if exists pdoc");
 		final String createPDocTable = "create table if not exists \"pdoc\" ("+
 				"id INTEGER PRIMARY KEY AUTOINCREMENT," + // 0
 				"name TEXT NOT NULL," + // 1
@@ -176,31 +174,29 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 				"creation_time INTEGER DEFAULT 0 NOT NULL," + // 15
 				"last_visit_time INTEGER NOT NULL" + // 16
 				")";
-		
 		db.execSQL(createPDocTable);
 		
 		// web tabs.
+		//db.execSQL("drop table if exists webtabs");
 		final String createWebTable = "create table if not exists \"webtabs\" ("+
 				"id INTEGER PRIMARY KEY AUTOINCREMENT," + // 0
-				"title TEXT NOT NULL," + // 1
+				"title TEXT," + // 1
 				"url TEXT NOT NULL," + // 2
+				"search TEXT," + // 1
 				"page_info TEXT," + // 3 页面位置的记忆
 				"zoom_info TEXT," + // 4 缩放信息 TODO
-				"bookmarks BLOB," + // 5 书签id TODO
-				"toc BLOB," +  // 6 toc expand / collapse states TODO
 				"thumbnail BLOB," + // 7
+				"webstack BLOB," + // 7
 				"ext1 TEXT,"+ // 8 comments
 				"f1 INTEGER DEFAULT 0 NOT NULL," + // 9
 				"f2 INTEGER DEFAULT 0 NOT NULL," +  // 10
 				"favor INTEGER DEFAULT 0 NOT NULL," +  // 11 喜爱等级 TODO
-				"pages INTEGER DEFAULT 0 NOT NULL," + // 12 页面总数
-				"progress INTEGER DEFAULT 0 NOT NULL," + // 13 (0~10000) 阅读进度
 				"visit_count INTEGER DEFAULT 0 NOT NULL,"+ // 14
+				"rank INTEGER DEFAULT 0 NOT NULL," + // 15
 				"creation_time INTEGER DEFAULT 0 NOT NULL," + // 15
-				"last_visit_time INTEGER NOT NULL" + // 16
+				"last_visit_time INTEGER DEFAULT 0 NOT NULL" + // 16
 				")";
-		
-		//db.execSQL(createWebTable);
+		db.execSQL(createWebTable);
 		
 		db.execSQL("CREATE INDEX if not exists urls_url_index ON urls (url)");
 		db.execSQL("CREATE INDEX if not exists annots_url_index ON annots (url)");
@@ -214,11 +210,22 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 			db.execSQL("CREATE INDEX if not exists pdoc_progress_index ON pdoc (progress)");
 		}
 		//db.execSQL("CREATE INDEX if not exists pdoc_url_index ON pdoc (url)");
+		db.execSQL("CREATE INDEX if not exists webtabs_rank_index ON webtabs (rank)");
 		
 		
 		CMN.Log("onDbCreate..done");
     }
-
+	
+	public Cursor queryTabs() {
+		return database.rawQuery("select id,title,url,search,f1,rank from webtabs order by rank", null);
+	}
+	
+	public long insertNewTab(String defaultUrl) {
+		ContentValues values = new ContentValues();
+		values.put("url", defaultUrl);
+		return database.insert("webtabs", null, values);
+	}
+	
     @Override
     public void onUpgrade(SQLiteDatabase db, int _oldVersion, int newVersion) {
         //在 setVersion 前已经调用

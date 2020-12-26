@@ -97,7 +97,6 @@ import com.knziha.filepicker.model.DialogConfigs;
 import com.knziha.filepicker.model.DialogProperties;
 import com.knziha.filepicker.model.DialogSelectionListener;
 import com.knziha.filepicker.view.FilePickerDialog;
-import com.knziha.polymer.Utils.BufferedReader;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.MyReceiver;
 import com.knziha.polymer.Utils.OptionProcessor;
@@ -132,7 +131,6 @@ import org.apache.commons.text.StringEscapeUtils;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -179,6 +177,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	ArrayList<AdvancedBrowserWebView> Pages = new ArrayList<>(1024);
 	//private ArrayList<WebViewmy> WebPool = new ArrayList<>(1024);
 	private ArrayList<TabHolder> TabHolders = new ArrayList<>(1024);
+	 boolean tabsRead = false;
 	private int padWidth;
 	private int itemPad;
 	private int _45_;
@@ -491,72 +490,39 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		menu_grid_painter = DescriptiveImageView.createTextPainter();
 		UIData.browserWidget10.textPainter = menu_grid_painter;
 		
-		final File def = new File(getExternalFilesDir(null),"sites_default.txt");
-		/* !!!原配 */
-		if(def.exists()) {
-			try {
-				BufferedReader in = new BufferedReader(new FileReader(def));
-				String line;
-				while((line=in.readLine())!=null) {
-					boolean via = false;
-					boolean set = false;
-					TabHolder holder = new TabHolder();
-					String[] args = line.split(TitleSep);
-					//CMN.Log("processing...", args);
-					try{
-						if(args.length==2) {
-							holder.url = args[0];
-							args = args[1].split("\\|");
-							int len = args.length;
-							if(len>0) {
-								if(args[len-1].equals("=")) {
-									via=true;
-									len--;
-								}
-							}
-							if(len>0) {
-								//CMN.Log("processing 1..", args);
-								holder.id = validifyid(Math.abs(Long.parseLong(args[0])));
-								set=true;
-								if(len>1) {
-									holder.flag = Long.parseLong(args[1]);
-								}
-								if(len>2) {
-									holder.title = args[2];
-								}
-								if(len>3) {
-									holder.page_search_term = args[3];
-								}
-							}
-						}
-					} catch (Exception e) {
-						CMN.Log(e);
-					}
-					if(set) {
-						TabHolders.add(holder);
-						if(via) {
-							adapter_idx=TabHolders.size()-1;
-						}
-					}
-				}
-				in.close();
-			} catch (IOException e) {
-				e.printStackTrace();
+		if(!tabsRead) {
+			Cursor tabsCursor = historyCon.queryTabs();
+			while (tabsCursor.moveToNext()) {
+				TabHolder holder = new TabHolder();
+				holder.id = tabsCursor.getLong(0);
+				holder.title = tabsCursor.getString(1);
+				holder.url = tabsCursor.getString(2);
+				holder.page_search_term = tabsCursor.getString(3);
+				holder.flag = tabsCursor.getLong(4);
+				holder.rank = tabsCursor.getLong(5);
+				TabHolders.add(holder);
 			}
+			tabsRead = true;
 		}
+		
 		/* !!!原装 */
 		if(TabHolders.size()==0) {
+			String defaultUrl = getDefaultPage();
 			TabHolder tab0=new TabHolder();
-			tab0.url="https://www.bing.com";
-			tab0.id=CMN.now();
-			TabHolders.add(tab0);
+			long id = historyCon.insertNewTab(defaultUrl);
+			CMN.Log("insertNewTab", id);
+			if(id!=-1) {
+				tab0.url=defaultUrl;
+				tab0.id=id;
+				TabHolders.add(tab0);
+			}
 		}
 		int size = TabHolders.size();
 		for (int i = 0; i < size; i++) {
 			Pages.add(null);
 		}
 		CMN.Log("ini.初始化完毕", size);
-		
+		adapter_idx=0;
 		AttachWebAt(adapter_idx, false);
 		//SetupPasteBin();
 		
@@ -2912,13 +2878,19 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			// 新建标签页
 			case R.id.browser_widget10:{
 				try {
-					long id = validifyid(supressingNxtLux=CMN.now());
+					supressingNxtLux=CMN.now();
 					int newtabloc = adapter_idx+1;
-					TabHolder holder = new TabHolder();
-					TabHolders.add(newtabloc, holder);
-					Pages.add(newtabloc, null);
-					holder.url=getDefaultPage();
-					holder.id=id;
+					String defaultUrl = getDefaultPage();
+					TabHolder holder=new TabHolder();
+					long id = historyCon.insertNewTab(defaultUrl);
+					CMN.Log("insertNewTab", id);
+					if(id!=-1) {
+						holder.url=defaultUrl;
+						holder.id=id;
+						TabHolders.add(holder);
+						TabHolders.add(newtabloc, holder);
+						Pages.add(newtabloc, null);
+					}
 					AttachWebAt(newtabloc, false);
 				} catch (IllegalArgumentException e) {
 					showT("Hello Future!");
@@ -2937,7 +2909,6 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	private String getDefaultPage() {
 		return "https://www.bing.com";
 	}
-	
 	
 	/** Luxuriously Load Url：使用新的WebView打开链接，受Via浏览器启发，用于“返回不重载”。<br/>
 	 *  标签页(tab)处于奢侈模式时({@link TabHolder#getLuxury})，使用此法打开链接。WebView总数有限制，且一段时间内不得打开太多。<br/>
@@ -3041,31 +3012,6 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		super.onDestroy();
 		if(systemIntialized) {
 			Glide.get(this).clearMemory();
-			//if(false)
-			try {
-				final File def = new File(getExternalFilesDir(null),"sites_default.txt");      //!!!原配
-				BufferedWriter output2 = new BufferedWriter(new FileWriter(def,false));
-				for (int i = 0; i < TabHolders.size(); i++) {
-					TabHolder holder=TabHolders.get(i);
-					output2.write(filteredStorageUrl(holder.url));
-					output2.write(TitleSep);
-					output2.write(Long.toString(holder.id));
-					output2.write(FieldSep);
-					output2.write(Long.toString(holder.flag));
-					output2.write(FieldSep);
-					output2.write(filteredStorageName(holder.title));
-					output2.write(FieldSep);
-					output2.write(filteredStorageName(holder.page_search_term));
-					if(i==adapter_idx) {
-						output2.write("|=");
-					}
-					output2.write("\r");
-				}
-				output2.flush();
-				output2.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
 			closing=true;
 			Collection<AdvancedBrowserWebView> values = id_table.values();
 			for (AdvancedBrowserWebView wv:values) {
@@ -3267,6 +3213,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		public String title;
 		public String page_search_term;
 		public long flag;
+		public long rank;
 		public long id;
 		public final TabIdentifier TabID = new TabIdentifier();
 		

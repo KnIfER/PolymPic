@@ -23,7 +23,6 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.appcompat.app.GlobalOptions;
 import androidx.recyclerview.widget.RecyclerView.OnScrollChangedListener;
@@ -50,6 +49,7 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
 	public BrowserActivity context;
 	public long time;
 	public int lastScroll;
+	public boolean stackloaded;
 	public File stackpath;
 	private boolean invalidable = true;
 	public boolean HLED;
