@@ -1,4 +1,4 @@
-Here presents PolymiumPic, the currently fully opensourced part of the pro-project PolymPic.   
+Here presents PolymiumPic, the currently fully opensourced part of PolymPic.   
 
 Just like chrome, it is a fantastic web browser + a PDF viewer.  
 
@@ -30,9 +30,19 @@ This is a 'complex' project which consists of multiple gradle sub-modules. You n
 5. https://github.com/KnIfER/GlideModule
 6. ( Some may be missing. )
 
+
 For some reason I've modified those 3rd party libaries but don't want to include them in my repo.    
 
 If you don't want to download them, then go and grab the current [archives](https://github.com/KnIfER/PolymPic/releases/tag/0.1.alpha1) exported directly from the Android Studio.
+
+___
+Some other dependencies:
+
+| Jar File        | Use    |  Included in the repo |
+| --------   | -----:   | :----: |
+| ActivityLauncher\libs\core-3.3.3.jar        | zxing qrcode      |   Yes    |
+| ActivityLauncher\libs\tbs_sdk_thirdapp.jar        | Resource sniffer      |   Yes    |
+| multiline\libs\closure-compiler-v20200628.jar        | compile js scripts      |   No. It's in archive    |
 
 ### How to invoke PolymPic (the App) and view PDFs at a specific page in your own project:
 1. Essential
