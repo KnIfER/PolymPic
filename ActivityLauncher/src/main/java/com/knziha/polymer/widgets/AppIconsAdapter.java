@@ -14,18 +14,28 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
-import android.view.WindowManager;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.GlobalOptions;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.DataSource;
+import com.bumptech.glide.load.DecodeFormat;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.load.engine.GlideException;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.RequestOptions;
+import com.bumptech.glide.request.target.ImageViewTarget;
+import com.bumptech.glide.request.target.Target;
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.knziha.polymer.BrowserActivity;
 import com.knziha.polymer.R;
 import com.knziha.polymer.Toastable_Activity;
-import com.google.android.material.bottomsheet.BottomSheetBehavior;
-import com.google.android.material.bottomsheet.BottomSheetDialog;
-import com.knziha.polymer.Utils.CMN;
+import com.knziha.polymer.browser.AppIconCover.AppIconCover;
+import com.knziha.polymer.browser.AppIconCover.AppInfoBean;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,7 +48,7 @@ public class AppIconsAdapter extends RecyclerView.Adapter<AppIconsAdapter.ViewHo
 	private final View bottomSheet;
     private final FlowTextView indicator;
     private TextPaint textPainter;
-    private ArrayList<AppBean> list = new ArrayList<>();
+    private ArrayList<AppInfoBean> list = new ArrayList<>();
     private View.OnClickListener itemClicker;
     private PackageManager pm;
 	private int landScapeMode;
@@ -61,7 +71,7 @@ public class AppIconsAdapter extends RecyclerView.Adapter<AppIconsAdapter.ViewHo
 		shareDialog.tag = this;
         itemClicker = v1 -> {
 			ViewHolder vh = (ViewHolder) v1.getTag();
-			AppBean appBean = list.get(vh.position);
+			AppInfoBean appBean = list.get(vh.position);
 			Intent shareIntent = new Intent(appBean.intent);
 			shareIntent.setComponent(new ComponentName(appBean.pkgName, appBean.appLauncherClassName));
 			shareIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -126,9 +136,10 @@ public class AppIconsAdapter extends RecyclerView.Adapter<AppIconsAdapter.ViewHo
 	private void ResolveResolvedQuery(Intent intent) {
 		List<ResolveInfo> resolved = pm.queryIntentActivities(intent, PackageManager.MATCH_ALL);
 		for (ResolveInfo RinfoI : resolved) {
-			AppBean appBean = new AppBean();
+			AppInfoBean appBean = new AppInfoBean();
 			appBean.intent = intent;
 			appBean.data = RinfoI;
+			appBean.pm = pm;
 			appBean.pkgName = RinfoI.activityInfo.packageName;
 			appBean.appLauncherClassName = RinfoI.activityInfo.name;
 			list.add(appBean);
@@ -149,10 +160,35 @@ public class AppIconsAdapter extends RecyclerView.Adapter<AppIconsAdapter.ViewHo
     @Override
     public void onBindViewHolder(ViewHolder holder, final int position) {
         holder.position = position;
-        AppBean app = list.get(position);
-        app.load();
+        AppInfoBean app = list.get(position);
         DescriptiveImageView iv = holder.textImageView;
-        iv.setImageDrawable(app.icon);
+	
+		RequestOptions options = new RequestOptions()
+				.format(DecodeFormat.PREFER_ARGB_8888)//DecodeFormat.PREFER_ARGB_8888
+				.skipMemoryCache(false)
+				.diskCacheStrategy(DiskCacheStrategy.NONE)
+				//.onlyRetrieveFromCache(true)
+				.fitCenter()
+				.override(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL)
+				;
+		
+		Glide.with(iv.getContext())
+				.load(new AppIconCover(app))
+				.apply(options)
+				.listener(new RequestListener<Drawable>() {
+					@Override
+					public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
+						return false;
+					}
+					@Override
+					public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
+						DescriptiveImageView medium_thumbnail = (DescriptiveImageView) ((ImageViewTarget<?>) target).getView();
+						medium_thumbnail.setText(((AppIconCover)model).path.appName);
+						return false;
+					}
+				})
+				.into(iv);
+		
         iv.setText(app.appName);
     }
 
@@ -168,24 +204,6 @@ public class AppIconsAdapter extends RecyclerView.Adapter<AppIconsAdapter.ViewHo
             super(itemView);
             textImageView = itemView.findViewById(R.id.app_icon_iv);
             itemView.setTag(this);
-        }
-    }
-
-    public class AppBean {
-        public Intent intent;
-        public ResolveInfo data;
-        public Drawable icon;
-        public String appName;
-        public String pkgName;
-        public String appLauncherClassName;
-        public boolean loaded;
-
-        public void load() {
-            if(!loaded) {
-                appName = data.loadLabel(pm).toString();
-                icon = data.loadIcon(pm);
-                loaded=true;
-            }
         }
     }
 }
