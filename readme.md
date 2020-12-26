@@ -41,7 +41,7 @@ Some other dependencies:
 | Jar File        | Use    |  Included in the repo |
 | --------   | -----:   | :----: |
 | ActivityLauncher\libs\core-3.3.3.jar        | Zxing qrcode      |   Yes    |
-| ActivityLauncher\libs\tbs_sdk_thirdapp.jar        | X5 Webview sniffer      |   Yes    |
+| ActivityLauncher\libs\tbs_sdk_thirdapp.jar        | X5 Webview resource sniffer      |   Yes    |
 | multiline\libs\closure-compiler-v20200628.jar        | To compile js scripts      |   No. It's in the archive    |
 
 ### How to invoke PolymPic (the App) and view PDFs at a specific page in your own project:
