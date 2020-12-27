@@ -22,6 +22,7 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.database.AbstractWindowedCursor;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
@@ -54,6 +55,7 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
@@ -88,6 +90,7 @@ public class Utils {
 	public static final boolean bigMountain = Build.VERSION.SDK_INT>22;
 	public static final boolean hugeHimalaya = Build.VERSION.SDK_INT>=Build.VERSION_CODES.P;
 	public static final boolean isHuawei = Build.MANUFACTURER.contains("HUAWEI");
+	public static final WeakReference<Bitmap> DummyBMRef = new WeakReference<>(null);
 	
 	/**
      * @param dp Desired size in dp (density-independent pixels)

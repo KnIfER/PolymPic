@@ -36,6 +36,7 @@ import org.adrianwalker.multilinestring.Multiline;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,6 +49,8 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
 	public BrowserActivity.TabHolder holder;
 	public BrowserActivity context;
 	public long time;
+	public int lastCaptureVer;
+	public int version;
 	public int lastScroll;
 	public boolean stackloaded;
 	public File stackpath;
@@ -84,9 +87,9 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
 	@Override
 	protected void onScrollChanged(int l, int t, int oldl, int oldt) {
 		super.onScrollChanged(l, t, oldl, oldt);
-		//CMN.Log(lastScroll, " onScrollChanged", l, t, oldl, oldt); //有的网页监听不到
+		//CMN.Log(lastScroll, "onScrollChanged", l, t, oldl, oldt); //有的网页监听不到
+		//version++;
 		if(!Options.getAlwaysRefreshThumbnail() && Math.abs(lastScroll-t)>100){
-			time=System.currentTimeMillis();
 			lastScroll=t;
 		}
 		if(mOnScrollChangeListener !=null)
@@ -142,9 +145,10 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
 	public boolean bIsActionMenuShown;
 	public AdvancedWebViewCallback webviewcallback;
 	
-	
-	
+	/** Recapture Thumnails as a bitmap. There's no point in doing this asynchronously.
+	 * 		draw(canvas) will block the UI even it's called in another thread. */
 	public void recaptureBitmap() {
+		lastCaptureVer = version;
 		int w = getWidth();
 		int h = getHeight();
 		if(w>0) {
@@ -154,12 +158,13 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
 			}
 			int targetW = (int)(w*factor);
 			int targetH = (int)(h*factor);
-			boolean reset = bitmap==null || bitmap.getWidth()!=targetW||bitmap.getHeight()!=targetH;
+			int needRam = targetW*targetH*2;
+			boolean reset = bitmap.getAllocationByteCount()<needRam;
 			if(reset) {
-				if(bitmap!=null) {
-					bitmap.recycle();
-				}
+				bitmap.recycle();
 				bitmap = Bitmap.createBitmap(targetW, targetH, Bitmap.Config.RGB_565);
+			} else if(bitmap.getWidth()!=targetW||bitmap.getHeight()!=targetH) {
+				bitmap.reconfigure(targetW, targetH, Bitmap.Config.RGB_565);
 			}
 			if(canvas==null) {
 				canvas = new Canvas(bitmap);
@@ -172,10 +177,19 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
 			long st = System.currentTimeMillis();
 			draw(canvas);
 			CMN.Log("绘制时间：", System.currentTimeMillis()-st);
+			Bitmap bmItem = bm.get();
+			if(bmItem!=null) {
+				bmItem.recycle();
+			}
+			// now copy the result to an unique bitmap cache.
+			bm = new WeakReference<>(bitmap.copy(Bitmap.Config.RGB_565, false));
+			CMN.Log("复制时间：", System.currentTimeMillis()-st);
 		}
 	}
 	
-	public Bitmap bitmap;
+	public static Bitmap bitmap = Bitmap.createBitmap(1,1,Bitmap.Config.RGB_565);
+	
+	public WeakReference<Bitmap> bm = Utils.DummyBMRef;
 	public Canvas canvas;
 	static Bitmap b = Bitmap.createBitmap(1,1,Bitmap.Config.RGB_565);
 	static long bindId;
@@ -232,6 +246,12 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
 			return b;
 		}
 		return null;
+	}
+	
+	public void incrementVerIfAtNormalPage() {
+		if(!"网页无法打开".equals(getTitle())) {
+			version++;
+		}
 	}
 	
 	@SuppressLint("NewApi")
@@ -660,6 +680,7 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
 				isWebHold=true;
 				orgY = lastY;
 				orgX = lastX;
+				incrementVerIfAtNormalPage();
 			break;
 			case MotionEvent.ACTION_MOVE:
 				if (dealWithCM && bIsActionMenuShownNew && (Math.abs(lastY - orgY) > GlobalOptions.density * 5 || Math.abs(lastX - orgX) > GlobalOptions.density * 5)) {

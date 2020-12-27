@@ -19,7 +19,6 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.database.Cursor;
-import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.Rect;
@@ -89,6 +88,10 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.DecodeFormat;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.request.RequestOptions;
+import com.bumptech.glide.request.target.Target;
 import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
@@ -113,6 +116,7 @@ import com.knziha.polymer.webslideshow.CenterLinearLayoutManager;
 import com.knziha.polymer.webslideshow.RecyclerViewPager;
 import com.knziha.polymer.webslideshow.ViewPagerTouchHelper;
 import com.knziha.polymer.webslideshow.ViewUtils;
+import com.knziha.polymer.webslideshow.WebPic.WebPic;
 import com.knziha.polymer.widgets.AppIconsAdapter;
 import com.knziha.polymer.widgets.DescriptiveImageView;
 import com.knziha.polymer.widgets.DialogWithTag;
@@ -499,6 +503,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				holder.rank = tabsCursor.getLong(5);
 				TabHolders.add(holder);
 			}
+			tabsCursor.close();
 			tabsRead = true;
 		}
 		
@@ -1268,7 +1273,6 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				//iv.setImageBitmap(Pages.get(position).getBitmap());
 				iv.getLayoutParams().height=ViewGroup.LayoutParams.MATCH_PARENT;
 				if(targetIsPage(position)) {
-					Bitmap bitmap=null;
 					WebViewmy mWebView = Pages.get(position);
 					TabHolder holder = TabHolders.get(position);
 					iv.setTag(R.id.home, false);
@@ -1277,11 +1281,21 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					String title=holder.title;
 					if(title==null||title.equals("")) title=holder.url;
 					vh.title.setText(title);
-					if(mWebView!=null) {
-						bitmap = mWebView.bitmap;
-					}
-					vh.iv.setImageBitmap(bitmap);
-					CMN.Log("setImageBitmap", bitmap);
+					int version = mWebView==null?0: (int) mWebView.version;
+					//iv.setImageBitmap(bitmap);
+					RequestOptions options = new RequestOptions()
+							.format(DecodeFormat.PREFER_ARGB_8888)//DecodeFormat.PREFER_ARGB_8888
+							.skipMemoryCache(false)
+							.diskCacheStrategy(DiskCacheStrategy.NONE)
+							//.onlyRetrieveFromCache(true)
+							.fitCenter()
+							.override(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL)
+							;
+					//CMN.Log("setImageBitmap__", iv);
+					Glide.with(iv.getContext())
+							.load(new WebPic(holder.id, version, id_table))
+							.apply(options)
+							.into(iv);
 				}
 				else {
 					iv.setTag(R.id.home, null);
@@ -1527,7 +1541,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	private void onLeaveCurrentTab(int reason) {
 		currentWebView.pauseTimers();
 		currentWebView.onPause();
-		currentWebView.recaptureBitmap();
+		if(currentWebView.lastCaptureVer!=currentWebView.version) {
+			currentWebView.recaptureBitmap();
+		}
 	}
 	
 	private void toggleInternalTabView(int fromClick) {
@@ -1702,7 +1718,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			DissmissingViewHolder=false;
 			boolean b1=Options.getAlwaysRefreshThumbnail();
 			if(b1){
-				currentWebView.time = System.currentTimeMillis();
+//				currentWebView.version++;
+//				currentWebView.time = System.currentTimeMillis();
 			}
 			adaptermy.notifyItemChanged(adapter_idx+1, false);
 			float startAlpha = 0;

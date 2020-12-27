@@ -1,0 +1,92 @@
+package com.knziha.polymer.webslideshow.WebPic;
+
+import android.content.ContentValues;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+
+import androidx.annotation.NonNull;
+
+import com.bumptech.glide.Priority;
+import com.bumptech.glide.load.DataSource;
+import com.bumptech.glide.load.data.DataFetcher;
+import com.knziha.polymer.AdvancedBrowserWebView;
+import com.knziha.polymer.Utils.CMN;
+import com.knziha.polymer.database.LexicalDBHelper;
+import com.knziha.polymer.toolkits.Utils.ReusableByteOutputStream;
+
+
+public class WebPicFetcher implements DataFetcher<Bitmap> {
+	final static ReusableByteOutputStream bos1 = new ReusableByteOutputStream();
+	
+	private final WebPic pic;
+
+	public WebPicFetcher(WebPic model) {
+		this.pic = model;
+	}
+
+	@Override
+	public void loadData(@NonNull Priority priority, @NonNull DataCallback<? super Bitmap> callback) {
+		Bitmap bm = null;
+		CMN.Log("WebPicFetcher loadData");
+		long st = System.currentTimeMillis();
+		SQLiteDatabase db = LexicalDBHelper.getInstancedDb();
+		byte[] data=null;
+		long tabID_Fetcher = pic.tabID;
+		String[] where = new String[]{String.valueOf(tabID_Fetcher)};
+		AdvancedBrowserWebView wv = pic.id_table.get(tabID_Fetcher);
+		if(wv!=null) {
+			bm = wv.bm.get();
+			if(bm!=null)
+			//synchronized (bos1)
+			{
+				pic.version = wv.version;
+				ContentValues values = new ContentValues();
+				bos1.reset();
+				bos1.ensureCapacity((int) (bm.getAllocationByteCount()*0.5));
+				bm.compress(Bitmap.CompressFormat.JPEG, 95, bos1);
+				data = bos1.toByteArray();
+				CMN.Log(tabID_Fetcher, "压缩时间：", System.currentTimeMillis()-st);
+				values.put("thumbnail", data);
+				LexicalDBHelper.getInstancedDb().update("webtabs", values, "id=?", where);
+				CMN.Log(tabID_Fetcher, "入表时间：", System.currentTimeMillis()-st, data.length, (int) (bm.getAllocationByteCount()*0.50), bos1.data().length);
+			}
+		}
+		if(bm==null) {
+			if(db!=null) {
+				Cursor csr = db.rawQuery("select thumbnail from webtabs where id=?", where);
+				if(csr.moveToFirst()) {
+					data = csr.getBlob(0);
+				}
+				csr.close();
+			}
+			if(data!=null) {
+				bm = BitmapFactory.decodeByteArray(data, 0, data.length);
+				CMN.Log(tabID_Fetcher, "WebPic__已取出...", pic.version, bm.getWidth(), bm.getHeight(), System.currentTimeMillis()-st);
+			}
+		}
+		if(bm!=null) {
+			callback.onDataReady(bm);
+		} else {
+			callback.onLoadFailed(new Exception("load page cover fail"));
+		}
+	}
+
+	@Override public void cleanup() {
+	}
+	@Override public void cancel() {
+	}
+
+	@NonNull
+	@Override
+	public Class<Bitmap> getDataClass() {
+		return Bitmap.class;
+	}
+
+	@NonNull
+	@Override
+	public DataSource getDataSource() {
+		return DataSource.LOCAL;
+	}
+}

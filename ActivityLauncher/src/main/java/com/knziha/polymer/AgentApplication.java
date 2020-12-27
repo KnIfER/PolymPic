@@ -8,8 +8,8 @@ import com.knziha.polymer.browser.AppIconCover.AppIconCover;
 import com.knziha.polymer.browser.AppIconCover.AppIconCoverLoaderFactory;
 import com.knziha.polymer.pdviewer.pagecover.PageCover;
 import com.knziha.polymer.pdviewer.pagecover.PageCoverLoaderFactory;
-import com.knziha.polymer.webslideshow.WebPic;
-import com.knziha.polymer.webslideshow.WebPicLoaderFactory;
+import com.knziha.polymer.webslideshow.WebPic.WebPic;
+import com.knziha.polymer.webslideshow.WebPic.WebPicLoaderFactory;
 import com.knziha.filepicker.model.GlideCacheModule;
 
 public class AgentApplication extends Application {

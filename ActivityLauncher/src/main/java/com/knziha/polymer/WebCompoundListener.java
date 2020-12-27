@@ -455,6 +455,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 			String title = mWebView.getTitle();
 			mWebView.holder.title=title;
 			mWebView.time=System.currentTimeMillis();
+			mWebView.incrementVerIfAtNormalPage();
 			mWebView.lastScroll=view.getScrollY();
 			
 //			boolean bEnableJavaScript = mWebView.getSettings().getJavaScriptEnabled();

@@ -1,4 +1,4 @@
-package com.knziha.polymer.webslideshow;
+package com.knziha.polymer.webslideshow.WebPic;
 
 import android.graphics.Bitmap;
 
