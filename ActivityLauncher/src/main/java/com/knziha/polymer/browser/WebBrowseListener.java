@@ -232,4 +232,9 @@ public class WebBrowseListener extends WebViewClient implements DownloadListener
 		EnhanceActivity.sendEmptyMessage(10);
 		a.onUrlExtracted(task, url);
 	}
+	
+	@JavascriptInterface
+	public void batRenWithPat(String path, String pattern, String replace) {
+		a.batRenWithPat(path, pattern, replace);
+	}
 }

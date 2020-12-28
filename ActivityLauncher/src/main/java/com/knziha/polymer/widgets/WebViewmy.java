@@ -254,6 +254,12 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
 		}
 	}
 	
+	public void setBMRef(WeakReference<Bitmap> tmpBmRef) {
+		if(tmpBmRef.get()!=null && bm.get()==null) {
+			bm = tmpBmRef;
+		}
+	}
+	
 	@SuppressLint("NewApi")
 	private class AdvancedWebViewCallback extends ActionMode.Callback2 {
 		ArrayList<ViewGroup> popupDecorVies = new ArrayList<>();

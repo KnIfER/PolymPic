@@ -19,9 +19,11 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.Rect;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.LayerDrawable;
@@ -157,6 +159,8 @@ import static com.knziha.polymer.WebCompoundListener.CustomViewHideTime;
 import static com.knziha.polymer.WebCompoundListener.PrintStartTime;
 import static com.knziha.polymer.WebCompoundListener.httpPattern;
 import static com.knziha.polymer.WebCompoundListener.requestPattern;
+import static com.knziha.polymer.widgets.Utils.DummyBMRef;
+import static com.knziha.polymer.widgets.Utils.DummyTransX;
 import static com.knziha.polymer.widgets.Utils.RequsetUrlFromCamera;
 import static com.knziha.polymer.widgets.Utils.getViewItemByPath;
 import static com.knziha.polymer.widgets.Utils.indexOf;
@@ -172,13 +176,15 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	View searchbartitle;
 	TextView webtitle;
 	
+	ImageView imageViewCover;
+	
 	private int adapter_idx;
 	boolean focused = true;
 	Map<Long, AdvancedBrowserWebView> id_table = Collections.synchronizedMap(new HashMap<>(1024));
 	ArrayList<AdvancedBrowserWebView> Pages = new ArrayList<>(1024);
 	//private ArrayList<WebViewmy> WebPool = new ArrayList<>(1024);
 	private ArrayList<TabHolder> TabHolders = new ArrayList<>(1024);
-	 boolean tabsRead = false;
+	boolean tabsRead = false;
 	private int padWidth;
 	private int itemPad;
 	private int _45_;
@@ -245,6 +251,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	private Resources mResource;
 	private String lastUrlSet;
 	private boolean goToBarcodeScanner;
+	private WeakReference<Bitmap> tmpBmRef = DummyBMRef;
 	
 	@Override
 	public void onConfigurationChanged(@NonNull Configuration newConfig) {
@@ -307,6 +314,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		root=UIData.root;
 		
 		mWebListener = new WebCompoundListener(this);
+		
+		imageViewCover = new ImageView(this);
 		
 		if(transit) {
 			root.setAlpha(0);
@@ -604,7 +613,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			QRBtn.setCompoundDrawablesRelativeWithIntrinsicBounds(
 					mResource.getDrawable(goToBarcodeScanner?R.drawable.ic_baseline_qrcode:R.drawable.abc_ic_go_search_api_material)
 					, null, null, null);
-			QRBtn.setTag(goToBarcodeScanner?Utils.DummyTransX:null);
+			QRBtn.setTag(goToBarcodeScanner? DummyTransX:null);
 		}
 	}
 	
@@ -731,7 +740,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		private int adapter_to;
 		ObjectAnimator resitu = ObjectAnimator.ofFloat(currentWebView.layout, "translationX", 0, 0);
 		ObjectAnimator resitu1 = ObjectAnimator.ofFloat(currentWebView.layout, "translationX", 0, 0);
-		ObjectAnimator resitu2 = ObjectAnimator.ofFloat(Utils.DummyTransX, "translationX", 0, 0);
+		ObjectAnimator resitu2 = ObjectAnimator.ofFloat(DummyTransX, "translationX", 0, 0);
 		AnimatorSet animator;
 		private float onFingDir;
 		private boolean isPaused=true;
@@ -945,13 +954,13 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 							resitu1.setTarget(webla);
 							resitu1.setFloatValues(webla.getTranslationX(), adapter_to==0?W*(tx>0?-1:1):0);
 						} else {
-							resitu1.setTarget(Utils.DummyTransX);
+							resitu1.setTarget(DummyTransX);
 						}
 						if(webtitle.getVisibility()!=View.VISIBLE) {
 							resitu2.setTarget(UIData.searchbar);
 							resitu2.setFloatValues(UIData.searchbar.getTranslationX(), -adapter_to*W);
 						} else {
-							resitu2.setTarget(Utils.DummyTransX);
+							resitu2.setTarget(DummyTransX);
 						}
 						animator.start();
 					}
@@ -1312,23 +1321,29 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				@Override
 				public void onClick(View v) {
 					if(v.getId()==R.id.close) {
-						ViewDataHolder vh = (ViewDataHolder) ((ViewGroup)v.getParent().getParent()).getTag();
+						ViewDataHolder<WebPageItemBinding> vh = (ViewDataHolder) ((ViewGroup)v.getParent().getParent()).getTag();
 						int target = vh.position;
 						closeTabAt(target, 0);
 					} else {
-						ViewDataHolder vh = (ViewDataHolder) v.getTag();
+						ViewDataHolder<WebPageItemBinding> vh = (ViewDataHolder) v.getTag();
 						int target = vh.position;
-						if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-							if(target!=adapter_idx) {
-								vh.itemView.setForeground(frame_web);
-							}
-						}
+//						if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+//							if(target!=adapter_idx) {
+//								vh.itemView.setForeground(frame_web);
+//							}
+//						}
 						
 						CMN.Log("onClick", target);
 						if(targetIsPage(target)) {
 							//AttachWebAt(target);
 							//currentWebView.setVisibility(View.INVISIBLE);
 							DissmissingViewHolder=false;
+							Drawable d = vh.data.iv.getDrawable();
+							if(d instanceof BitmapDrawable) {
+								tmpBmRef = new WeakReference<>(((BitmapDrawable)d).getBitmap());
+							} else {
+								tmpBmRef = DummyBMRef;
+							}
 							toggleTabView(target, v);
 						}
 					}
@@ -1497,7 +1512,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			alpha2 = PropertyValuesHolder.ofFloat("alpha", 0, 1);
 			alpha = new ObjectAnimator();
 			alpha.setPropertyName("alpha");
-			alpha.setTarget(viewpager_holder);
+			alpha.setTarget(DummyTransX);
+			//alpha.setTarget(viewpager_holder);
 			alpha1 = ObjectAnimator.ofInt(bottombar2Background().mutate(), "alpha", 1, 0);
 			alpha3 = ObjectAnimator.ofFloat(UIData.appbar, "alpha", 0, 1);
 			animatorObj = ObjectAnimator.ofPropertyValuesHolder(currentWebView.layout, scaleX, scaleY, translationX, translationY/*, alpha*/, alpha2/*, alpha3*/);
@@ -1510,8 +1526,11 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					//alpha1.setDuration(180);
 					//alpha1.start();
 					if(DissmissingViewHolder) {
-						viewpager_holder.setVisibility(View.GONE);
+						//viewpager_holder.setVisibility(View.GONE);
 						UIData.appbar.setAlpha(1);
+						//imageViewCover.setVisibility(View.GONE);
+						Utils.removeIfParentBeOrNotBe(imageViewCover, null, false);
+						((ViewGroup)currentWebView.layout).addView(imageViewCover, 0);
 					} else {
 						currentWebView.layout.setVisibility(View.INVISIBLE);
 						//etSearch.setText("标签模式");
@@ -1673,6 +1692,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				//added = TabHolders.get(targetPos)!=null;
 				added = AttachWebAt(targetPos, false);
 				layout = currentWebView.layout;
+				currentWebView.setBMRef(tmpBmRef);
 				layout.setScaleX(targetScale);
 				layout.setScaleY(targetScale);
 				layout.setTranslationY(ttY);
@@ -1693,19 +1713,24 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			if(added/* || bc*/) {
 				bNeedPost = true;
 				currentWebView.layout.setAlpha(0);
-				alpha2.setFloatValues(0, 1);
+				//alpha2.setFloatValues(0, 1);
 			}
+			
+			imageViewCover.setVisibility(View.VISIBLE);
+			Utils.removeIfParentBeOrNotBe(imageViewCover, null, false);
+			imageViewCover.setImageBitmap(currentWebView.bm.get());
+			((ViewGroup)layout).addView(imageViewCover);
 			
 			DissmissingViewHolder=true;
 			layout.setVisibility(View.VISIBLE);
-			//layout.setAlpha(1);
+			layout.setAlpha(1);
 			
 			scaleX.setFloatValues(bc?targetScale:layout.getScaleX(), 1f);
 			scaleY.setFloatValues(bc?targetScale:layout.getScaleY(), 1f);
 			translationX.setFloatValues(bc?ttX:layout.getTranslationX(), 0);
 			translationY.setFloatValues(bc?ttY:layout.getTranslationY(), 0);
 			
-			alpha.setFloatValues(viewpager_holder.getAlpha(), 0);
+			//alpha.setFloatValues(viewpager_holder.getAlpha(), 0);
 			//animatorObj.setInterpolator(new AccelerateInterpolator(.5f));
 			
 			//alpha2.setInterpolator(null);
@@ -1748,7 +1773,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 //			v.setBackground(null);
 //		}
 		//startAnimation(b!=null&&false||bNeedPost);
-		startAnimation(false);
+		startAnimation(true);
 	}
 	
 	
@@ -3002,6 +3027,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		mWebView.setWebViewClient(mWebListener);
 		mWebView.setDownloadListener(mWebListener);
 		mWebView.setOnScrollChangedListener(mWebListener);
+		mWebView.setBackgroundColor(Color.TRANSPARENT);
 
 		return mWebView;
 	}
@@ -3031,6 +3057,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			for (AdvancedBrowserWebView wv:values) {
 				wv.deconstruct();
 			}
+			WebPic.versionMap.clear();
 			id_table.clear();
 			CMN.Log("关闭历史记录...");
 			historyCon.close_for_browser();

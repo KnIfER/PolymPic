@@ -211,4 +211,9 @@ public class WebBrowseListenerX5 extends WebViewClient {
 	public void log(String items) {
 		CMN.Log(items);
 	}
+	
+	@JavascriptInterface
+	public void batRenWithPat(String path, String pattern, String replace) {
+		a.batRenWithPat(path, pattern, replace);
+	}
 }

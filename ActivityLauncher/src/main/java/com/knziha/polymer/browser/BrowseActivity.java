@@ -16,6 +16,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.PowerManager;
 import android.os.SystemClock;
 import android.text.TextPaint;
 import android.text.TextUtils;
@@ -76,6 +77,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -111,6 +114,8 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 			CMN.Log(e);
 		}
 	}
+	
+	private PowerManager.WakeLock mWakeLock;
 	
 	private void initX5WebStation() {
 		x5_webview_Player = new com.tencent.smtt.sdk.WebView(this);
@@ -171,6 +176,8 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+		mWakeLock = pm.newWakeLock(PowerManager.FULL_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP | PowerManager.ON_AFTER_RELEASE, "servis:SimpleTimer");
 		UIData = DataBindingUtil.setContentView(this, R.layout.browse_main);
 		opt = getSharedPreferences("browse", 0);
 		String path_download = opt.getString("path", null);
@@ -397,6 +404,39 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 	
 	public void markTaskEnded(long id) {
 		getRunningFlagForRow(id).set(false);
+	}
+	
+	public void batRenWithPat(String path, String pattern, String replace) {
+		File f = new File(path);
+		if(f.isDirectory()) {
+			File[] files = f.listFiles();
+			if(files!=null) {
+				File newF;
+				String newName, suffix;
+				Matcher m;
+				Pattern p = Pattern.compile(pattern);
+				for(File fI:files) {
+					if(fI.isFile() && (m=p.matcher(fI.getName())).find()) {
+						newName = m.replaceAll(replace);
+						suffix = "";
+						int  suffix_idx = newName.lastIndexOf(".");
+						if(suffix_idx>=0) {
+							suffix = newName.substring(suffix_idx);
+							newName = newName.substring(0, suffix_idx);
+						}
+						int cc=0;
+						while(true) {
+							String fn = cc==0?(newName+suffix):(newName+cc+suffix);
+							newF = new File(f, fn);
+							if(!newF.exists()) {
+								break;
+							}
+						}
+						CMN.Log("renameTo", fI.renameTo(newF), fI, newF);
+					}
+				}
+			}
+		}
 	}
 	
 	class ViewHolder extends RecyclerView.ViewHolder {
@@ -742,6 +782,8 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 			CMN.Log("接收到任务：", task, CMN.id(this), schedule);
 			queueTaskForDB(task, schedule);
 		}
+		mWakeLock.acquire();
+		mWakeLock.release();
 	}
 	
 	@Override

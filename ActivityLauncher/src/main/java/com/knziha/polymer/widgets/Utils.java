@@ -74,6 +74,7 @@ public class Utils {
 	public final static Matrix IDENTITYXIRTAM = new Matrix();
 	public final static Object DummyTransX = new Object(){
 		public void setTranslationX(float val) { }
+		public void setAlpha(float val) { }
 	};
 	public final static Cursor EmptyCursor=new AbstractWindowedCursor() {
 		@Override
