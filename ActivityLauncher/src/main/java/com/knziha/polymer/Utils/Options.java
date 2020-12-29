@@ -51,6 +51,14 @@ public class Options implements WebOptions, BookOptions {
 	public int getHintsLimitation() {
 		return defaultReader.getInt("hints",16);
 	}
+	
+	public String getOpenedTabs() {
+		return defaultReader.getString("tabs", "");
+	}
+	
+	public void putOpenedTabs(String val) {
+		defaultReader.edit().putString("tabs", val).apply();
+	}
 
 	public String pathToGlide(@NonNull Context context) {
 		return defaultReader.getString("cache_p", GlideCacheModule.DEFAULT_GLIDE_PATH=context.getExternalCacheDir().getAbsolutePath()+"/thumnails/");
@@ -200,6 +208,11 @@ public class Options implements WebOptions, BookOptions {
 	//@Multiline(flagPos=11, shift=1) public boolean getApplyOverride_group_client(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=12) public boolean getForbitNetworkImage(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=13) public boolean getPremature(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
+	
+	// 管理标签动画效果
+	@Multiline(flagPos=14, shift=1/*, debug=1*/) public boolean getShowWebCoverDuringTransition(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=15/*, debug=0*/) public boolean getAlwaysPostAnima(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=16, shift=1/*, debug=0*/) public boolean getAnimateTabsManager(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
 	
 	
 	/////////////////////End Third Flag////////////////////////////////////

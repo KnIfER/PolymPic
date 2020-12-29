@@ -416,7 +416,7 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 				Matcher m;
 				Pattern p = Pattern.compile(pattern);
 				for(File fI:files) {
-					if(fI.isFile() && (m=p.matcher(fI.getName())).find()) {
+					if(fI.isFile() && fI.length()>0 && (m=p.matcher(fI.getName())).find()) {
 						newName = m.replaceAll(replace);
 						suffix = "";
 						int  suffix_idx = newName.lastIndexOf(".");
@@ -650,9 +650,10 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 			task.abort();
 		}
 		String ext=cursor.getString(7);
+		String url = cursor.getString(2);
 		task = new DownloadTask(
 				this, id
-				, cursor.getString(2)
+				, url
 				, download_path
 				, cursor.getString(1)
 				, 0
@@ -665,10 +666,10 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 			if(task.ext1!=null || task.ext2!=null) {
 				UIData.root.post(() -> {
 					if(x5) {
-						x5_webview_Player.loadUrl(cursor.getString(2));
+						x5_webview_Player.loadUrl(url);
 						x5_webview_Player.setTag(finalTask);
 					} else {
-						webview_Player.loadUrl(cursor.getString(2));
+						webview_Player.loadUrl(url);
 						webview_Player.setTag(finalTask);
 					}
 				});
@@ -677,6 +678,7 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 		}
 		if(!started) {
 			taskMap.remove(id);
+			//task=null;
 		}
 		return task;
 	}
@@ -777,13 +779,15 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 		//CMN.Log("onNewIntent");
 		CMN.Log("接收到任务：", intent);
 		long task = intent.getLongExtra("task", -1);
-		if(task!=-1) {
-			boolean schedule = intent.getBooleanExtra("pro", false);
-			CMN.Log("接收到任务：", task, CMN.id(this), schedule);
-			queueTaskForDB(task, schedule);
+		if(taskRunning(task)) {
+			if(task!=-1) {
+				boolean schedule = intent.getBooleanExtra("pro", false);
+				CMN.Log("接收到任务：", task, CMN.id(this), schedule);
+				queueTaskForDB(task, schedule);
+			}
+			mWakeLock.acquire();
+			mWakeLock.release();
 		}
-		mWakeLock.acquire();
-		mWakeLock.release();
 	}
 	
 	@Override

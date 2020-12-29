@@ -46,16 +46,19 @@ public class BrowseTaskExecuter implements Runnable{
 							cursor.moveToFirst();
 							task = a.startTaskForDB(cursor);
 						}
+						cursor.close();
 						if(task!=null) {
 							AtomicBoolean token = this.token = task.abort;
 							boolean interrupted=false;
 							try {
+								CMN.Log("等待2.5min");
 								// 等待2.5min, 这是 webStation 的占用时限。
 								Thread.sleep((long) (1000*60*task.maxWaitTime));
 							} catch (InterruptedException e) {
 								// 中断，放弃任务。
 								interrupted = true;
 							}
+							CMN.Log("等待2.5min over");
 							if(!interrupted) { //timeout
 								token.set(true);
 								if(taskQueue.size()==0) {

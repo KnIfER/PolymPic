@@ -90,6 +90,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.Priority;
+import com.bumptech.glide.RequestBuilder;
 import com.bumptech.glide.load.DecodeFormat;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.request.RequestOptions;
@@ -184,6 +186,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	ArrayList<AdvancedBrowserWebView> Pages = new ArrayList<>(1024);
 	//private ArrayList<WebViewmy> WebPool = new ArrayList<>(1024);
 	private ArrayList<TabHolder> TabHolders = new ArrayList<>(1024);
+	HashMap<Long, TabHolder> allTabs;
+	private HashSet<AdvancedBrowserWebView> checkWebViewDirtyMap = new HashSet<>();
 	boolean tabsRead = false;
 	private int padWidth;
 	private int itemPad;
@@ -252,6 +256,10 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	private String lastUrlSet;
 	private boolean goToBarcodeScanner;
 	private WeakReference<Bitmap> tmpBmRef = DummyBMRef;
+	private Runnable removeIMCoverRunnable = () -> imageViewCover.setVisibility(View.GONE);
+	private boolean tabsDirty;
+	
+	private RequestBuilder<Drawable> glide;
 	
 	@Override
 	public void onConfigurationChanged(@NonNull Configuration newConfig) {
@@ -316,6 +324,18 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		mWebListener = new WebCompoundListener(this);
 		
 		imageViewCover = new ImageView(this);
+		
+		final RequestOptions glide_options = new RequestOptions()
+				.format(DecodeFormat.PREFER_ARGB_8888)//DecodeFormat.PREFER_ARGB_8888
+				.skipMemoryCache(false)
+				.diskCacheStrategy(DiskCacheStrategy.NONE)
+				//.onlyRetrieveFromCache(true)
+				.fitCenter()
+				.override(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL)
+				;
+		glide = Glide.with(this)
+				.load(new WebPic(0, 0, id_table))
+				.apply(glide_options);
 		
 		if(transit) {
 			root.setAlpha(0);
@@ -475,8 +495,22 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		super.onPause();
 		focused=false;
 		if(systemIntialized) {
+			if(checkWebViewDirtyMap.size()>0) {
+				for(AdvancedBrowserWebView webView:checkWebViewDirtyMap) {
+					webView.saveIfNeeded();
+				}
+				checkWebViewDirtyMap.clear();
+			}
 			if (currentWebView != null) {
 				currentWebView.saveIfNeeded();
+			}
+			if(tabsDirty) {
+				StringBuilder stringBuilder = new StringBuilder();
+				for(TabHolder tabHolder:TabHolders) {
+					stringBuilder.append(tabHolder.id).append(" ");
+				}
+				opt.putOpenedTabs(stringBuilder.toString());
+				tabsDirty = false;
 			}
 		}
 	}
@@ -500,8 +534,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		menu_grid_painter = DescriptiveImageView.createTextPainter();
 		UIData.browserWidget10.textPainter = menu_grid_painter;
 		
-		if(!tabsRead) {
+		if(allTabs==null) {
 			Cursor tabsCursor = historyCon.queryTabs();
+			allTabs = new HashMap<>(tabsCursor.getCount(), 1);
 			while (tabsCursor.moveToNext()) {
 				TabHolder holder = new TabHolder();
 				holder.id = tabsCursor.getLong(0);
@@ -510,10 +545,27 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				holder.page_search_term = tabsCursor.getString(3);
 				holder.flag = tabsCursor.getLong(4);
 				holder.rank = tabsCursor.getLong(5);
-				TabHolders.add(holder);
+				allTabs.put(holder.id, holder);
 			}
 			tabsCursor.close();
 			tabsRead = true;
+		}
+		
+		String tabs = opt.getOpenedTabs();
+		if(TextUtils.isEmpty(tabs)) {
+			TabHolders.addAll(allTabs.values());
+			tabsDirty = true;
+		} else {
+			String[] tabsArr = tabs.split(" ");
+			for(String tabsI:tabsArr) {
+				try {
+					long id = Long.parseLong(tabsI);
+					TabHolder tabI = allTabs.get(id);
+					if(tabI!=null) {
+						TabHolders.add(tabI);
+					}
+				} catch (Exception ignored) { }
+			}
 		}
 		
 		/* !!!原装 */
@@ -527,6 +579,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				tab0.id=id;
 				TabHolders.add(tab0);
 			}
+			tabsDirty=true;
 		}
 		int size = TabHolders.size();
 		for (int i = 0; i < size; i++) {
@@ -962,6 +1015,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 						} else {
 							resitu2.setTarget(DummyTransX);
 						}
+						if(adapter_to!=0) {
+							onLeaveCurrentTab(3);
+						}
 						animator.start();
 					}
 					onFingDir = 0;
@@ -1291,20 +1347,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					if(title==null||title.equals("")) title=holder.url;
 					vh.title.setText(title);
 					int version = mWebView==null?0: (int) mWebView.version;
-					//iv.setImageBitmap(bitmap);
-					RequestOptions options = new RequestOptions()
-							.format(DecodeFormat.PREFER_ARGB_8888)//DecodeFormat.PREFER_ARGB_8888
-							.skipMemoryCache(false)
-							.diskCacheStrategy(DiskCacheStrategy.NONE)
-							//.onlyRetrieveFromCache(true)
-							.fitCenter()
-							.override(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL)
-							;
 					//CMN.Log("setImageBitmap__", iv);
-					Glide.with(iv.getContext())
-							.load(new WebPic(holder.id, version, id_table))
-							.apply(options)
-							.into(iv);
+					glide.load(new WebPic(holder.id, version, id_table))
+						.into(iv);
 				}
 				else {
 					iv.setTag(R.id.home, null);
@@ -1338,12 +1383,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 							//AttachWebAt(target);
 							//currentWebView.setVisibility(View.INVISIBLE);
 							DissmissingViewHolder=false;
-							Drawable d = vh.data.iv.getDrawable();
-							if(d instanceof BitmapDrawable) {
-								tmpBmRef = new WeakReference<>(((BitmapDrawable)d).getBitmap());
-							} else {
-								tmpBmRef = DummyBMRef;
-							}
+							findBMTmpInViewHolder(vh);
 							toggleTabView(target, v);
 						}
 					}
@@ -1371,6 +1411,17 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		});
 		ItemTouchHelper itemTouchHelper=new ItemTouchHelper(callback);
 		itemTouchHelper.attachToRecyclerView(recyclerViewPager);
+	}
+	
+	private void findBMTmpInViewHolder(ViewDataHolder<WebPageItemBinding> vh) {
+		//CMN.Log("findBMTmpInViewHolder", vh);
+		tmpBmRef = DummyBMRef;
+		if(vh!=null) {
+			Drawable d = vh.data.iv.getDrawable();
+			if(d instanceof BitmapDrawable) {
+				tmpBmRef = new WeakReference<>(((BitmapDrawable)d).getBitmap());
+			}
+		}
 	}
 	
 	int MoveRangePositon;
@@ -1499,12 +1550,18 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			webtitle.setText("标签页管理");
 		} else {
 			webtitle.setText(currentWebView.getTitle());
+			if(fromClick==-1) {
+				int fvp = layoutManager.findFirstVisibleItemPosition();
+				View ca = recyclerView.getChildAt(layoutManager.targetPos-fvp);
+				findBMTmpInViewHolder(ca==null?null:(ViewDataHolder<WebPageItemBinding>) ca.getTag());
+			}
 		}
 		if(layoutManager.targetPos>Pages.size()) {
 			layoutManager.targetPos=Pages.size();
 		}
-		boolean AnimateTabsManager = true;
-		if(AnimateTabsManager && tabsAnimator==null) {
+		boolean AnimateTabsManager = opt.getAnimateTabsManager();
+		if(AnimateTabsManager)
+		if(tabsAnimator==null) {
 			scaleX = PropertyValuesHolder.ofFloat("scaleX", 0, 1);
 			scaleY = PropertyValuesHolder.ofFloat("scaleY", 0, 1);
 			translationX = PropertyValuesHolder.ofFloat("translationX", 0, 1);
@@ -1516,7 +1573,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			//alpha.setTarget(viewpager_holder);
 			alpha1 = ObjectAnimator.ofInt(bottombar2Background().mutate(), "alpha", 1, 0);
 			alpha3 = ObjectAnimator.ofFloat(UIData.appbar, "alpha", 0, 1);
-			animatorObj = ObjectAnimator.ofPropertyValuesHolder(currentWebView.layout, scaleX, scaleY, translationX, translationY/*, alpha*/, alpha2/*, alpha3*/);
+			animatorObj = ObjectAnimator.ofPropertyValuesHolder(currentWebView.layout, scaleX, scaleY, translationX, translationY/*, alpha*//*, alpha2*//*, alpha3*/);
 			//webAnimators = new ObjectAnimator[]{scaleX, scaleY, translationX, translationY, alpha1, alpha2};
 			//if(false)
 			animatorObj.addListener(new AnimatorListenerAdapter() {
@@ -1529,14 +1586,12 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 						//viewpager_holder.setVisibility(View.GONE);
 						UIData.appbar.setAlpha(1);
 						//imageViewCover.setVisibility(View.GONE);
-						Utils.removeIfParentBeOrNotBe(imageViewCover, null, false);
-						((ViewGroup)currentWebView.layout).addView(imageViewCover, 0);
+						uncoverTheTab(180);
 					} else {
 						currentWebView.layout.setVisibility(View.INVISIBLE);
 						//etSearch.setText("标签模式");
 					}
-					currentWebView.resumeTimers();
-					currentWebView.onResume();
+					resumeTimers(currentWebView);
 					//v.setBackgroundResource(R.drawable.surrtrip1);
 					//currentWebView.onResume();
 				}
@@ -1548,7 +1603,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			animatorObj.setDuration(350);
 			tabsAnimator = animatorObj;
 		} else {
-			animatorObj.setDuration(220);
+			animatorObj.setDuration(220); // 220
 		}
 		if(AnimateTabsManager) {
 			toggleInternalTabViewAnima(fromClick, v);
@@ -1557,26 +1612,59 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		}
 	}
 	
+	/** Leaving the current label for some reason.
+	 * @param reason 0=to leave webview;
+	 * 				 1=to show webview
+	 * 				 2=to leave activity
+	 * 				 3=to switch to another webview
+	 * */
 	private void onLeaveCurrentTab(int reason) {
-		currentWebView.pauseTimers();
-		currentWebView.onPause();
+		//if(false)
+		if(reason==0) {
+			currentWebView.pauseTimers();
+			currentWebView.onPause();
+			currentWebView.holder.paused=true;
+		}
+		if(reason!=1)
 		if(currentWebView.lastCaptureVer!=currentWebView.version) {
 			currentWebView.recaptureBitmap();
+			if(reason!=0) {
+				glide.load(new WebPic(currentWebView.holder.id, currentWebView.version, id_table))
+						.priority(Priority.HIGH)
+						.into(imageViewCover);
+			}
+		}
+		if(reason==3||reason==0) {
+			//CMN.Log("onLeaveCurrentTab", currentWebView.version);
+			if(currentWebView.version>1) {
+				checkWebViewDirtyMap.add(currentWebView);
+			}
+			//currentWebView.saveIfNeeded();
 		}
 	}
 	
 	private void toggleInternalTabView(int fromClick) {
-		if(viewpager_holder.getVisibility()==View.VISIBLE){
-			viewpager_holder.setVisibility(View.GONE);
-			//todo 直接点击 而不是取消
-			int targetPos = layoutManager.targetPos;
+		boolean added = false;
+		boolean bc=fromClick>=0;
+		DissmissingViewHolder = viewpager_holder.getVisibility()==View.VISIBLE;
+		scrollHereRunnnable.run();
+		if(DissmissingViewHolder) {
+			viewpager_holder.setVisibility(View.GONE); // 放
+			int targetPos = layoutManager.targetPos-1;
+			if(targetPos<0) targetPos=0;
+			if(bc) {
+				targetPos = fromClick;
+			}
 			if(targetPos!=adapter_idx) {
-				AttachWebAt(layoutManager.targetPos-1, false);
+				added = AttachWebAt(targetPos, false);
+				coverupTheTab(added);
+				currentWebView.setBMRef(tmpBmRef);
+				uncoverTheTab(225);
 			} else {
 				currentWebView.layout.setVisibility(View.VISIBLE);
 			}
 		} else {
-			viewpager_holder.setVisibility(View.VISIBLE);
+			viewpager_holder.setVisibility(View.VISIBLE); // 收
 			currentWebView.layout.setVisibility(View.INVISIBLE);
 			if(recyclerView.getTag(R.id.home)==null) {
 				//recyclerView.scrollToPosition(adapter_idx + 1);
@@ -1590,7 +1678,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			}
 			else {
 				boolean b1=Options.getAlwaysRefreshThumbnail();
-				if(b1){
+				if(b1) {
 					//currentWebView.time = System.currentTimeMillis();
 				}
 				//adaptermy.notifyDataSetChanged();
@@ -1599,7 +1687,6 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				//((SimpleItemAnimator)recyclerView.getItemAnimator()).setSupportsChangeAnimations(false);
 				adaptermy.notifyItemChanged(adapter_idx+1, false);
 				//adaptermy.onBindViewHolder((RecyclerView.ViewHolder) recyclerView.getChildAt(0).getTag(), layoutManager.findFirstVisibleItemPosition());
-				
 			}
 		}
 	}
@@ -1624,10 +1711,10 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		tabsAnimator.start();
 	};
 	private void startAnimation(boolean post) {
-		CMN.Log("动画咯");
+		CMN.Log("动画咯", post);
 		if(post) {
 			root.removeCallbacks(startAnimationRunnable);
-			root.postDelayed(startAnimationRunnable, 180);
+			root.postDelayed(startAnimationRunnable, 160);
 		} else {
 			startAnimationRunnable.run();
 		}
@@ -1707,23 +1794,21 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		alpha2.setFloatValues(1, 1);
 		int bottombar2_alpha = bottombar2Background().getAlpha();
 		float appbar_alpha = appbar.getAlpha();
+		root.removeCallbacks(removeIMCoverRunnable);
 		if(!DissmissingViewHolder){// 放
 			alpha1.setIntValues(bottombar2_alpha, 255);
 			alpha3.setFloatValues(appbar_alpha, 1);
 			if(added/* || bc*/) {
-				bNeedPost = true;
-				currentWebView.layout.setAlpha(0);
+				//bNeedPost = true;
+				//currentWebView.layout.setAlpha(0);
 				//alpha2.setFloatValues(0, 1);
 			}
 			
-			imageViewCover.setVisibility(View.VISIBLE);
-			Utils.removeIfParentBeOrNotBe(imageViewCover, null, false);
-			imageViewCover.setImageBitmap(currentWebView.bm.get());
-			((ViewGroup)layout).addView(imageViewCover);
+			bNeedPost = coverupTheTab(added);
 			
 			DissmissingViewHolder=true;
 			layout.setVisibility(View.VISIBLE);
-			layout.setAlpha(1);
+			//layout.setAlpha(1);
 			
 			scaleX.setFloatValues(bc?targetScale:layout.getScaleX(), 1f);
 			scaleY.setFloatValues(bc?targetScale:layout.getScaleY(), 1f);
@@ -1764,16 +1849,36 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			alpha.setFloatValues(startAlpha, 1f);
 			animatorObj.setInterpolator(null);
 		}
-		Drawable b = null;
-//		if(fromClick==-1) {
-//			b = v.getBackground();
-//			if(b!=null) {
-//				b.jumpToCurrentState();
-//			}
-//			v.setBackground(null);
-//		}
-		//startAnimation(b!=null&&false||bNeedPost);
-		startAnimation(true);
+		startAnimation(bNeedPost||opt.getAlwaysPostAnima());
+		//startAnimation(opt.getShowWebCoverDuringTransition());
+		//startAnimation(false);
+	}
+	
+	private void uncoverTheTab(long delay) {
+		if(true) return;
+		if(opt.getShowWebCoverDuringTransition()) {
+			ViewGroup layout = currentWebView.layout;
+			if (Utils.metaKill) layout.suppressLayout(true);
+			Utils.removeIfParentBeOrNotBe(imageViewCover, null, false);
+			layout.addView(imageViewCover, 0);
+			if (Utils.metaKill) layout.suppressLayout(false);
+			root.postDelayed(removeIMCoverRunnable, delay);
+		}
+	}
+	
+	private boolean coverupTheTab(boolean added) {
+		if(opt.getShowWebCoverDuringTransition() && added) {
+			CMN.Log("covering...");
+			ViewGroup vg = currentWebView.layout;
+			if (Utils.metaKill) vg.suppressLayout(true);
+			imageViewCover.setVisibility(View.VISIBLE);
+			Utils.removeIfParentBeOrNotBe(imageViewCover, null, false);
+			imageViewCover.setImageBitmap(currentWebView.bm.get());
+			vg.addView(imageViewCover);
+			if (Utils.metaKill) vg.suppressLayout(false);
+			return true;
+		}
+		return false;
 	}
 	
 	
@@ -1802,6 +1907,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			mWebView.setNestedScrollingEnabled(false);
 		}
 		View weblayout = mWebView.layout;
+		weblayout.setAlpha(1);
 		weblayout.setVisibility(View.VISIBLE);
 		weblayout.setScaleX(1);
 		weblayout.setScaleY(1);
@@ -1829,6 +1935,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			UIData.webcoord.addView(weblayout, 1);
 		}
 		decideWebviewPadding(mWebView);
+		resumeTimers(mWebView);
 		if(pseudoAdd) {
 			return false;
 		}
@@ -1842,6 +1949,14 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		}
 		UIData.browserWidget10.setText(Integer.toString(i));
 		return add;
+	}
+	
+	private void resumeTimers(AdvancedBrowserWebView currentWebView) {
+		if(currentWebView.holder.paused) {
+			currentWebView.resumeTimers();
+			currentWebView.onResume();
+			currentWebView.holder.paused=false;
+		}
 	}
 	
 	private void etSearch_clearFocus() {
@@ -2176,17 +2291,25 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				}
 			break;
 			case R.id.browser_widget10:
-				onLeaveCurrentTab(0);
+				tmpBmRef = DummyBMRef;
+				onLeaveCurrentTab(DissmissingViewHolder?0:1);
 				boolean post = false;
+				long delay=0;
 				if(viewpager_holder==null) {
 					init_tabs_layout();
 					post=true;
+					if(opt.getAnimateTabsManager()) {
+						delay = 350;
+					} else {
+						post = false;
+						delay = 180;
+					}
 				} else if(bNeedReCalculateItemWidth && DissmissingViewHolder) {
 					calculateItemWidth(false);
 					bNeedReCalculateItemWidth = false;
 				}
 				if(post) {
-					root.postDelayed(() -> toggleTabView(-1, v), 350);
+					root.postDelayed(() -> toggleTabView(-1, v), delay);
 				} else {
 					toggleTabView(-1, v);
 				}
@@ -2922,6 +3045,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					String defaultUrl = getDefaultPage();
 					TabHolder holder=new TabHolder();
 					long id = historyCon.insertNewTab(defaultUrl);
+					tabsDirty=true;
 					CMN.Log("insertNewTab", id);
 					if(id!=-1) {
 						holder.url=defaultUrl;
@@ -3051,6 +3175,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	protected void onDestroy() {
 		super.onDestroy();
 		if(systemIntialized) {
+			onLeaveCurrentTab(0);
 			Glide.get(this).clearMemory();
 			closing=true;
 			Collection<AdvancedBrowserWebView> values = id_table.values();
@@ -3257,6 +3382,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		public long rank;
 		public long id;
 		public final TabIdentifier TabID = new TabIdentifier();
+		public boolean paused;
 		
 		@Multiline(flagPos=0, debug=0) public boolean getLuxury(){ flag=flag; throw new RuntimeException(); }
 		

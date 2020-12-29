@@ -90,6 +90,7 @@ public class Utils {
 	public static final boolean littleCake = Build.VERSION.SDK_INT<=21;
 	public static final boolean bigMountain = Build.VERSION.SDK_INT>22;
 	public static final boolean hugeHimalaya = Build.VERSION.SDK_INT>=Build.VERSION_CODES.P;
+	public static final boolean metaKill = Build.VERSION.SDK_INT>=Build.VERSION_CODES.Q;
 	public static final boolean isHuawei = Build.MANUFACTURER.contains("HUAWEI");
 	public static final WeakReference<Bitmap> DummyBMRef = new WeakReference<>(null);
 	

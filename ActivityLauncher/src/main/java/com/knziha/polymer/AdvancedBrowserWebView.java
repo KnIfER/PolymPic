@@ -144,6 +144,7 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 	
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
+		//if(true) return true;
 		MotionEvent trackedEvent = MotionEvent.obtain(event);
 
 		final int action = MotionEventCompat.getActionMasked(event);
@@ -269,15 +270,10 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 					&&parseBundleFromData(stackcursor.getBlob(0))) {
 					return true;
 				}
-//				stackpath = new File(getContext().getExternalCacheDir(), "webstack"+holder.id);
-//				CMN.Log("stackpath", stackpath.exists());
-//				if(stackpath.exists()) {
-//
-//				}
+				CMN.Log("再生……", holder.url);
+				loadUrl(holder.url);
+				return true;
 			}
-			CMN.Log("再生……", holder.url);
-			loadUrl(holder.url);
-			return true;
 		}
 		return false;
 	}
@@ -324,7 +320,8 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 	
 	/** 持久化保存网页前进/回退栈 */
 	public void saveIfNeeded() { //WEBVIEW_CHROMIUM_STATE
-		if((true/*version>1*/) && stackloaded) {
+		if(version>1 && lastSaveVer<version && stackloaded) {
+			lastSaveVer = version;
 			Bundle bundle = new Bundle();
 			CMN.Log("saveIfNeeded", holder.getLuxury());
 //			int stacksCount=0;

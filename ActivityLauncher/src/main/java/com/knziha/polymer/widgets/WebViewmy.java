@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.knziha.polymer.WebCompoundListener.ensureMarkJS;
+import static com.knziha.polymer.widgets.Utils.DummyBMRef;
 import static com.knziha.polymer.widgets.Utils.getWindowManagerViews;
 
 public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListener {
@@ -50,6 +51,7 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
 	public BrowserActivity context;
 	public long time;
 	public int lastCaptureVer;
+	public int lastSaveVer;
 	public int version;
 	public int lastScroll;
 	public boolean stackloaded;
@@ -159,17 +161,22 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
 			int targetW = (int)(w*factor);
 			int targetH = (int)(h*factor);
 			int needRam = targetW*targetH*2;
-			boolean reset = bitmap.getAllocationByteCount()<needRam;
+			Bitmap bmItem = bm.get();
+			boolean reset = bmItem==null||!bmItem.isMutable()||bmItem.getAllocationByteCount()<needRam;
 			if(reset) {
-				bitmap.recycle();
-				bitmap = Bitmap.createBitmap(targetW, targetH, Bitmap.Config.RGB_565);
-			} else if(bitmap.getWidth()!=targetW||bitmap.getHeight()!=targetH) {
-				bitmap.reconfigure(targetW, targetH, Bitmap.Config.RGB_565);
+				if(bmItem!=null) {
+					//CMN.Log("bmItem reset");
+					bmItem.recycle();
+				}
+				bmItem = Bitmap.createBitmap(targetW, targetH, Bitmap.Config.RGB_565);
+			} else if(bmItem.getWidth()!=targetW||bmItem.getHeight()!=targetH) {
+				bmItem.reconfigure(targetW, targetH, Bitmap.Config.RGB_565);
+				bmItem.eraseColor(Color.WHITE);
 			}
 			if(canvas==null) {
-				canvas = new Canvas(bitmap);
+				canvas = new Canvas(bmItem);
 			} else if(reset) {
-				canvas.setBitmap(bitmap);
+				canvas.setBitmap(bmItem);
 			}
 			canvas.setMatrix(Utils.IDENTITYXIRTAM);
 			canvas.scale(factor, factor);
@@ -177,17 +184,12 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
 			long st = System.currentTimeMillis();
 			draw(canvas);
 			CMN.Log("绘制时间：", System.currentTimeMillis()-st);
-			Bitmap bmItem = bm.get();
-			if(bmItem!=null) {
-				bmItem.recycle();
-			}
-			// now copy the result to an unique bitmap cache.
-			bm = new WeakReference<>(bitmap.copy(Bitmap.Config.RGB_565, false));
+			bm = new WeakReference<>(bmItem);
 			CMN.Log("复制时间：", System.currentTimeMillis()-st);
 		}
 	}
 	
-	public static Bitmap bitmap = Bitmap.createBitmap(1,1,Bitmap.Config.RGB_565);
+	//public static Bitmap bitmap = Bitmap.createBitmap(1,1,Bitmap.Config.RGB_565);
 	
 	public WeakReference<Bitmap> bm = Utils.DummyBMRef;
 	public Canvas canvas;
@@ -255,7 +257,7 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
 	}
 	
 	public void setBMRef(WeakReference<Bitmap> tmpBmRef) {
-		if(tmpBmRef.get()!=null && bm.get()==null) {
+		if(bm==DummyBMRef && tmpBmRef.get()!=null) {
 			bm = tmpBmRef;
 		}
 	}
@@ -268,7 +270,7 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
 			callback=callher;
 			return this;
 		}
-   
+  
 		@Override
 		public boolean onCreateActionMode(ActionMode mode, Menu menu) {
 			CMN.Log("onCreateActionMode…");
