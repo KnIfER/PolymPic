@@ -1,6 +1,7 @@
 package com.knziha.polymer.widgets;
 
 import android.annotation.SuppressLint;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
@@ -31,6 +32,8 @@ import com.knziha.polymer.BrowserActivity;
 import com.knziha.polymer.R;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.Options;
+import com.knziha.polymer.database.LexicalDBHelper;
+import com.knziha.polymer.toolkits.Utils.ReusableByteOutputStream;
 
 import org.adrianwalker.multilinestring.Multiline;
 import org.apache.commons.lang3.StringUtils;
@@ -72,6 +75,8 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
 	private static boolean bAdvancedMenu=Build.VERSION.SDK_INT>=Build.VERSION_CODES.M;
 	public boolean isWebHold;
 	public boolean isIMScrollSupressed;
+	
+	public final static ReusableByteOutputStream bos1 = new ReusableByteOutputStream();
 	
 	public WebViewmy(Context context) {
 		super(context, null, 0);
@@ -148,8 +153,9 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
 	public AdvancedWebViewCallback webviewcallback;
 	
 	/** Recapture Thumnails as a bitmap. There's no point in doing this asynchronously.
-	 * 		draw(canvas) will block the UI even it's called in another thread. */
+	 * 		draw(canvas) will block the UI even when it's called in another thread. */
 	public void recaptureBitmap() {
+		CMN.Log("recaptureBitmap...", holder.id, version);
 		lastCaptureVer = version;
 		int w = getWidth();
 		int h = getHeight();
@@ -166,6 +172,8 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
 			if(reset) {
 				if(bmItem!=null) {
 					//CMN.Log("bmItem reset");
+					if(bmItem.isMutable()) //todo recycle all. ( this fixs the bug below )
+					// todo currently there's a  bug when you click on the tabs manager btn before the page finished on a second launch of this app then switch to another tab and switch back and quickly show the tabs manager again that displays a blank image erroneously.
 					bmItem.recycle();
 				}
 				bmItem = Bitmap.createBitmap(targetW, targetH, Bitmap.Config.RGB_565);
@@ -187,6 +195,32 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
 			bm = new WeakReference<>(bmItem);
 			CMN.Log("复制时间：", System.currentTimeMillis()-st);
 		}
+	}
+	
+	public Bitmap saveBitmap() {
+		Bitmap bmItem = bm.get();
+		if(bmItem==null) {
+			return null;
+		}
+		long st = System.currentTimeMillis();
+		ReusableByteOutputStream bos1 = WebViewmy.bos1;
+		if(bos1==null) {
+			return null;
+		}
+		bos1.reset();
+		bos1.ensureCapacity((int) (bmItem.getAllocationByteCount()*0.5));
+		bmItem.compress(Bitmap.CompressFormat.JPEG, 95, bos1);
+		long tabID_Fetcher = holder.id;
+		CMN.Log(tabID_Fetcher, "压缩时间：", System.currentTimeMillis()-st);
+		byte[] data = bos1.toByteArray();
+		ContentValues values = new ContentValues();
+		values.put("title", holder.title);
+		values.put("url", holder.url);
+		values.put("thumbnail", data);
+		LexicalDBHelper.getInstancedDb().update("webtabs", values, "id=?", new String[]{String.valueOf(tabID_Fetcher)});
+		CMN.Log(tabID_Fetcher, "入表时间：", System.currentTimeMillis()-st, data.length, (int) (bmItem.getAllocationByteCount()*0.50), bos1.data().length);
+		bos1.close();
+		return bmItem;
 	}
 	
 	//public static Bitmap bitmap = Bitmap.createBitmap(1,1,Bitmap.Config.RGB_565);

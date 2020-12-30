@@ -53,9 +53,20 @@ public class WebBrowseListenerX5 extends WebViewClient {
 		}
 	}
 	
+	Runnable stopWebRunnable = new Runnable() {
+		@Override
+		public void run() {
+			webview_Player.stopLoading();
+		}
+	};
+	
 	public void stopWebview() {
 		webview_Player.setTag(null);
-		webview_Player.stopLoading();
+		if(Looper.myLooper()!=Looper.getMainLooper()) {
+			webview_Player.post(stopWebRunnable);
+		} else {
+			stopWebRunnable.run();
+		}
 	}
 	
 	public WebBrowseListenerX5(BrowseActivity activity, WebView x5_webview_Player) {

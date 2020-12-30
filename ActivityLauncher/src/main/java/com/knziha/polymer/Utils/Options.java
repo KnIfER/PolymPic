@@ -210,9 +210,11 @@ public class Options implements WebOptions, BookOptions {
 	@Multiline(flagPos=13) public boolean getPremature(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
 	
 	// 管理标签动画效果
-	@Multiline(flagPos=14, shift=1/*, debug=1*/) public boolean getShowWebCoverDuringTransition(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
-	@Multiline(flagPos=15/*, debug=0*/) public boolean getAlwaysPostAnima(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
-	@Multiline(flagPos=16, shift=1/*, debug=0*/) public boolean getAnimateTabsManager(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=14, shift=1, debug=1) public boolean getShowWebCoverDuringTransition(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=15, debug=0) public boolean getAlwaysPostAnima(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=16, shift=1, debug=1) public boolean getAnimateTabsManager(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
+	
+	@Multiline(flagPos=17, shift=1, debug=0) public boolean getUseStdViewAnimator(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
 	
 	
 	/////////////////////End Third Flag////////////////////////////////////

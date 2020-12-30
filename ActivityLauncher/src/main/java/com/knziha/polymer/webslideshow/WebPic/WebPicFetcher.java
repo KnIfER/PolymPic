@@ -1,6 +1,5 @@
 package com.knziha.polymer.webslideshow.WebPic;
 
-import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
@@ -14,12 +13,9 @@ import com.bumptech.glide.load.data.DataFetcher;
 import com.knziha.polymer.AdvancedBrowserWebView;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.database.LexicalDBHelper;
-import com.knziha.polymer.toolkits.Utils.ReusableByteOutputStream;
 
 
 public class WebPicFetcher implements DataFetcher<Bitmap> {
-	final static ReusableByteOutputStream bos1 = new ReusableByteOutputStream();
-	
 	private final WebPic pic;
 
 	public WebPicFetcher(WebPic model) {
@@ -37,20 +33,10 @@ public class WebPicFetcher implements DataFetcher<Bitmap> {
 		String[] where = new String[]{String.valueOf(tabID_Fetcher)};
 		AdvancedBrowserWebView wv = pic.id_table.get(tabID_Fetcher);
 		if(wv!=null) {
-			bm = wv.bm.get();
+			bm = wv.saveBitmap();
 			if(bm!=null)
-			//synchronized (bos1)
 			{
 				pic.version = wv.version;
-				ContentValues values = new ContentValues();
-				bos1.reset();
-				bos1.ensureCapacity((int) (bm.getAllocationByteCount()*0.5));
-				bm.compress(Bitmap.CompressFormat.JPEG, 95, bos1);
-				data = bos1.toByteArray();
-				CMN.Log(tabID_Fetcher, "压缩时间：", System.currentTimeMillis()-st);
-				values.put("thumbnail", data);
-				LexicalDBHelper.getInstancedDb().update("webtabs", values, "id=?", where);
-				CMN.Log(tabID_Fetcher, "入表时间：", System.currentTimeMillis()-st, data.length, (int) (bm.getAllocationByteCount()*0.50), bos1.data().length);
 			}
 		}
 		if(bm==null) {

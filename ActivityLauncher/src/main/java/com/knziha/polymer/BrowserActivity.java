@@ -21,6 +21,7 @@ import android.content.res.Resources;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
@@ -51,12 +52,14 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewPropertyAnimator;
 import android.view.ViewStub;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.AnimationUtils;
 import android.view.animation.LayoutAnimationController;
+import android.view.animation.LinearInterpolator;
 import android.view.inputmethod.EditorInfo;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
@@ -260,6 +263,29 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	private boolean tabsDirty;
 	
 	private RequestBuilder<Drawable> glide;
+	private String android_ua;
+	private Animator.AnimatorListener animatorLis = new AnimatorListenerAdapter() {
+		@Override
+		public void onAnimationEnd(Animator animation) {
+			//alpha1.setFloatValues(1f, 0f);
+			//alpha1.setDuration(180);
+			//alpha1.start();
+			if(DissmissingViewHolder) {
+				//viewpager_holder.setVisibility(View.GONE);
+				UIData.appbar.setAlpha(1);
+				//imageViewCover.setVisibility(View.GONE);
+				uncoverTheTab(180);
+			} else {
+				currentWebView.layout.setVisibility(View.INVISIBLE);
+				//etSearch.setText("标签模式");
+			}
+			resumeTimers(currentWebView);
+			//v.setBackgroundResource(R.drawable.surrtrip1);
+			//currentWebView.onResume();
+		}
+	};
+	private LinearInterpolator linearInterpolator = new LinearInterpolator();
+	private Paint paint = new Paint();
 	
 	@Override
 	public void onConfigurationChanged(@NonNull Configuration newConfig) {
@@ -1346,7 +1372,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					String title=holder.title;
 					if(title==null||title.equals("")) title=holder.url;
 					vh.title.setText(title);
-					int version = mWebView==null?0: (int) mWebView.version;
+					int version = mWebView==null?0:(int) mWebView.version;
 					//CMN.Log("setImageBitmap__", iv);
 					glide.load(new WebPic(holder.id, version, id_table))
 						.into(iv);
@@ -1454,6 +1480,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					viewpager_holder.post(MoveRangeIvalidator);
 				}
 			}
+			
+			tabsDirty = true;
 		}
 	}
 	
@@ -1552,7 +1580,11 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			webtitle.setText(currentWebView.getTitle());
 			if(fromClick==-1) {
 				int fvp = layoutManager.findFirstVisibleItemPosition();
-				View ca = recyclerView.getChildAt(layoutManager.targetPos-fvp);
+				int target = layoutManager.targetPos;
+				if(target<=1) {
+					target=1;
+				}
+				View ca = recyclerView.getChildAt(target-fvp);
 				findBMTmpInViewHolder(ca==null?null:(ViewDataHolder<WebPageItemBinding>) ca.getTag());
 			}
 		}
@@ -1576,34 +1608,19 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			animatorObj = ObjectAnimator.ofPropertyValuesHolder(currentWebView.layout, scaleX, scaleY, translationX, translationY/*, alpha*//*, alpha2*//*, alpha3*/);
 			//webAnimators = new ObjectAnimator[]{scaleX, scaleY, translationX, translationY, alpha1, alpha2};
 			//if(false)
-			animatorObj.addListener(new AnimatorListenerAdapter() {
-				@Override
-				public void onAnimationEnd(Animator animation) {
-					//alpha1.setFloatValues(1f, 0f);
-					//alpha1.setDuration(180);
-					//alpha1.start();
-					if(DissmissingViewHolder) {
-						//viewpager_holder.setVisibility(View.GONE);
-						UIData.appbar.setAlpha(1);
-						//imageViewCover.setVisibility(View.GONE);
-						uncoverTheTab(180);
-					} else {
-						currentWebView.layout.setVisibility(View.INVISIBLE);
-						//etSearch.setText("标签模式");
-					}
-					resumeTimers(currentWebView);
-					//v.setBackgroundResource(R.drawable.surrtrip1);
-					//currentWebView.onResume();
-				}
-			});
+			animatorObj.addListener(animatorLis);
 			//animatorSet.playTogether(scaleX, scaleY, translationX, translationY/*, alpha*/, alpha2/*, alpha3*/);
 			animatorSet = new AnimatorSet();
-			animatorSet.playTogether(animatorObj, alpha1);
-			animatorObj.setTarget(currentWebView.layout);
-			animatorObj.setDuration(350);
+			
+			//animatorSet.playTogether(ValueAnimator.);
+			
+			//tabsAnimator = animatorObj;
 			tabsAnimator = animatorObj;
+			
+			tabsAnimator.setDuration(350);
+			tabsAnimator.setTarget(currentWebView.layout);
 		} else {
-			animatorObj.setDuration(220); // 220
+			tabsAnimator.setDuration(220); // 220
 		}
 		if(AnimateTabsManager) {
 			toggleInternalTabViewAnima(fromClick, v);
@@ -1619,7 +1636,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	 * 				 3=to switch to another webview
 	 * */
 	private void onLeaveCurrentTab(int reason) {
-		//if(false)
+		if(false)
 		if(reason==0) {
 			currentWebView.pauseTimers();
 			currentWebView.onPause();
@@ -1629,9 +1646,12 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		if(currentWebView.lastCaptureVer!=currentWebView.version) {
 			currentWebView.recaptureBitmap();
 			if(reason!=0) {
+				if(reason!=2)
 				glide.load(new WebPic(currentWebView.holder.id, currentWebView.version, id_table))
 						.priority(Priority.HIGH)
 						.into(imageViewCover);
+				else
+				currentWebView.saveBitmap();
 			}
 		}
 		if(reason==3||reason==0) {
@@ -1644,26 +1664,26 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	}
 	
 	private void toggleInternalTabView(int fromClick) {
-		boolean added = false;
-		boolean bc=fromClick>=0;
 		DissmissingViewHolder = viewpager_holder.getVisibility()==View.VISIBLE;
-		scrollHereRunnnable.run();
 		if(DissmissingViewHolder) {
-			viewpager_holder.setVisibility(View.GONE); // 放
 			int targetPos = layoutManager.targetPos-1;
-			if(targetPos<0) targetPos=0;
-			if(bc) {
+			if(fromClick>=0) {
 				targetPos = fromClick;
 			}
+			if(targetPos<0) targetPos=0;
 			if(targetPos!=adapter_idx) {
-				added = AttachWebAt(targetPos, false);
-				coverupTheTab(added);
+				boolean added = AttachWebAt(targetPos, false);
 				currentWebView.setBMRef(tmpBmRef);
+				coverupTheTab(added);
 				uncoverTheTab(225);
 			} else {
 				currentWebView.layout.setVisibility(View.VISIBLE);
 			}
+			currentWebView.layout.setTranslationX(0);
+			currentWebView.layout.setTranslationY(0);
+			viewpager_holder.setVisibility(View.GONE); // 放
 		} else {
+			scrollHereRunnnable.run();
 			viewpager_holder.setVisibility(View.VISIBLE); // 收
 			currentWebView.layout.setVisibility(View.INVISIBLE);
 			if(recyclerView.getTag(R.id.home)==null) {
@@ -1695,6 +1715,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	Animator tabsAnimator;
 	AnimatorSet animatorSet;
 	ValueAnimator animatorObj;
+	ViewPropertyAnimator animatorProp;
 	PropertyValuesHolder scaleX;
 	PropertyValuesHolder scaleY;
 	PropertyValuesHolder translationX;
@@ -1766,6 +1787,11 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		
 		boolean added = false;
 		
+		if(animatorProp!=null) {
+			animatorProp.cancel();
+			animatorProp=null;
+		}
+		
 		if(!DissmissingViewHolder) {
 			int targetPos = layoutManager.targetPos-1;
 			if(targetPos<0) targetPos=0;
@@ -1788,7 +1814,11 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				layout.setTranslationX(ttX);
 			}
 		}
-		animatorObj.setTarget(layout);
+		if(opt.getUseStdViewAnimator()) {
+			animatorObj.setTarget(DummyTransX);
+		} else {
+			animatorObj.setTarget(layout);
+		}
 		layout.setPivotX(0);
 		layout.setPivotY(0);
 		alpha2.setFloatValues(1, 1);
@@ -1810,10 +1840,21 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			layout.setVisibility(View.VISIBLE);
 			//layout.setAlpha(1);
 			
-			scaleX.setFloatValues(bc?targetScale:layout.getScaleX(), 1f);
-			scaleY.setFloatValues(bc?targetScale:layout.getScaleY(), 1f);
-			translationX.setFloatValues(bc?ttX:layout.getTranslationX(), 0);
-			translationY.setFloatValues(bc?ttY:layout.getTranslationY(), 0);
+			if(opt.getUseStdViewAnimator()) {
+				animatorProp = layout.animate().setListener(animatorLis)
+						.scaleX(1).scaleY(1)
+						.translationX(0).translationY(0)
+						//.setDuration(220)
+						.setInterpolator(linearInterpolator)
+				;
+			} else {
+				scaleX.setFloatValues(bc?targetScale:layout.getScaleX(), 1f);
+				scaleY.setFloatValues(bc?targetScale:layout.getScaleY(), 1f);
+				translationX.setFloatValues(bc?ttX:layout.getTranslationX(), 0);
+				translationY.setFloatValues(bc?ttY:layout.getTranslationY(), 0);
+				//animatorObj.setInterpolator(new AccelerateDecelerateInterpolator());
+			}
+			
 			
 			//alpha.setFloatValues(viewpager_holder.getAlpha(), 0);
 			//animatorObj.setInterpolator(new AccelerateInterpolator(.5f));
@@ -1842,20 +1883,36 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			recyclerView.post(scrollHereRunnnable);
 			//recyclerView.postDelayed(scrollHereRunnnable, 350);
 			
-			scaleX.setFloatValues(layout.getScaleX(), targetScale);
-			scaleY.setFloatValues(layout.getScaleY(), targetScale);
-			translationX.setFloatValues(layout.getTranslationX(), ttX);
-			translationY.setFloatValues(layout.getTranslationY(), ttY);
+			if(opt.getUseStdViewAnimator()) {
+				animatorProp = layout.animate().setListener(animatorLis)
+						.scaleX(targetScale).scaleY(targetScale)
+						.translationX(ttX).translationY(ttY)
+						//.setDuration(220)
+						.setInterpolator(linearInterpolator)
+				;
+			} else {
+				scaleX.setFloatValues(layout.getScaleX(), targetScale);
+				scaleY.setFloatValues(layout.getScaleY(), targetScale);
+				translationX.setFloatValues(layout.getTranslationX(), ttX);
+				translationY.setFloatValues(layout.getTranslationY(), ttY);
+				animatorObj.setInterpolator(linearInterpolator);
+				//animatorObj.setInterpolator(new AccelerateDecelerateInterpolator());
+			}
 			alpha.setFloatValues(startAlpha, 1f);
-			animatorObj.setInterpolator(null);
 		}
+		if(animatorProp!=null) {
+			CMN.Log("animatorProp", animatorProp.getDuration(), animatorProp.getInterpolator());
+			//animatorProp.setStartDelay(180);
+			//animatorProp.start();
+		}
+		
 		startAnimation(bNeedPost||opt.getAlwaysPostAnima());
 		//startAnimation(opt.getShowWebCoverDuringTransition());
 		//startAnimation(false);
 	}
 	
 	private void uncoverTheTab(long delay) {
-		if(true) return;
+		//if(true) return;
 		if(opt.getShowWebCoverDuringTransition()) {
 			ViewGroup layout = currentWebView.layout;
 			if (Utils.metaKill) layout.suppressLayout(true);
@@ -1868,7 +1925,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	
 	private boolean coverupTheTab(boolean added) {
 		if(opt.getShowWebCoverDuringTransition() && added) {
-			CMN.Log("covering...");
+			//CMN.Log("covering...");
 			ViewGroup vg = currentWebView.layout;
 			if (Utils.metaKill) vg.suppressLayout(true);
 			imageViewCover.setVisibility(View.VISIBLE);
@@ -2897,9 +2954,13 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	}
 	
 	public void setUserAgentString(AdvancedBrowserWebView mWebView, boolean val) {
+		if(android_ua==null) {
+			android_ua = "Mozilla/5.0 (Linux; Android "+Build.VERSION.RELEASE+"; "+Build.MODEL+") AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Mobile Safari/537.36 OPR/58.2.2878.53403";
+			CMN.Log("android_ua", android_ua);
+		}
 		mWebView.getSettings().setUserAgentString(val
 				?"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36"
-				:null);
+				:android_ua);
 	}
 	
 	private void init_menu_layout() {
@@ -3132,6 +3193,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		} else {
 			layout = new WebFrameLayout(getBaseContext());
 			layout.setBackgroundColor(Color.WHITE);
+			layout.setPadding(0, 0, 0, _45_);
 		}
 		mWebView.holder = holder;
 		mWebView.layout = layout;
@@ -3152,6 +3214,12 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		mWebView.setDownloadListener(mWebListener);
 		mWebView.setOnScrollChangedListener(mWebListener);
 		mWebView.setBackgroundColor(Color.TRANSPARENT);
+		
+		setUserAgentString(mWebView, false);
+		
+		
+		mWebView.setLayerType(View.LAYER_TYPE_HARDWARE, paint);
+		//mWebView.setLayerType(View.LAYER_TYPE_SOFTWARE,null);
 
 		return mWebView;
 	}
@@ -3175,7 +3243,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	protected void onDestroy() {
 		super.onDestroy();
 		if(systemIntialized) {
-			onLeaveCurrentTab(0);
+			onLeaveCurrentTab(2);
 			Glide.get(this).clearMemory();
 			closing=true;
 			Collection<AdvancedBrowserWebView> values = id_table.values();

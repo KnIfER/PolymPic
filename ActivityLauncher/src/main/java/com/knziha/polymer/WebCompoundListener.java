@@ -446,6 +446,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 			if(ordinalUrl!=null) {
 				url = ordinalUrl;
 			}
+			mWebView.holder.url = url;
 			CMN.Log("OPF:::", url, view.getTitle(), Thread.currentThread().getId());
 			//CMN.Log("OPF:::", mWebView.holder.url);
 			view.setTag(url);
@@ -473,7 +474,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 					}
 				}
 			}
-			mWebView.evaluateJavascript("chrome.craft('style', 'body{padding-bottom:450px !important;}')", null);
+			//mWebView.evaluateJavascript("chrome.craft('style', 'body{padding-bottom:450px !important;}')", null);
 			
 //			if(!bEnableJavaScript) {
 //				mWebView.postDelayed(() -> mWebView.getSettings().setJavaScriptEnabled(false), 1350);
