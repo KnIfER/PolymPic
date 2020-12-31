@@ -613,7 +613,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		}
 		CMN.Log("ini.初始化完毕", size);
 		adapter_idx=0;
-		AttachWebAt(adapter_idx, false);
+		AttachWebAt(adapter_idx, 0);
 		//SetupPasteBin();
 		
 		webtitle.setOnClickListener(this);
@@ -821,6 +821,25 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		ObjectAnimator resitu1 = ObjectAnimator.ofFloat(currentWebView.layout, "translationX", 0, 0);
 		ObjectAnimator resitu2 = ObjectAnimator.ofFloat(DummyTransX, "translationX", 0, 0);
 		AnimatorSet animator;
+		Animator.AnimatorListener animatorLis=new Animator.AnimatorListener() {
+			@Override public void onAnimationStart(Animator animation) {
+				int check = adapter_idx+adapter_to;
+				if(check<0||check>Pages.size()) {
+					TabHolder wv = TabHolders.get(check);
+					webtitle.setText(wv.title);
+				}
+				isPaused=false;
+			}
+			@Override public void onAnimationEnd(Animator animation) {
+				webla=null;
+				isPaused=true;
+				AttachWebAt(adapter_idx+adapter_to, (adapter_to==0&&animated_delta<dm.density*90)?1:0);
+			}
+			@Override
+			public void onAnimationCancel(Animator animation) {}
+			@Override
+			public void onAnimationRepeat(Animator animation) {}
+		};
 		private float onFingDir;
 		private boolean isPaused=true;
 		private float simovefactor=12;
@@ -833,25 +852,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		
 		BrowserSlider(){
 			animator = new AnimatorSet();
-			animator.addListener(new Animator.AnimatorListener() {
-				@Override public void onAnimationStart(Animator animation) {
-					int check = adapter_idx+adapter_to;
-					if(check<0||check>Pages.size()) {
-						TabHolder wv = TabHolders.get(check);
-						webtitle.setText(wv.title);
-					}
-					isPaused=false;
-				}
-				@Override public void onAnimationEnd(Animator animation) {
-					webla=null;
-					isPaused=true;
-					AttachWebAt(adapter_idx+adapter_to, adapter_to==0&&animated_delta<dm.density*90);
-				}
-				@Override
-				public void onAnimationCancel(Animator animation) {}
-				@Override
-				public void onAnimationRepeat(Animator animation) {}
-			});
+			animator.addListener(animatorLis);
 			animator.setDuration(150);
 			animator.playTogether(resitu, resitu1, resitu2);
 		}
@@ -874,12 +875,22 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				case MotionEvent.ACTION_DOWN:
 					//CMN.Log("ACTION_DOWN");
 					//toolbar.suppressLayout(true);
+					if(animator.isRunning()) {
+						animator.removeListener(animatorLis);
+						animator.cancel();
+						animator.addListener(animatorLis);
+						CMN.Log("animator.isRunning()", adapter_to, webla);
+						if(adapter_to!=0 && webla!=null) {
+							AttachWebAt(adapter_idx+adapter_to, 2);
+							adapter_to=0;
+						}
+					}
 					animated_delta=0;
 					etSearch_scrolled=false;
 					should_check_supressed=
 					supressed=false;
-					orgX = event.getX();
-					orgY = event.getX();
+					lastX = orgX = event.getX();
+					lastY = orgX = event.getX();
 					if(v==searchbartitle) {
 						supressed=true;
 					} else if(v!=UIData.bottombar2) {
@@ -892,6 +903,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 							}
 						}
 					}
+					webla = null;
 				break;
 				case MotionEvent.ACTION_MOVE: {
 					if(should_check_supressed&&!supressed) {
@@ -900,7 +912,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					if(supressed) {
 						if(v==searchbartitle) {
 							float lastX = event.getX();
-							lastY = event.getX();
+							lastY = event.getY();
 							float delta = lastX-orgX;
 							float abs = Math.abs(delta);
 							if(!selecting && abs>100) {
@@ -942,7 +954,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 						return false;
 					}
 					float lastX = event.getX();
-					lastY = event.getX();
+					lastY = event.getY();
 					float delta = Math.abs(lastX-orgX);
 					if(DissmissingViewHolder) {
 						//CMN.Log("ACTION_MOVE");
@@ -955,7 +967,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 							animated_delta = Math.max(animated_delta, delta);
 							mDectector.onTouchEvent(event);
 							isPaused=true;
-							animator.pause();
+							//animator.cancel();
 							//CMN.Log("draggging", getCurrentFocus());
 							View layout = currentWebView.layout;
 							float newTX = layout.getTranslationX()+lastX-this.lastX;
@@ -973,7 +985,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 							}
 							webla=null;
 							if(attachIdx>=0&&attachIdx<Pages.size()) {
-								AttachWebAt(attachIdx, true);
+								AttachWebAt(attachIdx, 1);
 								AdvancedBrowserWebView attachLayout = Pages.get(attachIdx);
 								if(attachLayout!=null) {
 									webla = attachLayout.layout;
@@ -1006,49 +1018,51 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 						sliding=false;
 						event.setLocation(lastX*simovefactor, 0);
 						recyclerView.dispatchTouchEvent(event);
-					} else if(dragging) {
-						dragging=false;
+					} else {
 						View layout = currentWebView.layout;
 						float tx = layout.getTranslationX();
-						int W = root.getWidth();
-						adapter_to=0;
-						mDectector.onTouchEvent(event);
-						int flingTheta = 10;
-						float flingMoveTheta = dm.density*62;
-						if(tx>0 && (onFingDir>flingTheta&&tx>flingMoveTheta||tx>=W/2)) {
-							adapter_to=-1;
-						} else if(tx<0 && (onFingDir<-flingTheta&&tx<-flingMoveTheta||tx<=-W/2)) {
-							adapter_to=1;
-						}
-						int check = adapter_idx + adapter_to;
-						if(check<0||check>Pages.size()) {
+						if(dragging||tx!=0&&layout.getScaleX()==1) {
+							int W = root.getWidth();
 							adapter_to=0;
+							mDectector.onTouchEvent(event);
+							int flingTheta = 10;
+							float flingMoveTheta = dm.density*62;
+							if(tx>0 && (onFingDir>flingTheta&&tx>flingMoveTheta||tx>=W/2)) {
+								adapter_to=-1;
+							} else if(tx<0 && (onFingDir<-flingTheta&&tx<-flingMoveTheta||tx<=-W/2)) {
+								adapter_to=1;
+							}
+							int check = adapter_idx + adapter_to;
+							if(check<0||check>Pages.size()) {
+								adapter_to=0;
+							}
+							isPaused=true;
+							animator.pause();
+							resitu.setTarget(layout);
+							resitu.setFloatValues(tx, -adapter_to*W);
+							//animated_delta = Math.abs(tx+adapter_to*W);
+							if(webla!=null) {
+								resitu1.setTarget(webla);
+								resitu1.setFloatValues(webla.getTranslationX(), adapter_to==0?W*(tx>0?-1:1):0);
+							} else {
+								resitu1.setTarget(DummyTransX);
+							}
+							if(webtitle.getVisibility()!=View.VISIBLE) {
+								resitu2.setTarget(UIData.searchbar);
+								resitu2.setFloatValues(UIData.searchbar.getTranslationX(), -adapter_to*W);
+							} else {
+								resitu2.setTarget(DummyTransX);
+							}
+							if(adapter_to!=0) {
+								onLeaveCurrentTab(3);
+							}
+							animator.start();
 						}
-						isPaused=true;
-						animator.pause();
-						resitu.setTarget(layout);
-						resitu.setFloatValues(tx, -adapter_to*W);
-						//animated_delta = Math.abs(tx+adapter_to*W);
-						if(webla!=null) {
-							resitu1.setTarget(webla);
-							resitu1.setFloatValues(webla.getTranslationX(), adapter_to==0?W*(tx>0?-1:1):0);
-						} else {
-							resitu1.setTarget(DummyTransX);
-						}
-						if(webtitle.getVisibility()!=View.VISIBLE) {
-							resitu2.setTarget(UIData.searchbar);
-							resitu2.setFloatValues(UIData.searchbar.getTranslationX(), -adapter_to*W);
-						} else {
-							resitu2.setTarget(DummyTransX);
-						}
-						if(adapter_to!=0) {
-							onLeaveCurrentTab(3);
-						}
-						animator.start();
+						dragging=false;
 					}
+					//webla=null;
 					onFingDir = 0;
 					selecting = false;
-					webla = null;
 				break;
 			}
 			return dragging;
@@ -1066,7 +1080,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				isPaused=true;
 				animator.pause();
 				webla = null;
-				AttachWebAt(adapter_idx, false);
+				AttachWebAt(adapter_idx, 0);
 			}
 		}
 		
@@ -1637,7 +1651,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	 * */
 	private void onLeaveCurrentTab(int reason) {
 		if(false)
-		if(reason==0) {
+		if(reason==0)
+		{
 			currentWebView.pauseTimers();
 			currentWebView.onPause();
 			currentWebView.holder.paused=true;
@@ -1672,7 +1687,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			}
 			if(targetPos<0) targetPos=0;
 			if(targetPos!=adapter_idx) {
-				boolean added = AttachWebAt(targetPos, false);
+				boolean added = AttachWebAt(targetPos, 0);
 				currentWebView.setBMRef(tmpBmRef);
 				coverupTheTab(added);
 				uncoverTheTab(225);
@@ -1803,7 +1818,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			}
 			if(targetPos!=adapter_idx) {
 				//added = TabHolders.get(targetPos)!=null;
-				added = AttachWebAt(targetPos, false);
+				added = AttachWebAt(targetPos, 0);
 				layout = currentWebView.layout;
 				currentWebView.setBMRef(tmpBmRef);
 				layout.setScaleX(targetScale);
@@ -1939,9 +1954,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	}
 	
 	
-	private boolean AttachWebAt(int i, boolean pseudoAdd) {
+	private boolean AttachWebAt(int i, int pseudoAdd) {
 		int size = TabHolders.size()-1; // sanity check
-		if(size<0) return pseudoAdd;
+		if(size<0) return pseudoAdd!=0;
 		if(i<0) i=0;
 		if(i>size) i=size;
 		AdvancedBrowserWebView mWebView = Pages.get(i);
@@ -1954,6 +1969,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				//mWebView.setNestedScrollingEnabled(false);
 			}
 			Pages.set(i, mWebView);
+		} else if(pseudoAdd==1 && mWebView.layout!=null && mWebView.layout.getParent()!=null && mWebView.getScaleX()==1 && mWebView.getVisibility()==View.VISIBLE) {
+			return true;
 		}
 		if(/*!pseudoAdd && */mWebView.loadIfNeeded()) {
 			viewpager_holder_hasTag = true;
@@ -1964,12 +1981,12 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			mWebView.setNestedScrollingEnabled(false);
 		}
 		View weblayout = mWebView.layout;
-		weblayout.setAlpha(1);
+		//weblayout.setAlpha(1);
 		weblayout.setVisibility(View.VISIBLE);
 		weblayout.setScaleX(1);
 		weblayout.setScaleY(1);
 		boolean add = true;
-		if(!pseudoAdd) {
+		if(pseudoAdd==0) {
 			int ci=1;
 			View ca;
 			while ((ca=UIData.webcoord.getChildAt(ci))instanceof WebFrameLayout){
@@ -1979,7 +1996,6 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					UIData.webcoord.removeViewAt(ci);
 				}
 			}
-			mWebView.setStorageSettings();
 			mWebView.setStorageSettings();
 		}
 		ViewGroup svp = (ViewGroup) weblayout.getParent();
@@ -1993,7 +2009,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		}
 		decideWebviewPadding(mWebView);
 		resumeTimers(mWebView);
-		if(pseudoAdd) {
+		if(pseudoAdd==1) {
 			return false;
 		}
 		webtitle_setVisibility(false);
@@ -3115,7 +3131,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 						TabHolders.add(newtabloc, holder);
 						Pages.add(newtabloc, null);
 					}
-					AttachWebAt(newtabloc, false);
+					AttachWebAt(newtabloc, 0);
 				} catch (IllegalArgumentException e) {
 					showT("Hello Future!");
 					break;
