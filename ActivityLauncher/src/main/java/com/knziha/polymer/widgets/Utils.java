@@ -16,6 +16,7 @@
 
 package com.knziha.polymer.widgets;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
@@ -29,6 +30,8 @@ import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
+import android.os.storage.StorageManager;
+import android.os.storage.StorageVolume;
 import android.provider.DocumentsContract;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
@@ -43,6 +46,7 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.EditText;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.GlobalOptions;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -56,6 +60,7 @@ import java.io.FileReader;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
@@ -71,6 +76,7 @@ import static com.knziha.polymer.Utils.IU.parseInt;
 
 public class Utils {
 	public static final int RequsetUrlFromCamera=1101;
+	public static final int RequsetUrlFromStorage=1102;
 	public final static Matrix IDENTITYXIRTAM = new Matrix();
 	public final static Object DummyTransX = new Object(){
 		public void setTranslationX(float val) { }
@@ -248,11 +254,16 @@ public class Utils {
 	
 	static String resolveContentUri(Context a, Uri uri) {
 		String filePath = null;
-		if (uri != null) {
-			Cursor cursor = a.getContentResolver().query(uri, new String[] { android.provider.MediaStore.Images.ImageColumns.DATA }, null, null, null);
-			cursor.moveToFirst();
-			filePath = cursor.getString(0);
-			cursor.close();
+		try {
+			if (uri != null) {
+				Cursor cursor = a.getContentResolver().query(uri, new String[] { android.provider.MediaStore.Images.ImageColumns.DATA }, null, null, null);
+				if(cursor.moveToNext() && cursor.getColumnCount()==1) {
+					filePath = cursor.getString(0);
+				}
+				cursor.close();
+			}
+		} catch (Exception e) {
+			CMN.Log(e);
 		}
 		return filePath;
 	}
@@ -477,7 +488,11 @@ public class Utils {
 			//CMN.Log("setOnClickListenersOneDepth", ca, (i+1)+"/"+(cc));
 			if(ca instanceof ViewGroup) {
 				if(--depth>0) {
-					setOnClickListenersOneDepth((ViewGroup) ca, clicker, depth, viewFetcher);
+					if(ca.isClickable()) {
+						ca.setOnClickListener(clicker);
+					} else {
+						setOnClickListenersOneDepth((ViewGroup) ca, clicker, depth, viewFetcher);
+					}
 				}
 			} else {
 				int id = ca.getId();
@@ -534,5 +549,104 @@ public class Utils {
 			return resources.getDimensionPixelSize(resourceId);
 		}
 		return 0;
+	}
+	
+	private static final String PRIMARY_VOLUME_NAME = "primary";
+	
+	@Nullable
+	public static String getFullPathFromTreeUri(Context con, @Nullable final Uri treeUri) {
+		if (treeUri == null) return null;
+		String volumePath = getVolumePath(getVolumeIdFromTreeUri(treeUri),con);
+		if (volumePath == null) return File.separator;
+		if (volumePath.endsWith(File.separator))
+			volumePath = volumePath.substring(0, volumePath.length() - 1);
+		
+		String documentPath = getDocumentPathFromTreeUri(treeUri);
+		if (documentPath.endsWith(File.separator))
+			documentPath = documentPath.substring(0, documentPath.length() - 1);
+		
+		if (documentPath.length() > 0) {
+			if (documentPath.startsWith(File.separator))
+				return volumePath + documentPath;
+			else
+				return volumePath + File.separator + documentPath;
+		}
+		else return volumePath;
+	}
+	
+	private static String getVolumePath(final String volumeId, Context context) {
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
+			return null;
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+			return getVolumePathForAndroid11AndAbove(volumeId, context);
+		else
+			return getVolumePathBeforeAndroid11(volumeId, context);
+	}
+	
+	private static String getVolumePathBeforeAndroid11(final String volumeId, Context context){
+		try {
+			StorageManager mStorageManager = (StorageManager) context.getSystemService(Context.STORAGE_SERVICE);
+			Class<?> storageVolumeClazz = Class.forName("android.os.storage.StorageVolume");
+			Method getVolumeList = mStorageManager.getClass().getMethod("getVolumeList");
+			Method getUuid = storageVolumeClazz.getMethod("getUuid");
+			Method getPath = storageVolumeClazz.getMethod("getPath");
+			Method isPrimary = storageVolumeClazz.getMethod("isPrimary");
+			Object result = getVolumeList.invoke(mStorageManager);
+			
+			final int length = Array.getLength(result);
+			for (int i = 0; i < length; i++) {
+				Object storageVolumeElement = Array.get(result, i);
+				String uuid = (String) getUuid.invoke(storageVolumeElement);
+				Boolean primary = (Boolean) isPrimary.invoke(storageVolumeElement);
+				if (primary && PRIMARY_VOLUME_NAME.equals(volumeId))    // primary volume?
+					return (String) getPath.invoke(storageVolumeElement);
+				if (uuid != null && uuid.equals(volumeId))    // other volumes?
+					return (String) getPath.invoke(storageVolumeElement);
+			}
+			// not found.
+			return null;
+		} catch (Exception ex) {
+			return null;
+		}
+	}
+	
+	@TargetApi(Build.VERSION_CODES.R)
+	private static String getVolumePathForAndroid11AndAbove(final String volumeId, Context context) {
+		try {
+			StorageManager mStorageManager = (StorageManager) context.getSystemService(Context.STORAGE_SERVICE);
+			List<StorageVolume> storageVolumes = mStorageManager.getStorageVolumes();
+			for (StorageVolume storageVolume : storageVolumes) {
+				// primary volume?
+				if (storageVolume.isPrimary() && PRIMARY_VOLUME_NAME.equals(volumeId))
+					return storageVolume.getDirectory().getPath();
+				
+				// other volumes?
+				String uuid = storageVolume.getUuid();
+				if (uuid != null && uuid.equals(volumeId))
+					return storageVolume.getDirectory().getPath();
+				
+			}
+			// not found.
+			return null;
+		} catch (Exception ex) {
+			return null;
+		}
+	}
+	
+	@TargetApi(Build.VERSION_CODES.LOLLIPOP)
+	private static String getVolumeIdFromTreeUri(final Uri treeUri) {
+		final String docId = DocumentsContract.getTreeDocumentId(treeUri);
+		final String[] split = docId.split(":");
+		if (split.length > 0) return split[0];
+		else return null;
+	}
+	
+	
+	@TargetApi(Build.VERSION_CODES.LOLLIPOP)
+	private static String getDocumentPathFromTreeUri(final Uri treeUri) {
+		final String docId = DocumentsContract.getTreeDocumentId(treeUri);
+		final String[] split = docId.split(":");
+		if ((split.length >= 2) && (split[1] != null)) return split[1];
+		else return File.separator;
 	}
 }

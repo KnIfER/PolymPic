@@ -32,6 +32,7 @@ import static com.knziha.polymer.widgets.Utils.RequsetUrlFromCamera;
 public class BrowseFieldHandler implements View.OnClickListener, View.OnLongClickListener {
 	final BrowseActivity a;
 	private final ViewGroup root;
+	public ScheduleTask taskToSchedule;
 	
 	EditText etField;
 	TextView etField_indicator;
@@ -185,11 +186,21 @@ public class BrowseFieldHandler implements View.OnClickListener, View.OnLongClic
 							delta += 24*60*60*1000;
 						}
 						if(delta>1000) {
+							a.scheduleMap.put(taskToSchedule.id, taskToSchedule);
 							a.setTaskDelayed(rowID, (int) delta, true);
-							Toast.makeText(a, "Task dispatched after "+delta/1000.f/60+" minutes", Toast.LENGTH_LONG).show();
+							float timing = delta / 1000.f / 60;
+							String danwei = "minutes";
+							if(timing>120) {
+								timing/=60;
+								danwei = "hours";
+							}
+							String nxtTiming =  String.format("Task dispatched after %.2f "
+									+danwei+" \r\n that lasts for about %.2f hours"
+									, timing
+									, taskToSchedule.lifeSpanExpectancy / 60.f );
+							Toast.makeText(a, ""+nxtTiming, Toast.LENGTH_LONG).show();
 							setVis(false);
 						}
-						
 					}
 				}
 			}

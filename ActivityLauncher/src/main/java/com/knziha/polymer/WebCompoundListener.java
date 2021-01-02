@@ -144,7 +144,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 			Pattern p = Pattern.compile("^http://.{0,20}\\.cssn\\.cn/.");
 			SiteRule rule = new SiteRule();
 			rule.EnRipenPercent = 80;
-			rule.JS = "chrome.craft('style', 'body,#f-main,.f-main-left-sire,.f-main-left,.wrap,.content_main,.mian_li,.mian{width:100% !important;min-width:0px !important;padding:0px !important;}')";
+			rule.JS = "polyme.craft('style', 'body,#f-main,.f-main-left-sire,.f-main-left,.wrap,.content_main,.mian_li,.mian{width:100% !important;min-width:0px !important;padding:0px !important;}')";
 			SiteConfigsByPattern.add(new Pair<>(p, rule));
 		}
 	}
@@ -387,13 +387,13 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 				item.content = content;
 				h.appendChild(item);
 			}
-			chrome.highlight=function(keyword) {
+			polyme.highlight=function(keyword) {
 				var b1 = keyword == null;
 				if (b1) keyword = '备 受 开 启';
 				if (keyword == null || b1 && keyword.trim().length == 0) return;
 				var w = window;
 				if (!w._PPMInst) {
-					chrome.loadJs('https://mark.js',
+					polyme.loadJs('https://mark.js',
 					function() {
 						w._PPMInst.do_highlight(keyword);
 					});
@@ -401,7 +401,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 					w._PPMInst.do_highlight(keyword);
 				}
 			};
-			chrome.loadJs=function(url, callback) {
+			polyme.loadJs=function(url, callback) {
 				var script = d.createElement('script');
 				script.type = "text/javascript";
 				if (typeof(callback) != "undefined") {
@@ -412,7 +412,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 				script.src = url;
 				b.appendChild(script);
 			};
-			chrome.craft=function(tagN, H, _) {
+			polyme.craft=function(tagN, H, _) {
 	 			var ele = d.createElement(tagN);
 				ele.innerHTML=H;
 				_?b:h.appendChild(ele);
@@ -422,8 +422,8 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	 		w._docAnnott="";
 		}
 	 	var test = ['1','2','3'];
-	 	chrome.logm(test);
-	 	chrome.logm(test);
+	 	polyme.logm(test);
+	 	polyme.logm(test);
 	 */
 	@Multiline(trim=true, compile=true)
 	public final static String PRI = "Primary Rule Insersion";
@@ -474,7 +474,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 					}
 				}
 			}
-			//mWebView.evaluateJavascript("chrome.craft('style', 'body{padding-bottom:450px !important;}')", null);
+			//mWebView.evaluateJavascript("polyme.craft('style', 'body{padding-bottom:450px !important;}')", null);
 			
 //			if(!bEnableJavaScript) {
 //				mWebView.postDelayed(() -> mWebView.getSettings().setJavaScriptEnabled(false), 1350);
@@ -503,7 +503,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 			}
 			
 			if(false)
-				mWebView.evaluateJavascript("chrome.highlight('aut')", new ValueCallback<String>() {
+				mWebView.evaluateJavascript("polyme.highlight('aut')", new ValueCallback<String>() {
 					@Override
 					public void onReceiveValue(String value) {
 						CMN.Log("asd", value);
@@ -799,7 +799,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	@Override
 	public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
 		CMN.Log("DOWNLOAD:::", url, contentDisposition, mimetype, contentLength);
-		a.showDownloadDialog(url);
+		a.showDownloadDialog(url, contentLength);
 	}
 	
 	@Override

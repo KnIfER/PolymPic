@@ -15,7 +15,9 @@ import android.app.PendingIntent;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.database.Cursor;
@@ -35,6 +37,7 @@ import android.os.Bundle;
 import android.os.CancellationSignal;
 import android.os.Environment;
 import android.os.Message;
+import android.provider.DocumentsContract;
 import android.text.Editable;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
@@ -114,6 +117,7 @@ import com.knziha.polymer.Utils.Options;
 import com.knziha.polymer.Utils.WebOptions;
 import com.knziha.polymer.database.LexicalDBHelper;
 import com.knziha.polymer.databinding.ActivityMainBinding;
+import com.knziha.polymer.databinding.DownloadBottomSheetBinding;
 import com.knziha.polymer.databinding.SearchHintsItemBinding;
 import com.knziha.polymer.databinding.WebPageItemBinding;
 import com.knziha.polymer.qrcode.QRActivity;
@@ -167,11 +171,14 @@ import static com.knziha.polymer.WebCompoundListener.requestPattern;
 import static com.knziha.polymer.widgets.Utils.DummyBMRef;
 import static com.knziha.polymer.widgets.Utils.DummyTransX;
 import static com.knziha.polymer.widgets.Utils.RequsetUrlFromCamera;
+import static com.knziha.polymer.widgets.Utils.RequsetUrlFromStorage;
 import static com.knziha.polymer.widgets.Utils.getViewItemByPath;
 import static com.knziha.polymer.widgets.Utils.indexOf;
 import static com.knziha.polymer.widgets.Utils.setOnClickListenersOneDepth;
-
-@SuppressWarnings({"rawtypes","ClickableViewAccessibility","IntegerDivisionInFloatingPointContext"})
+@SuppressWarnings({"rawtypes","ClickableViewAccessibility"
+		,"IntegerDivisionInFloatingPointContext"
+		,"NonConstantResourceId"
+})
 public class BrowserActivity extends Toastable_Activity implements View.OnClickListener, View.OnLongClickListener {
 	public final static String TitleSep="\n";
 	public final static String FieldSep="|";
@@ -262,6 +269,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	private Runnable removeIMCoverRunnable = () -> imageViewCover.setVisibility(View.GONE);
 	private boolean tabsDirty;
 	
+	public File downloadTargetDir;
+	
 	private RequestBuilder<Drawable> glide;
 	private String android_ua;
 	private Animator.AnimatorListener animatorLis = new AnimatorListenerAdapter() {
@@ -286,6 +295,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	};
 	private LinearInterpolator linearInterpolator = new LinearInterpolator();
 	private Paint paint = new Paint();
+	private BottomSheetDialog bottomDwnldDlg;
 	
 	@Override
 	public void onConfigurationChanged(@NonNull Configuration newConfig) {
@@ -821,6 +831,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		ObjectAnimator resitu1 = ObjectAnimator.ofFloat(currentWebView.layout, "translationX", 0, 0);
 		ObjectAnimator resitu2 = ObjectAnimator.ofFloat(DummyTransX, "translationX", 0, 0);
 		AnimatorSet animator;
+		boolean forceNxtEukatch=false;
 		Animator.AnimatorListener animatorLis=new Animator.AnimatorListener() {
 			@Override public void onAnimationStart(Animator animation) {
 				int check = adapter_idx+adapter_to;
@@ -833,7 +844,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			@Override public void onAnimationEnd(Animator animation) {
 				webla=null;
 				isPaused=true;
-				AttachWebAt(adapter_idx+adapter_to, (adapter_to==0&&animated_delta<dm.density*90)?1:0);
+				AttachWebAt(adapter_idx+adapter_to, (!forceNxtEukatch&&adapter_to==0&&animated_delta<dm.density*90)?1:0);
 			}
 			@Override
 			public void onAnimationCancel(Animator animation) {}
@@ -876,14 +887,20 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					//CMN.Log("ACTION_DOWN");
 					//toolbar.suppressLayout(true);
 					if(animator.isRunning()) {
+						forceNxtEukatch=true;
 						animator.removeListener(animatorLis);
 						animator.cancel();
 						animator.addListener(animatorLis);
 						CMN.Log("animator.isRunning()", adapter_to, webla);
-						if(adapter_to!=0 && webla!=null) {
+						float finilen;
+						if(adapter_to!=0 && webla!=null
+								/*&& ((finilen=webla.getTranslationX() + webla.getWidth() / 2)>=0
+								&&finilen<=root.getWidth())*/) {
 							AttachWebAt(adapter_idx+adapter_to, 2);
 							adapter_to=0;
 						}
+					} else {
+						forceNxtEukatch=false;
 					}
 					animated_delta=0;
 					etSearch_scrolled=false;
@@ -1986,14 +2003,18 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		weblayout.setScaleX(1);
 		weblayout.setScaleY(1);
 		boolean add = true;
-		if(pseudoAdd==0) {
-			int ci=1;
+		//if(pseudoAdd==0)
+		{
+			int cc=UIData.webcoord.getChildCount();
 			View ca;
-			while ((ca=UIData.webcoord.getChildAt(ci))instanceof WebFrameLayout){
-				if(ca==weblayout) {
-					ci++;
-				} else {
-					UIData.webcoord.removeViewAt(ci);
+			for (int j = 0; j < cc; j++) {
+				if((ca=UIData.webcoord.getChildAt(j))instanceof WebFrameLayout
+						&&ca!=weblayout
+						&&(pseudoAdd==0||ca!=mBrowserSlider.webla&&ca!=currentWebView.layout)
+				) {
+					UIData.webcoord.removeViewAt(j);
+					j--;
+					cc--;
 				}
 			}
 			mWebView.setStorageSettings();
@@ -2005,6 +2026,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			}
 		}
 		if(add) {
+			//UIData.webcoord.addView(weblayout);
 			UIData.webcoord.addView(weblayout, 1);
 		}
 		decideWebviewPadding(mWebView);
@@ -2330,7 +2352,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 //				showT("fixBotBar : "+fixBotBar);
 				break;
 			case R.id.browser_widget9:
-				showT("测试……");
+				//showT("测试……");
 				
 //				currentWebView.evaluateJavascript("window._docAnnots", new ValueCallback<String>() {
 //					@Override
@@ -2346,7 +2368,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 //					}
 //				});
 				
-				showDownloadDialog(null);
+				//showDownloadDialog(null);
 //				fixTopBar = !fixTopBar;
 //				decideTopBotBH();
 //				decideWebviewPadding();
@@ -3024,48 +3046,51 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		}
 	}
 	
-	public void showDownloadDialog(String url) {
+	public void showDownloadDialog(String url, long contentLength) {
 		//showT(text);
 		int id = WeakReferenceHelper.bottom_download_dialog;
 		BottomSheetDialog bottomPlaylist = (BottomSheetDialog) getReferencedObject(id);
 		if(bottomPlaylist==null) {
 			CMN.Log("重建底部弹出");
 			putReferencedObject(id, bottomPlaylist = new BottomSheetDialog(this));
-			View downloadPanel = LayoutInflater.from(this).inflate(R.layout.download_bottom_sheet, null);
-			
-			Object[] values = new Object[]{R.id.dir_path, R.id.download, null};
-			
+			DownloadBottomSheetBinding downloadDlg = DownloadBottomSheetBinding.inflate(LayoutInflater.from(this));
 			BottomSheetDialog final_bottomPlaylist = bottomPlaylist;
-			View.OnClickListener clicker = v -> {
+			 View.OnClickListener clicker = v -> {
 				switch (v.getId()) {
 					case R.id.abort:
 						final_bottomPlaylist.dismiss();
 					break;
-					case R.id.download:
-						String URL = (String) values[2];
-						showT("下载中…"+URL);
-						DownloadManager.Request request = new DownloadManager.Request(Uri.parse("ftp://127.0.0.1:8088/xhjhsatz.txt"));
-						//设置什么网络情况下可以下载
-						request.setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI);
-						//设置通知栏的标题
-						request.setTitle("下载");
-						//设置通知栏的message
-						request.setDescription("今日头条正在下载.....");
-						//设置漫游状态下是否可以下载
-						request.setAllowedOverRoaming(false);
-						//设置文件存放目录
-						request.setDestinationInExternalFilesDir(BrowserActivity.this, Environment.DIRECTORY_DOWNLOADS,"123.txt");
-						//获取系统服务
-						DownloadManager downloadManager = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
-						//进行下载
-						long ID = downloadManager.enqueue(request);
+					case R.id.new_folder:
+						boolean goInternalDirectoryPicker = false;
+						if(!goInternalDirectoryPicker) {
+							try {
+								Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+								i.addCategory(Intent.CATEGORY_DEFAULT);
+								startActivityForResult(Intent.createChooser(i,"Pick Download Path"),
+										RequsetUrlFromStorage);
+							} catch (Exception e) {
+								goInternalDirectoryPicker = true;
+								CMN.Log(e);
+							}
+						}
+						if(goInternalDirectoryPicker) {
 						
-					break;
+						}
+						break;
+					case R.id.download:
+						startDownload(true, false);
+						break;
 				}
 			};
-			setOnClickListenersOneDepth((ViewGroup) downloadPanel, clicker, 999, values);
-			bottomPlaylist.setContentView(downloadPanel);
-			bottomPlaylist.tag=values;
+			setOnClickListenersOneDepth((ViewGroup) downloadDlg.dialog, clicker, 999, null);
+			bottomPlaylist.setContentView(downloadDlg.dialog);
+			bottomPlaylist.setOnDismissListener(new DialogInterface.OnDismissListener() {
+				@Override
+				public void onDismiss(DialogInterface dialog) {
+					bottomDwnldDlg = null;
+				}
+			});
+			bottomPlaylist.tag=downloadDlg;
 			Window win = bottomPlaylist.getWindow();
 			if(win!=null) {
 				win.setDimAmount(0.2f);
@@ -3078,7 +3103,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					if(Utils.isKeyboardShown(v)) {
 						int resourceId = mResource.getIdentifier("status_bar_height", "dimen", "android");
 						mStatusBarH = mResource.getDimensionPixelSize(resourceId);
-						int max = Utils.rect.height() - ((View) values[0]).getHeight()-mStatusBarH;
+						int max = Utils.rect.height() - downloadDlg.dirPath.getHeight()-mStatusBarH;
 						if(max>0) {
 							targetTranY = Math.min(max, (int) (-50 * GlobalOptions.density));
 						}
@@ -3091,8 +3116,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			
 			bottomPlaylist.getBehavior().setState(BottomSheetBehavior.STATE_EXPANDED);
 			if(GlobalOptions.isDark) {
-				downloadPanel.setBackgroundColor(Color.BLACK);
-				((TextView) values[1]).setTextColor(Color.WHITE);
+				downloadDlg.dialog.setBackgroundColor(Color.BLACK);
+				downloadDlg.dirPath.setTextColor(Color.WHITE);
 			}
 		}
 //		View v = (View) _bottomPlaylist.getWindow().getDecorView().getTag();
@@ -3101,10 +3126,53 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 //		v.getLayoutParams().height = (int) (Math.max(dm2.heightPixels, dm2.widthPixels) * _bottomPlaylist.getBehavior().getHalfExpandedRatio() - getResources().getDimension(R.dimen._45_) * 1.75);
 //		v.requestLayout();
 		Utils.TrimWindowWidth(bottomPlaylist.getWindow(), dm);
-		Object[] views = (Object[]) bottomPlaylist.tag;
-		((TextView)views[0]).setText(url);
-		views[2]=url;
+		DownloadBottomSheetBinding downloadDlg = (DownloadBottomSheetBinding) bottomPlaylist.tag;
+		downloadDlg.dirPath.setText(new File(url).getName());
+		downloadDlg.dirPath.setTag(url);
 		bottomPlaylist.show();
+		bottomDwnldDlg = bottomPlaylist;
+	}
+	
+	private void startDownload(boolean req, boolean blame) {
+		if(bottomDwnldDlg!=null) {
+			DownloadBottomSheetBinding downloadDlg = (DownloadBottomSheetBinding) bottomDwnldDlg.tag;
+			String fileName = downloadDlg.dirPath.getText().toString();
+			if(TextUtils.isEmpty(fileName)) {
+				fileName = "unknow.download";
+			}
+			String URL = (String) downloadDlg.dirPath.getTag();
+			DownloadManager.Request request = new DownloadManager.Request(Uri.parse(URL));
+			request.setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI);
+			request.setTitle("下载管理");
+			request.setDescription("正在下载 "+fileName+"（16KB）");
+			request.setAllowedOverRoaming(false);
+			//downloadTargetDir = new File("/storage/2486-F9E1/Android/data/com.android.providers.downloads");
+			if(downloadTargetDir!=null) {
+				try {
+					request.setDestinationUri(Uri.fromFile(new File(downloadTargetDir, fileName)));
+				} catch (Exception e) { CMN.Log(e); }
+			}
+			boolean needPermission = Build.VERSION.SDK_INT>=Build.VERSION_CODES.M
+					&& checkSelfPermission(permissions[0]) != PackageManager.PERMISSION_GRANTED;
+			if(needPermission&&req) {
+				requestPermissions(permissions, RequsetUrlFromStorage);
+				return;
+			}
+			if(needPermission) {
+				request.setDestinationInExternalFilesDir(this, Environment.DIRECTORY_DOWNLOADS, fileName);
+				if(blame) {
+					showT("No Permission. Download to "+getExternalFilesDir(null)+" instead");
+				}
+			} else {
+				request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName);
+			}
+			try {
+				DownloadManager downloadManager = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
+				long ID = downloadManager.enqueue(request);
+				CMN.Log(downloadTargetDir);
+				showT(ID+"下载中…"+URL);
+			} catch (Exception e) { CMN.Log(e); }
+		}
 	}
 	
 	//longclick
@@ -3218,7 +3286,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		mWebView.setStorageSettings();
 		mWebView.setBackEndSettings();
 		
-		mWebView.addJavascriptInterface(mWebListener, "chrome");
+		mWebView.addJavascriptInterface(mWebListener, "polyme");
 		mWebView.addJavascriptInterface(holder.TabID, "chrmtd");
 		
 		mWebView.setFocusable(true);
@@ -3234,7 +3302,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		setUserAgentString(mWebView, false);
 		
 		
-		mWebView.setLayerType(View.LAYER_TYPE_HARDWARE, paint);
+		//mWebView.setLayerType(View.LAYER_TYPE_HARDWARE, paint);
 		//mWebView.setLayerType(View.LAYER_TYPE_SOFTWARE,null);
 
 		return mWebView;
@@ -3758,16 +3826,38 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		imm.hideSoftInputFromWindow(ht.getWindowToken(),0);
 	}
 	
+	@Override
+	public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+		super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+		if(requestCode==RequsetUrlFromStorage) {
+			startDownload(false, true);
+		}
+	}
+	
 	@Override @SuppressWarnings("ALL")
 	protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
 		CMN.Log("onActivityResult", requestCode, resultCode, data);
-		if(RequsetUrlFromCamera==requestCode) {
-			String text = data.getStringExtra(Intent.EXTRA_TEXT);
-			if(text!=null) {
-				webtitle_setVisibility(true);
-				execBrowserGoTo(text);
+		if(data!=null) {
+			if(RequsetUrlFromCamera==requestCode) {
+				String text = data.getStringExtra(Intent.EXTRA_TEXT);
+				if(text!=null) {
+					webtitle_setVisibility(true);
+					execBrowserGoTo(text);
+				}
+				//etSearch.setText(data.getStringExtra(Intent.EXTRA_TEXT));
 			}
-			//etSearch.setText(data.getStringExtra(Intent.EXTRA_TEXT));
+			if(RequsetUrlFromStorage==requestCode) {
+				Uri result = data.getData();
+				if(result!=null) {
+					Uri docUri = DocumentsContract.buildDocumentUriUsingTree(result
+							, DocumentsContract.getTreeDocumentId(result));
+					String realPath = Utils.getFullPathFromTreeUri(this, docUri);
+					if(realPath!=null) {
+						showT(realPath);
+						downloadTargetDir = new File(realPath);
+					}
+				}
+			}
 		}
 		if(795==requestCode && resultCode==RESULT_OK && data!=null) { // tutorial showing how to open pdf using the system file picker.
 			startActivity(new Intent(this, PolyShareActivity.class).setData(data.getData()));

@@ -154,7 +154,7 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 	Map<Long, DownloadTask> taskMap = Collections.synchronizedMap(new HashMap<>());
 	Map<Long, AtomicBoolean> runningMap = Collections.synchronizedMap(new HashMap<>());
 	Map<Long, Integer> lifesMap = Collections.synchronizedMap(new HashMap<>());
-	Map<Long, int[]> scheduleMap = Collections.synchronizedMap(new HashMap<>());
+	Map<Long, ScheduleTask> scheduleMap = Collections.synchronizedMap(new HashMap<>());
 	Map<Long, PendingIntent> intentMap = Collections.synchronizedMap(new HashMap<>());
 	Map<Long, ViewHolder> viewMap = new HashMap<>();
 	private boolean checkResumeQRText;
@@ -583,20 +583,23 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 					dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
 				} break;
 				case 4: { //schedule
+					cursor.moveToPosition(selectionPos);
+					String ext=cursor.getString(7);
+					String url = cursor.getString(2);
+					ScheduleTask task = new ScheduleTask(
+							BrowseActivity.this, id
+							, url
+							, download_path
+							, cursor.getString(1)
+							, 0
+							, ext);
 					
-					// 语义分析器
-					
-					// 90 分钟后
-					// 1:30 时
-					// 关键字：后、(时/冒号)
-					// 先支持 (时/冒号)
-					
-					scheduleMap.put(selectionRow, new int[]{5, 5, 10, 10, 5, 5, 10, 20, 30, 30, 30});
+					//scheduleMap.put(selectionRow, task);
 					//scheduleMap.put(selectionRow, new int[]{50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50});
 					
 					setFieldRowAndIndex(dateToStr(new Date(CMN.now()+1000*25)), selectionRow, 115);
 					
-					
+					editHandler.taskToSchedule = task;
 				} break;
 				case 5: { //mingling
 					cursor.moveToPosition(selectionPos);
@@ -686,19 +689,13 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 	
 	public void scheduleNxtAuto(long id) {
 		if(!respawnTask(id)) {
-			int[] schedule = scheduleMap.get(id);
+			ScheduleTask task = scheduleMap.get(id);
+			Integer[] schedule = task.scheduleSeq;
 			if(schedule!=null) {
-				int i=0;
-				while(schedule[i]<0) {
-					i++;
-				}
-				if(i<schedule.length) {
-					int delay = schedule[i];
+				if(++task.scheduleIter<schedule.length) {
+					int delay = schedule[task.scheduleIter];
 					delay = (int) (delay*60*1000+random.nextFloat()*1*30*1000);
-					schedule[i]=-1;
-					
 					setTaskDelayed(id, delay, true);
-					
 				} else {
 					scheduleMap.remove(id);
 				}
