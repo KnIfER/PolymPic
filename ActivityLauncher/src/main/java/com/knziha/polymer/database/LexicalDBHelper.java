@@ -42,7 +42,7 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 	private boolean search_empty_updated;
 	private List<Cursor> cursors_to_close = Collections.synchronizedList(new ArrayList<>());
 	
-	public static LexicalDBHelper connectInstance(Context context) {
+	public static synchronized LexicalDBHelper connectInstance(Context context) {
 		if(INSTANCE==null) {
 			INSTANCE = new LexicalDBHelper(context.getApplicationContext());
 		}
@@ -85,7 +85,7 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 		}
 	}
 	
-	public void try_close() {
+	public synchronized void try_close() {
 		if(--INSTANCE_COUNT<=0) {
 			close();
 			INSTANCE=null;
@@ -121,7 +121,6 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 	@Override
     public void onCreate(SQLiteDatabase db) {
 		CMN.Log("onDbCreate");
-		
 		// browse history.
 		final String createHistoryTable = "create table if not exists urls(" +
 				"id INTEGER PRIMARY KEY AUTOINCREMENT," +
@@ -198,6 +197,8 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 				")";
 		db.execSQL(createWebTable);
 		
+		ensureDwnldTable(db);
+		
 		db.execSQL("CREATE INDEX if not exists urls_url_index ON urls (url)");
 		db.execSQL("CREATE INDEX if not exists annots_url_index ON annots (url)");
 		db.execSQL("CREATE INDEX if not exists keyword_search_terms_index3 ON keyword_search_terms (term)");
@@ -215,6 +216,25 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 		
 		CMN.Log("onDbCreate..done");
     }
+	
+	public void ensureDwnldTable(SQLiteDatabase db) {
+		if(db==null) db = database;
+		//db.execSQL("drop table if exists downloads");
+		final String createDwnldTable = "create table if not exists \"downloads\" ("+
+				"id INTEGER PRIMARY KEY AUTOINCREMENT," + // 0
+				"tid TEXT," + // 1
+				"url TEXT NOT NULL," + // 2
+				"path TEXT," + // 1
+				"type INTEGER DEFAULT 0 NOT NULL," + // 15
+				"ext TEXT," + // 16
+				"filename TEXT," + // 16
+				"size INTEGER DEFAULT 0 NOT NULL," + // 15
+				"creation_time INTEGER DEFAULT 0 NOT NULL" + // 15
+				")";
+		db.execSQL(createDwnldTable);
+		db.execSQL("CREATE INDEX if not exists downloads_url_index ON downloads (url)");
+		db.execSQL("CREATE INDEX if not exists downloads_tid_index ON downloads (tid)");
+	}
 	
 	public Cursor queryTabs() {
 		return database.rawQuery("select id,title,url,search,f1,rank from webtabs order by rank", null);
@@ -584,5 +604,45 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 	public Cursor queryPdocHistory() {
 		String sql = "select * from pdoc";
 		return database.rawQuery(sql, null);
+	}
+	
+	public long getRowIdForDownload(long downloadId) {
+		String sql = "select id from downloads";
+		Cursor qursor = database.rawQuery(sql, null);
+		if(qursor.moveToNext()) {
+			return qursor.getLong(0);
+		}
+		return -1;
+	}
+	
+	public void updatePathForDownload(long rowId, String path) {
+		try {
+			ContentValues values = new ContentValues();
+			values.put("id", rowId);
+			values.put("path", path);
+			String[] where = new String[]{""+rowId};
+			database.update("downloads", values, "id=?", where);
+		} catch (Exception e) {
+			CMN.Log(e);
+		}
+	}
+	
+	public long recordDwnldItem(long tid, String url, String fileName, long contentLength) {
+		ContentValues values = new ContentValues();
+		values.put("tid", tid);
+		values.put("url", url);
+		values.put("creation_time", CMN.now());
+		values.put("filename", fileName);
+		values.put("size", contentLength);
+		return database.insert("downloads", null, values);
+	}
+	
+	public String getIntenedFileNameForDownload(long rowId) {
+		String sql = "select path from downloads where id=?";
+		Cursor qursor = database.rawQuery(sql, new String[]{""+rowId});
+		if(qursor.moveToNext()) {
+			return qursor.getString(0);
+		}
+		return null;
 	}
 }

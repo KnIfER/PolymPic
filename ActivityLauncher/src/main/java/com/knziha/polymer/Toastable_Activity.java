@@ -59,7 +59,7 @@ import java.util.regex.Pattern;
 
 public class Toastable_Activity extends AppCompatActivity {
 	public boolean systemIntialized;
-	protected String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE,Manifest.permission.READ_EXTERNAL_STORAGE};
+	public String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE,Manifest.permission.READ_EXTERNAL_STORAGE};
 
 	private static boolean MarginChecked;
 	private static int DockerMarginL;
@@ -90,7 +90,9 @@ public class Toastable_Activity extends AppCompatActivity {
 	protected EditTextmy etSearch;
 
 	protected ObjectAnimator objectAnimator;
-
+	
+	public Resources mResource;
+	
 	public Dialog d;
 	public View dv;
 	public Configuration mConfiguration;

@@ -30,6 +30,7 @@ import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
+import android.os.StrictMode;
 import android.os.storage.StorageManager;
 import android.os.storage.StorageVolume;
 import android.provider.DocumentsContract;
@@ -353,6 +354,15 @@ public class Utils {
 	public static void blameAndroidIfNeeded(Context a) {
 		if(a instanceof Toastable_Activity) {
 			((Toastable_Activity)a).showT("Permission denied. Blame Android! ");
+		}
+	}
+	
+	static boolean vmFucked;
+	
+	public static void fuckVM() {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && !vmFucked) {
+			StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder().build());
+			vmFucked = true;
 		}
 	}
 	

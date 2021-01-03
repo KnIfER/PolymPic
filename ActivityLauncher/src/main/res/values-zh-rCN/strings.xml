@@ -38,6 +38,8 @@ Donec feugiat ac nunc vel laoreet. In laoreet pretium fringilla. Suspendisse pot
 	<string name="pdf_app">本APP的主体是网页浏览器，但尚未完成。已完成的功能是PDF阅读/批注部分。</string>
 	<string name="pdf_hint">注：若用系统文件管理器调用多聚浏览打开PDF文档，不赋予存储权限，也可以使用。</string>
 	<string name="history">历史记录</string>
+	<string name="downloadWithSz">下载（ %s ）</string>
+	<string name="downloadingWithSz">正在下载 （%s）</string>
 
 
 </resources>

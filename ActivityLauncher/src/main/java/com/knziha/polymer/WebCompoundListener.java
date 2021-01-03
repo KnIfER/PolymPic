@@ -800,6 +800,14 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
 		CMN.Log("DOWNLOAD:::", url, contentDisposition, mimetype, contentLength);
 		a.showDownloadDialog(url, contentLength);
+		
+//		Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+//		//a.startActivity(intent);
+//
+//		intent = new Intent(Intent.ACTION_VIEW);
+//		intent.addCategory(Intent.CATEGORY_BROWSABLE);
+//		intent.setData(Uri.parse(url));
+//		a.startActivity(intent);
 	}
 	
 	@Override

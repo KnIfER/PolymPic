@@ -10,14 +10,11 @@ import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Dialog;
-import android.app.DownloadManager;
 import android.app.PendingIntent;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.database.Cursor;
@@ -66,6 +63,7 @@ import android.view.animation.LinearInterpolator;
 import android.view.inputmethod.EditorInfo;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
+import android.webkit.WebBackForwardList;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.widget.AdapterView;
@@ -109,12 +107,14 @@ import com.google.android.material.math.MathUtils;
 import com.knziha.filepicker.model.DialogConfigs;
 import com.knziha.filepicker.model.DialogProperties;
 import com.knziha.filepicker.model.DialogSelectionListener;
+import com.knziha.filepicker.utils.FU;
 import com.knziha.filepicker.view.FilePickerDialog;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.MyReceiver;
 import com.knziha.polymer.Utils.OptionProcessor;
 import com.knziha.polymer.Utils.Options;
 import com.knziha.polymer.Utils.WebOptions;
+import com.knziha.polymer.browser.DownloadHandlerStd;
 import com.knziha.polymer.database.LexicalDBHelper;
 import com.knziha.polymer.databinding.ActivityMainBinding;
 import com.knziha.polymer.databinding.DownloadBottomSheetBinding;
@@ -172,6 +172,7 @@ import static com.knziha.polymer.widgets.Utils.DummyBMRef;
 import static com.knziha.polymer.widgets.Utils.DummyTransX;
 import static com.knziha.polymer.widgets.Utils.RequsetUrlFromCamera;
 import static com.knziha.polymer.widgets.Utils.RequsetUrlFromStorage;
+import static com.knziha.polymer.widgets.Utils.getSimplifiedUrl;
 import static com.knziha.polymer.widgets.Utils.getViewItemByPath;
 import static com.knziha.polymer.widgets.Utils.indexOf;
 import static com.knziha.polymer.widgets.Utils.setOnClickListenersOneDepth;
@@ -262,7 +263,6 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	private PullHintsRunnable pull_hints_runnable;
 	private boolean search_hints_vising=true;
 	public ActivityMainBinding UIData;
-	private Resources mResource;
 	private String lastUrlSet;
 	private boolean goToBarcodeScanner;
 	private WeakReference<Bitmap> tmpBmRef = DummyBMRef;
@@ -2287,6 +2287,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				boolean backable = wv.canGoBack();
 				CMN.Log("backable::", backable, wv.getThisIdx(), wv.getUrl());
 				if(backable) {
+					WebBackForwardList stacks = wv.saveState(new Bundle());
+					webtitle.setText(stacks.getItemAtIndex(stacks.getCurrentIndex()-1).getTitle());
 					wv.goBack();
 				} else if(wv.holder.getLuxury()) {
 					boolean added = false;
@@ -2326,6 +2328,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				boolean forwadable = wv.canGoForward();
 				CMN.Log("forwadable::", forwadable, wv.getThisIdx(), wv.getUrl());
 				if(forwadable) {
+					WebBackForwardList stacks = wv.saveState(new Bundle());
+					webtitle.setText(stacks.getItemAtIndex(stacks.getCurrentIndex()+1).getTitle());
 					wv.goForward();
 				} else  if(wv.holder.getLuxury()) {
 					int cc = wv.layout.getChildCount();
@@ -3047,7 +3051,13 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	}
 	
 	public void showDownloadDialog(String url, long contentLength) {
+		if(downloader==null) {
+			downloader = new DownloadHandlerStd(this, historyCon);
+		}
 		//showT(text);
+//		Intent pageView = new Intent(DownloadManager.ACTION_VIEW_DOWNLOADS);
+//		pageView.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//		startActivity(pageView);
 		int id = WeakReferenceHelper.bottom_download_dialog;
 		BottomSheetDialog bottomPlaylist = (BottomSheetDialog) getReferencedObject(id);
 		if(bottomPlaylist==null) {
@@ -3057,10 +3067,32 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			BottomSheetDialog final_bottomPlaylist = bottomPlaylist;
 			 View.OnClickListener clicker = v -> {
 				switch (v.getId()) {
-					case R.id.abort:
+					case R.id.open: { //打开
+						Intent viewer = new Intent(Intent.ACTION_VIEW);
+						Cursor pursor = (Cursor) v.getTag();
+						if(pursor!=null) {
+							long dwnldID = pursor.getLong(1);
+							String path = pursor.getString(0);
+							if(TextUtils.isEmpty(path))
+							{
+								path = downloader.getDownloadPathForDwnldID(dwnldID);
+							}
+							if(!TextUtils.isEmpty(path)) {
+								Uri data = getSimplifiedUrl(this, Uri.parse(path));
+								viewer.setDataAndType(data, downloader.getMimeTypeForDwnldID(dwnldID));
+								viewer.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+								viewer.addCategory(Intent.CATEGORY_DEFAULT);
+								if(data.toString().startsWith("file://")) {
+									Utils.fuckVM();
+								}
+								startActivity(viewer);
+							}
+						}
+					} break;
+					case R.id.abort: {
 						final_bottomPlaylist.dismiss();
-					break;
-					case R.id.new_folder:
+					} break;
+					case R.id.new_folder:{
 						boolean goInternalDirectoryPicker = false;
 						if(!goInternalDirectoryPicker) {
 							try {
@@ -3076,18 +3108,38 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 						if(goInternalDirectoryPicker) {
 						
 						}
-						break;
+					} break;
+					case R.id.replace:{
+						Cursor cursor = (Cursor) downloadDlg.open.getTag();
+						if(cursor!=null) {
+							String path = cursor.getString(0);
+							if(path!=null) {
+								FU.delete3(this, FU.getFile(path));
+								CMN.Log("删除1…", path);
+							}
+							long dwnldID = cursor.getLong(1);
+							path = downloader.getDownloadPathForDwnldID(dwnldID);
+							Uri data = getSimplifiedUrl(this, Uri.parse(path));
+							path = data.toString();
+							if(path.startsWith("file://")) {
+								CMN.Log("删除2…", path);
+								FU.delete3(this, FU.getFile(path));
+							}
+						}
+					}
 					case R.id.download:
 						startDownload(true, false);
-						break;
+						final_bottomPlaylist.dismiss();
+					break;
 				}
 			};
-			setOnClickListenersOneDepth((ViewGroup) downloadDlg.dialog, clicker, 999, null);
+			setOnClickListenersOneDepth(downloadDlg.dialog, clicker, 999, null);
 			bottomPlaylist.setContentView(downloadDlg.dialog);
-			bottomPlaylist.setOnDismissListener(new DialogInterface.OnDismissListener() {
-				@Override
-				public void onDismiss(DialogInterface dialog) {
-					bottomDwnldDlg = null;
+			bottomPlaylist.setOnDismissListener(dialog -> {
+				bottomDwnldDlg = null;
+				Cursor pursor = (Cursor) downloadDlg.open.getTag();
+				if(pursor!=null) {
+					pursor.close();
 				}
 			});
 			bottomPlaylist.tag=downloadDlg;
@@ -3096,7 +3148,6 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				win.setDimAmount(0.2f);
 				win.findViewById(R.id.design_bottom_sheet).setBackground(null);
 				View decor = win.getDecorView();
-				
 				decor.addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom)
 						-> v.postDelayed(() -> {
 					int targetTranY = 0;
@@ -3113,13 +3164,13 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					CMN.Log("addOnLayoutChangeListener", Utils.isKeyboardShown(v), dm.widthPixels);
 				}, 0));
 			}
-			
 			bottomPlaylist.getBehavior().setState(BottomSheetBehavior.STATE_EXPANDED);
 			if(GlobalOptions.isDark) {
 				downloadDlg.dialog.setBackgroundColor(Color.BLACK);
 				downloadDlg.dirPath.setTextColor(Color.WHITE);
 			}
 		}
+		
 //		View v = (View) _bottomPlaylist.getWindow().getDecorView().getTag();
 //		DisplayMetrics dm2 = new DisplayMetrics();
 //		getWindowManager().getDefaultDisplay().getRealMetrics(dm2);
@@ -3129,49 +3180,34 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		DownloadBottomSheetBinding downloadDlg = (DownloadBottomSheetBinding) bottomPlaylist.tag;
 		downloadDlg.dirPath.setText(new File(url).getName());
 		downloadDlg.dirPath.setTag(url);
+		Cursor path = downloader.queryDownloadUrl(url);
+		int vis = path==null?View.GONE:View.VISIBLE;
+		if(path!=null) {
+			CMN.Log("downloadDlg.dirPath ", path.getString(0), path.getLong(1));
+		}
+		downloadDlg.replace.setVisibility(vis);
+		downloadDlg.replace.setTag(contentLength);
+		downloadDlg.open.setVisibility(vis);
+		downloadDlg.open.setTag(path);
+		downloadDlg.download.setText(mResource.getString(R.string.downloadWithSz, FU.formatSize(contentLength)));
 		bottomPlaylist.show();
 		bottomDwnldDlg = bottomPlaylist;
 	}
 	
+	DownloadHandlerStd downloader;
+	
+	@SuppressLint("NewApi")
 	private void startDownload(boolean req, boolean blame) {
 		if(bottomDwnldDlg!=null) {
+			historyCon.ensureDwnldTable(null);
 			DownloadBottomSheetBinding downloadDlg = (DownloadBottomSheetBinding) bottomDwnldDlg.tag;
 			String fileName = downloadDlg.dirPath.getText().toString();
+			long contentLength = (long) downloadDlg.replace.getTag();
 			if(TextUtils.isEmpty(fileName)) {
 				fileName = "unknow.download";
 			}
 			String URL = (String) downloadDlg.dirPath.getTag();
-			DownloadManager.Request request = new DownloadManager.Request(Uri.parse(URL));
-			request.setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI);
-			request.setTitle("下载管理");
-			request.setDescription("正在下载 "+fileName+"（16KB）");
-			request.setAllowedOverRoaming(false);
-			//downloadTargetDir = new File("/storage/2486-F9E1/Android/data/com.android.providers.downloads");
-			if(downloadTargetDir!=null) {
-				try {
-					request.setDestinationUri(Uri.fromFile(new File(downloadTargetDir, fileName)));
-				} catch (Exception e) { CMN.Log(e); }
-			}
-			boolean needPermission = Build.VERSION.SDK_INT>=Build.VERSION_CODES.M
-					&& checkSelfPermission(permissions[0]) != PackageManager.PERMISSION_GRANTED;
-			if(needPermission&&req) {
-				requestPermissions(permissions, RequsetUrlFromStorage);
-				return;
-			}
-			if(needPermission) {
-				request.setDestinationInExternalFilesDir(this, Environment.DIRECTORY_DOWNLOADS, fileName);
-				if(blame) {
-					showT("No Permission. Download to "+getExternalFilesDir(null)+" instead");
-				}
-			} else {
-				request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName);
-			}
-			try {
-				DownloadManager downloadManager = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
-				long ID = downloadManager.enqueue(request);
-				CMN.Log(downloadTargetDir);
-				showT(ID+"下载中…"+URL);
-			} catch (Exception e) { CMN.Log(e); }
+			downloader.start(this, URL, fileName, downloadTargetDir, contentLength, req, blame);
 		}
 	}
 	
@@ -3181,7 +3217,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		if(mBrowserSlider.active()) {
 			return false;
 		}
-		switch (v.getId()){
+		switch (v.getId()) {
 			// 新建标签页
 			case R.id.browser_widget10:{
 				try {

@@ -1,5 +1,6 @@
 package com.knziha.filepicker.utils;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.ContentUris;
@@ -867,8 +868,15 @@ public class FU {
         dest.getParentFile().mkdirs();
         return file.renameTo(dest)==true?0:-6;
     }
-
-    public static class CrudeStorageWork{
+	
+	public static File getFile(String path) {
+    	if(path.startsWith("file")) {
+    		return new File(Uri.parse(path).getPath());
+		}
+		return new File(path);
+	}
+	
+	public static class CrudeStorageWork{
         public Method getVolumeList;
         public Method getIsPrimary;
         public Method getPath;
@@ -1418,4 +1426,21 @@ public class FU {
     public static boolean isGooglePhotosUri(Uri uri) {
         return "com.google.android.apps.photos.content".equals(uri.getAuthority());
     }
+	
+	@SuppressLint("DefaultLocale")
+	public static String formatSize(long size) {
+		String tailing;
+		if (size >= 1099511627776L) {
+			tailing = String.format("%.2f TB", (float)size * 1.0F / 1.09951163E12F);
+		} else if (size >= 1073741824L) {
+			tailing = String.format("%.2f GB", (float)size * 1.0F / 1.07374182E9F);
+		} else if (size >= 1048576L) {
+			tailing = String.format("%.2f MB", (float)size * 1.0F / 1048576.0F);
+		} else if (size >= 1024L) {
+			tailing = String.format("%.2f KB", (float)size * 1.0F / 1024.0F);
+		} else {
+			tailing = size + "B";
+		}
+		return tailing;
+	}
 }

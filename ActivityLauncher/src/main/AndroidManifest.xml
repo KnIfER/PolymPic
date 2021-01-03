@@ -42,6 +42,9 @@
 	<!-- 查询快捷方式4.4以上 -->
 	<uses-permission android:name="com.android.launcher3.permission.READ_SETTINGS" />
 	<uses-permission android:name="com.android.launcher3.permission.WRITE_SETTINGS" />
+
+	<uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+
 	<application
 		android:allowBackup="true"
 		android:icon="@mipmap/ic_launcher"
@@ -260,6 +263,16 @@
 
 		<receiver android:name=".Utils.MyReceiver" />
 		<receiver android:name=".browser.BrowseReceiver" />
+
+		<provider
+			android:name="androidx.core.content.FileProvider"
+			android:authorities="com.knziha.polymer.fileprovider"
+			android:grantUriPermissions="true"
+			android:exported="false">
+			<meta-data
+				android:name="android.support.FILE_PROVIDER_PATHS"
+				android:resource="@xml/file_paths" />
+		</provider>
 	</application>
 
 </manifest>

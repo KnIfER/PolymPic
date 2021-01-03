@@ -35,10 +35,8 @@ import androidx.core.view.ViewCompat;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.WebOptions;
 import com.knziha.polymer.database.LexicalDBHelper;
-import com.knziha.polymer.toolkits.Utils.BU;
 import com.knziha.polymer.widgets.WebViewmy;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -124,18 +122,11 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 			settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
 		}
 		
+		webScale=getResources().getDisplayMetrics().density;
+		
 		//settings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
 		
 		//setLayerType(View.LAYER_TYPE_HARDWARE, null);
-		webScale=getResources().getDisplayMetrics().density;
-		
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-			CMN.Log("getTextClassifier", getTextClassifier());
-			//setTextClassifier(new AppCompatEditText.FuckTextClassifier(getTextClassifier()));
-			
-			//setTextClassifier(TextFucker);
-			
-		}
 	}
 	
 	///////// AdvancedNestScrollWebView START /////////
