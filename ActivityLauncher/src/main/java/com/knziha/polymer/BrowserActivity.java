@@ -273,6 +273,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	
 	private RequestBuilder<Drawable> glide;
 	private String android_ua;
+	
+	DownloadHandlerStd downloader;
+	
 	private Animator.AnimatorListener animatorLis = new AnimatorListenerAdapter() {
 		@Override
 		public void onAnimationEnd(Animator animation) {
@@ -3050,7 +3053,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		}
 	}
 	
-	public void showDownloadDialog(String url, long contentLength) {
+	public void showDownloadDialog(String url, long contentLength, String mimetype) {
 		if(downloader==null) {
 			downloader = new DownloadHandlerStd(this, historyCon);
 		}
@@ -3180,21 +3183,18 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		DownloadBottomSheetBinding downloadDlg = (DownloadBottomSheetBinding) bottomPlaylist.tag;
 		downloadDlg.dirPath.setText(new File(url).getName());
 		downloadDlg.dirPath.setTag(url);
-		Cursor path = downloader.queryDownloadUrl(url);
-		int vis = path==null?View.GONE:View.VISIBLE;
-		if(path!=null) {
-			CMN.Log("downloadDlg.dirPath ", path.getString(0), path.getLong(1));
-		}
+		Cursor recorded = downloader.queryDownloadUrl(url);
+		int vis = recorded==null?View.GONE:View.VISIBLE;
+		//if(path!=null) CMN.Log("downloadDlg.dirPath ", path.getString(0), path.getLong(1));
 		downloadDlg.replace.setVisibility(vis);
 		downloadDlg.replace.setTag(contentLength);
+		downloadDlg.abort.setTag(mimetype);
 		downloadDlg.open.setVisibility(vis);
-		downloadDlg.open.setTag(path);
+		downloadDlg.open.setTag(recorded);
 		downloadDlg.download.setText(mResource.getString(R.string.downloadWithSz, FU.formatSize(contentLength)));
 		bottomPlaylist.show();
 		bottomDwnldDlg = bottomPlaylist;
 	}
-	
-	DownloadHandlerStd downloader;
 	
 	@SuppressLint("NewApi")
 	private void startDownload(boolean req, boolean blame) {
@@ -3202,12 +3202,13 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			historyCon.ensureDwnldTable(null);
 			DownloadBottomSheetBinding downloadDlg = (DownloadBottomSheetBinding) bottomDwnldDlg.tag;
 			String fileName = downloadDlg.dirPath.getText().toString();
+			String mimetype = downloadDlg.abort.getText().toString();
 			long contentLength = (long) downloadDlg.replace.getTag();
 			if(TextUtils.isEmpty(fileName)) {
-				fileName = "unknow.download";
+				fileName = "unknown.download";
 			}
 			String URL = (String) downloadDlg.dirPath.getTag();
-			downloader.start(this, URL, fileName, downloadTargetDir, contentLength, req, blame);
+			downloader.start(this, URL, fileName, downloadTargetDir, contentLength, mimetype, req, blame);
 		}
 	}
 	

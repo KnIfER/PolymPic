@@ -217,25 +217,6 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 		CMN.Log("onDbCreate..done");
     }
 	
-	public void ensureDwnldTable(SQLiteDatabase db) {
-		if(db==null) db = database;
-		//db.execSQL("drop table if exists downloads");
-		final String createDwnldTable = "create table if not exists \"downloads\" ("+
-				"id INTEGER PRIMARY KEY AUTOINCREMENT," + // 0
-				"tid TEXT," + // 1
-				"url TEXT NOT NULL," + // 2
-				"path TEXT," + // 1
-				"type INTEGER DEFAULT 0 NOT NULL," + // 15
-				"ext TEXT," + // 16
-				"filename TEXT," + // 16
-				"size INTEGER DEFAULT 0 NOT NULL," + // 15
-				"creation_time INTEGER DEFAULT 0 NOT NULL" + // 15
-				")";
-		db.execSQL(createDwnldTable);
-		db.execSQL("CREATE INDEX if not exists downloads_url_index ON downloads (url)");
-		db.execSQL("CREATE INDEX if not exists downloads_tid_index ON downloads (tid)");
-	}
-	
 	public Cursor queryTabs() {
 		return database.rawQuery("select id,title,url,search,f1,rank from webtabs order by rank", null);
 	}
@@ -558,6 +539,7 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 			if(cursor.getCount()>0 && cursor.moveToFirst()) {
 				ret = cursor.getString(0);
 			}
+			cursor.close();
 			if(ret!=null) {
 				return Uri.parse(ret);
 			}
@@ -606,13 +588,37 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 		return database.rawQuery(sql, null);
 	}
 	
-	public long getRowIdForDownload(long downloadId) {
-		String sql = "select id from downloads";
-		Cursor qursor = database.rawQuery(sql, null);
+	public void ensureDwnldTable(SQLiteDatabase db) {
+		if(db==null) db = database;
+		//db.execSQL("drop table if exists downloads");
+		final String createDwnldTable = "create table if not exists \"downloads\" ("+
+				"id INTEGER PRIMARY KEY AUTOINCREMENT," + // 0
+				"tid TEXT," + // 1
+				"url TEXT NOT NULL," + // 2
+				"path TEXT," + // 1
+				"type INTEGER DEFAULT 0 NOT NULL," + // 15
+				"ext TEXT," + // 16
+				"mime TEXT," + // 16
+				"filename TEXT," + // 16
+				"fromUrl TEXT," + // 16
+				"size INTEGER DEFAULT 0 NOT NULL," + // 15
+				"creation_time INTEGER DEFAULT 0 NOT NULL" + // 15
+				")";
+		db.execSQL(createDwnldTable);
+		db.execSQL("CREATE INDEX if not exists downloads_url_index ON downloads (url)");
+		db.execSQL("CREATE INDEX if not exists downloads_tid_index ON downloads (tid)");
+		db.execSQL("CREATE INDEX if not exists downloads_time_index ON downloads (creation_time)");
+	}
+	
+	public long getRowIdForTaskID(long dwnldID) {
+		String sql = "select id from downloads where tid=?";
+		Cursor qursor = database.rawQuery(sql, new String[]{""+dwnldID});
+		long ret=-1;
 		if(qursor.moveToNext()) {
-			return qursor.getLong(0);
+			ret = qursor.getLong(0);
 		}
-		return -1;
+		qursor.close();
+		return ret;
 	}
 	
 	public void updatePathForDownload(long rowId, String path) {
@@ -627,22 +633,25 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 		}
 	}
 	
-	public long recordDwnldItem(long tid, String url, String fileName, long contentLength) {
+	public long recordDwnldItem(long tid, String url, String fileName, long contentLength, String mimetype) {
 		ContentValues values = new ContentValues();
 		values.put("tid", tid);
 		values.put("url", url);
 		values.put("creation_time", CMN.now());
 		values.put("filename", fileName);
 		values.put("size", contentLength);
+		values.put("mime", mimetype);
 		return database.insert("downloads", null, values);
 	}
 	
 	public String getIntenedFileNameForDownload(long rowId) {
 		String sql = "select path from downloads where id=?";
 		Cursor qursor = database.rawQuery(sql, new String[]{""+rowId});
+		String ret = null;
 		if(qursor.moveToNext()) {
-			return qursor.getString(0);
+			ret = qursor.getString(0);
 		}
-		return null;
+		qursor.close();
+		return ret;
 	}
 }

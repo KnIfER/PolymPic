@@ -52,7 +52,7 @@ public class DownloadHandlerStd {
 		@Override
 		public void run() {
 			if(a.systemIntialized) {
-				long rowId = historyCon.getRowIdForDownload(dwnldID);
+				long rowId = historyCon.getRowIdForTaskID(dwnldID);
 				if(rowId!=-1 && dwnldReceiver.recordRealPathForDwnldWithRow(dwnldID, rowId, downloadManager, historyCon)) {
 					queuedDownloads.remove(dwnldID);
 				}
@@ -99,7 +99,7 @@ public class DownloadHandlerStd {
 					long dwnldID = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1);
 					if(queuedDownloads.remove(dwnldID)) {
 						LexicalDBHelper db = LexicalDBHelper.connectInstance(context);
-						long rowId = db.getRowIdForDownload(dwnldID);
+						long rowId = db.getRowIdForTaskID(dwnldID);
 						if(rowId!=-1) {
 							DownloadManager downloadManager = (DownloadManager) context.getSystemService(DOWNLOAD_SERVICE);
 							recordRealPathForDwnldWithRow(dwnldID, rowId, downloadManager, db);
@@ -115,7 +115,7 @@ public class DownloadHandlerStd {
 	public void start(Toastable_Activity a
 			, String url
 			, String fileName
-			, File downloadTargetDir, long contentLength, boolean req, boolean blame) {
+			, File downloadTargetDir, long contentLength, String mimetype, boolean req, boolean blame) {
 		DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
 		request.setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI);
 		request.setDescription(a.mResource.getString(R.string.downloadingWithSz, FU.formatSize(contentLength)));
@@ -142,7 +142,7 @@ public class DownloadHandlerStd {
 		try {
 			long dwnldID = downloadManager.enqueue(request);
 			queuedDownloads.add(dwnldID);
-			historyCon.recordDwnldItem(dwnldID, url, fileName, contentLength);
+			historyCon.recordDwnldItem(dwnldID, url, fileName, contentLength, mimetype);
 			a.root.postDelayed(new GetDwnldPathRunnable(a, dwnldID), 350);
 			CMN.Log("下载开始...", downloadTargetDir);
 			if(!blame) {
@@ -152,7 +152,7 @@ public class DownloadHandlerStd {
 	}
 	
 	public Cursor queryDownloadUrl(String url) {
-		String sql = "select path,tid from downloads where url=?";
+		String sql = "select path,tid from downloads where url=? order by creation_time DESC limit 50";
 		Cursor qursor = historyCon.getDB().rawQuery(sql, new String[]{url});
 		while(qursor.moveToNext()) {
 			if(downloadManager.getUriForDownloadedFile(qursor.getLong(1))!=null
@@ -160,6 +160,7 @@ public class DownloadHandlerStd {
 				return qursor;
 			}
 		}
+		qursor.close();
 		return null;
 	}
 }

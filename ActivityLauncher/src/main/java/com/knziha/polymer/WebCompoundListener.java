@@ -799,7 +799,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	@Override
 	public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
 		CMN.Log("DOWNLOAD:::", url, contentDisposition, mimetype, contentLength);
-		a.showDownloadDialog(url, contentLength);
+		a.showDownloadDialog(url, contentLength, mimetype);
 		
 //		Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
 //		//a.startActivity(intent);
