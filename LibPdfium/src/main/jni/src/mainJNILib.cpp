@@ -1057,7 +1057,8 @@ void recursiveFetchBookMarks(JNIEnv *env, FPDF_DOCUMENT doc, FPDF_BOOKMARK bm, j
 
 // bookmarks
 void processBookMarks(JNIEnv *env, FPDF_DOCUMENT doc, FPDF_BOOKMARK bm, jobject bmk) {
-    if(bm) { // 处理当前书签节点
+    bool dlt = bm;
+    if(dlt) { // 处理当前书签节点
         long len = FPDFBookmark_GetTitle(bm, 0, 0);
         FPDF_WCHAR* buffer = new FPDF_WCHAR[len];
         len = FPDFBookmark_GetTitle(bm, buffer, len);
@@ -1068,17 +1069,19 @@ void processBookMarks(JNIEnv *env, FPDF_DOCUMENT doc, FPDF_BOOKMARK bm, jobject 
             pageIdx = FPDFDest_GetDestPageIndex(doc, dest);
         }
         delete[] buffer;
-
         bmk = env->CallObjectMethod(bmk
             , bmkNode_add
             , ret
             , pageIdx
         );
+        env->DeleteLocalRef(ret);
         bmkCount++;
     }
     bm = FPDFBookmark_GetFirstChild(doc, bm);
     if(bm) {
         recursiveFetchBookMarks(env, doc, bm, bmk);
+    } else if(dlt) {
+        env->DeleteLocalRef(bmk);
     }
 }
 
@@ -1089,6 +1092,7 @@ void recursiveFetchBookMarks(JNIEnv *env, FPDF_DOCUMENT doc, FPDF_BOOKMARK bm, j
         while((bm=FPDFBookmark_GetNextSibling(doc, bm))!=NULL) {
             processBookMarks(env, doc, bm, bmk);
         }
+        env->DeleteLocalRef(bmk);
     }
 }
 
