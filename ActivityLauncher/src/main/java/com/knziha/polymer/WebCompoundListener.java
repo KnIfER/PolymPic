@@ -28,9 +28,12 @@ import android.webkit.WebViewClient;
 import androidx.recyclerview.widget.RecyclerView.OnScrollChangedListener;
 
 import com.knziha.polymer.Utils.CMN;
+import com.knziha.polymer.Utils.IISTri;
+import com.knziha.polymer.Utils.RgxPlc;
 import com.knziha.polymer.toolkits.MyX509TrustManager;
 import com.knziha.polymer.toolkits.Utils.BU;
 import com.knziha.polymer.toolkits.Utils.ReusableByteOutputStream;
+import com.knziha.polymer.widgets.Utils;
 import com.knziha.polymer.widgets.WebViewmy;
 
 import org.adrianwalker.multilinestring.Multiline;
@@ -44,8 +47,10 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -63,6 +68,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	public final static Pattern httpPattern = Pattern.compile("(https?://.*)", Pattern.CASE_INSENSITIVE);
 	public final static Pattern timePattern = Pattern.compile("t=([0-9]{8,15})", Pattern.CASE_INSENSITIVE);
 	
+	static final WebResourceResponse emptyResponse = new WebResourceResponse("", "", null);
 	public static boolean layoutScrollDisabled;
 	public boolean bShowCustomView;
 	public static long CustomViewHideTime;
@@ -79,6 +85,9 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		String quantifier;
 		String JS = null;
 		int EnRipenPercent = -1;
+		Object[] pruneRules;
+		boolean forbidScrollWhenSelecting;
+		boolean pauseJs;
 	}
 	
 	static class HostKey {
@@ -128,6 +137,8 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		}
 	}
 	
+	LinkedList<RgxPlc> DNSIntelligence = new LinkedList<>();
+	
 	public WebCompoundListener(BrowserActivity activity) {
 		a = activity;
 		//wg
@@ -145,6 +156,23 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 			SiteRule rule = new SiteRule();
 			rule.EnRipenPercent = 80;
 			rule.JS = "polyme.craft('style', 'body,#f-main,.f-main-left-sire,.f-main-left,.wrap,.content_main,.mian_li,.mian{width:100% !important;min-width:0px !important;padding:0px !important;}')";
+			SiteConfigsByPattern.add(new Pair<>(p, rule));
+		}
+		
+		// zhihu
+		{
+			Pattern p = Pattern.compile("^https?://www.zhihu.com/tardis/sogou/ans");
+			SiteRule rule = new SiteRule();
+			//rule.EnRipenPercent = 80;
+			rule.JS = "var items=document.getElementsByClassName('sgui-slide-down');if(items.length==1) items[0].click();" +
+					"items=document.getElementsByClassName('AuthorInfo AnswerItem-authorInfo AnswerItem-authorInfo--related')[0];if(items)items.onclick=function(){window.location='zhihu://answer/'+/[0-9]+/.exec(window.location.href)[0]}";
+			rule.forbidScrollWhenSelecting = true;
+			//rule.pauseJs = true;
+			DNSIntelligence.add(new RgxPlc(Pattern.compile("^https?://www.zhihu.com/question/.+/answer/([0-9]+).*")
+				,"https://www.zhihu.com/tardis/sogou/ans/$1"));
+			rule.pruneRules = new Object[2]; // pIRl
+			rule.pruneRules[0] = new IISTri(42, -402077131, "js", null);
+			rule.pruneRules[1] = new IISTri(51, -1941194295, "ut", ".App{height:auto!important}");
 			SiteConfigsByPattern.add(new Pair<>(p, rule));
 		}
 	}
@@ -308,16 +336,28 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		startHostMatcher.set(url);
 		ArrayList<SiteRule> sm = SiteConfigs.get(startHostMatcher);
 		int EnRipenPercent=Integer.MAX_VALUE;
+		List<Object> prunes = mWebView.prunes;
 		List<SiteRule> holder = mWebView.rules;
+		prunes.clear();
 		holder.clear();
+		mWebView.forbidScrollWhenSelecting = false;
+		boolean shutdownJs = false;
 		for (Pair<Pattern, SiteRule> siteRulePair:SiteConfigsByPattern) {
 			if(siteRulePair.first.matcher(url).find()) {
 				SiteRule rI = siteRulePair.second;
 				holder.add(rI);
+				if(rI.pruneRules!=null) {
+					prunes.addAll(Arrays.asList(rI.pruneRules));
+				}
+				mWebView.forbidScrollWhenSelecting |= rI.forbidScrollWhenSelecting;
+				shutdownJs |= rI.pauseJs;
 				if(rI.EnRipenPercent>10) {
 					EnRipenPercent=Math.min(EnRipenPercent, rI.EnRipenPercent);
 				}
 			}
+		}
+		if(shutdownJs) {
+			mWebView.shutdownJS();
 		}
 		if(EnRipenPercent>100) {
 			EnRipenPercent=-1;
@@ -464,6 +504,9 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 //			if(!bEnableJavaScript)
 //				mWebView.getSettings().setJavaScriptEnabled(true);
 			
+			//mWebView.postReviveJS(0);
+			mWebView.reviveJS();
+			
 			/* 原天道契 */
 			mWebView.evaluateJavascript(PRI, null);
 			
@@ -583,9 +626,25 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	
 	@Override
 	public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
-		WebViewmy mWebView=((WebViewmy)view);
+		AdvancedBrowserWebView mWebView = (AdvancedBrowserWebView) view;
 		//CMN.Log("SIR::", url,url.length(), Thread.currentThread().getId());
 		//CMN.Log(url.startsWith("https://mark.js"), markjsBytesArr!=null);
+		if(mWebView.prunes.size()>0) {
+			for(Object pI:mWebView.prunes) {
+				if(pI instanceof IISTri) {
+					IISTri tri = (IISTri) pI;
+					int len = url.length();
+					if(len>=tri.i1&&url.regionMatches(tri.i1-(len=tri.str1.length()), tri.str1, 0, len)&&Utils.hashCode(url, 0, tri.i1)==tri.i2) {
+						CMN.Log("pIRl", url);
+						if(tri.plc==null) {
+							return emptyResponse;
+						} else {
+							return new WebResourceResponse("text/css","utf8", new ByteArrayInputStream(tri.plc.getBytes()));
+						}
+					}
+				}
+			}
+		}
 		if(url.startsWith("pp:")) {
 			CMN.Log("pp://", url);
 			try {
@@ -819,7 +878,8 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 			webview.requestLayout();
 			return;
 		}
-		if(CustomViewHideTime>0 && System.currentTimeMillis()-CustomViewHideTime<350){
+		if(webview.forbidScrollWhenSelecting && webview.bIsActionMenuShown && oldy-scrollY>200
+			|| CustomViewHideTime>0 && System.currentTimeMillis()-CustomViewHideTime<350){
 			CMN.Log("re_scroll...");
 			webview.SafeScrollTo(oldx, oldy);
 			return;

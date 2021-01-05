@@ -99,9 +99,10 @@ public class Utils {
 	public static final boolean littleCat = Build.VERSION.SDK_INT<=Build.VERSION_CODES.KITKAT;
 	public static final boolean littleCake = Build.VERSION.SDK_INT<=21;
 	public static final boolean bigMountain = Build.VERSION.SDK_INT>22;
+	public static final boolean bigMouth = Build.VERSION.SDK_INT>=Build.VERSION_CODES.O;
 	public static final boolean hugeHimalaya = Build.VERSION.SDK_INT>=Build.VERSION_CODES.P;
 	public static final boolean metaKill = Build.VERSION.SDK_INT>=Build.VERSION_CODES.Q;
-	public static final boolean isHuawei = Build.MANUFACTURER.contains("HUAWEI");
+	//public static final boolean isHuawei = Build.MANUFACTURER.contains("HUAWEI");
 	public static final WeakReference<Bitmap> DummyBMRef = new WeakReference<>(null);
 	
 	/**
@@ -376,9 +377,8 @@ public class Utils {
 	public static boolean isKeyboardShown(View rootView) {
 		final int softKeyboardHeight = 100;
 		rootView.getWindowVisibleDisplayFrame(rect);
-		DisplayMetrics dm = rootView.getResources().getDisplayMetrics();
 		int heightDiff = rootView.getBottom() - rect.bottom;
-		return heightDiff > softKeyboardHeight * dm.density;
+		return heightDiff > softKeyboardHeight * GlobalOptions.density;
 	}
 	
 	static class ViewConfigurationDog extends ViewConfiguration{
@@ -493,6 +493,7 @@ public class Utils {
 	public static void setOnClickListenersOneDepth(ViewGroup vg, View.OnClickListener clicker, int depth, Object[] viewFetcher) {
 		int cc = vg.getChildCount();
 		View ca;
+		boolean longClickable = clicker instanceof View.OnLongClickListener;
 		for (int i = 0; i < cc; i++) {
 			ca = vg.getChildAt(i);
 			//CMN.Log("setOnClickListenersOneDepth", ca, (i+1)+"/"+(cc));
@@ -500,6 +501,9 @@ public class Utils {
 				if(--depth>0) {
 					if(ca.isClickable()) {
 						ca.setOnClickListener(clicker);
+						if(longClickable&&ca.isLongClickable()) {
+							ca.setOnLongClickListener((View.OnLongClickListener) clicker);
+						}
 					} else {
 						setOnClickListenersOneDepth((ViewGroup) ca, clicker, depth, viewFetcher);
 					}
@@ -509,7 +513,7 @@ public class Utils {
 				if(ca.getId()!=View.NO_ID){
 					if(!(ca instanceof EditText) && ca.isEnabled()) {
 						ca.setOnClickListener(clicker);
-						if(clicker instanceof View.OnLongClickListener && ca.isLongClickable()) {
+						if(longClickable && ca.isLongClickable()) {
 							ca.setOnLongClickListener((View.OnLongClickListener) clicker);
 						}
 					}
@@ -658,5 +662,14 @@ public class Utils {
 		final String[] split = docId.split(":");
 		if ((split.length >= 2) && (split[1] != null)) return split[1];
 		else return File.separator;
+	}
+	
+	public static int hashCode(String toHash, int start, int len) {
+		int h=0;
+		len = Math.min(toHash.length(), len);
+		for (int i = start; i < len; i++) {
+			h = 31 * h + Character.toLowerCase(toHash.charAt(i));
+		}
+		return h;
 	}
 }

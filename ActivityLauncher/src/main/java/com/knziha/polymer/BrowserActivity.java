@@ -64,7 +64,6 @@ import android.view.inputmethod.EditorInfo;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebBackForwardList;
-import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -113,6 +112,7 @@ import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.MyReceiver;
 import com.knziha.polymer.Utils.OptionProcessor;
 import com.knziha.polymer.Utils.Options;
+import com.knziha.polymer.Utils.RgxPlc;
 import com.knziha.polymer.Utils.WebOptions;
 import com.knziha.polymer.browser.DownloadHandlerStd;
 import com.knziha.polymer.database.LexicalDBHelper;
@@ -154,6 +154,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -175,6 +176,7 @@ import static com.knziha.polymer.widgets.Utils.RequsetUrlFromStorage;
 import static com.knziha.polymer.widgets.Utils.getSimplifiedUrl;
 import static com.knziha.polymer.widgets.Utils.getViewItemByPath;
 import static com.knziha.polymer.widgets.Utils.indexOf;
+import static com.knziha.polymer.widgets.Utils.isKeyboardShown;
 import static com.knziha.polymer.widgets.Utils.setOnClickListenersOneDepth;
 @SuppressWarnings({"rawtypes","ClickableViewAccessibility"
 		,"IntegerDivisionInFloatingPointContext"
@@ -215,7 +217,6 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	private RecyclerView.Adapter/*<ViewDataHolder<SearchHintsItemBinding>>*/ adaptermy2;
 	boolean viewpager_holder_hasTag;
 	private CenterLinearLayoutManager layoutManager;
-	private static final WebResourceResponse emptyResponse = new WebResourceResponse("", "", null);
 	private int mItemWidth;
 	private int mItemHeight;
 	private Runnable scrollHereRunnnable;
@@ -299,6 +300,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	private LinearInterpolator linearInterpolator = new LinearInterpolator();
 	private Paint paint = new Paint();
 	private BottomSheetDialog bottomDwnldDlg;
+	private boolean bottombarHidden;
 	
 	@Override
 	public void onConfigurationChanged(@NonNull Configuration newConfig) {
@@ -350,7 +352,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		Window win = getWindow();
 		//getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN|WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
 		//getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN|WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
-		win.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN|WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
+		//win.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN|WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
+		win.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
 		
 		boolean transit = Options.getTransitSplashScreen();
@@ -392,7 +395,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			root.post(fadeInContents::start);
 		}
 		
-		CMN.mResource = mResource = getResources();
+		CMN.mResource = mResource;
 		
 		frame_web = mResource.getDrawable(R.drawable.frame_web);
 		
@@ -439,7 +442,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	}
 	
 	protected void checkLog(Bundle savedInstanceState){
-		if(false) { // show tutorials
+		if(0==1) { // show tutorials
 			ViewGroup tutorialsView = (ViewGroup) UIData.tutorials.getViewStub().inflate();
 			View.OnClickListener tutClicker = new View.OnClickListener() {
 				private File filepickernow;
@@ -693,11 +696,24 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		
 		//TestHelper.insertMegaUrlDataToHistory(historyCon, 2500);
 		
+		root.getViewTreeObserver().addOnGlobalLayoutListener(() -> {
+			boolean mKeyboardUp = isKeyboardShown(root);
+			View bottombar2 = UIData.bottombar2;
+			if (mKeyboardUp) {
+				//CMN.Log("键盘弹出...");
+				bottombarHidden = true;
+				bottombar2.setVisibility(View.INVISIBLE);
+			} else if(bottombarHidden){
+				//CMN.Log("键盘收起...");
+				bottombar2.setVisibility(View.VISIBLE);
+			}
+		});
+		
 		systemIntialized=true;
 	}
 	
 	private void updateQRBtn() {
-		CMN.Log("updateQRBtn", goToBarcodeScanner);
+		//CMN.Log("updateQRBtn", goToBarcodeScanner);
 		TextView QRBtn = UIData.browserWidget5;
 		if(QRBtn.getTag()!=null^goToBarcodeScanner) {
 			QRBtn.setText(goToBarcodeScanner?"扫码":"前往");
@@ -766,6 +782,16 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		if(!isUrl) {
 			historyCon.insertSearchTerm(text);
 			text = WebDicts.get(0).replace("%s", text);
+		} else {
+			LinkedList<RgxPlc> queryDNS = mWebListener.DNSIntelligence;
+			if(queryDNS.size()>0) {
+				for(RgxPlc dI:queryDNS) {
+					Matcher m = dI.p.matcher(text);
+					if(m.matches()) {
+						text = m.replaceAll(dI.rep);
+					}
+				}
+			}
 		}
 		CMN.Log("isUrl", isUrl, text, currentWebView.getOriginalUrl());
 		if(currentWebView.holder.getLuxury() && !currentWebView.equalsUrl(text)) {

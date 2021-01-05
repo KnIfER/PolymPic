@@ -80,9 +80,12 @@ public class BrowseDBHelper extends SQLiteOpenHelper {
 	
 	}
 	
-	public long insertNewEntry() {
+	public long insertNewEntry(String ext) {
 		ContentValues values = new ContentValues();
 		//values.put("title", "");
+		if(ext!=null) {
+			values.put("ext1", ext);
+		}
 		values.put("creation_time", System.currentTimeMillis());
 		return database.insert("tasks", null, values);
 	}
@@ -93,5 +96,9 @@ public class BrowseDBHelper extends SQLiteOpenHelper {
 	
 	public Cursor getCursorByRowID(long rowID) {
 		return database.rawQuery("select * from tasks where id=?", new String[]{""+rowID});
+	}
+	
+	public int delete(long rowID) {
+		return database.delete("tasks", "id=?", new String[]{""+rowID});
 	}
 }

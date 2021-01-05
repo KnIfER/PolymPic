@@ -1,6 +1,7 @@
 package com.knziha.polymer.browser;
 
 import android.database.Cursor;
+import android.os.Build;
 
 import com.knziha.polymer.Utils.CMN;
 
@@ -12,7 +13,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class BrowseTaskExecuter implements Runnable{
+public class BrowseTaskExecutor implements Runnable{
 	final WeakReference<BrowseActivity> aRef;
 	Queue<Long> taskQueue = new ConcurrentLinkedQueue<>();
 	Set<Long> taskSet = Collections.synchronizedSet(new HashSet<>());
@@ -25,7 +26,7 @@ public class BrowseTaskExecuter implements Runnable{
 	final AtomicBoolean ASleeping = new AtomicBoolean();
 	
 	
-	public BrowseTaskExecuter(BrowseActivity a) {
+	public BrowseTaskExecutor(BrowseActivity a) {
 		aRef = new WeakReference<>(a);
 	}
 	
@@ -39,34 +40,41 @@ public class BrowseTaskExecuter implements Runnable{
 				Long item;
 				while((item = taskQueue.poll())!=null || acquired.get()) {
 					if(item!=null) {
-						taskSet.remove(item);
+						//a.updateViewForRow(item);
 						Cursor cursor = a.tasksDB.getCursorByRowID(item);
 						DownloadTask task = null;
 						if(cursor.getCount()>=1) {
 							cursor.moveToFirst();
-							task = a.startTaskForDB(cursor);
+							task = a.startTaskForDB(this, cursor);
 						}
 						cursor.close();
+						taskSet.remove(item);
 						if(task!=null) {
-							AtomicBoolean token = this.token = task.abort;
+							AtomicBoolean token = task.abort;
+							synchronized (this) {
+								this.token = token;
+							}
 							boolean interrupted=false;
 							try {
-								CMN.Log("等待2.5min");
+								CMN.Log("等待2.5min —————— ");
 								// 等待2.5min, 这是 webStation 的占用时限。
 								Thread.sleep((long) (1000*60*task.maxWaitTime));
 							} catch (InterruptedException e) {
 								// 中断，放弃任务。
 								interrupted = true;
 							}
-							CMN.Log("等待2.5min over");
+							CMN.Log("等待2.5min  ——————  over", interrupted);
 							if(!interrupted) { //timeout
 								token.set(true);
+								a.notifyTaskStopped(task.id);
 								if(taskQueue.size()==0) {
 									a.clearWebview();
 								} else {
 									a.stopWebView();
 								}
 								a.respawnTask(task.id);
+							} else {
+								CMN.Log("被打断");
 							}
 							this.token = null;
 						}
@@ -76,6 +84,7 @@ public class BrowseTaskExecuter implements Runnable{
 						break;
 					}
 					if(item==null||taskQueue.peek()==null) {
+						a.clearWebview();
 						try {
 							ASleeping.set(true);
 							Thread.sleep(1000*60);
@@ -119,10 +128,9 @@ public class BrowseTaskExecuter implements Runnable{
 	}
 	
 	public void run(BrowseActivity a, long rowID) {
-		DownloadTask runningAnalogue = a.taskMap.get(rowID);
+		DownloadTask runningAnalogue = a.taskMap.remove(rowID);
 		if(runningAnalogue!=null) {
-			runningAnalogue.abort();
-			a.taskMap.remove(rowID);
+			runningAnalogue.stop();
 		}
 		if(taskSet.contains(rowID)) {
 			return;
@@ -136,10 +144,12 @@ public class BrowseTaskExecuter implements Runnable{
 			t = new Thread(this);
 			t.start();
 		} else {
-			acquired.set(false);
-			if(ASleeping.get()) {
-				interrupt();
-				ASleeping.set(false);
+			synchronized (this) {
+				acquired.set(false);
+				if(token==null || ASleeping.get()) {
+					interrupt();
+					ASleeping.set(false);
+				}
 			}
 		}
 	}
@@ -162,6 +172,17 @@ public class BrowseTaskExecuter implements Runnable{
 	public void interrupt() {
 		if(t!=null) {
 			t.interrupt();
+		}
+	}
+	
+	public void removeTasks(AtomicBoolean abort, long id) {
+		if(token==abort) {
+			interrupt();
+		}
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+			taskQueue.removeIf(val -> val==id);
+		} else {
+			while(taskQueue.remove(id));
 		}
 	}
 }

@@ -37,7 +37,7 @@ public class WebBrowseListenerX5 extends WebViewClient {
 		@Override
 		public void run() {
 			webview_Player.clearView();
-			webview_Player.loadData("http://2123", "text/plain", "utf8");
+			//webview_Player.loadData("http://2123", "text/plain", "utf8");
 			webview_Player.loadUrl("about:blank");
 			webview_Player.clearHistory();
 		}
@@ -117,8 +117,11 @@ public class WebBrowseListenerX5 extends WebViewClient {
 		public void onReceivedTitle(WebView webView, String title) {
 			super.onReceivedTitle(webView, title);
 			DownloadTask task = (DownloadTask) webView.getTag();
-			if(task!=null && TextUtils.isEmpty(task.title)) {
-				task.updateTitle(title);
+			if(task!=null) {
+				task.webTitle = title;
+				if(TextUtils.isEmpty(task.title)) {
+					a.updateTitleForRow(task.id, title);
+				}
 			}
 		}
 		
@@ -126,7 +129,7 @@ public class WebBrowseListenerX5 extends WebViewClient {
 		 * see {@link WebBrowseListenerX5#onPageFinished}*/
 		@Override
 		public void onProgressChanged(WebView view, int newProgress) {
-			if(view.getUrl().startsWith("about:")) return;
+			if(view.getUrl().startsWith("about:")||!pageStarted) return;
 			CMN.Log("OPC::", newProgress, Thread.currentThread().getId());
 			WebView mWebView = (WebView) view;
 			
@@ -156,7 +159,7 @@ public class WebBrowseListenerX5 extends WebViewClient {
 		DownloadTask task = (DownloadTask) view.getTag();
 		if(task!=null) {
 			if(task.ext2 !=null && url.contains(task.ext2)) {
-				onUrlExtracted(url);
+				onUrlExtracted(url, null);
 			}
 		}
 	}
@@ -212,10 +215,14 @@ public class WebBrowseListenerX5 extends WebViewClient {
 	
 	@JavascriptInterface
 	public void onUrlExtracted(String url) {
+		onUrlExtracted(url, null);
+	}
+	
+	@JavascriptInterface
+	public void onUrlExtracted(String url, String title) {
 		DownloadTask task = (DownloadTask) webview_Player.getTag();
-		CMN.Log("onUrlExtract", url, a.taskRunning(task.id));
 		EnhanceActivity.sendEmptyMessage(10);
-		a.onUrlExtracted(task, url);
+		a.onUrlExtracted(task, url, title);
 	}
 	
 	@JavascriptInterface

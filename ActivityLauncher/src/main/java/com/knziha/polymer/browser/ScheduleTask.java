@@ -17,7 +17,7 @@ public class ScheduleTask extends DownloadTask{
 	int lifeSpanExpectancy;
 	
 	public ScheduleTask(BrowseActivity a, long id, String url, File download_path, String title, int flag1, String ext1) {
-		super(a, id, url, download_path, title, flag1, ext1);
+		super(a, null, id, url, download_path, title, flag1, ext1);
 		leapToDay = extObj.getBooleanValue("leap");
 		String val = extObj.getString("seq");
 		if(!TextUtils.isEmpty(val)) {

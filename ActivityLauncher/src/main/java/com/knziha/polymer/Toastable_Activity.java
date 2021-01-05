@@ -137,7 +137,8 @@ public class Toastable_Activity extends AppCompatActivity {
 			GlobalOptions.densityDpi = dm.densityDpi;
 		}
 		display.getMetrics(dm);
-		dm = getResources().getDisplayMetrics();
+		mResource = getResources();
+		dm = mResource.getDisplayMetrics();
 		super.onCreate(savedInstanceState);
 		FFStamp=opt.getFirstFlag();
 		SFStamp=opt.getSecondFlag();

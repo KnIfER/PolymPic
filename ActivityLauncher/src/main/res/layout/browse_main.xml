@@ -33,10 +33,30 @@
 					android:layout_weight="1"
 					/>
 				<ImageView
+					android:id="@+id/search"
+					android:layout_width="@dimen/_45_"
+					android:layout_height="match_parent"
+					android:src="@drawable/ic_baseline_search_24"
+					android:background="?actionBarItemBackground"
+					android:padding="6dp"
+					android:layout_marginRight="8dp"
+					android:longClickable="true"
+					/>
+				<ImageView
+					android:id="@+id/refresh"
+					android:layout_width="@dimen/_45_"
+					android:layout_height="match_parent"
+					android:src="@drawable/ic_refresh_black_24dp"
+					android:background="?actionBarItemBackground"
+					android:padding="6dp"
+					android:layout_marginRight="8dp"
+					android:longClickable="true"
+					/>
+				<ImageView
 					android:id="@+id/switchWidget"
 					android:layout_width="@dimen/_45_"
 					android:layout_height="match_parent"
-					android:src="@drawable/abc_switch_thumb_material"
+					android:src="@drawable/ic_baseline_switch"
 					android:background="?actionBarItemBackground"
 					android:padding="10dp"/>
 			</com.knziha.polymer.widgets.LineaSlidog>
@@ -87,6 +107,7 @@
 				android:layout="@layout/edittext_field"
 				android:layout_width="match_parent"
 				android:layout_height="wrap_content"
+				android:elevation="16dp"
 				/>
 		</FrameLayout>
 	</LinearLayout>

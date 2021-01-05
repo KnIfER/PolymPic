@@ -16,9 +16,9 @@ import android.telephony.TelephonyManager;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 
 import com.knziha.polymer.R;
+import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.widgets.Utils;
 
 public class ServiceEnhancer extends Service {
@@ -53,15 +53,14 @@ public class ServiceEnhancer extends Service {
 			EnhanceService.sendEmptyMessageDelayed(0, 1000);
 		}
 	};
-    
-    @RequiresApi(api = Build.VERSION_CODES.O)
+ 
 	@Override
     public void onCreate() {
         super.onCreate();
 	
 		notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 		
-		if(Utils.bigMountain) {
+		if(Utils.bigMouth) {
 			channel = new NotificationChannel(Id, Name, NotificationManager.IMPORTANCE_HIGH);
 			notificationManager.createNotificationChannel(channel);
 		}

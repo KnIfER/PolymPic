@@ -42,7 +42,7 @@ public class WebBrowseListener extends WebViewClient implements DownloadListener
 		@Override
 		public void run() {
 			webview_Player.clearView();
-			webview_Player.loadData("http://2123", "text/plain", "utf8");
+			//webview_Player.loadData("http://2123", "text/plain", "utf8");
 			webview_Player.loadUrl("about:blank");
 			webview_Player.clearHistory();
 		}
@@ -136,8 +136,11 @@ public class WebBrowseListener extends WebViewClient implements DownloadListener
 		@Override
 		public void onReceivedTitle(WebView webView, String title) {
 			DownloadTask task = (DownloadTask) webView.getTag();
-			if(task!=null && TextUtils.isEmpty(task.title)) {
-				task.updateTitle(title);
+			if(task!=null) {
+				task.webTitle = title;
+				if(TextUtils.isEmpty(task.title)) {
+					a.updateTitleForRow(task.id, title);
+				}
 			}
 		}
 		
@@ -145,7 +148,8 @@ public class WebBrowseListener extends WebViewClient implements DownloadListener
 		 * see {@link WebBrowseListener#onPageFinished}*/
 		@Override
 		public void onProgressChanged(WebView view, int newProgress) {
-			CMN.Log("OPC::", newProgress, Thread.currentThread().getId());
+			if(view.getUrl().startsWith("about:")||!pageStarted) return;
+			CMN.Log("OPC::", newProgress);
 			WebView mWebView = (WebView) view;
 			
 			boolean premature=true;
@@ -175,7 +179,7 @@ public class WebBrowseListener extends WebViewClient implements DownloadListener
 		DownloadTask task = (DownloadTask) view.getTag();
 		if(task!=null) {
 			if(task.ext2!=null && url.contains(task.ext2)) {
-				onUrlExtracted(url);
+				onUrlExtracted(url, null);
 			}
 		}
 	}
@@ -184,19 +188,21 @@ public class WebBrowseListener extends WebViewClient implements DownloadListener
 	@Override
 	public void onPageStarted(WebView view, String url, Bitmap favicon) {
 		CMN.Log("onPageStarted……", url, Thread.currentThread().getId());
+		if(url.startsWith("about:")) return;
 		pageStarted = true;
 	}
 	
 	@Override public void onPageFinished(WebView view, String url) {
 		WebView mWebView=((WebView)view);
+		String ordinalUrl=view.getUrl();
+		if(ordinalUrl!=null) {
+			url = ordinalUrl;
+		}
+		if(url.startsWith("about:")) return;
 		if(pageStarted) {
-			String ordinalUrl=view.getUrl();
-			if(ordinalUrl!=null) {
-				url = ordinalUrl;
-			}
-			CMN.Log("OPF:::", url, view.getTitle(), Thread.currentThread().getId());
 			//CMN.Log("OPF:::", mWebView.holder.url);
 			DownloadTask task = (DownloadTask) view.getTag();
+			CMN.Log("OPF:::", url, view.getTitle(), task);
 			mWebView.removeCallbacks(OnPageFinishedNotifier);
 			pageStarted=false;
 			if(task!=null) {
@@ -238,10 +244,14 @@ public class WebBrowseListener extends WebViewClient implements DownloadListener
 	
 	@JavascriptInterface
 	public void onUrlExtracted(String url) {
-		CMN.Log("onUrlExtract", url);
+		onUrlExtracted(url, null);
+	}
+	
+	@JavascriptInterface
+	public void onUrlExtracted(String url, String title) {
 		DownloadTask task = (DownloadTask) webview_Player.getTag();
 		EnhanceActivity.sendEmptyMessage(10);
-		a.onUrlExtracted(task, url);
+		a.onUrlExtracted(task, url, title);
 	}
 	
 	@JavascriptInterface

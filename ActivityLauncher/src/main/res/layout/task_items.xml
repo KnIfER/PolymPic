@@ -48,6 +48,23 @@
 				tools:text="Task URL" />
 		</LinearLayout>
 
+		<androidx.appcompat.widget.AppCompatTextView
+			android:id="@+id/download_indicator"
+			android:layout_width="50dp"
+			android:layout_height="match_parent"
+			android:gravity="center_vertical"
+			android:paddingTop="5dp"
+			tools:text="100KB"
+			tools:visibility="visible"
+			android:visibility="gone"
+			android:textSize="8sp"
+			android:autoSizeMinTextSize="2dp"
+			android:autoSizeTextType="uniform"
+			android:autoSizeMaxTextSize="25sp"
+			android:maxLines="1"
+			android:textColor="#000"
+			/>
+
 		<View
 			android:id="@+id/states_indicator"
 			android:layout_width="50dp"

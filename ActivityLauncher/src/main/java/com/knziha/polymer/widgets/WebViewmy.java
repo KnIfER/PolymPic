@@ -76,6 +76,8 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
 	public boolean isWebHold;
 	public boolean isIMScrollSupressed;
 	
+	public boolean forbidScrollWhenSelecting;
+	
 	public final static ReusableByteOutputStream bos1 = new ReusableByteOutputStream();
 	
 	public WebViewmy(Context context) {
@@ -179,8 +181,8 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
 				bmItem = Bitmap.createBitmap(targetW, targetH, Bitmap.Config.RGB_565);
 			} else if(bmItem.getWidth()!=targetW||bmItem.getHeight()!=targetH) {
 				bmItem.reconfigure(targetW, targetH, Bitmap.Config.RGB_565);
-				bmItem.eraseColor(Color.WHITE);
 			}
+			bmItem.eraseColor(Color.WHITE);
 			if(canvas==null) {
 				canvas = new Canvas(bmItem);
 			} else if(reset) {

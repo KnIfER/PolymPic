@@ -18,6 +18,7 @@ import android.widget.Toast;
 import com.knziha.polymer.R;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.qrcode.QRActivityPlus;
+import com.knziha.polymer.qrcode.QRGenerator;
 import com.knziha.polymer.widgets.Utils;
 
 import java.text.ParsePosition;
@@ -43,7 +44,6 @@ public class BrowseFieldHandler implements View.OnClickListener, View.OnLongClic
 	TextView QRBtn;
 	
 	private boolean goToBarcodeScanner;
-	private boolean longClickedQr;
 	private String lastTextBackup;
 	
 	public BrowseFieldHandler(BrowseActivity a) {
@@ -76,28 +76,17 @@ public class BrowseFieldHandler implements View.OnClickListener, View.OnLongClic
 			@Override
 			public void afterTextChanged(Editable s) {
 				CMN.Log("afterTextChanged");
-				goToBarcodeScanner=s.length()==0;
-				updateQRBtn();
+				setGotoQR(s.length()==0);
 			}
 		});
 	}
 	
-	private void updateQRBtn() {
-		CMN.Log("updateQRBtn", goToBarcodeScanner);
-		TextView QRBtn = this.QRBtn;
-		if(QRBtn.getTag()!=null^goToBarcodeScanner) {
-			QRBtn.setText(goToBarcodeScanner?"扫码":"前往");
-			QRBtn.setCompoundDrawablesRelativeWithIntrinsicBounds(
-					a.getResources().getDrawable(goToBarcodeScanner?R.drawable.ic_baseline_qrcode:R.drawable.abc_ic_go_search_api_material)
-					, null, null, null);
-			QRBtn.setTag(goToBarcodeScanner?Utils.DummyTransX:null);
-		}
-	}
-	
 	public void setVis(boolean vis) {
 		root.setVisibility(vis?View.VISIBLE:View.GONE);
-		
-		
+	}
+	
+	public boolean getVis() {
+		return root.getVisibility()==View.VISIBLE;
 	}
 	
 	@Override
@@ -131,18 +120,13 @@ public class BrowseFieldHandler implements View.OnClickListener, View.OnLongClic
 				lastTextBackup = etField.getText().toString();
 				etField.setText(null);
 			break;
-			case R.id.browser_widget5:{
+			case R.id.browser_widget5: {
 				String value = etField.getText().toString().trim();
-				if(longClickedQr) {
-					commitField(value);
-					longClickedQr=false;
+				if(goToBarcodeScanner||value.length()==0) { //二维码
+					Intent intent = new Intent(a, QRActivityPlus.class);
+					a.startActivityForResult(intent, RequsetUrlFromCamera);
 				} else {
-					if(goToBarcodeScanner||value.length()==0) { //二维码
-						Intent intent = new Intent(a, QRActivityPlus.class);
-						a.startActivityForResult(intent, RequsetUrlFromCamera);
-					} else {
-						commitField(value);
-					}
+					commitField(value);
 				}
 			} break;
 		}
@@ -161,11 +145,9 @@ public class BrowseFieldHandler implements View.OnClickListener, View.OnLongClic
 	
 	private void commitField(String value) {
 		//CMN.Log("commitField", value, rowID, index);
-		if(rowID==-1) {
-			return;
-		}
 		if(index>=100) {
 			if(index==115) { // schedule delayed task
+				if(rowID==-1) return;
 				if(value.contains(":")||value.contains("时")||value.contains("h")) {
 					Pattern timeReg = Pattern.compile(".*?([0-9]+):([0-9]+)(.[0-9]+)?.*?");
 					Matcher m = timeReg.matcher(value);
@@ -203,9 +185,13 @@ public class BrowseFieldHandler implements View.OnClickListener, View.OnLongClic
 						}
 					}
 				}
+			} else if(index==211) {
+				a.setSearchText(value);
+				setVis(false);
 			}
 			return;
 		}
+		if(rowID==-1) return;
 		SQLiteDatabase db = BrowseDBHelper.getInstancedDb();
 		String field = fieldForIndex(index);
 		if (!TextUtils.isEmpty(field)) {
@@ -213,6 +199,7 @@ public class BrowseFieldHandler implements View.OnClickListener, View.OnLongClic
 			values.put(field, value);
 			db.update("tasks", values, "id=?", new String[]{"" + rowID});
 			a.updateTaskList();
+			//a.updateViewForRow(rowID);
 			setVis(false);
 		}
 	}
@@ -239,13 +226,29 @@ public class BrowseFieldHandler implements View.OnClickListener, View.OnLongClic
 	}
 	
 	public void setGotoQR(boolean val) {
-		goToBarcodeScanner=val;
+		if(goToBarcodeScanner!=val) {
+			goToBarcodeScanner=val;
+			QRBtn.setText(goToBarcodeScanner?"扫码":"前往");
+			QRBtn.setCompoundDrawablesRelativeWithIntrinsicBounds(
+					a.mResource.getDrawable(goToBarcodeScanner?R.drawable.ic_baseline_qrcode:R.drawable.abc_ic_go_search_api_material)
+					, null, null, null);
+		}
 	}
 	
 	@Override
 	public boolean onLongClick(View v) {
-		longClickedQr = true;
-		v.performClick();
+		String value = etField.getText().toString().trim();
+		switch (v.getId()) {
+			case R.id.browser_widget5: {
+				Intent intent = new Intent(a, QRGenerator.class).putExtra(Intent.EXTRA_TEXT, value);
+				a.startActivity(intent);
+				a.mWakeLocked = true;
+				a.mWakeLock.acquire();
+			} break;
+			case R.id.browser_widget4:{
+				commitField(value);
+			} break;
+		}
 		return true;
 	}
 }

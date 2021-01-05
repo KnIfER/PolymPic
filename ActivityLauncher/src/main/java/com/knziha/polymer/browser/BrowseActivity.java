@@ -12,10 +12,14 @@ import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.database.Cursor;
 import android.graphics.Color;
+import android.graphics.PorterDuff;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Message;
 import android.os.PowerManager;
 import android.os.SystemClock;
 import android.text.TextPaint;
@@ -31,7 +35,6 @@ import android.webkit.WebView;
 import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.GlobalOptions;
@@ -39,6 +42,7 @@ import androidx.databinding.DataBindingUtil;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.util.Util;
 import com.jess.ui.TwoWayAdapterView;
 import com.jess.ui.TwoWayGridView;
 import com.knziha.filepicker.model.DialogConfigs;
@@ -47,6 +51,7 @@ import com.knziha.filepicker.model.DialogSelectionListener;
 import com.knziha.filepicker.view.FilePickerDialog;
 import com.knziha.polymer.PDocViewerActivity;
 import com.knziha.polymer.R;
+import com.knziha.polymer.Toastable_Activity;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.databinding.BrowseMainBinding;
 import com.knziha.polymer.databinding.TaskItemsBinding;
@@ -68,6 +73,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
@@ -91,7 +97,8 @@ import static com.knziha.polymer.widgets.Utils.RequsetUrlFromCamera;
 /** BrowseActivity Is Not The Browser. It is a work station for resource sniffers.
  * 		The extraction logic is extracted and is not included.
  * 		It is extracted as a field in the db.	*/
-public class BrowseActivity extends Activity implements View.OnClickListener {
+public class BrowseActivity extends Toastable_Activity
+		implements View.OnClickListener, View.OnLongClickListener {
 	BrowseMainBinding UIData;
 	
 	WebView webview_Player;
@@ -100,9 +107,10 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 	WebBrowseListener listener;
 	WebBrowseListenerX5 listenerX5;
 	
-	BrowseTaskExecuter taskExecuter;
+	BrowseTaskExecutor taskExecutor;
 	private File download_path;
-	private SharedPreferences opt;
+	private boolean autoRefreshing;
+	private SharedPreferences preference;
 	
 	static {
 		try {
@@ -115,7 +123,22 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 		}
 	}
 	
-	private PowerManager.WakeLock mWakeLock;
+	boolean mWakeLocked;
+	PowerManager.WakeLock mWakeLock;
+	private long deletingRow;
+	private boolean isViewDirty;
+	String SearchText;
+	private LinearLayoutManager layoutManager;
+	
+	@Override
+	public void onWindowFocusChanged(boolean hasFocus) {
+		super.onWindowFocusChanged(hasFocus);
+		if(hasFocus&&isViewDirty) {
+			CMN.Log("isViewDirty updated...");
+			updateTaskList();
+			isViewDirty=false;
+		}
+	}
 	
 	private void initX5WebStation() {
 		x5_webview_Player = new com.tencent.smtt.sdk.WebView(this);
@@ -163,10 +186,36 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 	
 	public boolean MainMenuListVis;
 	
+	AppHandler appHandler = new AppHandler(this);
+	
+	static class AppHandler extends Handler{
+		final WeakReference<BrowseActivity> aRef;
+		
+		AppHandler(BrowseActivity a) {
+			this.aRef = new WeakReference<>(a);
+		}
+		
+		@Override
+		public void handleMessage(@NonNull Message msg) {
+			super.handleMessage(msg);
+			BrowseActivity a = aRef.get();
+			if(a!=null)
+			if(msg.what==110) {
+				removeMessages(110);
+				a.adapter.notifyDataSetChanged();
+				if(a.autoRefreshing) {
+					sendEmptyMessageDelayed(110, 900);
+				}
+			}
+		}
+	}
+	
 	@Override
 	public void onBackPressed() {
-		if(MainMenuListVis) {
-			setMainMenuList(false);
+		if(editHandler!=null&&editHandler.getVis()) {
+			editHandler.setVis(false);
+		} else if(MainMenuListVis) {
+			setMainMenuListVis(false);
 		} else {
 			super.onBackPressed();
 		}
@@ -179,8 +228,13 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 		PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
 		mWakeLock = pm.newWakeLock(PowerManager.FULL_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP | PowerManager.ON_AFTER_RELEASE, "servis:SimpleTimer");
 		UIData = DataBindingUtil.setContentView(this, R.layout.browse_main);
-		opt = getSharedPreferences("browse", 0);
-		String path_download = opt.getString("path", null);
+		preference = getSharedPreferences("browse", 0);
+		root = UIData.root;
+		if(autoRefreshing = preference.getBoolean("autoRefresh", false)) {
+			updateRefreshBtn();
+		}
+		
+		String path_download = preference.getString("path", null);
 		if(path_download!=null) {
 			download_path = new File(path_download);
 			download_path.mkdir();
@@ -207,6 +261,7 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 		menuList.add("下载至…");
 		menuList.add("计划任务");
 		menuList.add("编辑命令");
+		menuList.add("删除");
 		menu_grid_painter = DescriptiveImageView.createTextPainter();
 		TwoWayGridView mainMenuLst = UIData.mainMenuLst;
 		mainMenuLst.setHorizontalSpacing(0);
@@ -229,7 +284,7 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 		tasksDB = BrowseDBHelper.connectInstance(this);
 		alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
 		RecyclerView recyclerView = UIData.tasks;
-		recyclerView.setLayoutManager(new LinearLayoutManager(this));
+		recyclerView.setLayoutManager(layoutManager=new LinearLayoutManager(this));
 		recyclerView.setItemAnimator(null);
 		recyclerView.setRecycledViewPool(Utils.MaxRecyclerPool(35));
 		recyclerView.setHasFixedSize(true);
@@ -250,17 +305,45 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 				long rowID = cursor.getLong(0);
 				viewMap.put(viewHolder.lastBoundRow=rowID, viewHolder);
 				String title = cursor.getString(1);
-				viewHolder.taskItemData.title.setText(TextUtils.isEmpty(title)?"Untitled":title);
-				viewHolder.taskItemData.url.setText(cursor.getString(2));
-				
-				TextView number = viewHolder.taskItemData.number;
+				String url = cursor.getString(2);
+				DownloadTask task = taskMap.get(rowID);
+				if(title==null && task!=null) {
+					if(task.title!=null) {
+						title = task.title;
+					} else {
+						title = task.webTitle;
+					}
+				}
+				TaskItemsBinding taskItemView = viewHolder.taskItemData;
+				taskItemView.title.setText(TextUtils.isEmpty(title)?"Untitled":title);
+				taskItemView.url.setText(url);
+				int color = Color.BLACK;
+				long len=0;
+				if(taskRunning(rowID)) {
+					if(task!=null) {
+						color = Color.GREEN;
+						len = task.getDownloadedLength();
+					} else if(taskExecutor !=null && taskExecutor.inQueue(rowID)) {
+						color = Color.YELLOW;
+					} else {
+						color = Color.GRAY;
+					}
+				}
+				//CMN.Log("onBindViewHolder", position, rowID, task, taskRunning(rowID));
+				TextView number = taskItemView.number;
+				TextView downloadIndicator = taskItemView.downloadIndicator;
 				number.setText(""+position);
-				if(taskMap.containsKey(rowID)) {
-					number.setTextColor(Color.GREEN);
-				} else if(taskExecuter!=null && taskExecuter.inQueue(rowID)) {
-					number.setTextColor(Color.GRAY);
+				number.setTextColor(color);
+				if(len>0) {
+					downloadIndicator.setText(mp4meta.utils.CMN.formatSize(len));
+					downloadIndicator.setVisibility(View.VISIBLE);
 				} else {
-					number.setTextColor(Color.BLACK);
+					downloadIndicator.setVisibility(View.GONE);
+				}
+				if(!TextUtils.isEmpty(SearchText) && ((title!=null&&title.contains(SearchText))||url!=null&&url.contains(SearchText))) {
+					taskItemView.itemRoot.setBackgroundResource(R.drawable.xuxian2);
+				} else {
+					taskItemView.itemRoot.setBackground(null);
 				}
 			}
 			
@@ -276,7 +359,7 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 				write(fout, "启动..."+new Date()+"\n\n");
 			}
 		} catch (IOException e) {
-			CMN.Log(e);
+			//CMN.Log(e);
 		}
 		if(Utils.littleCat) {
 			initX5WebStation();
@@ -284,10 +367,27 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 			initStdWebStation();
 		}
 		CMN.Log("启动...");
-		UIData.switchWidget.setOnClickListener(this);
+		Utils.setOnClickListenersOneDepth(UIData.toolbarContent, this, 1, null); //switchWidget
 		Window window = getWindow();
 		if(Build.VERSION.SDK_INT>=21) {
 			window.setStatusBarColor(0xff8f8f8f);
+		}
+	}
+	
+	private void updateRefreshBtn() {
+		Drawable drawable = UIData.refresh.getDrawable();
+		if(autoRefreshing) {
+			drawable.setColorFilter(Color.GREEN, PorterDuff.Mode.SRC_IN);
+		} else {
+			drawable.setColorFilter(null);
+		}
+	}
+	
+	@Override
+	protected void onPause() {
+		super.onPause();
+		if(autoRefreshing) {
+			appHandler.removeMessages(110);
 		}
 	}
 	
@@ -298,6 +398,12 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 			editHandler.setText(StaticTextExtra);
 			StaticTextExtra = null;
 		}
+		if(autoRefreshing) {
+			appHandler.sendEmptyMessage(110);
+		}
+		if(mWakeLocked) {
+			mWakeLock.release();
+		}
 	}
 	
 	void updateTaskList() {
@@ -306,10 +412,28 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 		}
 		cursor = tasksDB.getCursor();
 		if(cursor.getCount()==0) {
-			tasksDB.insertNewEntry();
+			tasksDB.insertNewEntry(null);
 			cursor = tasksDB.getCursor();
 		}
 		adapter.notifyDataSetChanged();
+	}
+	
+	
+	@Override
+	public boolean onLongClick(View v) {
+		int id = v.getId();
+		if(id==R.id.refresh) {
+			autoRefreshing = !autoRefreshing;
+			preference.edit().putBoolean("autoRefresh", autoRefreshing).apply();
+			if(autoRefreshing) {
+				appHandler.sendEmptyMessage(110);
+				showT("自动刷新");
+			} else {
+				showT("已关闭");
+			}
+			updateRefreshBtn();
+		}
+		return true;
 	}
 	
 	@Override
@@ -321,12 +445,22 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 				UIData.webs.removeView(ca);
 				UIData.webs.addView(ca, 1);
 			}
-		} else {
+		}
+		else if(id==R.id.search) { //search
+			setFieldRowAndIndex(SearchText, -1, 211);
+			editHandler.setGotoQR(true);
+		}
+		else if(id==R.id.refresh) {
+			updateTaskList();
+		}
+		else if(id==R.id.etSearchp) {
+		}
+		else {
 			ViewHolder vh = (ViewHolder) v.getTag();
 			selectionPos = vh.getLayoutPosition();
 			selectionRow = vh.lastBoundRow;
 			if(id==R.id.itemRoot) {
-				setMainMenuList(true);
+				setMainMenuListVis(true);
 			} else {
 				int idx = getFieldIndex(id);
 				if(idx>=0) {
@@ -336,6 +470,27 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 				}
 			}
 		}
+	}
+	
+	public void setSearchText(String value) {
+		//CMN.Log("setSearchText...", value);
+		SearchText = value;
+		if(!TextUtils.isEmpty(value)) {
+			cursor.moveToPosition(-1);
+			int foundIdx=-1;
+			while(cursor.moveToNext()) {
+				String val = cursor.getString(1);
+				if(val!=null&&val.contains(value)
+						||(val=cursor.getString(2))!=null&&val.contains(value)) {
+					foundIdx = cursor.getPosition();
+					break;
+				}
+			}
+			if(foundIdx>0) {
+				layoutManager.scrollToPositionWithOffset(foundIdx, 0);
+			}
+		}
+		adapter.notifyDataSetChanged();
 	}
 	
 	private void setFieldRowAndIndex(String text, long rowID, int idx) {
@@ -359,7 +514,6 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 		}
 		return -1;
 	}
-	
 	
 	public void stopWebView() {
 		boolean x5 = Utils.littleCat;
@@ -388,13 +542,29 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 //		if(item!=null && item.lastBoundRow==id) {
 //			item.taskItemData.title.set(newTitle);
 //		}
-		updateTaskList();
+		updateViewForRow(id);
+		//updateTaskList();
 	}
 	
-	public void refreshViewForRow(long id) {
+	public void updateViewForRow(long id) {
 		ViewHolder view = viewMap.get(id);
 		if(view!=null) {
-			UIData.root.post(() -> adapter.onBindViewHolder(view, view.getLayoutPosition()));
+			if(hasWindowFocus()) {
+				if(Util.isOnMainThread()) {
+					updateViewForRowRunnable(id);
+				} else {
+					UIData.root.post(() -> updateViewForRowRunnable(id));
+				}
+			} else {
+				isViewDirty = true;
+			}
+		}
+	}
+	
+	public void updateViewForRowRunnable(long id) {
+		ViewHolder view = viewMap.get(id);
+		if(view!=null) {
+			adapter.onBindViewHolder(view, view.getLayoutPosition());
 		}
 	}
 	
@@ -404,6 +574,7 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 	
 	public void markTaskEnded(long id) {
 		getRunningFlagForRow(id).set(false);
+		notifyTaskStopped(id);
 	}
 	
 	public void batRenWithPat(String path, String pattern, String replace) {
@@ -439,6 +610,15 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 		}
 	}
 	
+	public void notifyTaskStopped(long id) {
+		updateViewForRow(id);
+//		if(Looper.myLooper()==Looper.getMainLooper()) {
+//			updateTaskList();
+//		} else {
+//			root.post(this::updateTaskList);
+//		}
+	}
+	
 	class ViewHolder extends RecyclerView.ViewHolder {
 		final TaskItemsBinding taskItemData;
 		public Long lastBoundRow;
@@ -455,7 +635,7 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 		}
 	}
 	
-	public void setMainMenuList(boolean vis) {
+	public void setMainMenuListVis(boolean vis) {
 		int TargetTransY = 0;
 		TwoWayGridView animMenu = UIData.mainMenuLst;
 		if(MainMenuListVis&&vis) {
@@ -464,6 +644,7 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 		if(MainMenuListVis = vis) {
 			animMenu.setVisibility(View.VISIBLE);
 		} else {
+			deletingRow = -1;
 			TargetTransY = TargetTransY + animMenu.getHeight();
 		}
 		animMenu
@@ -507,14 +688,12 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 		
 		@Override
 		public void onItemClick(TwoWayAdapterView<?> parent, View view, int position, long id) {
+			long rowID = selectionRow;
 			switch (position) {
 				case 0:{ //start
-					cursor.moveToPosition(selectionPos);
-					long rowID = cursor.getLong(0);
-					DownloadTask task = taskMap.get(rowID);
+					DownloadTask task = taskMap.remove(rowID);
 					if(task!=null) {
 						task.stop();
-						taskMap.remove(rowID);
 					}
 					AtomicBoolean runFlag = getRunningFlagForRow(rowID);
 					boolean start=!runFlag.get();
@@ -524,13 +703,17 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 						//startTaskForDB(cursor);
 					} else {
 						setTaskDelayed(rowID, -1, false);
-						if(task!=null && taskExecuter!=null && taskExecuter.token==task.abort) {
-							taskExecuter.interrupt();
+						if(task!=null) {
+							BrowseTaskExecutor taskExecutor = task.taskExecutor;
+							if(taskExecutor !=null) {
+								taskExecutor.removeTasks(task.abort, task.id);
+							}
 						}
+						scheduleMap.remove(rowID);
+						notifyTaskStopped(rowID);
 					}
-					Toast.makeText(BrowseActivity.this, start?"开始":"终止", Toast.LENGTH_LONG).show();
-					setMainMenuList(false);
-					refreshViewForRow(id);
+					showT(start?"开始":"终止");
+					setMainMenuListVis(false);
 				} break;
 				case 1:{ //ext
 					cursor.moveToPosition(selectionPos);
@@ -543,9 +726,11 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 					editHandler.setGotoQR(false);
 				} break;
 				case 2: { //add
-					tasksDB.insertNewEntry();
+					cursor.moveToPosition(selectionPos);
+					String ext1 = cursor.getString(7);
+					tasksDB.insertNewEntry(ext1);
 					updateTaskList();
-					setMainMenuList(false);
+					setMainMenuListVis(false);
 				} break;
 				case 3: { //folder
 					//CMN.Log(fileChooserParams.getAcceptTypes());
@@ -565,7 +750,7 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 						public void onSelectedFilePaths(String[] files, String currentPath) {
 							if(files.length>0) {
 								download_path = new File(files[0]);
-								opt.edit().putString("path", download_path.getPath()).apply();
+								preference.edit().putString("path", download_path.getPath()).apply();
 							}
 						}
 						@Override
@@ -587,7 +772,7 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 					String ext=cursor.getString(7);
 					String url = cursor.getString(2);
 					ScheduleTask task = new ScheduleTask(
-							BrowseActivity.this, id
+							BrowseActivity.this, cursor.getLong(0)
 							, url
 							, download_path
 							, cursor.getString(1)
@@ -597,15 +782,30 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 					//scheduleMap.put(selectionRow, task);
 					//scheduleMap.put(selectionRow, new int[]{50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50});
 					
-					setFieldRowAndIndex(dateToStr(new Date(CMN.now()+1000*25)), selectionRow, 115);
+					setFieldRowAndIndex(dateToStr(new Date(CMN.now()+1000*25)), rowID, 115);
 					
 					editHandler.taskToSchedule = task;
 				} break;
 				case 5: { //mingling
 					cursor.moveToPosition(selectionPos);
-					long rowID = cursor.getLong(0);
+					rowID = cursor.getLong(0);
 					String ext1 = cursor.getString(7);
 					setFieldRowAndIndex(ext1, rowID, 7);
+				} break;
+				case 6: { //delete
+					if(deletingRow!=rowID) {
+						deletingRow = rowID;
+						showT("Tap again to delete!");
+					} else {
+						if(tasksDB.delete(rowID)>0) {
+							if(taskRunning(rowID)) {
+								onItemClick(null, null, 0, 0);
+							}
+							updateTaskList();
+							showT("deleted...");
+						}
+						deletingRow = -1;
+					}
 				} break;
 			}
 		}
@@ -624,28 +824,31 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 	}
 	
 	void queueTaskForDB(long rowID, boolean proliferate) {
-		BrowseTaskExecuter taskExecutor = acquireExecutor();
+		BrowseTaskExecutor taskExecutor = acquireExecutor();
 		taskExecutor.run(this, rowID);
 		taskExecutor.start();
 		if(proliferate) {
 			lifesMap.put(rowID, null);
 		}
+		updateViewForRow(rowID);
+//		DownloadTask task = taskMap.get(rowID);
+//		if(task==null || !task.isDownloading()) {
+//			updateViewForRow(rowID);
+//		}
 	}
 	
-	private BrowseTaskExecuter acquireExecutor() {
+	private BrowseTaskExecutor acquireExecutor() {
 		synchronized (this) {
-			if(taskExecuter!=null && taskExecuter.acquire()) {
-				return taskExecuter;
+			if(taskExecutor !=null) {
+				if(taskExecutor.acquire()) return taskExecutor;
+				taskExecutor.stop();
 			}
-			if(taskExecuter!=null) {
-				taskExecuter.stop();
-			}
-			return taskExecuter = new BrowseTaskExecuter(this);
+			return taskExecutor = new BrowseTaskExecutor(this);
 		}
 	}
 	
 	// 任务启动，添加记录至图
-	DownloadTask startTaskForDB(Cursor cursor) {
+	DownloadTask startTaskForDB(BrowseTaskExecutor taskExecutor, Cursor cursor) {
 		boolean x5 = Utils.littleCat;
 		long id = cursor.getLong(0);
 		DownloadTask task = taskMap.get(id);
@@ -655,7 +858,7 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 		String ext=cursor.getString(7);
 		String url = cursor.getString(2);
 		task = new DownloadTask(
-				this, id
+				this, taskExecutor, id
 				, url
 				, download_path
 				, cursor.getString(1)
@@ -687,10 +890,10 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 	}
 	
 	
-	public void scheduleNxtAuto(long id) {
+	public boolean scheduleNxtAuto(long id) {
 		if(!respawnTask(id)) {
 			ScheduleTask task = scheduleMap.get(id);
-			Integer[] schedule = task.scheduleSeq;
+			Integer[] schedule = task==null?null:task.scheduleSeq;
 			if(schedule!=null) {
 				if(++task.scheduleIter<schedule.length) {
 					int delay = schedule[task.scheduleIter];
@@ -699,8 +902,11 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 				} else {
 					scheduleMap.remove(id);
 				}
+			} else {
+				return false;
 			}
 		}
+		return true;
 	}
 	
 	void setTaskDelayed(long id, int delay, boolean schedule) {
@@ -830,8 +1036,8 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 				CMN.Log(e);
 			}
 		}
-		if(taskExecuter!=null) {
-			taskExecuter.stop();
+		if(taskExecutor !=null) {
+			taskExecutor.stop();
 		}
 	}
 	
@@ -843,21 +1049,33 @@ public class BrowseActivity extends Activity implements View.OnClickListener {
 		return ret;
 	}
 	
-	public void onUrlExtracted(DownloadTask task, String url) {
+	public void onUrlExtracted(DownloadTask task, String url, String title) {
+		//CMN.Log("onUrlExtracted", url, title);
 		if(task!=null) {
 			if(taskRunning(task.id)) {
 				if(!TextUtils.isEmpty(url) && !task.abort.get()) {
+					if(TextUtils.isEmpty(task.title)) {
+						if(title!=null) {
+							task.updateTitle(title);
+						} else if(task.webTitle!=null) {
+							task.updateTitle(task.webTitle);
+						}
+					}
 					task.download(url);
 				} else {
 					task.abort();
 					// fail to extract url and start download. schedule nxt.
 					scheduleNxtAuto(task.id);
 					taskMap.remove(task.id);
+					notifyTaskStopped(task.id);
 				}
 			}
-			BrowseTaskExecuter taskExecuter = this.taskExecuter;
-			if(taskExecuter !=null && taskExecuter.token==task.abort) {
-				taskExecuter.interrupt();
+			BrowseTaskExecutor taskExecutor = task.taskExecutor;
+			CMN.Log("尝试打断", taskExecutor);
+			if(taskExecutor !=null
+					//&& taskExecutor.token==task.abort
+			) {
+				taskExecutor.interrupt();
 			}
 		}
 	}

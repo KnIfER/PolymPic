@@ -16,10 +16,12 @@ import java.net.URL;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DownloadTask implements Runnable{
+	final BrowseTaskExecutor taskExecutor;
 	final WeakReference<BrowseActivity> aRef;
 	final long id;
 	final String url;
 	final File download_path;
+	public String webTitle;
 	String extUrl;
 	String title;
 	final int flag1;
@@ -34,12 +36,14 @@ public class DownloadTask implements Runnable{
 	
 	int state;
 	
-	static DownloadInfo info;
+	DownloadInfo info;
 	static long last;
 	private boolean notified;
+	private boolean stopped;
 	
-	public DownloadTask(BrowseActivity a, long id, String url, File download_path, String title, int flag1, String ext1) {
+	public DownloadTask(BrowseActivity a, BrowseTaskExecutor taskExecutor, long id, String url, File download_path, String title, int flag1, String ext1) {
 		this.aRef = new WeakReference<>(a);
+		this.taskExecutor = taskExecutor;
 		this.id = id;
 		this.url = url;
 		this.download_path = download_path;
@@ -107,15 +111,15 @@ public class DownloadTask implements Runnable{
 							CMN.Log(info.getState() + " " + info.getDelay());
 							break;
 						case DOWNLOADING:
-							long now = System.currentTimeMillis();
-							if (now - 1000 > last) {
-								last = now;
-								CMN.Log(info.getCount());
-							}
-							if(!notified) {
+							//long now = System.currentTimeMillis();
+							//if (now - 1000 > last) {
+							//	last = now;
+							//	CMN.Log(info.getCount());
+							//}
+							if(!notified && info.getCount()>0) {
 								state = 1;
 								BrowseActivity a = aRef.get();
-								a.refreshViewForRow(id);
+								a.updateViewForRow(id);
 								a.thriveIfNeeded(id);
 								notified = true;
 							}
@@ -153,7 +157,7 @@ public class DownloadTask implements Runnable{
 		if(a!=null) {
 			// pull again if needed.
 			boolean ended=true;
-			if(true)
+			if(!stopped)
 			if(!downloadInterrupted && a.respawnTask(id)) { // if not interrupted by the user.
 				ended = false;
 			}
@@ -161,7 +165,7 @@ public class DownloadTask implements Runnable{
 				a.markTaskEnded(id);
 			}
 			a.taskMap.remove(id);
-			a.refreshViewForRow(id);
+			a.updateViewForRow(id);
 		}
 		aRef.clear();
 	}
@@ -174,7 +178,16 @@ public class DownloadTask implements Runnable{
 		}
 	}
 	
+	public boolean isDownloading() {
+		return t!=null&&!abort.get();
+	}
+	
 	public void stop() {
+		stopped = true;
 		abort();
+	}
+	
+	public long getDownloadedLength() {
+		return info==null?-1:info.getCount();
 	}
 }

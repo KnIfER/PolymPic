@@ -59,6 +59,7 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 	public int EnRipenPercent;
 	/**网页规则，即插件。*/
 	public List<WebCompoundListener.SiteRule> rules = Collections.synchronizedList(new ArrayList<>());
+	public List<Object> prunes = Collections.synchronizedList(new ArrayList<>());
 	
 	private int mLastMotionY;
 
@@ -273,6 +274,7 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 		if(data==null) {
 			return false;
 		}
+		try {
 		Parcel parcel = Parcel.obtain();
 		parcel.unmarshall(data, 0, data.length);
 		parcel.setDataPosition(0);
@@ -305,6 +307,9 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 				CMN.Log("复活……", stacks.getSize());
 				return true;
 			}
+		}
+		} catch (Exception e) {
+			CMN.Log(e);
 		}
 		return false;
 	}
@@ -461,5 +466,21 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 				return context.opt;
 		}
 		return holder;
+	}
+	
+	Runnable reviveJSRunnable = () -> getSettings().setJavaScriptEnabled(true);
+	
+	public void shutdownJS() {
+		removeCallbacks(reviveJSRunnable);
+		getSettings().setJavaScriptEnabled(false);
+	}
+	
+	public void reviveJS() {
+		getSettings().setJavaScriptEnabled(true);
+	}
+	
+	public void postReviveJS(long timeMs) {
+		removeCallbacks(reviveJSRunnable);
+		postDelayed(reviveJSRunnable, timeMs);
 	}
 }
