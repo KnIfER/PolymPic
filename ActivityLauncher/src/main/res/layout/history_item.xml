@@ -7,14 +7,39 @@
 	android:layout_height="wrap_content"
 	android:orientation="horizontal"
 	android:clickable="true"
+	android:background="?attr/listChoiceBackgroundIndicator"
+	android:paddingEnd="5dp"
 	>
-	<ImageView
-		android:id="@+id/icon"
-		android:layout_width="35dp"
-		android:layout_height="35dp"
-		android:layout_gravity="center"
-		android:src="@drawable/ic_baseline_history_gray"
-		/>
+	<FrameLayout
+		android:id="@+id/iconp"
+		android:layout_width="28dp"
+		android:layout_height="match_parent"
+		android:clickable="true"
+		android:background="?attr/listChoiceBackgroundIndicator"
+		>
+		<ImageView
+			android:id="@+id/icon"
+			android:layout_width= "28dp"
+			android:layout_height="28dp"
+			android:paddingEnd="5dp"
+			android:paddingStart="5dp"
+			android:layout_gravity="top"
+			android:src="@drawable/ic_baseline_history_gray"
+			android:layout_marginTop="8dp"
+			/>
+
+		<CheckBox
+			android:id="@+id/check1"
+			android:layout_width="35dp"
+			android:layout_height="wrap_content"
+			android:layout_gravity="bottom"
+			tools:checked="true"
+			android:paddingTop="3dp"
+			android:paddingBottom="6dp"
+			android:visibility="gone"
+			tools:visibility="visible"
+			/>
+	</FrameLayout>
 	<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
 		xmlns:tools="http://schemas.android.com/tools"
 		android:layout_width="0dp"
@@ -35,14 +60,15 @@
 				tools:text="一天前"
 				android:textColor="#fff"
 				android:textSize="25sp"
-				android:padding="5dp"
+				android:padding="3dp"
 				android:paddingStart="12dp"
 				android:paddingEnd="12dp"
-				android:layout_marginTop="10dp"
-				android:layout_marginBottom="10dp"
+				android:layout_marginTop=   "6dp"
+				android:layout_marginBottom="4dp"
 				android:layout_gravity="end|center"
 				android:background="@drawable/capsule"
 				android:visibility="gone"
+				tools:visibility="visible"
 				/>
 			<TextView
 				android:id="@+id/title"
@@ -50,9 +76,10 @@
 				android:layout_height="wrap_content"
 				tools:text="Title"
 				android:textColor="#000"
-				android:textSize="25sp"
-				android:padding="10dp"
-				android:paddingStart="12dp"
+				android:textSize="19sp"
+				android:paddingTop="5dp"
+				android:paddingBottom="5dp"
+				android:paddingStart="2dp"
 				android:layout_gravity="center"
 
 				android:shadowColor="#fff"
@@ -72,10 +99,11 @@
 				android:layout_weight="1"
 				android:layout_height="wrap_content"
 				tools:text="baidu.com"
-				android:textSize="18sp"
-				android:textColor="#555"
-				android:padding="5dp"
-				android:paddingStart="12dp"
+				android:textSize="15sp"
+				android:textColor="#505050"
+				android:paddingTop="3dp"
+				android:paddingBottom="6dp"
+				android:paddingStart="2dp"
 				android:singleLine="true"
 				android:ellipsize="end"
 				/>
@@ -85,8 +113,8 @@
 				android:layout_width="wrap_content"
 				android:layout_height="wrap_content"
 				tools:text="1/6 12:21"
-				android:textSize="18sp"
-				android:textColor="#555"
+				android:textSize="16sp"
+				android:textColor="#505050"
 				android:singleLine="true"
 				android:paddingEnd="1dp"
 				/>
@@ -94,13 +122,5 @@
 		</LinearLayout>
 
 	</LinearLayout>
-
-	<CheckBox
-		android:id="@+id/check1"
-		android:layout_width="35dp"
-		tools:checked="true"
-		android:layout_height="match_parent"
-		android:visibility="gone"
-		/>
 </LinearLayout>
 </layout>

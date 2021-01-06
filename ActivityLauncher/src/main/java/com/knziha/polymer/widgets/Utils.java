@@ -367,6 +367,14 @@ public class Utils {
 		}
 	}
 	
+	public static int httpIndex(String url) {
+		int idx = url.indexOf("://");
+		if(idx>=4&&url.charAt(0)=='h') {
+			return idx+2;
+		}
+		return -1;
+	}
+	
 	public static class DummyOnClick implements View.OnClickListener {
 		@Override
 		public void onClick(View v) {
@@ -551,15 +559,13 @@ public class Utils {
 		return false;
 	}
 	
-	static int resourceId;
+	static int resourceId=-1;
 	public static int getStatusBarHeight(Resources resources) {
-		if(resourceId==0)
+		if(resourceId==-1)
 			try {
 				resourceId = resources.getIdentifier("status_bar_height", "dimen", "android");
-			} catch (Exception e) {
-				resourceId=0;
-			}
-		if (resourceId > 0) {
+			} catch (Exception ignored) { }
+		if (resourceId != -1) {
 			return resources.getDimensionPixelSize(resourceId);
 		}
 		return 0;

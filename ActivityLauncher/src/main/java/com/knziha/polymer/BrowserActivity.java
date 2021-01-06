@@ -230,7 +230,6 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	private boolean polysearching;
 	private ColorDrawable AppWhiteDrawable;
 	private Drawable frame_web;
-	private int mStatusBarH;
 	private CoordinatorLayout.Behavior bottombarScrollBehaviour;
 	private AppBarLayout.LayoutParams toolbatLP;
 	private CoordinatorLayout.LayoutParams bottombarLP;
@@ -305,12 +304,15 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	private boolean bottombarHidden;
 	private int softMode;
 	private final int softModeHold = WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN | WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN;
+	private final int softModeResize = WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN|WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE;
 	
 	
 	@Override
 	public void onConfigurationChanged(@NonNull Configuration newConfig) {
 		CMN.Log("onConfigurationChanged");
 		super.onConfigurationChanged(newConfig);
+		mResource = getResources();
+		mStatusBarH = Utils.getStatusBarHeight(mResource);
 		mConfiguration.setTo(newConfig);
 		getWindowManager().getDefaultDisplay().getMetrics(dm);
 		if(recyclerView!=null && !DismissingViewHolder) {
@@ -358,7 +360,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		//getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN|WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
 		//getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN|WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
 		//win.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN|WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
-		setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+		setSoftInputMode(softModeResize);
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
 		
 		boolean transit = Options.getTransitSplashScreen();
@@ -1641,7 +1643,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		}
 		if(DismissingViewHolder) {
 			webtitle.setText("标签页管理");
-			setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+			setSoftInputMode(softModeResize);
 		} else {
 			webtitle.setText(currentWebView.getTitle());
 			if(fromClick==-1) {
@@ -1819,8 +1821,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			int W = root.getWidth();
 			if(W==0) W=dm.widthPixels;
 			
-			int resourceId = mResource.getIdentifier("status_bar_height", "dimen", "android");
-			mStatusBarH = mResource.getDimensionPixelSize(resourceId);
+			mStatusBarH = Utils.getStatusBarHeight(mResource);
+			
 			int H = root.getHeight()-mStatusBarH;
 			if(H<=0) H=dm.heightPixels;
 			
@@ -2093,7 +2095,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		etSearch.clearFocus();
 		imm.hideSoftInputFromWindow(etSearch.getWindowToken(), 0);
 		if(DismissingViewHolder)
-			setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+			setSoftInputMode(softModeResize);
 	}
 	
 	private void decideTopBotBH() {
@@ -3464,7 +3466,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		return fieldVal;
 	}
 	
-	private void setStatusBarColor(Window window){
+	public static void setStatusBarColor(Window window){
 		window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS
 				| WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
 		window.getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN

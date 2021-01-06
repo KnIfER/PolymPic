@@ -402,7 +402,10 @@ public class BrowseActivity extends Toastable_Activity
 			appHandler.sendEmptyMessage(110);
 		}
 		if(mWakeLocked) {
-			mWakeLock.release();
+			try {
+				mWakeLock.release();
+			} catch (Exception ignored) { }
+			mWakeLocked=false;
 		}
 	}
 	

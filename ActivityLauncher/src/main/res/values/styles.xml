@@ -17,6 +17,18 @@
         <!-- All customizations that are NOT specific to a particular API-level can go here. -->
     </style>
 
+
+	<style name="DialogAnimation" parent="android:Animation">
+		<item name="android:windowEnterAnimation">@anim/abc_popup_enter</item>
+<!--		<item name="android:windowExitAnimation">@anim/abc_popup_exit</item>-->
+		<item name="android:windowExitAnimation">@anim/animnull</item>
+	</style>
+
+    <!-- Application theme. -->
+    <style name="Dialog" parent="AppThemeRaw">
+		<item name="android:windowAnimationStyle">@style/DialogAnimation</item>
+    </style>
+
 	<style name="AppThemeTranslucent" parent="AppThemeRaw">
 		<item name="android:windowTranslucentStatus">true</item>
 		<item name="android:windowIsTranslucent">true</item>

@@ -123,13 +123,13 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 		CMN.Log("onDbCreate");
 		// browse history.
 		final String createHistoryTable = "create table if not exists urls(" +
-				"id INTEGER PRIMARY KEY AUTOINCREMENT," +
-				"url LONGVARCHAR," +
-				"title LONGVARCHAR," +
-				"visit_count INTEGER DEFAULT 0 NOT NULL," +
-				"note_id INTEGER DEFAULT -1 NOT NULL,"+
-				"creation_time INTEGER NOT NULL,"+
-				"last_visit_time INTEGER NOT NULL)";
+				"id INTEGER PRIMARY KEY AUTOINCREMENT," + //0
+				"url LONGVARCHAR," + //1
+				"title LONGVARCHAR," + //2
+				"visit_count INTEGER DEFAULT 0 NOT NULL," + //3
+				"note_id INTEGER DEFAULT -1 NOT NULL,"+ //4
+				"creation_time INTEGER NOT NULL,"+ //5
+				"last_visit_time INTEGER NOT NULL)"; //6
         db.execSQL(createHistoryTable);
 		
 		// search history.
@@ -200,6 +200,7 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 		ensureDwnldTable(db);
 		
 		db.execSQL("CREATE INDEX if not exists urls_url_index ON urls (url)");
+		db.execSQL("CREATE INDEX if not exists urls_time_index ON urls (last_visit_time)");
 		db.execSQL("CREATE INDEX if not exists annots_url_index ON annots (url)");
 		db.execSQL("CREATE INDEX if not exists keyword_search_terms_index3 ON keyword_search_terms (term)");
 		db.execSQL("CREATE INDEX if not exists pdoc_name_index ON pdoc (name)");

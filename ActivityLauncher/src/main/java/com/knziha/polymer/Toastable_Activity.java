@@ -74,6 +74,7 @@ public class Toastable_Activity extends AppCompatActivity {
 	public DisplayMetrics dm;
 	public LayoutInflater inflater;
 	public InputMethodManager imm;
+	public int mStatusBarH;
 
 	public long lastClickTime=0;
 
