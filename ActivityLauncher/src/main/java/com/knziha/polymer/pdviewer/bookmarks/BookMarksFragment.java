@@ -81,6 +81,7 @@ public class BookMarksFragment extends DialogFragment implements Toolbar.OnMenuI
 	}
 	
 	private void resize() {
+		//if(false)
 		if(width!=-1 || height!=-1) {
 			if(getDialog()!=null) {
 				Window window = getDialog().getWindow();

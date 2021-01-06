@@ -1,4 +1,4 @@
-package com.knziha.polymer;
+ package com.knziha.polymer;
 
 
 import android.animation.Animator;
@@ -128,6 +128,7 @@ import com.knziha.polymer.webslideshow.RecyclerViewPager;
 import com.knziha.polymer.webslideshow.ViewPagerTouchHelper;
 import com.knziha.polymer.webslideshow.ViewUtils;
 import com.knziha.polymer.webslideshow.WebPic.WebPic;
+import com.knziha.polymer.webstorage.WebStacksSer;
 import com.knziha.polymer.widgets.AppIconsAdapter;
 import com.knziha.polymer.widgets.DescriptiveImageView;
 import com.knziha.polymer.widgets.DialogWithTag;
@@ -144,6 +145,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
@@ -283,7 +285,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			//alpha1.setFloatValues(1f, 0f);
 			//alpha1.setDuration(180);
 			//alpha1.start();
-			if(DissmissingViewHolder) {
+			if(DismissingViewHolder) {
 				//viewpager_holder.setVisibility(View.GONE);
 				UIData.appbar.setAlpha(1);
 				//imageViewCover.setVisibility(View.GONE);
@@ -301,6 +303,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	private Paint paint = new Paint();
 	private BottomSheetDialog bottomDwnldDlg;
 	private boolean bottombarHidden;
+	private int softMode;
+	private final int softModeHold = WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN | WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN;
+	
 	
 	@Override
 	public void onConfigurationChanged(@NonNull Configuration newConfig) {
@@ -308,7 +313,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		super.onConfigurationChanged(newConfig);
 		mConfiguration.setTo(newConfig);
 		getWindowManager().getDefaultDisplay().getMetrics(dm);
-		if(recyclerView!=null && !DissmissingViewHolder) {
+		if(recyclerView!=null && !DismissingViewHolder) {
 			calculateItemWidth(true);
 		} else {
 			bNeedReCalculateItemWidth = true;
@@ -353,7 +358,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		//getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN|WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
 		//getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN|WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
 		//win.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN|WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
-		win.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+		setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
 		
 		boolean transit = Options.getTransitSplashScreen();
@@ -1002,7 +1007,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					float lastX = event.getX();
 					lastY = event.getY();
 					float delta = Math.abs(lastX-orgX);
-					if(DissmissingViewHolder) {
+					if(DismissingViewHolder) {
 						//CMN.Log("ACTION_MOVE");
 						if(!dragging && delta>100) {
 							preventDefault(v, event);
@@ -1468,7 +1473,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 						if(targetIsPage(target)) {
 							//AttachWebAt(target);
 							//currentWebView.setVisibility(View.INVISIBLE);
-							DissmissingViewHolder=false;
+							DismissingViewHolder =false;
 							findBMTmpInViewHolder(vh);
 							toggleTabView(target, v);
 						}
@@ -1634,8 +1639,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		if(webtitle.getVisibility()!=View.VISIBLE) {
 			webtitle_setVisibility(false);
 		}
-		if(DissmissingViewHolder) {
+		if(DismissingViewHolder) {
 			webtitle.setText("标签页管理");
+			setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
 		} else {
 			webtitle.setText(currentWebView.getTitle());
 			if(fromClick==-1) {
@@ -1725,8 +1731,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	}
 	
 	private void toggleInternalTabView(int fromClick) {
-		DissmissingViewHolder = viewpager_holder.getVisibility()==View.VISIBLE;
-		if(DissmissingViewHolder) {
+		DismissingViewHolder = viewpager_holder.getVisibility()==View.VISIBLE;
+		if(DismissingViewHolder) {
 			int targetPos = layoutManager.targetPos-1;
 			if(fromClick>=0) {
 				targetPos = fromClick;
@@ -1785,10 +1791,10 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	ObjectAnimator alpha1;
 	PropertyValuesHolder alpha2;
 	ObjectAnimator alpha3;
-	boolean DissmissingViewHolder=true;
+	boolean DismissingViewHolder=true;
 	Runnable startAnimationRunnable = () -> {
 		if(anioutTopBotForTab) {
-			UIData.appbar.setExpanded(DissmissingViewHolder, true);
+			UIData.appbar.setExpanded(DismissingViewHolder, true);
 		}
 		tabsAnimator.start();
 	};
@@ -1809,7 +1815,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		float ttY=1, ttX=1, targetScale=mItemWidth;
 		boolean bc=fromClick>=0;
 		View appbar=UIData.appbar;
-		if(true||DissmissingViewHolder||bc) {
+		if(true|| DismissingViewHolder ||bc) {
 			int W = root.getWidth();
 			if(W==0) W=dm.widthPixels;
 			
@@ -1853,7 +1859,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			animatorProp=null;
 		}
 		
-		if(!DissmissingViewHolder) {
+		if(!DismissingViewHolder) {
 			int targetPos = layoutManager.targetPos-1;
 			if(targetPos<0) targetPos=0;
 			int bcc=0;
@@ -1886,7 +1892,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		int bottombar2_alpha = bottombar2Background().getAlpha();
 		float appbar_alpha = appbar.getAlpha();
 		root.removeCallbacks(removeIMCoverRunnable);
-		if(!DissmissingViewHolder){// 放
+		if(!DismissingViewHolder){// 放
 			alpha1.setIntValues(bottombar2_alpha, 255);
 			alpha3.setFloatValues(appbar_alpha, 1);
 			if(added/* || bc*/) {
@@ -1897,7 +1903,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			
 			bNeedPost = coverupTheTab(added);
 			
-			DissmissingViewHolder=true;
+			DismissingViewHolder =true;
 			layout.setVisibility(View.VISIBLE);
 			//layout.setAlpha(1);
 			
@@ -1927,7 +1933,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		else {  // 收
 			alpha1.setIntValues(bottombar2_alpha, 128);
 			alpha3.setFloatValues(appbar_alpha, 0);
-			DissmissingViewHolder=false;
+			DismissingViewHolder =false;
 			boolean b1=Options.getAlwaysRefreshThumbnail();
 			if(b1){
 //				currentWebView.version++;
@@ -2086,6 +2092,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	private void etSearch_clearFocus() {
 		etSearch.clearFocus();
 		imm.hideSoftInputFromWindow(etSearch.getWindowToken(), 0);
+		if(DismissingViewHolder)
+			setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
 	}
 	
 	private void decideTopBotBH() {
@@ -2137,6 +2145,16 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			return;
 		}
 		switch (v.getId()){
+			/* 历史 */
+			case R.id.menu_icon3: {
+				int id = WeakReferenceHelper.history_list;
+				BrowserHistory historyList = (BrowserHistory) getReferencedObject(id);
+				if(historyList==null) {
+					CMN.Log("重建历史列表");
+					putReferencedObject(id, historyList = new BrowserHistory());
+				}
+				historyList.show(getSupportFragmentManager(), "history");
+			} break;
 			/* 分享 */
 			case R.id.menu_icon6: {
 				shareUrlOrText();
@@ -2225,6 +2243,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				updateQRBtn();
 				webtitle_setVisibility(true);
 				if(opt.getSelectAllOnFocus()||opt.getShowImeImm()) {
+					setSoftInputMode(softModeHold);
 					v.post(() -> { //upEvt
 						etSearch.requestFocus();
 						imm.showSoftInput(etSearch, 0);
@@ -2420,7 +2439,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			break;
 			case R.id.browser_widget10:
 				tmpBmRef = DummyBMRef;
-				onLeaveCurrentTab(DissmissingViewHolder?0:1);
+				onLeaveCurrentTab(DismissingViewHolder ?0:1);
 				boolean post = false;
 				long delay=0;
 				if(viewpager_holder==null) {
@@ -2432,7 +2451,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 						post = false;
 						delay = 180;
 					}
-				} else if(bNeedReCalculateItemWidth && DissmissingViewHolder) {
+				} else if(bNeedReCalculateItemWidth && DismissingViewHolder) {
 					calculateItemWidth(false);
 					bNeedReCalculateItemWidth = false;
 				}
@@ -2481,9 +2500,29 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					Intent intent = new Intent(this, QRActivity.class);
 					startActivityForResult(intent, RequsetUrlFromCamera);
 				} else {
-					execBrowserGoTo(url);
+					if(url.equals("w:")) {
+						File f = new File("/storage/emulated/0/w1");
+						if(f.exists()) {
+							try(FileInputStream in = new FileInputStream(f)) {
+								byte[] data = new byte[(int) f.length()];
+								in.read(data);
+								Bundle bundle = new Bundle();
+								new WebStacksSer().readData(bundle, data);
+								currentWebView.restoreState(bundle);
+							} catch (Exception e){ CMN.Log(e); }
+						}
+					} else {
+						execBrowserGoTo(url);
+					}
 				}
 			} break;
+		}
+	}
+	
+	private void setSoftInputMode(int mode) {
+		if(softMode!=mode) {
+			softMode=mode;
+			getWindow().setSoftInputMode(mode);
 		}
 	}
 	

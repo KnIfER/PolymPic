@@ -21,7 +21,6 @@ import android.content.Context;
 import android.database.Cursor;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Parcel;
 import android.view.MotionEvent;
 import android.view.ViewGroup;
 import android.webkit.WebBackForwardList;
@@ -35,6 +34,10 @@ import androidx.core.view.ViewCompat;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.WebOptions;
 import com.knziha.polymer.database.LexicalDBHelper;
+import com.knziha.polymer.toolkits.Utils.BU;
+import com.knziha.polymer.webstorage.WebStacks;
+import com.knziha.polymer.webstorage.WebStacksSer;
+import com.knziha.polymer.webstorage.WebStacksStd;
 import com.knziha.polymer.widgets.WebViewmy;
 
 import java.util.ArrayList;
@@ -75,6 +78,10 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 	private WebCompoundListener listener;
 	
 	public boolean PageFinishedPosted;
+	
+	static final WebStacks webStacksWriterStd = new WebStacksStd();
+	
+	public static WebStacks webStacksWriter = webStacksWriterStd;
 	
 	public AdvancedBrowserWebView(Context context) {
 		super(context);
@@ -275,12 +282,15 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 			return false;
 		}
 		try {
-		Parcel parcel = Parcel.obtain();
-		parcel.unmarshall(data, 0, data.length);
-		parcel.setDataPosition(0);
+		WebStacks stateReader = webStacksWriterStd;
+		if(data.length>4) {
+			int magic = BU.getInt(data, 0);
+			if(magic==123456789) {
+				stateReader = new WebStacksSer();
+			}
+		}
 		Bundle bundle = new Bundle();
-		bundle.readFromParcel(parcel);
-		parcel.recycle();
+		stateReader.readData(bundle, data);
 		if(holder.getLuxury()) {
 			ArrayList<String> BackList = bundle.getStringArrayList("PBL");
 			CMN.Log("PBL", BackList);
@@ -355,18 +365,22 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 				}
 			}
 			if(NeedSave) {
-				Parcel parcel = Parcel.obtain();
-				parcel.setDataPosition(0);
-				bundle.writeToParcel(parcel, 0);
-				byte[] data = parcel.marshall();
-				parcel.recycle();
-				//BU.printFile(data, stackpath.getPath());
+				byte[] data = webStacksWriter.bakeData(bundle);
+				//BU.printFile(data, "/storage/emulated/0/myFolder/w");
 				ContentValues values = new ContentValues();
 				values.put("webstack", data);
 				LexicalDBHelper.getInstancedDb().update("webtabs", values, "id=?", new String[]{""+holder.id});
 				if(preserve>=0) {
 					PolymerBackList.subList(preserve, PolymerBackList.size()).clear();
 				}
+				// "w:" test
+//				WebStacksSer wss = new WebStacksSer();
+//				data = wss.bakeData(bundle);
+//				BU.printFile(data, "/storage/emulated/0/myFolder/w1");
+//				CMN.Log("data.length", data.length);
+//				BU.printBytes(data, 0, Math.min(data.length, 100));
+//				bundle.clear();
+//				wss.retrieveData(bundle, data);
 			}
 		}
 	}
