@@ -33,7 +33,7 @@ import java.util.Date;
 
 import static com.knziha.polymer.widgets.Utils.EmptyCursor;
 
-public class BrowserHistory extends DialogFragment implements View.OnClickListener {
+public class BrowserDownloads extends DialogFragment implements View.OnClickListener {
 	HistoryBinding UIData;
 	RecyclerView hyRv;
 	Cursor cursor = EmptyCursor;
@@ -76,7 +76,10 @@ public class BrowserHistory extends DialogFragment implements View.OnClickListen
 				@Override
 				public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
 					cursor.moveToPosition(position);
-					String url = cursor.getString(1);
+					String url = cursor.getString(2);
+					String title = cursor.getString(7);
+					long time = cursor.getLong(10);
+					
 					int idx = Utils.httpIndex(url);
 					if(idx>0) {
 						if(url.startsWith("www.", idx+1)) {
@@ -86,11 +89,9 @@ public class BrowserHistory extends DialogFragment implements View.OnClickListen
 					}
 					holder.itemData.subtitle.setText(url);
 					
-					String title = cursor.getString(2);
 					holder.itemData.title.setText(title);
 					holder.itemData.title.setMaxLines(Utils.httpIndex(title)>0?1:10);
 					
-					long time = cursor.getLong(6);
 					date.setTime(time);
 					
 					holder.itemData.time.setText(dateFormatter.format(date));
@@ -99,7 +100,7 @@ public class BrowserHistory extends DialogFragment implements View.OnClickListen
 					
 					if(!showTimeCapsule) {
 						cursor.moveToPosition(position-1);
-						long time1 = cursor.getLong(6);
+						long time1 = cursor.getLong(10);
 						date1.setTime(time1);
 						if(date.getDay()!=date1.getDay()||Math.abs(time-time1)>24*60*60*1000) {
 							showTimeCapsule = true;
@@ -114,6 +115,8 @@ public class BrowserHistory extends DialogFragment implements View.OnClickListen
 						holder.itemData.capsule.setVisibility(View.GONE);
 						((ViewGroup.MarginLayoutParams)holder.itemData.icon.getLayoutParams()).topMargin=(int) (8* GlobalOptions.density);
 					}
+					
+					holder.itemData.icon.setImageResource(R.drawable.ic_file_download_black_24dp);
 					
 				}
 				
@@ -160,7 +163,7 @@ public class BrowserHistory extends DialogFragment implements View.OnClickListen
 	}
 	
 	private void pullData() {
-		cursor = LexicalDBHelper.getInstancedDb().rawQuery("select * from urls order by last_visit_time DESC", null);
+		cursor = LexicalDBHelper.getInstancedDb().rawQuery("select * from downloads order by creation_time DESC", null);
 		adapter.notifyDataSetChanged();
 	}
 	

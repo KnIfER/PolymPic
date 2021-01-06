@@ -2157,6 +2157,16 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				}
 				historyList.show(getSupportFragmentManager(), "history");
 			} break;
+			/* 下载 */
+			case R.id.menu_icon4: {
+				int id = WeakReferenceHelper.dwnld_list;
+				BrowserDownloads downloadList = (BrowserDownloads) getReferencedObject(id);
+				if(downloadList==null) {
+					CMN.Log("重建下载列表");
+					putReferencedObject(id, downloadList = new BrowserDownloads());
+				}
+				downloadList.show(getSupportFragmentManager(), "downloads");
+			} break;
 			/* 分享 */
 			case R.id.menu_icon6: {
 				shareUrlOrText();

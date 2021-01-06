@@ -596,14 +596,14 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 				"id INTEGER PRIMARY KEY AUTOINCREMENT," + // 0
 				"tid TEXT," + // 1
 				"url TEXT NOT NULL," + // 2
-				"path TEXT," + // 1
-				"type INTEGER DEFAULT 0 NOT NULL," + // 15
-				"ext TEXT," + // 16
-				"mime TEXT," + // 16
-				"filename TEXT," + // 16
-				"fromUrl TEXT," + // 16
-				"size INTEGER DEFAULT 0 NOT NULL," + // 15
-				"creation_time INTEGER DEFAULT 0 NOT NULL" + // 15
+				"path TEXT," + // 3
+				"type INTEGER DEFAULT 0 NOT NULL," + // 4
+				"ext TEXT," + //  5
+				"mime TEXT," + // 6
+				"filename TEXT," + // 7
+				"fromUrl TEXT," + // 8
+				"size INTEGER DEFAULT 0 NOT NULL," + // 9
+				"creation_time INTEGER DEFAULT 0 NOT NULL" + // 10
 				")";
 		db.execSQL(createDwnldTable);
 		db.execSQL("CREATE INDEX if not exists downloads_url_index ON downloads (url)");

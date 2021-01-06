@@ -9,7 +9,8 @@ public class WeakReferenceHelper {
 	public final static int top_menu = 2;
 	public final static int share_dialog = 3;
 	public final static int history_list = 4;
-	public final static int poolSize = 5;
+	public final static int dwnld_list = 5;
+	public final static int poolSize = 6;
 	public final static String[] topDomainNames = new String[]{
 		"aaa",
 		"aarp",
