@@ -636,6 +636,10 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 	
 	public long recordDwnldItem(long tid, String url, String fileName, long contentLength, String mimetype) {
 		ContentValues values = new ContentValues();
+		//values.put("tid", -1);
+		//int count = database.update("downloads", values, "tid=?", new String[]{""+tid});
+		//CMN.Log("敲打", count, tid);
+		values.remove("id");
 		values.put("tid", tid);
 		values.put("url", url);
 		values.put("creation_time", CMN.now());

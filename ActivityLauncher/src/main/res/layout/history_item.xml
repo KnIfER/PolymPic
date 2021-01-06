@@ -10,17 +10,18 @@
 	android:background="?attr/listChoiceBackgroundIndicator"
 	android:paddingEnd="5dp"
 	>
+
 	<FrameLayout
 		android:id="@+id/iconp"
-		android:layout_width="28dp"
+		android:layout_width="32dp"
 		android:layout_height="match_parent"
 		android:clickable="true"
 		android:background="?attr/listChoiceBackgroundIndicator"
 		>
 		<ImageView
 			android:id="@+id/icon"
-			android:layout_width= "28dp"
-			android:layout_height="28dp"
+			android:layout_width= "32dp"
+			android:layout_height="32dp"
 			android:paddingEnd="5dp"
 			android:paddingStart="5dp"
 			android:layout_gravity="top"
@@ -59,12 +60,12 @@
 				android:layout_height="wrap_content"
 				tools:text="一天前"
 				android:textColor="#fff"
-				android:textSize="25sp"
+				android:textSize="19sp"
 				android:padding="3dp"
 				android:paddingStart="12dp"
-				android:paddingEnd="12dp"
-				android:layout_marginTop=   "6dp"
-				android:layout_marginBottom="4dp"
+				android:paddingEnd=  "12dp"
+				android:layout_marginTop=   "7dp"
+				android:layout_marginBottom="7dp"
 				android:layout_gravity="end|center"
 				android:background="@drawable/capsule"
 				android:visibility="gone"
@@ -93,6 +94,20 @@
 			android:layout_height="wrap_content"
 			android:orientation="horizontal"
 			>
+			<TextView
+				android:id="@+id/subtitle1"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				tools:text="5 MB"
+				android:textSize="16sp"
+				android:textColor="#333"
+				android:paddingTop="3dp"
+				android:paddingBottom="6dp"
+				android:paddingStart="2dp"
+				android:paddingEnd="12dp"
+				android:singleLine="true"
+				android:visibility="gone"
+				/>
 			<TextView
 				android:id="@+id/subtitle"
 				android:layout_width="0dp"

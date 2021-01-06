@@ -278,7 +278,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	private RequestBuilder<Drawable> glide;
 	private String android_ua;
 	
-	DownloadHandlerStd downloader;
+	private DownloadHandlerStd downloader;
 	
 	private Animator.AnimatorListener animatorLis = new AnimatorListenerAdapter() {
 		@Override
@@ -853,6 +853,13 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				ca.setPadding(padpad, pad, padpad, pad);
 			}
 		}
+	}
+	
+	public DownloadHandlerStd getDownloader() {
+		if(downloader==null) {
+			downloader = new DownloadHandlerStd(this, historyCon);
+		}
+		return downloader;
 	}
 	
 	class BrowserSlider implements View.OnTouchListener {

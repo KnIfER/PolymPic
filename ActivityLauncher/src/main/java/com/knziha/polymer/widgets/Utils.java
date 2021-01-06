@@ -371,7 +371,7 @@ public class Utils {
 	}
 	
 	public static int httpIndex(String url) {
-		int idx = url.indexOf("://");
+		int idx = url==null?0:url.indexOf("://");
 		if(idx>=4&&url.charAt(0)=='h') {
 			return idx+2;
 		}

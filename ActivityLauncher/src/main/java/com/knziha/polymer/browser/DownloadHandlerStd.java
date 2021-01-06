@@ -11,6 +11,10 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
+import android.view.View;
+import android.view.animation.Animation;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.knziha.filepicker.utils.FU;
 import com.knziha.polymer.R;
@@ -76,7 +80,7 @@ public class DownloadHandlerStd {
 		private boolean recordRealPathForDwnldWithRow(long dwnldID, long rowId, DownloadManager downloadManager, LexicalDBHelper db) {
 			String realUrl=null;
 			Cursor qursor = downloadManager.query(new DownloadManager.Query().setFilterById(dwnldID));
-			if(qursor.moveToNext()) {
+			if(qursor!=null && qursor.moveToNext()) {
 				realUrl = qursor.getString(qursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI));
 			}
 			if(realUrl!=null) {
@@ -162,5 +166,60 @@ public class DownloadHandlerStd {
 		}
 		qursor.close();
 		return null;
+	}
+	
+	
+	public static class DownloadItemView {
+		public final ImageView downloadIconView;
+		public final TextView downloadProgressIndicator;
+		public boolean running;
+		public Animation mShake;
+		public long tid;
+		public boolean animStarted;
+		
+		public DownloadItemView(ImageView downloadIconView, TextView downloadProgressIndicator) {
+			this.downloadIconView = downloadIconView;
+			this.downloadProgressIndicator = downloadProgressIndicator;
+			this.downloadProgressIndicator.setVisibility(View.VISIBLE);
+		}
+	}
+	
+	public void queryDownloadStates(long id, DownloadItemView dwnldView, int normalRes) {
+		Cursor cursor = downloadManager.query(new DownloadManager.Query().setFilterById(id));
+		dwnldView.running = false;
+		int mRes = normalRes;
+		String tmp = " -- ";
+		if (cursor != null && cursor.moveToFirst()) {
+			int status = cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_STATUS));
+			//CMN.Log(id, "status???", status, status==DownloadManager.STATUS_RUNNING, dwnldView);
+			if(status==DownloadManager.STATUS_FAILED) {
+				mRes = R.drawable.abc_ic_clear_material;
+			} else if(status==DownloadManager.STATUS_PAUSED) {
+				//downloadIndicator.setImageResource(R.drawable.pause);
+			} else {
+				mRes = normalRes;
+				if(status==DownloadManager.STATUS_RUNNING) {
+					dwnldView.running = true;
+				}
+			}
+//			int fileName = cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_FILENAME);
+//			int fileUri = cursor.getColumnIndex(DownloadManager.COLUMN_URI);
+			long totalBytes = cursor.getLong(cursor.getColumnIndex(DownloadManager.COLUMN_TOTAL_SIZE_BYTES));
+			String D = FU.formatSize(totalBytes);
+			if(status==DownloadManager.STATUS_SUCCESSFUL) {
+				tmp = D+"  ";
+			} else
+			{
+				long downloadedBytes = cursor.getLong(cursor.getColumnIndex(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR));
+				String N = FU.formatSize(downloadedBytes);
+				if(N.regionMatches(N.length()-2, D, D.length()-2, 2)) {
+					N = N.substring(0, N.length()-3);
+				}
+				tmp = N+"/"+D;
+			}
+		}
+		cursor.close();
+		dwnldView.downloadIconView.setImageResource(mRes);
+		dwnldView.downloadProgressIndicator.setText(tmp);
 	}
 }

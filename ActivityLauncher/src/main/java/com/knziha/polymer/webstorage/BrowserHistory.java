@@ -68,18 +68,16 @@ public class BrowserHistory extends DialogFragment implements View.OnClickListen
 				}
 				url = url.substring(idx+1);
 			}
-			
 			HistoryItemBinding viewData = holder.itemData;
 			viewData.subtitle.setText(url);
 			viewData.title.setText(title);
 			viewData.title.setMaxLines(Utils.httpIndex(title)>0?1:10);
-			
 			date.setTime(time);
-			
 			viewData.time.setText(dateFormatter.format(date));
 			
-			boolean showTimeCapsule = position==0;
+			BrowserHistory.this.onBindViewHolder(holder, cursor, position);
 			
+			boolean showTimeCapsule = position==0;
 			if(!showTimeCapsule) {
 				cursor.moveToPosition(position-1);
 				long time1 = cursor.getLong(3);
@@ -88,7 +86,6 @@ public class BrowserHistory extends DialogFragment implements View.OnClickListen
 					showTimeCapsule = true;
 				}
 			}
-			
 			if(showTimeCapsule) {
 				viewData.capsule.setVisibility(View.VISIBLE);
 				viewData.capsule.setText(dateFormatter1.format(date));
@@ -97,14 +94,16 @@ public class BrowserHistory extends DialogFragment implements View.OnClickListen
 				viewData.capsule.setVisibility(View.GONE);
 				((ViewGroup.MarginLayoutParams) viewData.icon.getLayoutParams()).topMargin=(int) (8* GlobalOptions.density);
 			}
-			
-			viewData.icon.setImageResource(baseIconIndicatorRes);
 		}
 		
 		@Override
 		public int getItemCount() {
 			return cursor.getCount();
 		}
+	}
+	
+	protected void onBindViewHolder(ViewHolder holder, Cursor cursor, int position) {
+		holder.itemData.icon.setImageResource(baseIconIndicatorRes);
 	}
 	
 	@Nullable
@@ -160,6 +159,7 @@ public class BrowserHistory extends DialogFragment implements View.OnClickListen
 		String url;
 		String title;
 		long time;
+		Object tag;
 		public ViewHolder(HistoryItemBinding itemData) {
 			super(itemData.root);
 			this.itemData = itemData;
