@@ -128,6 +128,8 @@ import com.knziha.polymer.webslideshow.RecyclerViewPager;
 import com.knziha.polymer.webslideshow.ViewPagerTouchHelper;
 import com.knziha.polymer.webslideshow.ViewUtils;
 import com.knziha.polymer.webslideshow.WebPic.WebPic;
+import com.knziha.polymer.webstorage.BrowserDownloads;
+import com.knziha.polymer.webstorage.BrowserHistory;
 import com.knziha.polymer.webstorage.WebStacksSer;
 import com.knziha.polymer.widgets.AppIconsAdapter;
 import com.knziha.polymer.widgets.DescriptiveImageView;

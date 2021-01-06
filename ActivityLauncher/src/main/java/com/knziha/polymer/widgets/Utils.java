@@ -24,6 +24,8 @@ import android.content.res.Resources;
 import android.database.AbstractWindowedCursor;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
@@ -47,6 +49,7 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.EditText;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.GlobalOptions;
 import androidx.recyclerview.widget.RecyclerView;
@@ -677,5 +680,40 @@ public class Utils {
 			h = 31 * h + Character.toLowerCase(toHash.charAt(i));
 		}
 		return h;
+	}
+	
+	public static class RecyclerViewDivider extends RecyclerView.ItemDecoration {
+		static RecyclerViewDivider INSTANCE;
+		final ColorDrawable mDivider = new ColorDrawable(Color.GRAY);
+		final int mDividerHeight = 1;
+		@Override
+		public void onDrawOver(@NonNull Canvas c, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
+			final int childCount = parent.getChildCount();
+			final int width = parent.getWidth();
+			for (int childViewIndex = 0; childViewIndex < childCount; childViewIndex++) {
+				final View view = parent.getChildAt(childViewIndex);
+				if (shouldDrawDividerBelow(view, parent)) {
+					int top = (int) view.getY() + view.getHeight();
+					mDivider.setBounds(0, top, width, top + mDividerHeight);
+					mDivider.draw(c);
+				}
+			}
+		}
+		@Override
+		public void getItemOffsets(@NonNull Rect outRect, @NonNull View view, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
+			if (shouldDrawDividerBelow(view, parent)) {
+				outRect.bottom = mDividerHeight;
+			}
+		}
+		private boolean shouldDrawDividerBelow(View view, RecyclerView parent) {
+			//return parent.getChildViewHolder(view).getLayoutPosition()<parent.getChildCount()-1;
+			return parent.getChildViewHolder(view).getBindingAdapterPosition()<parent.getAdapter().getItemCount()-1;
+		}
+		public static RecyclerViewDivider getInstance() {
+			if(INSTANCE==null) {
+				INSTANCE = new RecyclerViewDivider();
+			}
+			return INSTANCE;
+		}
 	}
 }
