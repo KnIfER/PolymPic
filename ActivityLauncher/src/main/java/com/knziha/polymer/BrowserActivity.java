@@ -3174,7 +3174,12 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 								if(data.toString().startsWith("file://")) {
 									Utils.fuckVM();
 								}
-								startActivity(viewer);
+								try {
+									startActivity(viewer);
+								} catch (Exception e) {
+									showT("打开失败");
+									CMN.Log(e);
+								}
 							}
 						}
 					} break;

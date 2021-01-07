@@ -378,6 +378,14 @@ public class Utils {
 		return -1;
 	}
 	
+	public static String getSubStrWord(String text, int start, int end) {
+		char c = text.charAt(start);
+		if(c>='a'&&c<='z') {
+			return Character.toUpperCase(c)+text.substring(start+1, end);
+		}
+		return text.substring(start, end);
+	}
+	
 	public static class DummyOnClick implements View.OnClickListener {
 		@Override
 		public void onClick(View v) {

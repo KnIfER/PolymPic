@@ -1,11 +1,15 @@
 package com.knziha.polymer;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.net.http.SslError;
 import android.os.Build;
 import android.os.Message;
@@ -24,7 +28,9 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.TextView;
 
+import androidx.appcompat.app.GlobalOptions;
 import androidx.recyclerview.widget.RecyclerView.OnScrollChangedListener;
 
 import com.knziha.polymer.Utils.CMN;
@@ -79,6 +85,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	
 	Map<HostKey, ArrayList<SiteRule>> SiteConfigs = Collections.synchronizedMap(new HashMap<>());
 	ArrayList<Pair<Pattern, SiteRule>> SiteConfigsByPattern = new ArrayList<>();
+	private View appToast;
 	
 	public static class SiteRule {
 		long id;
@@ -599,8 +606,53 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		CMN.Log("SOUL::", url, Thread.currentThread().getId());
 		if(!url.regionMatches(false, 0, "http", 0, 4)
 				&&!url.regionMatches(false, 0, "https", 0, 5)) {
-			if(a.webtitle.getVisibility()== View.VISIBLE) {
-				a.etSearch.setText(url);
+			//if(a.webtitle.getVisibility()== View.VISIBLE) a.etSearch.setText(url);
+			if(true) {
+				int idx = url.indexOf(":");
+				String appScheme = url;
+				if(idx>0) {
+					appScheme = Utils.getSubStrWord(appScheme, 0, idx);
+				}
+				if(appToast==null) {
+					appToast = a.UIData.appToast.getViewStub().inflate();
+					TextView tv = appToast.findViewById(R.id.confirm_button);
+					tv.setOnClickListener(v -> {
+						try {
+							a.startActivity(new Intent(Intent.ACTION_VIEW
+									, Uri.parse((String) appToast.getTag())));
+						} catch (Exception e) {
+							CMN.Log(e);
+							a.showT("跳转失败…");
+						}
+					});
+				}
+				appToast.setVisibility(View.VISIBLE);
+				appToast.setTag(url);
+				TextView tv = appToast.findViewById(R.id.text1);
+				tv.setText(appScheme+" 请求打开外部APP");
+				float targetY = 10 * GlobalOptions.density;
+				Runnable runnable = (Runnable) tv.getTag();
+				if(runnable==null) {
+					AnimatorListenerAdapter animaLis = new AnimatorListenerAdapter() {
+						@Override
+						public void onAnimationEnd(Animator animation) {
+							appToast.setVisibility(View.GONE);
+						}
+					};
+					tv.setTag(runnable = () -> appToast.animate()
+							.alpha(0)
+							.translationY(targetY)
+							.setListener(animaLis));
+				}
+				appToast.removeCallbacks(runnable);
+				appToast.setAlpha(0);
+				appToast.setTranslationY(targetY);
+				appToast.animate()
+						.alpha(1)
+						.translationY(0)
+						.setListener(null)
+				;
+				appToast.postDelayed(runnable, 2350+180);
 			}
 			return true;
 		}
@@ -858,6 +910,9 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	@Override
 	public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
 		CMN.Log("DOWNLOAD:::", url, contentDisposition, mimetype, contentLength);
+		if(appToast.getVisibility()==View.VISIBLE) {
+			return;
+		}
 		a.showDownloadDialog(url, contentLength, mimetype);
 		
 //		Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
