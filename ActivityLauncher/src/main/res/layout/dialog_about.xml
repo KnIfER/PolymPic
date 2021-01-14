@@ -37,17 +37,40 @@
 			android:layout_gravity="center_horizontal"
 			/>
     </ScrollView>
-    
-    <Button
-        android:textColor="@color/zumulv"
-        android:id="@+id/cancel"
-        style="?android:attr/buttonBarButtonStyle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-		android:layout_gravity="end"
-        android:layout_marginEnd="8dp"
-        android:layout_marginBottom="8dp"
-        android:text="@string/confirm" />
+
+	<LinearLayout
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:orientation="horizontal"
+		android:layout_marginBottom="8dp"
+		>
+		<TextView
+			android:id="@+id/bottom_title"
+			android:padding="8dp"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:textSize="18sp"
+			android:text="@string/about"
+			android:background="?attr/listChoiceBackgroundIndicator"
+			android:textColor="@android:color/black"
+			android:visibility="gone"
+			/>
+		<View
+			android:layout_width="0dp"
+			android:layout_weight="1"
+			android:layout_height="match_parent"
+			/>
+		<Button
+			android:id="@+id/cancel"
+			android:textColor="@color/zumulv"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_marginEnd="8dp"
+			android:text="@string/confirm"
+			style="?android:attr/buttonBarButtonStyle"
+			/>
+	</LinearLayout>
+
 
 </LinearLayout>
 

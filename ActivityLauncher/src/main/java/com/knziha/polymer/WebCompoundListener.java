@@ -86,6 +86,15 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	Map<HostKey, ArrayList<SiteRule>> SiteConfigs = Collections.synchronizedMap(new HashMap<>());
 	ArrayList<Pair<Pattern, SiteRule>> SiteConfigsByPattern = new ArrayList<>();
 	private View appToast;
+	public long lastTitleSuppressTime;
+	
+	public boolean dismissAppToast() {
+		if(appToast!=null&&appToast.getVisibility()==View.VISIBLE) {
+			appToast.setVisibility(View.GONE);
+			return true;
+		}
+		return false;
+	}
 	
 	public static class SiteRule {
 		long id;
@@ -257,6 +266,12 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 			AdvancedBrowserWebView mWebView = (AdvancedBrowserWebView) view;
 			mWebView.holder.title = title;
 			if(mWebView==a.currentWebView) {
+				if(lastTitleSuppressTime !=0) {
+					if(CMN.now()- lastTitleSuppressTime <200) {
+						return;
+					}
+					lastTitleSuppressTime =0;
+				}
 				a.webtitle.setText(title);
 			}
 		}
@@ -269,6 +284,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 			a.viewpager_holder_hasTag=true;
 			AdvancedBrowserWebView mWebView = (AdvancedBrowserWebView) view;
 			mWebView.isloading=true;
+			
 			if(mWebView==a.currentWebView) {
 				boolean premature=mWebView.getDelegate(BackendSettings).getPremature();
 				int lowerBound = mWebView.EnRipenPercent;
@@ -337,8 +353,21 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	
 	@Override
 	public void onPageStarted(WebView view, String url, Bitmap favicon) {
-		CMN.Log("onPageStarted……", url, Thread.currentThread().getId());
+		CMN.Log("onPageStarted……", url, view.getUrl(), Thread.currentThread().getId());
 		AdvancedBrowserWebView mWebView = (AdvancedBrowserWebView) view;
+		
+		if(!a.opt.getUpdateUALowEnd()) {
+			a.updateUserAgentString(mWebView, url);
+		}
+		
+		// 滑动隐藏底栏  滑动隐藏顶栏 0
+		// 底栏不动  滑动隐藏顶栏 1
+		// 底栏不动  顶栏不动 2
+		int hideBarType = 1;
+		boolean PadPartPadBar = false;
+		mWebView.layout.syncBarType(hideBarType, PadPartPadBar, a.UIData);
+		
+		//((ViewGroup.MarginLayoutParams)mWebView.layout.getLayoutParams()).bottomMargin=2*a.UIData.bottombar2.getHeight();
 		mWebView.holder.url=url;
 		startHostMatcher.set(url);
 		ArrayList<SiteRule> sm = SiteConfigs.get(startHostMatcher);
@@ -617,9 +646,12 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 					appToast = a.UIData.appToast.getViewStub().inflate();
 					TextView tv = appToast.findViewById(R.id.confirm_button);
 					tv.setOnClickListener(v -> {
+						String appUrl = (String) appToast.getTag();
+						if(appUrl!=null)
 						try {
 							a.startActivity(new Intent(Intent.ACTION_VIEW
-									, Uri.parse((String) appToast.getTag())));
+									, Uri.parse(appUrl)));
+							appToast.setTag(null);
 						} catch (Exception e) {
 							CMN.Log(e);
 							a.showT("跳转失败…");
@@ -679,7 +711,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	@Override
 	public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
 		AdvancedBrowserWebView mWebView = (AdvancedBrowserWebView) view;
-		//CMN.Log("SIR::", url,url.length(), Thread.currentThread().getId());
+		//CMN.Log("SIR::", url, url.length(), Thread.currentThread().getId());
 		//CMN.Log(url.startsWith("https://mark.js"), markjsBytesArr!=null);
 		if(mWebView.prunes.size()>0) {
 			for(Object pI:mWebView.prunes) {
@@ -697,8 +729,8 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 				}
 			}
 		}
-		if(url.startsWith("pp:")) {
-			CMN.Log("pp://", url);
+		if(url.startsWith("polyme://")) {
+			CMN.Log("polyme://", url);
 			try {
 				if(url.contains(".js")) {
 					return new WebResourceResponse("text/javascript","utf8", a.getAssets().open("3"));
@@ -926,13 +958,15 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	
 	@Override
 	public void onScrollChange(View v, int scrollX, int scrollY, int oldx, int oldy) {
-		WebViewmy webview = (WebViewmy) v;
+		AdvancedBrowserWebView webview = (AdvancedBrowserWebView) v;
 		if(PrintStartTime>0 && System.currentTimeMillis()-CustomViewHideTime<5350){
 			CMN.Log("re_scroll...", a.focused);
 			webview.SafeScrollTo(a.printSX, a.printSY);
 			webview.requestLayout();
 			return;
 		}
+		boolean scrollforbid;
+		CMN.Log("onScrollChange", scrollY-oldy);
 		if(webview.forbidScrollWhenSelecting && webview.bIsActionMenuShown && oldy-scrollY>200
 			|| CustomViewHideTime>0 && System.currentTimeMillis()-CustomViewHideTime<350){
 			CMN.Log("re_scroll...");

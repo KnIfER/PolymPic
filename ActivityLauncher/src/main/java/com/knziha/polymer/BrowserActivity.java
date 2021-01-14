@@ -64,6 +64,8 @@ import android.view.inputmethod.EditorInfo;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebBackForwardList;
+import android.webkit.WebHistoryItem;
+import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -346,6 +348,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		
 		} else if(searchEnginePopup!=null && searchEnginePopup.isShowing()) {
 			searchEnginePopup.dismiss();
+		}  else if(mWebListener.dismissAppToast()) {
+		
 		} else {
 			super.onBackPressed();
 		}
@@ -684,7 +688,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			
 			@Override
 			public void afterTextChanged(Editable s) {
-				CMN.Log("afterTextChanged");
+				//CMN.Log("afterTextChanged");
 				if(webtitle.getVisibility()!=View.VISIBLE) {
 					goToBarcodeScanner=s.length()==0;
 					updateQRBtn();
@@ -806,10 +810,39 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		if(currentWebView.holder.getLuxury() && !currentWebView.equalsUrl(text)) {
 			LuxuriouslyLoadUrl(currentWebView, text);
 		} else {
-			currentWebView.loadUrl(text);
+			loadUrl(currentWebView, text);
 		}
 		webtitle_setVisibility(false);
 		etSearch_clearFocus();
+	}
+	
+	private void loadUrl(AdvancedBrowserWebView mWebView, String url) {
+		if(opt.getUpdateUALowEnd()) {
+			updateUserAgentString(mWebView, url);
+		}
+		mWebView.loadUrl(url);
+	}
+	
+	public void updateUserAgentString(AdvancedBrowserWebView mWebView, String url) {
+		historyCon.queryDomain(mWebView, url);
+		boolean pcMode = false;
+		//pcMode = url!=null && url.contains("baidu");
+		String targetUa;
+		if(pcMode) {
+			targetUa = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36";
+		} else {
+			if(android_ua==null) {
+				android_ua = "Mozilla/5.0 (Linux; Android " + Build.VERSION.RELEASE + "; " + Build.MODEL + ") AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Mobile Safari/537.36 OPR/58.2.2878.53403";
+			}
+			//CMN.Log("android_ua", android_ua);
+			targetUa = android_ua;
+		}
+		mWebView.targetUa = targetUa;
+		WebSettings settings = mWebView.getSettings();
+		if(!TextUtils.equals(settings.getUserAgentString(), mWebView.targetUa)) {
+			CMN.Log("测试 ua 设置处……");
+			settings.setUserAgentString(mWebView.targetUa);
+		}
 	}
 	
 	private void webtitle_setVisibility(boolean invisible) {
@@ -2285,6 +2318,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					CMN.Log("刷新……");
 					progressbar_background.setLevel(0);
 					UIData.progressbar.setAlpha(1);
+					if(opt.getUpdateUALowEnd()) {
+						updateUserAgentString(mWebView, mWebView.getUrl());
+					}
 					mWebView.reload();
 					UIData.ivRefresh.setImageResource(R.drawable.ic_close_white_24dp);
 					supressingProgressListener = false;
@@ -2356,10 +2392,15 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				boolean backable = wv.canGoBack();
 				CMN.Log("backable::", backable, wv.getThisIdx(), wv.getUrl());
 				if(backable) {
-					WebBackForwardList stacks = wv.saveState(new Bundle());
-					webtitle.setText(stacks.getItemAtIndex(stacks.getCurrentIndex()-1).getTitle());
+					if(true) {
+						WebBackForwardList stacks = wv.saveState(new Bundle());
+						WebHistoryItem bfItem = stacks.getItemAtIndex(stacks.getCurrentIndex() - 1);
+						mWebListener.lastTitleSuppressTime = CMN.now();
+						webtitle.setText(bfItem.getTitle());
+					}
 					wv.goBack();
-				} else if(wv.holder.getLuxury()) {
+				}
+				else if(wv.holder.getLuxury()) {
 					boolean added = false;
 					int idx = wv.getThisIdx();
 					if(idx>0) {
@@ -2397,10 +2438,15 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				boolean forwadable = wv.canGoForward();
 				CMN.Log("forwadable::", forwadable, wv.getThisIdx(), wv.getUrl());
 				if(forwadable) {
-					WebBackForwardList stacks = wv.saveState(new Bundle());
-					webtitle.setText(stacks.getItemAtIndex(stacks.getCurrentIndex()+1).getTitle());
+					if(true) {
+						WebBackForwardList stacks = wv.saveState(new Bundle());
+						WebHistoryItem bfItem = stacks.getItemAtIndex(stacks.getCurrentIndex() + 1);
+						mWebListener.lastTitleSuppressTime = CMN.now();
+						webtitle.setText(bfItem.getTitle());
+					}
 					wv.goForward();
-				} else  if(wv.holder.getLuxury()) {
+				}
+				else  if(wv.holder.getLuxury()) {
 					int cc = wv.layout.getChildCount();
 					int idx = wv.getThisIdx();
 					if(idx<cc-1) {
@@ -2426,6 +2472,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				break;
 			case R.id.browser_widget9:
 				//showT("测试……");
+				currentWebView.loadUrl("polyme://nav/index");
 				
 //				currentWebView.evaluateJavascript("window._docAnnots", new ValueCallback<String>() {
 //					@Override
@@ -2764,7 +2811,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			
 			StandardConfigDialog.buildStandardConfigDialog(BrowserActivity.this, holder, null, R.string.global_vs_tabs);
 			
-			holder.init_web_configs(currentWebView.holder.getApplyRegion(groupID), groupID);
+			holder.init_web_configs(currentWebView.holder.getApplyRegion(groupID), groupID, 0);
 			
 			topMenuRequestedInvalidate=0;
 			
@@ -2780,10 +2827,13 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		int realm;
 		int region;
 		int regionBackUp=0;
+		boolean globalOrTabBackUp;
 		boolean globalOrTab;
+		String domainSettings;
 		private String[] groupNym;
 		//private String[] groupPrefix;
 		private String[] groupApply;
+		private boolean bottomTitleSet;
 		
 		public void clear(){
 			str_global.clear();
@@ -2800,16 +2850,22 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					topMenuRequestedInvalidate|=1<<BackendSettings;
 				break;
 				case 666:
-					init_web_configs(globalOrTab, region==-1?regionBackUp:-1);
+					init_web_configs(globalOrTab, region==-1?regionBackUp:-1, realm);
 				break;
 			}
 		}
 		
-		public void init_web_configs(boolean globalOrTab, int grounpID) {
-			realm=0;
+		public void init_web_configs(boolean globalOrTab, int grounpID, int realm) {
+			this.realm=realm;
 			region=grounpID;
 			if(region!=-1) {
 				regionBackUp=region;
+			}
+			if(!bottomTitleSet) {
+				bottomTitle.setVisibility(View.VISIBLE);
+				bottomTitle.setText("网站设定");
+				bottomTitle.setOnClickListener(this);
+				bottomTitleSet = true;
 			}
 			this.globalOrTab=globalOrTab;
 			if(YinYangSpan==null) {
@@ -2819,9 +2875,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				YinYangSpan=new ForegroundColorSpan(0x8a8f8f8f);
 				title.setOnClickListener(this);
 			}
-			Spannable text = (Spannable) title.getText();
-			int idx = indexOf(text, '/', 0);
-			text.setSpan(YinYangSpan, globalOrTab?0:(idx+1), globalOrTab?idx:text.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
+			
 			
 			final String[] Coef = mResource.getString(R.string.coef).split("_");
 			SpannableStringBuilder ssb = str_tab;
@@ -2832,7 +2886,24 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			
 			groupApply = mResource.getStringArray(R.array.GroupApply);
 			
-			int flagIndex=globalOrTab?-1:3;
+			int flagIndex=realm==1?-2:globalOrTab?-1:3;
+			
+			int bitMax = 1;
+			int bitMask = 0x1;
+			int bitShift = 0;
+			Spannable text = (Spannable) title.getText();
+			if(realm==1)
+			{
+				bitShift = 1;
+				bitMax = 2;
+				bitMask = 0x3;
+				text.setSpan(YinYangSpan, 0, text.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
+				bottomTitle.setTextColor(0xff000000);
+			} else {
+				int idx = indexOf(text, '/', 0);
+				text.setSpan(YinYangSpan, globalOrTab?0:(idx+1), globalOrTab?idx:text.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
+				bottomTitle.setTextColor(0x8a8f8f8f);
+			}
 			
 			switch (grounpID) {
 				default:
@@ -2841,15 +2912,15 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				case 0:
 					if(!buildSingle) webSepGroupApply(builder, ssb, 0, 6, 1);
 					builder.withTitle(mResource.getStringArray(R.array.BenDiCunChu))
-						.init_clickspan_with_bits_at(0,  0, 0x1, 2, 1, flagIndex, 1)//总开关
-						.init_clickspan_with_bits_at(1, 1, 0x1, 3, 1, flagIndex, 1)//Cookie
-						.init_clickspan_with_bits_at(2, 1, 0x1, 4, 1, flagIndex, 1)//DataBase
-						.init_clickspan_with_bits_at(3, 1, 0x1, 5, 1, flagIndex, 1);//Dom
+						.init_clickspan_with_bits_at(0,  0, bitMask, 2, bitMax, flagIndex, 1)//总开关
+						.init_clickspan_with_bits_at(1, 1, bitMask, 3, bitMax, flagIndex, 1)//Cookie
+						.init_clickspan_with_bits_at(2, 1, bitMask, 4, bitMax, flagIndex, 1)//DataBase
+						.init_clickspan_with_bits_at(3, 1, bitMask, 5, bitMax, flagIndex, 1);//Dom
 					
 					if(buildSingle) {
 						ssb.append("\r\n");
 						if(globalOrTab) {
-							builder.init_clickspan_with_bits_at(4, 1, 0x1, 6, 1, flagIndex, 1);//Apply
+							builder.init_clickspan_with_bits_at(4, 1, bitMask, 6, bitMax, flagIndex, 1);//Apply
 						}
 						break;
 					} else {
@@ -2859,17 +2930,17 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				case 1:
 					if(!buildSingle) webSepGroupApply(builder, ssb, 1, 11, 1);
 					builder.withTitle(mResource.getStringArray(R.array.KeHuDuan))
-						.init_clickspan_with_bits_at(0,  0, 0x1, 7, 1, flagIndex, 2)
-						.init_clickspan_with_bits_at(1, 0, 0x1, 12, 1, flagIndex, 2)
-						.init_clickspan_with_bits_at(2, 0, 0x1, 9, 1, flagIndex, 2)
-						.init_clickspan_with_bits_at(3, 0, 0x1, 10, 1, flagIndex, 2)
-						.init_clickspan_with_bits_at(4, 0, 0x1, 13, 1, flagIndex, 2)
-						.init_clickspan_with_bits_at(5, 1, 0x1, 8, 1, flagIndex, 2)
+						.init_clickspan_with_bits_at(0,  0, bitMask, 7, bitMax, flagIndex, 2)
+						.init_clickspan_with_bits_at(1, 0, bitMask, 12, bitMax, flagIndex, 2)
+						.init_clickspan_with_bits_at(2, 0, bitMask, 9, bitMax, flagIndex, 2)
+						.init_clickspan_with_bits_at(3, 0, bitMask, 10, bitMax, flagIndex, 2)
+						.init_clickspan_with_bits_at(4, 0, bitMask, 13, bitMax, flagIndex, 2)
+						.init_clickspan_with_bits_at(5, 1, bitMask, 8, bitMax, flagIndex, 2)
 					;
 					if(buildSingle) {
 						ssb.append("\r\n");
 						if(globalOrTab) {
-							builder.init_clickspan_with_bits_at(6, 1, 0x1, 11, 1, flagIndex, 2);
+							builder.init_clickspan_with_bits_at(6, 1, bitMask, 11, bitMax, flagIndex, 2);
 						}
 						break;
 					} else {
@@ -2879,7 +2950,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			}
 			
 			builder.withTitle(groupApply).withCoef(null)
-					.init_clickspan_with_bits_at(buildSingle?1:2, 0, 0x1, 10, 1, flagIndex, 666);
+					.init_clickspan_with_bits_at(buildSingle?1:2, 0, bitMask, 10, bitMax, flagIndex, 666);
 			
 			if(buildSingle) {
 				ssb.delete(ssb.length()-2, ssb.length());
@@ -2915,10 +2986,21 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		
 		@Override
 		public void onClick(View v) {
-			if(realm==0) {
-				init_web_configs(!globalOrTab, region);
+			boolean intoWebSettings = realm==0&&v.getId()==R.id.bottom_title;
+			if(intoWebSettings) {
+				globalOrTabBackUp = globalOrTab;
+				init_web_configs(false, region, 1);
+			} else {
+				if(realm==0) {
+					globalOrTab = !globalOrTab;
+				} else {
+					globalOrTab = globalOrTabBackUp;
+				}
+				init_web_configs(globalOrTab, region, 0);
 				v.getBackground().jumpToCurrentState();
 			}
+//			if(realm==0) {
+//			}
 		}
 	}
 	
@@ -2926,6 +3008,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		public AlertDialog dlg;
 		public TextView tv;
 		public TextView title;
+		public TextView bottomTitle;
 		public SpannableStringBuilder str_global=new SpannableStringBuilder();
 		
 		public static class ClickSpanBuilder {
@@ -3081,6 +3164,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			resultHolder.dlg=configurableDialog;
 			resultHolder.tv=tv;
 			resultHolder.title=title;
+			resultHolder.bottomTitle = dv.findViewById(R.id.bottom_title);
 		}
 	}
 	
@@ -3374,7 +3458,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	
 	private AdvancedBrowserWebView new_AdvancedNestScrollWebView(TabHolder holder, AdvancedBrowserWebView patWeb) {
 		AdvancedBrowserWebView mWebView = null;
-		ViewGroup layout = null;
+		WebFrameLayout layout = null;
 		if(patWeb!=null) {
 			layout = patWeb.layout;
 			final int luxLimit = 25;
@@ -3391,6 +3475,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		if(mWebView==null) {
 			mWebView = new AdvancedBrowserWebView(this);
 		}
+		//CMN.Log("new mWebView::ua::", mWebView.getSettings().getUserAgentString());
 		//Utils.sencat(opt, ViewConfigDefault);
 		
 		int addIdx = -1;
@@ -3408,6 +3493,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			layout.setPadding(0, 0, 0, _45_);
 		}
 		mWebView.holder = holder;
+		mWebView.appBarLayout = UIData.appbar;
 		mWebView.layout = layout;
 		layout.addView(mWebView, addIdx, new FrameLayout.LayoutParams(-1, -1));
 		
@@ -3425,7 +3511,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		mWebView.setWebViewClient(mWebListener);
 		mWebView.setDownloadListener(mWebListener);
 		mWebView.setOnScrollChangedListener(mWebListener);
-		mWebView.setBackgroundColor(Color.TRANSPARENT);
+		//mWebView.setBackgroundColor(Color.TRANSPARENT);
 		
 		setUserAgentString(mWebView, false);
 		

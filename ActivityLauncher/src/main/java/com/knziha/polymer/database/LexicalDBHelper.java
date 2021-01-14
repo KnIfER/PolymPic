@@ -12,6 +12,7 @@ import android.os.CancellationSignal;
 import android.text.TextUtils;
 import android.util.SparseArray;
 
+import com.knziha.polymer.AdvancedBrowserWebView;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.pdviewer.PDocument;
 import com.knziha.polymer.pdviewer.bookdata.PDocBookInfo;
@@ -22,6 +23,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.knziha.polymer.widgets.Utils.EmptyCursor;
 
@@ -122,15 +125,26 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase db) {
 		CMN.Log("onDbCreate");
 		// browse history.
+		//db.execSQL("drop table if exists urls");
 		final String createHistoryTable = "create table if not exists urls(" +
 				"id INTEGER PRIMARY KEY AUTOINCREMENT," + //0
 				"url LONGVARCHAR," + //1
 				"title LONGVARCHAR," + //2
 				"visit_count INTEGER DEFAULT 0 NOT NULL," + //3
 				"note_id INTEGER DEFAULT -1 NOT NULL,"+ //4
-				"creation_time INTEGER NOT NULL,"+ //5
-				"last_visit_time INTEGER NOT NULL)"; //6
+				"domain_id INTEGER DEFAULT -1 NOT NULL,"+ //5
+				"creation_time INTEGER NOT NULL,"+ //6
+				"last_visit_time INTEGER NOT NULL)"; //7
         db.execSQL(createHistoryTable);
+        
+		final String createDomainsTable = "create table if not exists domains(" +
+				"id INTEGER PRIMARY KEY AUTOINCREMENT," + //0
+				"url LONGVARCHAR," + //1
+				"icon BLOB," + //2
+				"f1 INTEGER DEFAULT 0 NOT NULL," + //3
+				"ext TEXT"+ //4
+				")"; //7
+        db.execSQL(createDomainsTable);
 		
 		// search history.
 		final String createSearchTable = "create table if not exists \"keyword_search_terms\" ("+
@@ -201,6 +215,7 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 		
 		db.execSQL("CREATE INDEX if not exists urls_url_index ON urls (url)");
 		db.execSQL("CREATE INDEX if not exists urls_time_index ON urls (last_visit_time)");
+		db.execSQL("CREATE INDEX if not exists domains_url_index ON domains (url)");
 		db.execSQL("CREATE INDEX if not exists annots_url_index ON annots (url)");
 		db.execSQL("CREATE INDEX if not exists keyword_search_terms_index3 ON keyword_search_terms (term)");
 		db.execSQL("CREATE INDEX if not exists pdoc_name_index ON pdoc (name)");
@@ -331,15 +346,17 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 		LastSearchTerm = url_key;
 	}
 	
-	public long insertUpdateBrowserUrl(String lex, String tile) {
+	// 在 onpagefinished 之时记录下url等信息
+	public long insertUpdateBrowserUrl(String url, String tile) {
 		history_empty_updated=history_active_updated=true;
     	int count=-1;
 		int id=-1;
 		final String sql = "select id,visit_count from urls where url = ? ";
-		String[] where = new String[]{lex};
+		boolean insertNew=true;
+		String[] where = new String[]{url};
 		Cursor c = database.rawQuery(sql, where);
-		if(c.getCount()>0) {
-			c.moveToFirst();
+		if(c.moveToFirst()) {
+			insertNew = false;
 			id = c.getInt(0);
 			count = c.getInt(1);
 		}
@@ -347,27 +364,112 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 		
 		boolean notUpdateHistory=false;
 		
-		if(count>0&&notUpdateHistory) {
+		if(!insertNew&&notUpdateHistory) {
 			return 1;
 		}
 		
 		//CMN.Log("countcount", count);
 		
 		ContentValues values = new ContentValues();
-		values.put("url", lex);
+		values.put("url", url);
 		values.put("title", tile);
 		values.put("visit_count", ++count);
 		values.put("last_visit_time", System.currentTimeMillis());
 		values.put("creation_time", System.currentTimeMillis());
 		
-		if(count>0) {
-			values.put("id", id);
-			//database.update("urls", values, "url=?", where);
-			database.insertWithOnConflict("urls", null, values, SQLiteDatabase.CONFLICT_REPLACE);
-		} else {
+		if(insertNew) {
 			database.insert("urls", null, values);
+		} else {
+			//values.put("id", id);
+			//database.update("urls", values, "url=?", where);
+			//database.insertWithOnConflict("urls", null, values, SQLiteDatabase.CONFLICT_REPLACE);
+			where[0]=""+id;
+			database.update("urls", values, "id=?", where);
 		}
 		return count;
+	}
+	
+	Pattern domainPattern = Pattern.compile("://(.+?)/");
+	
+	// 搜索引擎列表，导航页，需要域数据库记录的图标。
+	// 常规访问，updateua (loadurl、刷新、onpagestart之时) 需要域数据库记录的配置信息。
+	public void queryDomain(AdvancedBrowserWebView mWebView, String url) {
+		String domain = null;
+		Matcher m = domainPattern.matcher(url);
+		if(m.find()) {
+			domain = m.group();
+		}
+		Cursor infoCursor = mWebView.domainInfoCursor;
+		if(infoCursor!=null && TextUtils.equals(infoCursor.getString(1), domain)) {
+			return;
+		}
+		infoCursor = null;
+		if(domain!=null) {
+			final String sql = "select * from domains where url = ? ";
+			String[] where = new String[]{domain};
+			infoCursor = database.rawQuery(sql, where);
+			if(!infoCursor.moveToFirst()) {
+				infoCursor.close();
+				infoCursor = null;
+			}
+		}
+		mWebView.setDomainCursor(domain, infoCursor);
+	}
+	
+	public void updateDomainFlag(AdvancedBrowserWebView mWebView, long val) {
+		String domain = mWebView.domain;
+		if(domain!=null) {
+			ContentValues values = new ContentValues();
+			values.put("url", domain);
+			values.put("f1", val);
+			AdvancedBrowserWebView.DomainInfo domainInfo = mWebView.domainInfo;
+			if(domainInfo!=null) {
+				long rowID = domainInfo.rowID;
+				database.update("domains", values, "id=?", new String[]{""+rowID});
+				domainInfo.f1 = val;
+			} else {
+				long rowID = database.insert("domains", null, values);
+				mWebView.setDomainCursor(mWebView.domain
+						, database.rawQuery("select * from domains where id=?", new String[]{""+rowID})
+						);
+			}
+		}
+	}
+	
+	// 配置网址设定、插入图标前，需保证有存储目标
+	public void insertUpdateDomain(AdvancedBrowserWebView mWebView, String url, Long val) {
+		Matcher m = domainPattern.matcher(url);
+		String domain = null;
+		Cursor infoCursor = null;
+		if(m.find()) {
+			domain = m.group();
+			final String sql = "select * from domains where url = ? ";
+			String[] where = new String[]{domain};
+			if(TextUtils.equals(mWebView.domain, domain)) {
+				infoCursor = mWebView.domainInfoCursor;
+				if(infoCursor!=null && !infoCursor.moveToFirst()) {
+					infoCursor = null;
+				}
+			}
+			if(infoCursor==null) {
+				infoCursor = database.rawQuery(sql, where);
+			}
+			if(!infoCursor.moveToFirst()) {
+				infoCursor.close();
+				ContentValues values = new ContentValues();
+				values.put("url", domain);
+				if(val!=null) {
+					values.put("f1", val);
+				}
+				database.insert("domains", null, values);
+				infoCursor = database.rawQuery(sql, where);
+				if(!infoCursor.moveToFirst()) {
+					infoCursor.close();
+					infoCursor = null;
+				}
+			}
+		}
+		mWebView.setDomainCursor(domain, infoCursor);
 	}
 	
 	public long insertSearchTerm(String lex) {

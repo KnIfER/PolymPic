@@ -14,14 +14,14 @@
 		<com.knziha.polymer.widgets.DescriptiveImageView
 			android:id="@+id/menu_icon1"
 			style="@style/MenuIconIVStyle"
-			android:text="夜间"
-			android:src="@drawable/ic_baseline_nightmode_24"
+			android:text="添加收藏"
+			android:src="@drawable/star_ic_1"
 			/>
 		<com.knziha.polymer.widgets.DescriptiveImageView
 			android:id="@+id/menu_icon2"
 			style="@style/MenuIconIVStyle"
-			android:text="外观"
-			android:src="@drawable/ic_baseline_color_24"
+			android:text="收藏夹"
+			android:src="@drawable/star_ic_1"
 			/>
 		<com.knziha.polymer.widgets.DescriptiveImageView
 			android:id="@+id/menu_icon3"
@@ -38,8 +38,8 @@
 		<com.knziha.polymer.widgets.DescriptiveImageView
 			android:id="@+id/menu_icon5"
 			style="@style/MenuIconIVStyle"
-			android:text="JavaScript"
-			android:src="@drawable/ic_baseline_free_breakfast_24"
+			android:text="分享至…"
+			android:src="@drawable/ic_baseline_share_24"
 			/>
 	</LinearLayout>
 
@@ -52,23 +52,24 @@
 			style="@style/MenuIconIVStyle"
 			android:text="分享"
 			android:src="@drawable/ic_baseline_share_24"
+			android:visibility="invisible"
 			/>
 		<com.knziha.polymer.widgets.DescriptiveImageView
 			android:id="@+id/menu_icon7"
 			style="@style/MenuIconIVStyle"
-			android:text="记录历史"
-			android:src="@drawable/ic_baseline_chat_bubble_24"
+			android:text="笔记内容"
+			android:src="@drawable/ic_mode_edit_black_24dp"
 			/>
 		<com.knziha.polymer.widgets.DescriptiveImageView
 			android:id="@+id/menu_icon8"
 			style="@style/MenuIconIVStyle"
-			android:text="收藏夹"
-			android:src="@drawable/ic_baseline_folder_24"
+			android:text="夜间模式"
+			android:src="@drawable/ic_baseline_nightmode_24"
 			/>
 		<com.knziha.polymer.widgets.DescriptiveImageView
 			android:id="@+id/menu_icon9"
 			style="@style/MenuIconIVStyle"
-			android:text="更多工具"
+			android:text="浏览选项"
 			android:src="@drawable/ic_baseline_work_outline_24"
 			/>
 		<com.knziha.polymer.widgets.DescriptiveImageView
@@ -76,6 +77,7 @@
 			style="@style/MenuIconIVStyle"
 			android:text="设置"
 			android:src="@drawable/ic_baseline_settings_24"
+			android:visibility="invisible"
 			/>
 
 	</LinearLayout>

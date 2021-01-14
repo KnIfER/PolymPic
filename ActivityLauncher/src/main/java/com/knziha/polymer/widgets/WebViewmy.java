@@ -59,6 +59,7 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
 	public int lastScroll;
 	public boolean stackloaded;
 	public File stackpath;
+	public String targetUa;
 	private boolean invalidable = true;
 	public boolean HLED;
 	public float lastX;
@@ -140,7 +141,7 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
 	@Override
 	public void loadUrl(String url) {
 		super.loadUrl(url);
-		//CMN.Log("loadUrl: "+url.equals("about:blank"));
+		CMN.Log("loadUrl: "+url.equals("about:blank"));
 		//if(!url.equals("about:blank"))
 		isloading=true;
 	}

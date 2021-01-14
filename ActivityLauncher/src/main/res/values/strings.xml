@@ -27,7 +27,7 @@ Donec feugiat ac nunc vel laoreet. In laoreet pretium fringilla. Suspendisse pot
 	<string name="share_link">分享链接：</string>
 	<string name="highlight">高亮</string>
 	<string name="global_vs_tabs">全局设定/标签设定</string>
-	<string name="coef">&#160;×_ √</string>
+	<string name="coef" translatable="false">&#160;×_ √_ --</string>
 	<string name="qr_settings">扫码选项</string>
 	<string name="plain_dict">平典</string>
 	<string name="pls_pick_permission">please pick a sdcard to grant write permission. </string>

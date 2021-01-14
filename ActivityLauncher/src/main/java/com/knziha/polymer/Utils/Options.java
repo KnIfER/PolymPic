@@ -216,6 +216,9 @@ public class Options implements WebOptions, BookOptions {
 	
 	@Multiline(flagPos=17, shift=1, debug=0) public boolean getUseStdViewAnimator(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
 	
+	@Multiline(flagPos=18, shift=0, debug=0) public boolean getUpdateUALowEnd(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=18, shift=0) public void setUpdateUALowEnd(boolean val){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
+	
 	
 	/////////////////////End Third Flag////////////////////////////////////
 	/////////////////////Start Fourth Flag////////////////////////////////////
@@ -257,6 +260,8 @@ public class Options implements WebOptions, BookOptions {
 	
 	public long Flag(BrowserActivity a, int flagIndex) {
 		switch (flagIndex){
+			case -2:
+				return a.currentWebView.getDomainFlag();
 			case -1:
 				return a.currentWebView.holder.flag;
 			case 1:
@@ -271,6 +276,9 @@ public class Options implements WebOptions, BookOptions {
 	
 	public void Flag(BrowserActivity a, int flagIndex, long val) {
 		switch (flagIndex){
+			case -2:
+				a.currentWebView.setDomainFlag(val);
+			break;
 			case -1:
 				a.currentWebView.holder.flag=val;
 			break;

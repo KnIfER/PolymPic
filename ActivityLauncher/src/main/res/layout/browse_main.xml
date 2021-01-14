@@ -33,6 +33,26 @@
 					android:layout_weight="1"
 					/>
 				<ImageView
+					android:id="@+id/upward"
+					android:layout_width="@dimen/_45_"
+					android:layout_height="match_parent"
+					android:src="@drawable/chevron_upward"
+					android:background="?actionBarItemBackground"
+					android:padding="1dp"
+					android:layout_marginRight="8dp"
+					android:longClickable="true"
+					/>
+				<ImageView
+					android:id="@+id/downward"
+					android:layout_width="@dimen/_45_"
+					android:layout_height="match_parent"
+					android:src="@drawable/chevron_downward"
+					android:background="?actionBarItemBackground"
+					android:padding="1dp"
+					android:layout_marginRight="8dp"
+					android:longClickable="true"
+					/>
+				<ImageView
 					android:id="@+id/search"
 					android:layout_width="@dimen/_45_"
 					android:layout_height="match_parent"
@@ -88,6 +108,7 @@
 				android:layout_width="match_parent"
 				android:layout_height="match_parent"
 				tools:listitem="@layout/task_items"
+				android:background="#53ffffff"
 				/>
 
 			<com.jess.ui.TwoWayGridView

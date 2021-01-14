@@ -19,10 +19,10 @@ package com.knziha.polymer;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.MotionEvent;
-import android.view.ViewGroup;
 import android.webkit.WebBackForwardList;
 import android.webkit.WebSettings;
 
@@ -31,6 +31,7 @@ import androidx.core.view.NestedScrollingChild;
 import androidx.core.view.NestedScrollingChildHelper;
 import androidx.core.view.ViewCompat;
 
+import com.google.android.material.appbar.AppBarLayout;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.WebOptions;
 import com.knziha.polymer.database.LexicalDBHelper;
@@ -38,6 +39,7 @@ import com.knziha.polymer.toolkits.Utils.BU;
 import com.knziha.polymer.webstorage.WebStacks;
 import com.knziha.polymer.webstorage.WebStacksSer;
 import com.knziha.polymer.webstorage.WebStacksStd;
+import com.knziha.polymer.widgets.WebFrameLayout;
 import com.knziha.polymer.widgets.WebViewmy;
 
 import java.util.ArrayList;
@@ -51,7 +53,8 @@ import static com.knziha.polymer.Utils.WebOptions.StorageSettings;
  * 多聚浏览器 <br/>
  * Based On previous work on Plain-Dictionary*/
 public class AdvancedBrowserWebView extends WebViewmy implements NestedScrollingChild {
-	public ViewGroup layout;
+	public WebFrameLayout layout;
+	public AppBarLayout appBarLayout;
 	/**网页加载完成时清理回退栈 see {@link BrowserActivity#LuxuriouslyLoadUrl}*/
 	public boolean clearHistroyRequested;
 	/**记录网页开始加载*/
@@ -63,6 +66,23 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 	/**网页规则，即插件。*/
 	public List<WebCompoundListener.SiteRule> rules = Collections.synchronizedList(new ArrayList<>());
 	public List<Object> prunes = Collections.synchronizedList(new ArrayList<>());
+	public Cursor domainInfoCursor;
+	public DomainInfo domainInfo;
+	private float lastRawY;
+	private float OrgRawY;
+	private boolean dragged;
+	private long lastRawYTime;
+	
+	public static class DomainInfo {
+		public long rowID;
+		public long f1;
+		public Bitmap thumbnail;
+		DomainInfo(long rowID, long f1) {
+			this.rowID = rowID;
+			this.f1 = f1;
+		}
+	}
+	public String domain;
 	
 	private int mLastMotionY;
 
@@ -70,6 +90,7 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 	private final int[] mScrollConsumed = new int[2];
 
 	private int mNestedYOffset;
+	private int mNestedYOffset1;
 	
 	public ArrayList<String> PolymerBackList = new ArrayList<>();
 
@@ -150,18 +171,54 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 
 		if (action == MotionEvent.ACTION_DOWN) {
 			mNestedYOffset = 0;
+			mNestedYOffset1 = 0;
 		}
 
 		int y = (int) event.getY();
-
+		layout.mWebView = this;
 		event.offsetLocation(0, mNestedYOffset);
-		if(!isIMScrollSupressed)
+//		event.offsetLocation(0, mNestedYOffset1);
+		if(!isIMScrollSupressed){
+//		int layoutTop = layout.getTop();
+//			int offset = layout.offsetTopAndBottom;
+//			if(offset!=0) {
+//				int top = layout.getTop();
+//				offset = Math.max(-top, Math.min(appBarLayout.getHeight()-top, offset));
+//				layout.offsetTopAndBottom=0;
+//				event.offsetLocation(0, -offset);
+//			}
+		boolean limitSpd=false;
 		switch (action) {
 			case MotionEvent.ACTION_DOWN:
 				mLastMotionY = y;
 				startNestedScroll(ViewCompat.SCROLL_AXIS_VERTICAL);
+				layout.offsetTopAndBottom=0;
+				lastRawY = OrgRawY = event.getRawY();
+				lastRawYTime = limitSpd?event.getEventTime():0;
+				dragged = layout.getTop()!=0;
+				//dragged = false;
 				break;
 			case MotionEvent.ACTION_MOVE:
+				float rawY = event.getRawY();
+				float dRawY = rawY - OrgRawY;
+				long evTime = limitSpd?event.getEventTime():0;
+				if(layout.getTop()==0&&!dragged) {
+					float dstFactor=0.75f;
+					if(limitSpd&&(rawY-lastRawY)/(evTime-lastRawYTime)<1.15) {
+						OrgRawY += rawY-lastRawY;
+					} else // Math.abs
+					if((dRawY)>=appBarLayout.getHeight()*dstFactor) {
+						mLastMotionY = (int) (y+(dRawY-appBarLayout.getHeight()*dstFactor));
+						//mLastMotionY = (int) (y-(event.getRawY() - (downRawY + appBarLayout.getHeight())));
+						//mLastMotionY = y;
+						dragged=true;
+					}
+				}
+				lastRawY = rawY;
+				lastRawYTime = evTime;
+				if(!dragged) {
+					break;
+				}
 				int deltaY = mLastMotionY - y;
 
 				if (dispatchNestedPreScroll(0, deltaY, mScrollConsumed, mScrollOffset)) {
@@ -169,20 +226,23 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 					trackedEvent.offsetLocation(0, mScrollOffset[1]);
 					mNestedYOffset += mScrollOffset[1];
 				}
-
 				mLastMotionY = y - mScrollOffset[1];
 
 				int oldY = getScrollY();
 				int newScrollY = Math.max(0, oldY + deltaY);
 				int dyConsumed = newScrollY - oldY;
 				int dyUnconsumed = deltaY - dyConsumed;
-
+				
 				if (dispatchNestedScroll(0, dyConsumed, 0, dyUnconsumed, mScrollOffset)) {
 					mLastMotionY -= mScrollOffset[1];
 					trackedEvent.offsetLocation(0, mScrollOffset[1]);
 					mNestedYOffset += mScrollOffset[1];
+					mNestedYOffset1-=dyConsumed;
 				}
 				trackedEvent.recycle();
+				if(layout.getTop()==0&&dRawY<0) {
+					dragged=false;
+				}
 				break;
 			case MotionEvent.ACTION_POINTER_DOWN:
 			case MotionEvent.ACTION_POINTER_UP:
@@ -190,6 +250,13 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 			case MotionEvent.ACTION_CANCEL:
 				stopNestedScroll();
 				break;
+		}
+		
+			//event.offsetLocation(0, -offset);
+			//event.offsetLocation(0, -mNestedYOffset1);
+//		if(layoutTop!=0)
+//			CMN.Log("top changed::",layoutTop);
+//			event.offsetLocation(0, -layoutTop);
 		}
 		//if(OrgTop-getTop()==0)
 			super.onTouchEvent(event);
@@ -223,6 +290,7 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 
 	@Override
 	public boolean dispatchNestedScroll(int dxConsumed, int dyConsumed, int dxUnconsumed, int dyUnconsumed, int[] offsetInWindow) {
+		//CMN.Log("dispatchNestedScroll");
 		return mChildHelper.dispatchNestedScroll(dxConsumed, dyConsumed, dxUnconsumed, dyUnconsumed, offsetInWindow);
 	}
 
@@ -233,6 +301,7 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 
 	@Override
 	public boolean dispatchNestedFling(float velocityX, float velocityY, boolean consumed) {
+		//CMN.Log("dispatchNestedFling");
 		return mChildHelper.dispatchNestedFling(velocityX, velocityY, consumed);
 	}
 
@@ -496,5 +565,31 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 	public void postReviveJS(long timeMs) {
 		removeCallbacks(reviveJSRunnable);
 		postDelayed(reviveJSRunnable, timeMs);
+	}
+	
+	public void setDomainCursor(String domainUrl, Cursor infoCursor) {
+		if(domainInfoCursor!=null) {
+			domainInfoCursor.close();
+		}
+		domain = domainUrl;
+		if(infoCursor!=null&&!infoCursor.moveToFirst()) {
+			infoCursor.close();
+			domainInfoCursor = null;
+			return;
+		}
+		if((domainInfoCursor = infoCursor)!=null) {
+			domainInfo = new DomainInfo(infoCursor.getLong(0), infoCursor.getLong(3));
+		}
+	}
+	
+	public long getDomainFlag() {
+		if(domainInfo!=null) {
+			return domainInfo.f1;
+		}
+		return 0;
+	}
+	
+	public void setDomainFlag(long val) {
+		LexicalDBHelper.getInstance().updateDomainFlag(this, val);
 	}
 }

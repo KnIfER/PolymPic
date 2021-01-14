@@ -189,7 +189,7 @@
 				android:layout_width="match_parent"
 				android:layout_height="@dimen/_45_"
 				android:orientation="horizontal"
-				android:background="#ff8f8f8f"
+				android:background="#af8f8f8f"
 				android:theme="@style/AppTheme"
 				android:layout_gravity="bottom"
 				android:gravity="bottom|center_vertical|fill_horizontal"
