@@ -45,8 +45,10 @@ public class RetryWrap {
 
         if (Thread.currentThread().isInterrupted())
             throw new DownloadInterruptedError("interrrupted");
-
-        r.moved(e.getMoved());
+	
+		throw e;
+		//here throws download moved
+        //r.moved(e.getMoved());
     }
 
     static <T> void retry(AtomicBoolean stop, WrapReturn<T> r, RuntimeException e) {
@@ -93,7 +95,7 @@ public class RetryWrap {
                     throw new DownloadIOError(e);
                 }
             } catch (DownloadMoved e) {
-				CMN.Log(e);
+				//CMN.Log("DownloadMoved", e);
                 moved(stop, r, e);
             } catch (DownloadRetry e) {
 				CMN.Log(e);

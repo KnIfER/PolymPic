@@ -3,6 +3,7 @@ package com.knziha.polymer.browser;
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 import android.net.http.SslError;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -20,6 +21,8 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView.OnScrollChangedListener;
 
 import com.knziha.polymer.Utils.CMN;
+
+import org.apache.commons.lang3.StringUtils;
 
 /** WebView Compound Listener ：两大网页客户端监听器及Javascript桥，全局一个实例。 */
 public class WebBrowseListener extends WebViewClient implements DownloadListener, OnScrollChangedListener {
@@ -87,10 +90,9 @@ public class WebBrowseListener extends WebViewClient implements DownloadListener
 		settings.setBuiltInZoomControls(true);
 		settings.setDisplayZoomControls(false);
 		settings.setDefaultTextEncodingName("UTF-8");
-		
-		settings.setUserAgentString(true
-				?"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36"
-				:null);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+			settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+		}
 		
 		settings.setNeedInitialFocus(false);
 		//settings.setDefaultFontSize(40);
@@ -115,6 +117,31 @@ public class WebBrowseListener extends WebViewClient implements DownloadListener
 	}
 	
 	public WebChromeClient mWebClient = new WebClient();
+	
+	public void loadUrl(String url, DownloadTask task) {
+		//webview_Player.stopLoading();
+		String ua = task.ua;
+		CMN.Log("ua!!!", ua);
+		if(TextUtils.isEmpty(ua)) {
+			ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36";
+		} else if(ua.startsWith("ph")){
+			ua = "Mozilla/5.0 (Linux; Android 6.0.1; PAD A57) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Mobile Safari/537.36 OPR/58.2.2878.53403";
+		}
+		if(!StringUtils.equals(webview_Player.getSettings().getUserAgentString()
+				, ua)) {
+			webview_Player.getSettings().setUserAgentString(ua);
+		}
+		task.shotFn = null;
+		int idx = url.indexOf("\n");
+		if(idx>0) {
+			if(url.charAt(idx-1)=='\r') {
+				idx--;
+			}
+			url = url.substring(0, idx);
+		}
+		webview_Player.loadUrl(url);
+		webview_Player.setTag(task);
+	}
 	
 	class WebClient extends WebChromeClient {
 		@Override
@@ -178,7 +205,7 @@ public class WebBrowseListener extends WebViewClient implements DownloadListener
 		//CMN.Log("onLoadResource", view, url);
 		DownloadTask task = (DownloadTask) view.getTag();
 		if(task!=null) {
-			if(task.ext2!=null && url.contains(task.ext2)) {
+			if(task.ext2!=null && task.ext2contains(url)) {
 				onUrlExtracted(url, null);
 			}
 		}

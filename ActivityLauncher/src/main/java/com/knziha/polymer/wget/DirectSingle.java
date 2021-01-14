@@ -1,5 +1,9 @@
 package com.knziha.polymer.wget;
 
+import com.knziha.polymer.wget.info.DownloadInfo;
+import com.knziha.polymer.wget.info.URLInfo;
+import com.knziha.polymer.wget.info.ex.DownloadInterruptedError;
+
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -7,10 +11,6 @@ import java.io.RandomAccessFile;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import com.knziha.polymer.wget.info.DownloadInfo;
-import com.knziha.polymer.wget.info.URLInfo;
-import com.knziha.polymer.wget.info.ex.DownloadInterruptedError;
 
 public class DirectSingle extends Direct {
 
@@ -43,20 +43,21 @@ public class DirectSingle extends Direct {
             conn.setRequestProperty("User-Agent", info.getUserAgent());
             if (info.getReferer() != null)
                 conn.setRequestProperty("Referer", info.getReferer().toExternalForm());
-
-            File f = target;
-            info.setCount(0);
-            f.createNewFile();
-
-            fos = new RandomAccessFile(f, "rw");
+	
+			info.setCount(0);
 
             byte[] bytes = new byte[BUF_SIZE];
-            int read = 0;
+            int read;
 
             RetryWrap.check(conn);
 
             BufferedInputStream binaryreader = new BufferedInputStream(conn.getInputStream());
-
+	
+			if(fos==null) {
+				File f = target;
+				f.createNewFile();
+				fos = new RandomAccessFile(f, "rw");
+			}
             while ((read = binaryreader.read(bytes)) > 0) {
                 fos.write(bytes, 0, read);
 
@@ -70,7 +71,11 @@ public class DirectSingle extends Direct {
             }
 
             binaryreader.close();
-        } finally {
+        }/* catch (Exception e) {
+			CMN.Log("WTF download error");
+			//here download error
+			//CMN.Log("dwnld::error::", e);
+		} */finally {
             if (fos != null)
                 fos.close();
         }

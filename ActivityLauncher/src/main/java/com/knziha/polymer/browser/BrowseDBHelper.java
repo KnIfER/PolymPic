@@ -101,4 +101,8 @@ public class BrowseDBHelper extends SQLiteOpenHelper {
 	public int delete(long rowID) {
 		return database.delete("tasks", "id=?", new String[]{""+rowID});
 	}
+	
+	public SQLiteDatabase getDatabase() {
+		return database;
+	}
 }

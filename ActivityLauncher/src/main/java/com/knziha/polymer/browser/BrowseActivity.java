@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -117,7 +118,7 @@ public class BrowseActivity extends Toastable_Activity
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
 				WebView.setDataDirectorySuffix("st");
 			}
-			com.tencent.smtt.sdk.WebView.setDataDirectorySuffix("st");
+			com.tencent.smtt.sdk.WebView.setDataDirectorySuffix("stx");
 		} catch (Exception e) {
 			CMN.Log(e);
 		}
@@ -449,9 +450,15 @@ public class BrowseActivity extends Toastable_Activity
 				UIData.webs.addView(ca, 1);
 			}
 		}
+		else if(id==R.id.upward) {
+			layoutManager.scrollToPositionWithOffset(0, 0);
+		}
+		else if(id==R.id.downward) {
+			layoutManager.scrollToPositionWithOffset(adapter.getItemCount()-1, 0);
+		}
 		else if(id==R.id.search) { //search
 			setFieldRowAndIndex(SearchText, -1, 211);
-			editHandler.setGotoQR(true);
+			editHandler.setGotoQR(false);
 		}
 		else if(id==R.id.refresh) {
 			updateTaskList();
@@ -477,23 +484,34 @@ public class BrowseActivity extends Toastable_Activity
 	
 	public void setSearchText(String value) {
 		//CMN.Log("setSearchText...", value);
-		SearchText = value;
-		if(!TextUtils.isEmpty(value)) {
-			cursor.moveToPosition(-1);
-			int foundIdx=-1;
-			while(cursor.moveToNext()) {
-				String val = cursor.getString(1);
-				if(val!=null&&val.contains(value)
-						||(val=cursor.getString(2))!=null&&val.contains(value)) {
-					foundIdx = cursor.getPosition();
-					break;
-				}
+		if(value!=null&&TextUtils.equals(SearchText, value)) {
+			int fvp = layoutManager.findFirstVisibleItemPosition();
+			if(fvp>=0&&fvp<cursor.getCount()) {
+				searchInDatabase(fvp, value);
 			}
-			if(foundIdx>0) {
-				layoutManager.scrollToPositionWithOffset(foundIdx, 0);
+		} else {
+			SearchText = value;
+			if(!TextUtils.isEmpty(value)) {
+				searchInDatabase(-1, value);
+			}
+			adapter.notifyDataSetChanged();
+		}
+	}
+	
+	private void searchInDatabase(int start, String kay) {
+		cursor.moveToPosition(start);
+		int foundIdx=-1;
+		while(cursor.moveToNext()) {
+			String val = cursor.getString(1);
+			if(val!=null&&val.contains(kay)
+					||(val=cursor.getString(2))!=null&&val.contains(kay)) {
+				foundIdx = cursor.getPosition();
+				break;
 			}
 		}
-		adapter.notifyDataSetChanged();
+		if(foundIdx>0) {
+			layoutManager.scrollToPositionWithOffset(foundIdx, 0);
+		}
 	}
 	
 	private void setFieldRowAndIndex(String text, long rowID, int idx) {
@@ -519,7 +537,7 @@ public class BrowseActivity extends Toastable_Activity
 	}
 	
 	public void stopWebView() {
-		boolean x5 = Utils.littleCat;
+		boolean x5 = listenerX5!=null;
 		if(x5) {
 			if(listenerX5!=null)
 				listenerX5.stopWebview();
@@ -530,7 +548,7 @@ public class BrowseActivity extends Toastable_Activity
 	}
 	
 	public void clearWebview() {
-		boolean x5 = Utils.littleCat;
+		boolean x5 = listenerX5!=null;
 		if(x5) {
 			if(listenerX5!=null)
 				listenerX5.clearWebview();
@@ -826,6 +844,27 @@ public class BrowseActivity extends Toastable_Activity
 		}
 	}
 	
+	public void drainTaskForDB(long rowID) {
+		//CMN.Log("drainTaskForDB...");
+		Cursor taskNxt = tasksDB.getCursorByRowID(rowID);
+		if(taskNxt.moveToNext()) {
+			String urls = taskNxt.getString(2);
+			int idx = urls.indexOf("\n");
+			if(idx>0) {
+				//CMN.Log("draining out::", idx, urls.substring(0, idx));
+				urls = urls.substring(idx+1);
+				if(!TextUtils.isEmpty(urls)) {
+					ContentValues values = new ContentValues();
+					values.put("url", urls);
+					tasksDB.getDatabase().update("tasks", values, "id=?", new String[]{"" + rowID});
+					if(taskRunning(rowID)) {
+						queueTaskForDB(rowID, true);
+					}
+				}
+			}
+		}
+	}
+	
 	void queueTaskForDB(long rowID, boolean proliferate) {
 		BrowseTaskExecutor taskExecutor = acquireExecutor();
 		taskExecutor.run(this, rowID);
@@ -852,7 +891,7 @@ public class BrowseActivity extends Toastable_Activity
 	
 	// 任务启动，添加记录至图
 	DownloadTask startTaskForDB(BrowseTaskExecutor taskExecutor, Cursor cursor) {
-		boolean x5 = Utils.littleCat;
+		boolean x5 = listenerX5!=null;
 		long id = cursor.getLong(0);
 		DownloadTask task = taskMap.get(id);
 		if(task!=null) {
@@ -875,11 +914,9 @@ public class BrowseActivity extends Toastable_Activity
 			if(task.ext1!=null || task.ext2!=null) {
 				UIData.root.post(() -> {
 					if(x5) {
-						x5_webview_Player.loadUrl(url);
-						x5_webview_Player.setTag(finalTask);
+						listenerX5.loadUrl(url, finalTask);
 					} else {
-						webview_Player.loadUrl(url);
-						webview_Player.setTag(finalTask);
+						listener.loadUrl(url, finalTask);
 					}
 				});
 				started=true;
@@ -1053,7 +1090,7 @@ public class BrowseActivity extends Toastable_Activity
 	}
 	
 	public void onUrlExtracted(DownloadTask task, String url, String title) {
-		//CMN.Log("onUrlExtracted", url, title);
+		CMN.Log("onUrlExtracted", url, title);
 		if(task!=null) {
 			if(taskRunning(task.id)) {
 				if(!TextUtils.isEmpty(url) && !task.abort.get()) {
@@ -1063,6 +1100,9 @@ public class BrowseActivity extends Toastable_Activity
 						} else if(task.webTitle!=null) {
 							task.updateTitle(task.webTitle);
 						}
+					}
+					if(title!=null&&task.shotExt !=null) {
+						task.shotFn = title;
 					}
 					task.download(url);
 				} else {

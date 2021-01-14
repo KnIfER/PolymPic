@@ -1,5 +1,6 @@
 package com.knziha.polymer.wget.info;
 
+import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.wget.Direct;
 import com.knziha.polymer.wget.RetryWrap;
 import com.knziha.polymer.wget.info.ex.DownloadRetry;
@@ -110,6 +111,7 @@ public class URLInfo extends BrowserInfo {
 
                 @Override
                 public void moved(URL u) {
+					CMN.Log("moved??", u, url);
                     setReferer(url);
 
                     url = u;
