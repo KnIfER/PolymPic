@@ -1153,6 +1153,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 							}
 							animator.start();
 						}
+						if(Math.abs(event.getX()-orgX)>10) {
+							hideKeyboard();
+						}
 						dragging=false;
 					}
 					//webla=null;
