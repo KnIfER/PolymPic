@@ -1153,8 +1153,13 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 							}
 							animator.start();
 						}
-						if(Math.abs(event.getX()-orgX)>10) {
+						float delta = Math.abs(event.getX()-orgX);
+						if(delta>10) {
 							hideKeyboard();
+							if(delta>30*GlobalOptions.density) {
+								webtitle_setVisibility(false);
+								etSearch_clearFocus();
+							}
 						}
 						dragging=false;
 					}
