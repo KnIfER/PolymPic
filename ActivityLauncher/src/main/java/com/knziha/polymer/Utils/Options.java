@@ -219,6 +219,11 @@ public class Options implements WebOptions, BookOptions {
 	@Multiline(flagPos=18, shift=0, debug=0) public boolean getUpdateUALowEnd(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=18, shift=0) public void setUpdateUALowEnd(boolean val){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
 	
+	@Multiline(flagPos=19, debug=0) public boolean getAlwaysShowWebCoverDuringTransition(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=20, debug=0) public boolean getHideWebViewWhenShowingWebCoverDuringTransition(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
+	/** Need to Rearrange ViewPager's View order. */
+	@Multiline(flagPos=21, debug=0) public boolean getAnimateImageviewAlone(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
+	
 	
 	/////////////////////End Third Flag////////////////////////////////////
 	/////////////////////Start Fourth Flag////////////////////////////////////

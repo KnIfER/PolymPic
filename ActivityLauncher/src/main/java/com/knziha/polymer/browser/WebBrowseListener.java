@@ -175,7 +175,7 @@ public class WebBrowseListener extends WebViewClient implements DownloadListener
 		 * see {@link WebBrowseListener#onPageFinished}*/
 		@Override
 		public void onProgressChanged(WebView view, int newProgress) {
-			if(view.getUrl().startsWith("about:")||!pageStarted) return;
+			if(view.getUrl()==null||view.getUrl().startsWith("about:")||!pageStarted) return;
 			CMN.Log("OPC::", newProgress);
 			WebView mWebView = (WebView) view;
 			

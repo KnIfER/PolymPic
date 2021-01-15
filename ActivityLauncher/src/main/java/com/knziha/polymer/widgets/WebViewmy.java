@@ -58,7 +58,6 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
 	public int version;
 	public int lastScroll;
 	public boolean stackloaded;
-	public File stackpath;
 	public String targetUa;
 	private boolean invalidable = true;
 	public boolean HLED;

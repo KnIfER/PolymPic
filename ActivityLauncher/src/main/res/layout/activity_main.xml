@@ -17,7 +17,9 @@
 			layout="@layout/viewpager_holder"
 			android:layout="@layout/viewpager_holder"
 			android:layout_width="match_parent"
-			android:layout_height="match_parent"/>
+			android:layout_height="match_parent"
+			android:alpha="0.5"
+			/>
 
 		<androidx.coordinatorlayout.widget.CoordinatorLayout
 			android:id="@+id/webcoord"
@@ -113,6 +115,9 @@
 					</com.knziha.polymer.widgets.LineaSlidog>
 				</androidx.appcompat.widget.Toolbar>
 			</com.google.android.material.appbar.AppBarLayout>
+
+
+
 
 			<LinearLayout
 				android:id="@+id/searchbar"
@@ -225,7 +230,6 @@
 					android:layout_width="0dp"
 					android:layout_height="match_parent"
 					android:layout_weight="1"
-					android:background="@drawable/surrtrip1"
 					android:clickable="true"
 					android:layout_y="-1px"
 					android:src="@drawable/ic_window_black_24dp" />
@@ -248,6 +252,7 @@
 				android:elevation="10dp"
 				/>
 		</androidx.coordinatorlayout.widget.CoordinatorLayout>
+
 
 		<com.knziha.polymer.widgets.PopupBackground
 			android:id="@+id/layoutListener"

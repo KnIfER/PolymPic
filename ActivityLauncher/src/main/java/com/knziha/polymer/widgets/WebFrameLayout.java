@@ -9,7 +9,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.knziha.polymer.AdvancedBrowserWebView;
-import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.databinding.ActivityMainBinding;
 
 public class WebFrameLayout extends FrameLayout {
@@ -19,6 +18,7 @@ public class WebFrameLayout extends FrameLayout {
 	public int legalPart;
 	/** (始终显示底栏，滑动隐藏顶栏之时，) 若用户要求响应式高度变化，则启用此。 */
 	public boolean PadPartPadBar = false;  // 响应式。
+	public boolean recover;
 	
 	public WebFrameLayout(@NonNull Context context) {
 		super(context);
@@ -35,7 +35,7 @@ public class WebFrameLayout extends FrameLayout {
 	
 	@Override
 	public void setTranslationY(float translationY) {
-		CMN.Log("setTranslationY");
+		//CMN.Log("setTranslationY");
 		super.setTranslationY(translationY);
 	}
 	

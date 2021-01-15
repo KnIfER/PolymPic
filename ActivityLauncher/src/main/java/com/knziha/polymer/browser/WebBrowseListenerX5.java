@@ -164,7 +164,7 @@ public class WebBrowseListenerX5 extends WebViewClient {
 		 * see {@link WebBrowseListenerX5#onPageFinished}*/
 		@Override
 		public void onProgressChanged(WebView view, int newProgress) {
-			if(view.getUrl().startsWith("about:")||!pageStarted) return;
+			if(view.getUrl()==null||view.getUrl().startsWith("about:")||!pageStarted) return;
 			CMN.Log("OPC::", newProgress, Thread.currentThread().getId());
 			WebView mWebView = (WebView) view;
 			

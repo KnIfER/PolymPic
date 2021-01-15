@@ -175,7 +175,6 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 		}
 
 		int y = (int) event.getY();
-		layout.mWebView = this;
 		event.offsetLocation(0, mNestedYOffset);
 //		event.offsetLocation(0, mNestedYOffset1);
 		if(!isIMScrollSupressed){
@@ -429,8 +428,6 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 				if(stacks!=null&&stacks.getSize()>0) {
 					NeedSave = true;
 					CMN.Log("飞升……");
-				} else {
-					stackpath.delete();
 				}
 			}
 			if(NeedSave) {
@@ -465,8 +462,8 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 	public void pauseWeb() {
 		CMN.Log("pauseWeb");
 		//stopLoading();
-		pauseTimers();
-		onPause();
+		//pauseTimers();
+		//onPause();
 	}
 	
 	public void resumeWeb() {
