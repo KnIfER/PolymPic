@@ -705,8 +705,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		});
 		//tg
 		//TestHelper.async(TestHelper::downloadlink);
-		
-//		StandardConfigDialog holder = buildStandardConfigDialog(BrowserActivity.this, null, R.string.global_vs_tabs);
+		//TestHelper.savePngBitmap(this, R.drawable.polymer, 150, 150, "/sdcard/150.png");
+
+		//		StandardConfigDialog holder = buildStandardConfigDialog(BrowserActivity.this, null, R.string.global_vs_tabs);
 //		holder.init_web_configs(true, 1);
 //		holder.dlg.show();
 		

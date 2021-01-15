@@ -2,6 +2,6 @@
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
 <item android:drawable="@android:color/white"></item>
 <item>
-	<bitmap android:src="@drawable/ic_launcher" android:gravity="center"></bitmap>
+	<bitmap android:src="@drawable/polymer" android:gravity="center"></bitmap>
 </item>
 </layer-list>

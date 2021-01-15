@@ -1,9 +1,15 @@
 package com.knziha.polymer;
 
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.drawable.Drawable;
+
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.database.LexicalDBHelper;
 import com.knziha.polymer.toolkits.Utils.BU;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -13,6 +19,19 @@ import java.util.ArrayList;
 import java.util.Random;
 
 public class TestHelper {
+	static void savePngBitmap(Context c, int resId, int w, int h, String path) {
+		Drawable drawable = c.getResources().getDrawable(resId);
+		Bitmap bm = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+		drawable.setBounds(0, 0, w, h);
+		drawable.draw(new Canvas(bm));
+		try (FileOutputStream fout = new FileOutputStream(path)){
+			bm.compress(Bitmap.CompressFormat.PNG, 100, fout);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	
 	static String[] adjectives = {
 			"aged", "ancient", "autumn", "billowing", "bitter", "black", "blue", "bold",
 			"broad", "broken", "calm", "cold", "cool", "crimson", "curly", "damp",
