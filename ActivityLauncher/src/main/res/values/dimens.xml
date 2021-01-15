@@ -33,6 +33,7 @@
 	<dimen name="_25_">25dp</dimen>
 	<dimen name="_18_">18dp</dimen>
 	<dimen name="_65_">65dp</dimen>
+	<dimen name="_90_">90dp</dimen>
 	<dimen name="_20_">20dp</dimen>
 
 </resources>

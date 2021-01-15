@@ -1,189 +1,189 @@
  package com.knziha.polymer;
 
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.animation.AnimatorSet;
-import android.animation.ObjectAnimator;
-import android.animation.PropertyValuesHolder;
-import android.animation.ValueAnimator;
-import android.annotation.SuppressLint;
-import android.app.Activity;
-import android.app.Dialog;
-import android.app.PendingIntent;
-import android.content.ClipData;
-import android.content.ClipboardManager;
-import android.content.Context;
-import android.content.Intent;
-import android.content.res.Configuration;
-import android.content.res.Resources;
-import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.PorterDuff;
-import android.graphics.Rect;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.ColorDrawable;
-import android.graphics.drawable.Drawable;
-import android.graphics.drawable.LayerDrawable;
-import android.graphics.drawable.RotateDrawable;
-import android.net.Uri;
-import android.os.Build;
-import android.os.Bundle;
-import android.os.CancellationSignal;
-import android.os.Environment;
-import android.os.Message;
-import android.provider.DocumentsContract;
-import android.text.Editable;
-import android.text.Spannable;
-import android.text.SpannableStringBuilder;
-import android.text.Spanned;
-import android.text.TextPaint;
-import android.text.TextUtils;
-import android.text.TextWatcher;
-import android.text.style.ClickableSpan;
-import android.text.style.ForegroundColorSpan;
-import android.view.ActionMode;
-import android.view.GestureDetector;
-import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.MotionEvent;
-import android.view.View;
-import android.view.ViewGroup;
-import android.view.ViewPropertyAnimator;
-import android.view.ViewStub;
-import android.view.Window;
-import android.view.WindowManager;
-import android.view.animation.AccelerateDecelerateInterpolator;
-import android.view.animation.AnimationUtils;
-import android.view.animation.LayoutAnimationController;
-import android.view.animation.LinearInterpolator;
-import android.view.inputmethod.EditorInfo;
-import android.webkit.JavascriptInterface;
-import android.webkit.ValueCallback;
-import android.webkit.WebBackForwardList;
-import android.webkit.WebHistoryItem;
-import android.webkit.WebSettings;
-import android.webkit.WebView;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.FrameLayout;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.ListView;
-import android.widget.PopupWindow;
-import android.widget.TextView;
+ import android.animation.Animator;
+ import android.animation.AnimatorListenerAdapter;
+ import android.animation.AnimatorSet;
+ import android.animation.ObjectAnimator;
+ import android.animation.PropertyValuesHolder;
+ import android.animation.ValueAnimator;
+ import android.annotation.SuppressLint;
+ import android.app.Activity;
+ import android.app.Dialog;
+ import android.app.PendingIntent;
+ import android.content.ClipData;
+ import android.content.ClipboardManager;
+ import android.content.Context;
+ import android.content.Intent;
+ import android.content.res.Configuration;
+ import android.content.res.Resources;
+ import android.database.Cursor;
+ import android.graphics.Bitmap;
+ import android.graphics.Color;
+ import android.graphics.Paint;
+ import android.graphics.PorterDuff;
+ import android.graphics.Rect;
+ import android.graphics.drawable.BitmapDrawable;
+ import android.graphics.drawable.ColorDrawable;
+ import android.graphics.drawable.Drawable;
+ import android.graphics.drawable.LayerDrawable;
+ import android.graphics.drawable.RotateDrawable;
+ import android.net.Uri;
+ import android.os.Build;
+ import android.os.Bundle;
+ import android.os.CancellationSignal;
+ import android.os.Environment;
+ import android.os.Message;
+ import android.provider.DocumentsContract;
+ import android.text.Editable;
+ import android.text.Spannable;
+ import android.text.SpannableStringBuilder;
+ import android.text.Spanned;
+ import android.text.TextPaint;
+ import android.text.TextUtils;
+ import android.text.TextWatcher;
+ import android.text.style.ClickableSpan;
+ import android.text.style.ForegroundColorSpan;
+ import android.view.ActionMode;
+ import android.view.GestureDetector;
+ import android.view.LayoutInflater;
+ import android.view.Menu;
+ import android.view.MenuItem;
+ import android.view.MotionEvent;
+ import android.view.View;
+ import android.view.ViewGroup;
+ import android.view.ViewPropertyAnimator;
+ import android.view.Window;
+ import android.view.WindowManager;
+ import android.view.animation.AccelerateDecelerateInterpolator;
+ import android.view.animation.AnimationUtils;
+ import android.view.animation.LayoutAnimationController;
+ import android.view.animation.LinearInterpolator;
+ import android.view.inputmethod.EditorInfo;
+ import android.webkit.JavascriptInterface;
+ import android.webkit.ValueCallback;
+ import android.webkit.WebBackForwardList;
+ import android.webkit.WebHistoryItem;
+ import android.webkit.WebSettings;
+ import android.webkit.WebView;
+ import android.widget.AdapterView;
+ import android.widget.ArrayAdapter;
+ import android.widget.FrameLayout;
+ import android.widget.ImageView;
+ import android.widget.LinearLayout;
+ import android.widget.ListView;
+ import android.widget.PopupWindow;
+ import android.widget.TextView;
 
-import androidx.annotation.AnyThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
-import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.GlobalOptions;
-import androidx.appcompat.widget.ListPopupWindow;
-import androidx.coordinatorlayout.widget.CoordinatorLayout;
-import androidx.core.content.pm.ShortcutInfoCompat;
-import androidx.core.content.pm.ShortcutManagerCompat;
-import androidx.core.graphics.drawable.IconCompat;
-import androidx.databinding.DataBindingUtil;
-import androidx.databinding.ViewDataBinding;
-import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.ItemTouchHelper;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
+ import androidx.annotation.AnyThread;
+ import androidx.annotation.NonNull;
+ import androidx.annotation.Nullable;
+ import androidx.annotation.RequiresApi;
+ import androidx.appcompat.app.AlertDialog;
+ import androidx.appcompat.app.GlobalOptions;
+ import androidx.appcompat.widget.ListPopupWindow;
+ import androidx.coordinatorlayout.widget.CoordinatorLayout;
+ import androidx.core.content.pm.ShortcutInfoCompat;
+ import androidx.core.content.pm.ShortcutManagerCompat;
+ import androidx.core.graphics.drawable.IconCompat;
+ import androidx.databinding.DataBindingUtil;
+ import androidx.databinding.ViewDataBinding;
+ import androidx.recyclerview.widget.GridLayoutManager;
+ import androidx.recyclerview.widget.ItemTouchHelper;
+ import androidx.recyclerview.widget.LinearLayoutManager;
+ import androidx.recyclerview.widget.RecyclerView;
 
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.Priority;
-import com.bumptech.glide.RequestBuilder;
-import com.bumptech.glide.load.DecodeFormat;
-import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.bumptech.glide.request.RequestOptions;
-import com.bumptech.glide.request.target.Target;
-import com.google.android.material.appbar.AppBarLayout;
-import com.google.android.material.bottomsheet.BottomSheetBehavior;
-import com.google.android.material.bottomsheet.BottomSheetDialog;
-import com.google.android.material.math.MathUtils;
-import com.knziha.filepicker.model.DialogConfigs;
-import com.knziha.filepicker.model.DialogProperties;
-import com.knziha.filepicker.model.DialogSelectionListener;
-import com.knziha.filepicker.utils.FU;
-import com.knziha.filepicker.view.FilePickerDialog;
-import com.knziha.polymer.Utils.CMN;
-import com.knziha.polymer.Utils.MyReceiver;
-import com.knziha.polymer.Utils.OptionProcessor;
-import com.knziha.polymer.Utils.Options;
-import com.knziha.polymer.Utils.RgxPlc;
-import com.knziha.polymer.Utils.WebOptions;
-import com.knziha.polymer.browser.DownloadHandlerStd;
-import com.knziha.polymer.database.LexicalDBHelper;
-import com.knziha.polymer.databinding.ActivityMainBinding;
-import com.knziha.polymer.databinding.DownloadBottomSheetBinding;
-import com.knziha.polymer.databinding.SearchHintsItemBinding;
-import com.knziha.polymer.databinding.WebPageItemBinding;
-import com.knziha.polymer.qrcode.QRActivity;
-import com.knziha.polymer.toolkits.Utils.BU;
-import com.knziha.polymer.toolkits.Utils.ReusableByteOutputStream;
-import com.knziha.polymer.webslideshow.CenterLinearLayoutManager;
-import com.knziha.polymer.webslideshow.RecyclerViewPager;
-import com.knziha.polymer.webslideshow.ViewPagerTouchHelper;
-import com.knziha.polymer.webslideshow.ViewUtils;
-import com.knziha.polymer.webslideshow.WebPic.WebPic;
-import com.knziha.polymer.webstorage.BrowserDownloads;
-import com.knziha.polymer.webstorage.BrowserHistory;
-import com.knziha.polymer.webstorage.WebStacksSer;
-import com.knziha.polymer.widgets.AppIconsAdapter;
-import com.knziha.polymer.widgets.DescriptiveImageView;
-import com.knziha.polymer.widgets.DialogWithTag;
-import com.knziha.polymer.widgets.PopupBackground;
-import com.knziha.polymer.widgets.PrintPdfAgentActivity;
-import com.knziha.polymer.widgets.SpacesItemDecoration;
-import com.knziha.polymer.widgets.TwoColumnAdapter;
-import com.knziha.polymer.widgets.Utils;
-import com.knziha.polymer.widgets.WebFrameLayout;
-import com.knziha.polymer.widgets.WebViewmy;
+ import com.bumptech.glide.Glide;
+ import com.bumptech.glide.Priority;
+ import com.bumptech.glide.RequestBuilder;
+ import com.bumptech.glide.load.DecodeFormat;
+ import com.bumptech.glide.load.engine.DiskCacheStrategy;
+ import com.bumptech.glide.request.RequestOptions;
+ import com.bumptech.glide.request.target.Target;
+ import com.google.android.material.appbar.AppBarLayout;
+ import com.google.android.material.bottomsheet.BottomSheetBehavior;
+ import com.google.android.material.bottomsheet.BottomSheetDialog;
+ import com.google.android.material.math.MathUtils;
+ import com.knziha.filepicker.model.DialogConfigs;
+ import com.knziha.filepicker.model.DialogProperties;
+ import com.knziha.filepicker.model.DialogSelectionListener;
+ import com.knziha.filepicker.utils.FU;
+ import com.knziha.filepicker.view.FilePickerDialog;
+ import com.knziha.polymer.Utils.CMN;
+ import com.knziha.polymer.Utils.MyReceiver;
+ import com.knziha.polymer.Utils.OptionProcessor;
+ import com.knziha.polymer.Utils.Options;
+ import com.knziha.polymer.Utils.RgxPlc;
+ import com.knziha.polymer.Utils.WebOptions;
+ import com.knziha.polymer.browser.DownloadHandlerStd;
+ import com.knziha.polymer.database.LexicalDBHelper;
+ import com.knziha.polymer.databinding.ActivityMainBinding;
+ import com.knziha.polymer.databinding.DownloadBottomSheetBinding;
+ import com.knziha.polymer.databinding.SearchHintsItemBinding;
+ import com.knziha.polymer.databinding.WebPageItemBinding;
+ import com.knziha.polymer.qrcode.QRActivity;
+ import com.knziha.polymer.toolkits.Utils.BU;
+ import com.knziha.polymer.toolkits.Utils.ReusableByteOutputStream;
+ import com.knziha.polymer.webslideshow.CenterLinearLayoutManager;
+ import com.knziha.polymer.webslideshow.RecyclerViewPager;
+ import com.knziha.polymer.webslideshow.ViewPagerTouchHelper;
+ import com.knziha.polymer.webslideshow.ViewUtils;
+ import com.knziha.polymer.webslideshow.WebPic.WebPic;
+ import com.knziha.polymer.webstorage.BrowserDownloads;
+ import com.knziha.polymer.webstorage.BrowserHistory;
+ import com.knziha.polymer.webstorage.WebStacksSer;
+ import com.knziha.polymer.widgets.AppIconsAdapter;
+ import com.knziha.polymer.widgets.DescriptiveImageView;
+ import com.knziha.polymer.widgets.DialogWithTag;
+ import com.knziha.polymer.widgets.ScrollViewTransparent;
+ import com.knziha.polymer.widgets.PopupBackground;
+ import com.knziha.polymer.widgets.PrintPdfAgentActivity;
+ import com.knziha.polymer.widgets.SpacesItemDecoration;
+ import com.knziha.polymer.widgets.TwoColumnAdapter;
+ import com.knziha.polymer.widgets.Utils;
+ import com.knziha.polymer.widgets.WebFrameLayout;
+ import com.knziha.polymer.widgets.WebViewmy;
 
-import org.adrianwalker.multilinestring.Multiline;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.text.StringEscapeUtils;
+ import org.adrianwalker.multilinestring.Multiline;
+ import org.apache.commons.lang3.StringUtils;
+ import org.apache.commons.text.StringEscapeUtils;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.lang.ref.WeakReference;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+ import java.io.File;
+ import java.io.FileInputStream;
+ import java.io.FileOutputStream;
+ import java.io.InputStream;
+ import java.lang.ref.WeakReference;
+ import java.net.HttpURLConnection;
+ import java.net.URL;
+ import java.util.ArrayList;
+ import java.util.Collection;
+ import java.util.Collections;
+ import java.util.HashMap;
+ import java.util.HashSet;
+ import java.util.LinkedList;
+ import java.util.Map;
+ import java.util.regex.Matcher;
+ import java.util.regex.Pattern;
 
-import static androidx.appcompat.app.GlobalOptions.realWidth;
-import static com.knziha.polymer.Utils.Options.getLimitHints;
-import static com.knziha.polymer.Utils.Options.getTransitSearchHints;
-import static com.knziha.polymer.Utils.WebOptions.BackendSettings;
-import static com.knziha.polymer.Utils.WebOptions.StorageSettings;
-import static com.knziha.polymer.WeakReferenceHelper.topDomainNamesMap;
-import static com.knziha.polymer.WebCompoundListener.CustomViewHideTime;
-import static com.knziha.polymer.WebCompoundListener.PrintStartTime;
-import static com.knziha.polymer.WebCompoundListener.httpPattern;
-import static com.knziha.polymer.WebCompoundListener.requestPattern;
-import static com.knziha.polymer.widgets.Utils.DummyBMRef;
-import static com.knziha.polymer.widgets.Utils.DummyTransX;
-import static com.knziha.polymer.widgets.Utils.RequsetUrlFromCamera;
-import static com.knziha.polymer.widgets.Utils.RequsetUrlFromStorage;
-import static com.knziha.polymer.widgets.Utils.getSimplifiedUrl;
-import static com.knziha.polymer.widgets.Utils.getViewItemByPath;
-import static com.knziha.polymer.widgets.Utils.indexOf;
-import static com.knziha.polymer.widgets.Utils.isKeyboardShown;
-import static com.knziha.polymer.widgets.Utils.setOnClickListenersOneDepth;
+ import static androidx.appcompat.app.GlobalOptions.realWidth;
+ import static com.knziha.polymer.Utils.Options.getLimitHints;
+ import static com.knziha.polymer.Utils.Options.getTransitSearchHints;
+ import static com.knziha.polymer.Utils.WebOptions.BackendSettings;
+ import static com.knziha.polymer.Utils.WebOptions.StorageSettings;
+ import static com.knziha.polymer.WeakReferenceHelper.topDomainNamesMap;
+ import static com.knziha.polymer.WebCompoundListener.CustomViewHideTime;
+ import static com.knziha.polymer.WebCompoundListener.PrintStartTime;
+ import static com.knziha.polymer.WebCompoundListener.httpPattern;
+ import static com.knziha.polymer.WebCompoundListener.requestPattern;
+ import static com.knziha.polymer.widgets.Utils.DummyBMRef;
+ import static com.knziha.polymer.widgets.Utils.DummyTransX;
+ import static com.knziha.polymer.widgets.Utils.RequsetUrlFromCamera;
+ import static com.knziha.polymer.widgets.Utils.RequsetUrlFromStorage;
+ import static com.knziha.polymer.widgets.Utils.getSimplifiedUrl;
+ import static com.knziha.polymer.widgets.Utils.getViewItemByPath;
+ import static com.knziha.polymer.widgets.Utils.indexOf;
+ import static com.knziha.polymer.widgets.Utils.isKeyboardShown;
+ import static com.knziha.polymer.widgets.Utils.setOnClickListenersOneDepth;
 @SuppressWarnings({"rawtypes","ClickableViewAccessibility"
 		,"IntegerDivisionInFloatingPointContext"
 		,"NonConstantResourceId"
@@ -262,7 +262,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	boolean supressingProgressListener;
 	
 	TextPaint menu_grid_painter;
-	private ViewGroup menu_grid;
+	private ScrollViewTransparent menu_grid;
+	private AnimatorListenerAdapter menu_grid_animlis;
 	long supressingNxtLux;
 	public static boolean closing;
 	
@@ -290,6 +291,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	private int softMode;
 	private final int softModeHold = WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN | WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN;
 	private final int softModeResize = WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN|WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE;
+	private boolean MainMenuListVis;
+	private boolean MenuClicked;
 	
 	
 	@Override
@@ -304,6 +307,24 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			calculateItemWidth(true);
 		} else {
 			bNeedReCalculateItemWidth = true;
+		}
+		if(MainMenuListVis) {
+			refreshMenuGridSize();
+		}
+		if(!GlobalOptions.isLarge) {
+			// 压扁你，底部工具栏！
+			float targetH = 45;
+			if(newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+				targetH = 40;
+				if(dm.heightPixels<450*GlobalOptions.density) {
+					targetH = 38;
+				}
+			}
+			targetH*=GlobalOptions.density;
+			UIData.bottombar2.getLayoutParams().height = (int) (targetH);
+			if(MainMenuListVis) {
+				menu_grid.setTranslationY(-targetH);
+			}
 		}
 	}
 	
@@ -810,7 +831,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	public void updateUserAgentString(AdvancedBrowserWebView mWebView, String url) {
 		historyCon.queryDomain(mWebView, url);
 		boolean pcMode = false;
-		pcMode = url!=null && url.contains("www.baidu");
+		//pcMode = url!=null && url.contains("www.baidu");
 		String targetUa;
 		if(pcMode) {
 			targetUa = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36";
@@ -2218,9 +2239,13 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	private void etSearch_clearFocus() {
 		etSearch.clearFocus();
 		imm.hideSoftInputFromWindow(etSearch.getWindowToken(), 0);
-		if(DismissingViewHolder)
-			setSoftInputMode(softModeResize);
+		if(DismissingViewHolder) {
+			root.removeCallbacks(postSetSoftResizeRunnable);
+			root.postDelayed(postSetSoftResizeRunnable, 350);
+		}
 	}
+	
+	Runnable postSetSoftResizeRunnable = () -> setSoftInputMode(softModeResize);
 	
 	private void decideTopBotBH() {
 		bottombarLP.setBehavior(fixBotBar?null:bottombarScrollBehaviour);
@@ -2271,48 +2296,6 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			return;
 		}
 		switch (v.getId()){
-			/* 历史 */
-			case R.id.menu_icon3: {
-				int id = WeakReferenceHelper.history_list;
-				BrowserHistory historyList = (BrowserHistory) getReferencedObject(id);
-				if(historyList==null) {
-					CMN.Log("重建历史列表");
-					putReferencedObject(id, historyList = new BrowserHistory());
-				}
-				historyList.show(getSupportFragmentManager(), "history");
-			} break;
-			/* 下载 */
-			case R.id.menu_icon4: {
-				int id = WeakReferenceHelper.dwnld_list;
-				BrowserDownloads downloadList = (BrowserDownloads) getReferencedObject(id);
-				if(downloadList==null) {
-					CMN.Log("重建下载列表");
-					putReferencedObject(id, downloadList = new BrowserDownloads());
-				}
-				downloadList.show(getSupportFragmentManager(), "downloads");
-			} break;
-			/* 分享 */
-			case R.id.menu_icon6: {
-				shareUrlOrText();
-			} break;
-			case R.id.menu_icon10: {
-				AddPDFViewerShortCut(getApplicationContext());
-				
-//				Intent intent = new Intent("colordict.intent.action.SEARCH");
-//				intent.putExtra("EXTRA_QUERY", "happy");
-//				startActivity(intent);
-				//intent.addCategory(Intent.CATEGORY_BROWSABLE);
-//				intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-//				intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-//				intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
-//				intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
-				
-				
-				//intent.setFlags(0x10000000);
-				
-				
-				
-			} break;
 			case R.id.ivBack:{ // 搜索引擎弹窗 //searpop
 				int polypopupW = (int) (_45_*1.5);
 				int searchEnginePopupW = (int) (etSearch.getWidth()*0.85);
@@ -2379,6 +2362,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				updateQRBtn();
 				webtitle_setVisibility(true);
 				if(opt.getSelectAllOnFocus()||opt.getShowImeImm()) {
+					root.removeCallbacks(postSetSoftResizeRunnable);
 					setSoftInputMode(softModeHold);
 					v.post(() -> { //upEvt
 						etSearch.requestFocus();
@@ -2577,15 +2561,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 //				showT("fixTopBar : "+fixTopBar);
 			break;
 			case R.id.browser_widget11:
-				//appbar.setExpanded(false, true);
-				if(menu_grid==null) {
-					init_menu_layout();
-				}
-				if(menu_grid.getVisibility()==View.VISIBLE) {
-					menu_grid.setVisibility(View.GONE);
-				} else {
-					menu_grid.setVisibility(View.VISIBLE);
-				}
+				MenuClicked=MainMenuListVis;
+				toggleMenuGrid();
 			break;
 			case R.id.browser_widget10:
 				tmpBmRef = DummyBMRef;
@@ -2668,6 +2645,120 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					}
 				}
 			} break;
+		}
+	}
+	
+	private void toggleMenuGrid() {
+		int TargetTransY = -UIData.bottombar2.getHeight();
+		int legalMenuTransY = (int) (GlobalOptions.density*55);
+		//appbar.setExpanded(false, true);
+		if(menu_grid==null) {
+			// init_menu_layout
+			menu_grid_animlis = new AnimatorListenerAdapter() {
+				@Override
+				public void onAnimationEnd(Animator animation) {
+					if(!MainMenuListVis) {
+						menu_grid.setVisibility(View.GONE);
+					}
+				}
+			};
+			View.OnClickListener menuGridClicker = v -> {
+				if(MenuClicked) {
+					return;
+				}
+				switch (v.getId()) {
+					/* 历史 */
+					case R.id.menu_icon3: {
+						int id = WeakReferenceHelper.history_list;
+						BrowserHistory historyList = (BrowserHistory) getReferencedObject(id);
+						if(historyList==null) {
+							CMN.Log("重建历史列表");
+							putReferencedObject(id, historyList = new BrowserHistory());
+						}
+						historyList.show(getSupportFragmentManager(), "history");
+					} break;
+					/* 下载 */
+					case R.id.menu_icon4: {
+						int id = WeakReferenceHelper.dwnld_list;
+						BrowserDownloads downloadList = (BrowserDownloads) getReferencedObject(id);
+						if(downloadList==null) {
+							CMN.Log("重建下载列表");
+							putReferencedObject(id, downloadList = new BrowserDownloads());
+						}
+						downloadList.show(getSupportFragmentManager(), "downloads");
+					} break;
+					/* 分享 */
+					case R.id.menu_icon5: {
+						shareUrlOrText();
+					} break;
+					case R.id.menu_icon10: {
+						AddPDFViewerShortCut(getApplicationContext());
+		//				Intent intent = new Intent("colordict.intent.action.SEARCH");
+		//				intent.putExtra("EXTRA_QUERY", "happy");
+		//				startActivity(intent);
+						//intent.addCategory(Intent.CATEGORY_BROWSABLE);
+		//				intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+		//				intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+		//				intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
+		//				intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
+						//intent.setFlags(0x10000000);
+					} break;
+				}
+  				MenuClicked = true;
+				v.postDelayed(this::toggleMenuGrid, 250);
+			};
+			menu_grid=(ScrollViewTransparent) UIData.menuGrid.getViewStub().inflate();
+			ViewGroup svp = (ViewGroup) menu_grid.getChildAt(0);
+			menu_grid.setTranslationY(TargetTransY + legalMenuTransY);
+			for (int i = 0; i < 2; i++) {
+				ViewGroup sv = (ViewGroup) svp.getChildAt(i);
+				for (int j = 0; j < 5; j++) {
+					DescriptiveImageView vv = (DescriptiveImageView) sv.getChildAt(j);
+					vv.textPainter=menu_grid_painter;
+					vv.setOnClickListener(menuGridClicker);
+				}
+			}
+		}
+		
+		float alpha = 0;
+		if(MainMenuListVis) { // 隐藏
+			TargetTransY = TargetTransY + legalMenuTransY;
+			MainMenuListVis=false;
+		} else { // 显示
+			alpha=1;
+			MainMenuListVis=true;
+			refreshMenuGridSize();
+			menu_grid.setVisibility(View.VISIBLE);
+			//UIData.bottombar.getLayoutParams().height = UIData.mainMenuLst.getHeight()+UIData.bottombar2.getHeight();
+		}
+		menu_grid.focusable=MainMenuListVis;
+		//UIData.browserWidget11.jumpDrawablesToCurrentState();
+		menu_grid
+				.animate()
+				.translationY(TargetTransY)
+				.alpha(alpha)
+				.setDuration(180)
+				//.setInterpolator(linearInterpolator)
+				.setListener(menu_grid_animlis)
+				.start();
+	}
+	
+	private void refreshMenuGridSize() {
+		int w = dm.widthPixels;
+		if(w>dm.heightPixels) {
+			w -= GlobalOptions.density*18;
+		}
+		int maxWidth = Math.min(w, (int) (GlobalOptions.density*480));
+		if(Utils.actualLandscapeMode(this)) {
+			maxWidth = Math.min(dm.heightPixels, maxWidth);
+		}
+		//if(root.getWidth()>maxWidth)
+		{
+			menu_grid.setBackgroundResource(R.drawable.frame_top_rounded);
+			menu_grid.getLayoutParams().width=maxWidth;
+			int shortLim = dm.heightPixels-UIData.bottombar2.getHeight();
+			boolean tooShort = GlobalOptions.density*200>shortLim;
+			menu_grid.getLayoutParams().height=tooShort?shortLim:-2;
 		}
 	}
 	
@@ -3262,19 +3353,6 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				:android_ua);
 	}
 	
-	private void init_menu_layout() {
-		menu_grid=(ViewGroup) ((ViewStub)findViewById(R.id.menu_grid)).inflate();
-		for (int i = 0; i < 2; i++) {
-			ViewGroup sv = (ViewGroup) menu_grid.getChildAt(i);
-			for (int j = 0; j < 5; j++) {
-				DescriptiveImageView vv = (DescriptiveImageView) sv.getChildAt(j);
-				vv.textPainter=menu_grid_painter;
-				vv.setOnClickListener(this);
-			}
-		}
-		menu_grid.setVisibility(View.GONE);
-	}
-	
 	private void shareUrlOrText() {
 		//CMN.Log("menu_icon6menu_icon6");
 		//CMN.rt("分享链接……");
@@ -3381,11 +3459,13 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 							}
 							long dwnldID = cursor.getLong(1);
 							path = downloader.getDownloadPathForDwnldID(dwnldID);
-							Uri data = getSimplifiedUrl(this, Uri.parse(path));
-							path = data.toString();
-							if(path.startsWith("file://")) {
-								CMN.Log("删除2…", path);
-								FU.delete3(this, FU.getFile(path));
+							if(path!=null) {
+								Uri data = getSimplifiedUrl(this, Uri.parse(path));
+								path = data.toString();
+								if(path.startsWith("file://")) {
+									CMN.Log("删除2…", path);
+									FU.delete3(this, FU.getFile(path));
+								}
 							}
 						}
 					}

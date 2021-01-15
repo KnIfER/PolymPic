@@ -91,6 +91,7 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 
 	private int mNestedYOffset;
 	private int mNestedYOffset1;
+	private int mNestedYOffset2;
 	
 	public ArrayList<String> PolymerBackList = new ArrayList<>();
 
@@ -172,6 +173,7 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 		if (action == MotionEvent.ACTION_DOWN) {
 			mNestedYOffset = 0;
 			mNestedYOffset1 = 0;
+			mNestedYOffset2 = 0;
 		}
 
 		int y = (int) event.getY();
@@ -184,8 +186,10 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 //				int top = layout.getTop();
 //				offset = Math.max(-top, Math.min(appBarLayout.getHeight()-top, offset));
 //				layout.offsetTopAndBottom=0;
-//				event.offsetLocation(0, -offset);
+//				mNestedYOffset2+=offset;
+//				//event.offsetLocation(0, -offset);
 //			}
+//			event.offsetLocation(0, -mNestedYOffset2);
 		boolean limitSpd=false;
 		switch (action) {
 			case MotionEvent.ACTION_DOWN:

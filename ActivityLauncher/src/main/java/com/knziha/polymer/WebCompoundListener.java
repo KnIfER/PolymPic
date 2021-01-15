@@ -942,7 +942,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	@Override
 	public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
 		CMN.Log("DOWNLOAD:::", url, contentDisposition, mimetype, contentLength);
-		if(appToast.getVisibility()==View.VISIBLE) {
+		if(appToast!=null && appToast.getVisibility()==View.VISIBLE) {
 			return;
 		}
 		a.showDownloadDialog(url, contentLength, mimetype);

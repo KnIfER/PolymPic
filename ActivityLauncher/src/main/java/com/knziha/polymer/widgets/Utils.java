@@ -41,6 +41,7 @@ import android.util.DisplayMetrics;
 import android.util.LayoutDirection;
 import android.util.SparseArray;
 import android.util.TypedValue;
+import android.view.Surface;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
@@ -62,7 +63,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -293,7 +293,7 @@ public class Utils {
 					return Uri.fromFile(f);
 				}
 			}
-		} catch (UnsupportedEncodingException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return data;
@@ -384,6 +384,11 @@ public class Utils {
 			return Character.toUpperCase(c)+text.substring(start+1, end);
 		}
 		return text.substring(start, end);
+	}
+	
+	public static boolean actualLandscapeMode(Context c) {
+		int angle = ((WindowManager)c.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay().getRotation();
+		return angle==Surface.ROTATION_90||angle==Surface.ROTATION_270;
 	}
 	
 	public static class DummyOnClick implements View.OnClickListener {
