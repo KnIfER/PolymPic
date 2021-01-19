@@ -280,7 +280,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	public File downloadTargetDir;
 	
 	private RequestBuilder<Drawable> glide;
-	private String android_ua;
+	public String android_ua = "Mozilla/5.0 (Linux; Android " + Build.VERSION.RELEASE + "; " + Build.MODEL + ") AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Mobile Safari/537.36 OPR/58.2.2878.53403";
+	
 	
 	private DownloadHandlerStd downloader;
 	
@@ -380,7 +381,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		
 		root=UIData.root;
 		
-		mWebListener = new WebCompoundListener(this);
+		mWebListener = new WebCompatListener(this);
 		
 		imageViewCover = new ImageView(this);
 		imageViewCover1 = new ImageView(this);
@@ -572,6 +573,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				opt.putOpenedTabs(stringBuilder.toString());
 				tabsDirty = false;
 			}
+			if(mWebListener!=null) mWebListener.parseJinKe();
 		}
 	}
 	
@@ -704,6 +706,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			}
 		});
 		//tg
+		CMN.Log("device density is ::", GlobalOptions.density);
+		
 		//TestHelper.async(TestHelper::downloadlink);
 		//TestHelper.savePngBitmap(this, R.drawable.polymer, 150, 150, "/sdcard/150.png");
 
@@ -837,9 +841,6 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		if(pcMode) {
 			targetUa = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36";
 		} else {
-			if(android_ua==null) {
-				android_ua = "Mozilla/5.0 (Linux; Android " + Build.VERSION.RELEASE + "; " + Build.MODEL + ") AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Mobile Safari/537.36 OPR/58.2.2878.53403";
-			}
 			//CMN.Log("android_ua", android_ua);
 			targetUa = android_ua;
 		}
@@ -899,6 +900,22 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			downloader = new DownloadHandlerStd(this, historyCon);
 		}
 		return downloader;
+	}
+	
+	public void updateProgressUI() {
+		AdvancedBrowserWebView mWebView = currentWebView;
+		View starting_progressbar = UIData.progressbar;
+		if(mWebView.PageStarted) {
+		//if(mWebView.getProgress()<100) {
+			starting_progressbar.setAlpha(1);
+			starting_progressbar.setVisibility(View.VISIBLE);
+			//progressbar_background.setLevel(Math.min(progressbar_background.getLevel(), 2500));
+			progressbar_background.setLevel(mWebView.getProgress()*100);
+			UIData.ivRefresh.setImageResource(R.drawable.ic_close_white_24dp);
+		} else {
+			starting_progressbar.setVisibility(View.GONE);
+			UIData.ivRefresh.setImageResource(R.drawable.ic_refresh_black_24dp);
+		}
 	}
 	
 	class BrowserSlider implements View.OnTouchListener {
@@ -1159,12 +1176,16 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 							}
 							animator.start();
 						}
-						float delta = Math.abs(event.getX()-orgX);
-						if(delta>10) {
-							hideKeyboard();
-							if(delta>30*GlobalOptions.density) {
-								webtitle_setVisibility(false);
-								etSearch_clearFocus();
+						if(v==UIData.toolbarContent&&search_bar_vis()) {
+							//float delta = Math.abs(event.getX()-orgX);
+							float delta = Math.abs(currentWebView.layout.getTranslationX());
+							if(delta>5*GlobalOptions.density) {
+								hideKeyboard();
+								//if(delta>30*GlobalOptions.density)
+								{
+									webtitle_setVisibility(false);
+									etSearch_clearFocus();
+								}
 							}
 						}
 						dragging=false;
@@ -2221,6 +2242,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		etSearch_clearFocus();
 		webtitle.setText(mWebView.holder.title);
 		currentWebView=mWebView;
+		//if(pseudoAdd==0)
+		updateProgressUI();
 		if(adapter_idx!=i || add) {
 			adapter_idx=i;
 			etSearch.setText(mWebView.holder.url);
@@ -3376,8 +3399,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	
 	public void fadeOutProgressbar() {
 		if(UIData.progressbar.getAlpha()==1 && !supressingProgressListener) {
-			progressTransient.pause();
-			progressProceed.pause();
+//			progressTransient.pause();
+//			progressProceed.pause();
 			progressTransient.setFloatValues(1, 0);
 			int start = progressbar_background.getLevel();
 			progressProceed.setIntValues(start, 10000);
@@ -3635,11 +3658,11 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				layout.removeViewAt(cc);
 			}
 		}
-		
 		//Utils.sendog(opt);
 		if(mWebView==null) {
 			mWebView = new AdvancedBrowserWebView(this);
 		}
+		//mWebView.clearCache(true);
 		//CMN.Log("new mWebView::ua::", mWebView.getSettings().getUserAgentString());
 		//Utils.sencat(opt, ViewConfigDefault);
 		

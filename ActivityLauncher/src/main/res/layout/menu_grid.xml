@@ -11,7 +11,9 @@
 	android:paddingRight="6dp"
 	android:elevation="3dp"
 	android:visibility="gone"
+	android:alpha="0"
 	tools:visibility="visible"
+	tools:alpha="1"
 	>
 	<LinearLayout
 		android:orientation="vertical"

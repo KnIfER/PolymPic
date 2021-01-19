@@ -30,9 +30,11 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.GlobalOptions;
 import androidx.recyclerview.widget.RecyclerView.OnScrollChangedListener;
 
+import com.knziha.polymer.Utils.BufferedReader;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.IISTri;
 import com.knziha.polymer.Utils.RgxPlc;
@@ -48,6 +50,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -59,6 +62,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -82,6 +86,59 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	private int mOldOri;
 	
 	BrowserActivity a;
+	
+	static class SubStringKey {
+		final int st;
+		final int ed;
+		final int hash;
+		final String text;
+		final int len;
+		
+		static SubStringKey fast_hostKey(String text) {
+			return new SubStringKey(text, 0, text.length());
+		}
+		
+		static SubStringKey new_hostKey(String text) {
+			int st=0, ed= text.length();
+			int idx=text.indexOf("://");
+			if(idx>0) {
+				st=idx+3;
+			}
+			idx=text.indexOf("/", st);
+			if(idx>0) {
+				ed=idx;
+			}
+			return new SubStringKey(text, st, ed);
+		}
+		
+		SubStringKey(String text, int st, int ed) {
+			this.st = st;
+			this.ed = ed;
+			this.text = text;
+			this.hash = Utils.hashCode(text, st, ed);
+			this.len = ed-st;
+		}
+		
+		@Override
+		public boolean equals(Object o) {
+			if (!(o instanceof SubStringKey)) return false;
+			SubStringKey that = (SubStringKey) o;
+			return this==that || len==that.len && text.regionMatches(st, that.text, that.st, len);
+		}
+		
+		@Override
+		public int hashCode() {
+			return hash;
+		}
+		
+		@NonNull @Override
+		public String toString() {
+			return text.substring(st, ed);
+		}
+	}
+	
+	/** 以荆轲之鞘纳山川之峰脊破阻业之障 */
+	HashMap<SubStringKey, String> jinkeSheaths = new HashMap<>();
 	
 	Map<HostKey, ArrayList<SiteRule>> SiteConfigs = Collections.synchronizedMap(new HashMap<>());
 	ArrayList<Pair<Pattern, SiteRule>> SiteConfigsByPattern = new ArrayList<>();
@@ -191,6 +248,32 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 			rule.pruneRules[1] = new IISTri(51, -1941194295, "ut", ".App{height:auto!important}");
 			SiteConfigsByPattern.add(new Pair<>(p, rule));
 		}
+		
+		parseJinKe();
+		//jinkeSheaths.put(SubStringKey.fast_hostKey("en.wiktionary.org"), "91.198.174.192");
+	}
+	
+	public void parseJinKe() {
+		jinkeSheaths.clear();
+		File f = new File(a.getExternalFilesDir(null), "hosts");
+		if(f.isFile()) {
+			System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
+			try (BufferedReader bufferedReader = new BufferedReader(new FileReader(f))){
+				String ln;
+				Pattern p = Pattern.compile("(.*)[ ]+(.*)");
+				while ((ln=bufferedReader.readLine())!=null) {
+					ln = ln.trim();
+					if(ln.startsWith("#")) continue;
+					Matcher m = p.matcher(ln);
+					if(m.find()) {
+						jinkeSheaths.put(SubStringKey.fast_hostKey(m.group(2)), m.group(1));
+						//CMN.Log("jinke...", SubStringKey.fast_hostKey(m.group(2)), m.group(1));
+					}
+				}
+			} catch (IOException e) {
+				CMN.Log(e);
+			}
+		}
 	}
 	
 	@SuppressLint("SourceLockedOrientationActivity")
@@ -281,11 +364,10 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		@Override
 		public void onProgressChanged(WebView view, int newProgress) {
 			CMN.Log("OPC::", newProgress, Thread.currentThread().getId());
-			a.viewpager_holder_hasTag=true;
 			AdvancedBrowserWebView mWebView = (AdvancedBrowserWebView) view;
-			mWebView.isloading=true;
-			
-			if(mWebView==a.currentWebView) {
+			if(mWebView==a.currentWebView && mWebView.PageStarted) {
+				a.viewpager_holder_hasTag=true;
+				mWebView.isloading=true;
 				boolean premature=mWebView.getDelegate(BackendSettings).getPremature();
 				int lowerBound = mWebView.EnRipenPercent;
 				if(lowerBound<=10) {
@@ -408,11 +490,9 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		mWebView.PageStarted=true;
 		mWebView.PageVersion++;
 		mWebView.PageFinishedPosted=false;
-		View starting_progressbar = a.UIData.progressbar;
-		starting_progressbar.setAlpha(1);
-		starting_progressbar.setVisibility(View.VISIBLE);
-		a.progressbar_background.setLevel(Math.min(a.progressbar_background.getLevel(), 2500));
-		a.UIData.ivRefresh.setImageResource(R.drawable.ic_close_white_24dp);
+		if(mWebView==a.currentWebView) {
+			a.updateProgressUI();
+		}
 	}
 	
 	
@@ -741,6 +821,8 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 				CMN.Log(e);
 			}
 		}
+		
+		
 		//CMN.Log("request.getUrl().getScheme()", request.getUrl().getScheme());
 		if(url.length()<=20) {
 			if(url.startsWith("https://mark.js")&&markjsBytesArr!=null) {
@@ -966,7 +1048,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 			return;
 		}
 		boolean scrollforbid;
-		CMN.Log("onScrollChange", scrollY-oldy);
+		//CMN.Log("onScrollChange", scrollY-oldy);
 		if(webview.forbidScrollWhenSelecting && webview.bIsActionMenuShown && oldy-scrollY>200
 			|| CustomViewHideTime>0 && System.currentTimeMillis()-CustomViewHideTime<350){
 			CMN.Log("re_scroll...");

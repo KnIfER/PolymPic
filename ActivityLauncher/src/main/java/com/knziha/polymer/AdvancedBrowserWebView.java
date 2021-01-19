@@ -154,7 +154,7 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 		
 		webScale=getResources().getDisplayMetrics().density;
 		
-		//settings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
+		settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
 		
 		//setLayerType(View.LAYER_TYPE_HARDWARE, null);
 	}
