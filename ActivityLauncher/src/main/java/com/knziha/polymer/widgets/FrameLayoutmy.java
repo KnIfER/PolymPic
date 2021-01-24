@@ -20,7 +20,7 @@ public class FrameLayoutmy extends FrameLayout {
 
 	@Override
 	public void setTranslationY(float translationY) {
-		CMN.Log("setTranslationY");
+		//CMN.Log("setTranslationY");
 		super.setTranslationY(translationY);
 	}
 	@Override

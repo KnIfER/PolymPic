@@ -1427,7 +1427,7 @@ var Maya;
               w._docAnnots+=this_.serializeRange(range)+('|0'+'…');
               w._docAnnott+=range+('…');
               this_.surroundRangeContents(range, spanner)
-              chrome.SaveAnnots(chrmtd.get(), w._docAnnots, w._docAnnott);
+              polyme.SaveAnnots(chrmtd.get(), w._docAnnots, w._docAnnott);
            }
            //sel.removeAllRanges();
         }
@@ -1502,7 +1502,7 @@ var Maya;
     }, {
       key: "do_highlight",
       value: function do_highlight(keyword){
-        chrome.bOnceHL=false;
+        polyme.bOnceHL=false;
         var _this = this;
         this.unmark({
             done: function() {
@@ -1517,10 +1517,10 @@ var Maya;
     }, {
       key: "done_highlight",
       value: function() {
-        chrome.bOnceHL=true;
-        chrome.lights = document.getElementsByTagName("mark");
+        polyme.bOnceHL=true;
+        polyme.lights = document.getElementsByTagName("mark");
         this.currentIndex=-1;
-        //chrome.onHighlightReady(frameAt, this.results.length);
+        //polyme.onHighlightReady(frameAt, this.results.length);
       }
     }
     ]);
@@ -1556,19 +1556,19 @@ var Maya;
     };
 
     _this.done_highlight = function(){
-      chrome.lights = document.getElementsByTagName("mark");
+      polyme.lights = document.getElementsByTagName("mark");
     }
 
     _this.HighlightSelection = function () {
-        console.log('HighlightSelection super called'+chrome.bOnceHL);
+        console.log('HighlightSelection super called'+polyme.bOnceHL);
       if(instance.rejectHL) return;
-      if(chrome.bOnceHL) {
+      if(polyme.bOnceHL) {
         instance.rejectHL=1;
         instance.unmark({done: function() {
           instance.rejectHL=0;
           instance.HighlightSelection();
-          console.log('rehighlighting...'+chrome.keys);
-            instance.mark(chrome.keys, {
+          console.log('rehighlighting...'+polyme.keys);
+            instance.mark(polyme.keys, {
               separateWordSearch: 'enabled',done: _this.done_highlight,
               caseSensitive:false
             });
@@ -1584,12 +1584,12 @@ var Maya;
     };
 
     _this.GetLights = function () {
-      return chrome.lights;
+      return polyme.lights;
     };
 
     _this.do_highlight = function (e) {
       e=decodeURIComponent(e);
-      instance.do_highlight(chrome.keys=e);
+      instance.do_highlight(polyme.keys=e);
     };
 
     return _this;
@@ -1613,14 +1613,14 @@ window.addEventListener('click',function(e){
       var range = new Range();
       range.selectNode(e.target);
       sel.addRange(range);
-      chrome.sendup(chrmtd.get());
+      polyme.sendup(chrmtd.get());
       igNoreNextClick=1;
     }
   }
   //console.log(e.target)
 });
 
-chrome.craft("style", "mark{background:yellow;}mark.current{background:orange;}"+
+polyme.craft("style", "mark{background:yellow;}mark.current{background:orange;}"+
   ".PLOD_HL{position:relative;background:#ffaaaa;}.PLOD_HL::after{"+
   "content: '···';"+
   "border-radius: 16px;"+

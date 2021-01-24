@@ -140,12 +140,25 @@ public class  BU{//byteUtils
         resStr = strHex[high]+strHex[low];
         return resStr;
     }
-    
-    
-    
-    
-
-    public static char toChar(byte[] buffer,int offset) {   
+	
+	
+	public static void putInt(byte[] b, int off, int val) {
+		b[off + 3] = (byte) (val       );
+		b[off + 2] = (byte) (val >>>  8);
+		b[off + 1] = (byte) (val >>> 16);
+		b[off    ] = (byte) (val >>> 24);
+	}
+	
+	public static int getInt(byte[] b, int off) {
+		return ((b[off + 3] & 0xFF)      ) +
+				((b[off + 2] & 0xFF) <<  8) +
+				((b[off + 1] & 0xFF) << 16) +
+				((b[off    ]       ) << 24);
+	}
+	
+	
+	
+	public static char toChar(byte[] buffer,int offset) {
         char  values = 0;   
         for (int i = 0; i < 2; i++) {    
             values <<= 8; values|= (buffer[offset+i] & 0xff);   

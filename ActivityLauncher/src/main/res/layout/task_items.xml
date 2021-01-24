@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:tools="http://schemas.android.com/tools">
+	<LinearLayout
+		android:id="@+id/itemRoot"
+		android:orientation="horizontal"
+		android:layout_width="match_parent"
+		android:layout_height="65dp"
+		android:background="#66ffffff"
+		>
+
+		<TextView
+			android:id="@+id/number"
+			android:layout_width="50dp"
+			android:layout_height="match_parent"
+			tools:text="1"
+			android:textSize="25sp"
+			android:textColor="#000"
+			android:gravity="center"
+			/>
+
+		<LinearLayout
+			android:layout_width="0dp"
+			android:layout_height="match_parent"
+			android:layout_weight="1"
+			android:orientation="vertical"
+			android:paddingStart="10dp">
+
+			<TextView
+				android:id="@+id/title"
+				android:layout_width="match_parent"
+				android:layout_height="0dp"
+				android:layout_weight="2"
+				android:gravity="center_vertical"
+				android:singleLine="true"
+				android:textColor="#000"
+				android:textSize="18sp"
+				tools:text="Task Title" />
+
+			<TextView
+				android:id="@+id/url"
+				android:layout_width="match_parent"
+				android:layout_height="0dp"
+				android:layout_weight="1"
+				android:gravity="center_vertical"
+				android:singleLine="true"
+				android:textSize="14sp"
+				tools:text="Task URL" />
+		</LinearLayout>
+
+		<androidx.appcompat.widget.AppCompatTextView
+			android:id="@+id/download_indicator"
+			android:layout_width="50dp"
+			android:layout_height="match_parent"
+			android:gravity="center_vertical"
+			android:paddingTop="5dp"
+			tools:text="100KB"
+			tools:visibility="visible"
+			android:visibility="gone"
+			android:textSize="8sp"
+			android:autoSizeMinTextSize="2dp"
+			android:autoSizeTextType="uniform"
+			android:autoSizeMaxTextSize="25sp"
+			android:maxLines="1"
+			android:textColor="#000"
+			/>
+
+		<View
+			android:id="@+id/states_indicator"
+			android:layout_width="50dp"
+			android:layout_height="match_parent"
+			/>
+	</LinearLayout>
+</layout>

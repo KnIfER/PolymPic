@@ -1,6 +1,7 @@
 package com.knziha.polymer.widgets;
 
 import android.annotation.SuppressLint;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
@@ -23,7 +24,6 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.appcompat.app.GlobalOptions;
 import androidx.recyclerview.widget.RecyclerView.OnScrollChangedListener;
@@ -32,16 +32,20 @@ import com.knziha.polymer.BrowserActivity;
 import com.knziha.polymer.R;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.Options;
+import com.knziha.polymer.database.LexicalDBHelper;
+import com.knziha.polymer.toolkits.Utils.ReusableByteOutputStream;
 
 import org.adrianwalker.multilinestring.Multiline;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.knziha.polymer.WebCompoundListener.ensureMarkJS;
+import static com.knziha.polymer.widgets.Utils.DummyBMRef;
 import static com.knziha.polymer.widgets.Utils.getWindowManagerViews;
 
 public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListener {
@@ -49,8 +53,12 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
 	public BrowserActivity.TabHolder holder;
 	public BrowserActivity context;
 	public long time;
+	public int lastCaptureVer;
+	public int lastSaveVer;
+	public int version;
 	public int lastScroll;
-	public File stackpath;
+	public boolean stackloaded;
+	public String targetUa;
 	private boolean invalidable = true;
 	public boolean HLED;
 	public float lastX;
@@ -68,6 +76,10 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
 	public boolean isWebHold;
 	public boolean isIMScrollSupressed;
 	
+	public boolean forbidScrollWhenSelecting;
+	
+	public final static ReusableByteOutputStream bos1 = new ReusableByteOutputStream();
+	
 	public WebViewmy(Context context) {
 		super(context, null, 0);
 		this.context=(BrowserActivity) context;
@@ -84,9 +96,9 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
 	@Override
 	protected void onScrollChanged(int l, int t, int oldl, int oldt) {
 		super.onScrollChanged(l, t, oldl, oldt);
-		//CMN.Log(lastScroll, " onScrollChanged", l, t, oldl, oldt); //有的网页监听不到
+		//CMN.Log(lastScroll, "onScrollChanged", l, t, oldl, oldt); //有的网页监听不到
+		//version++;
 		if(!Options.getAlwaysRefreshThumbnail() && Math.abs(lastScroll-t)>100){
-			time=System.currentTimeMillis();
 			lastScroll=t;
 		}
 		if(mOnScrollChangeListener !=null)
@@ -128,7 +140,7 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
 	@Override
 	public void loadUrl(String url) {
 		super.loadUrl(url);
-		//CMN.Log("loadUrl: "+url.equals("about:blank"));
+		CMN.Log("loadUrl: "+url.equals("about:blank"));
 		//if(!url.equals("about:blank"))
 		isloading=true;
 	}
@@ -142,9 +154,11 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
 	public boolean bIsActionMenuShown;
 	public AdvancedWebViewCallback webviewcallback;
 	
-	
-	
+	/** Recapture Thumnails as a bitmap. There's no point in doing this asynchronously.
+	 * 		draw(canvas) will block the UI even when it's called in another thread. */
 	public void recaptureBitmap() {
+		CMN.Log("recaptureBitmap...", holder.id, version);
+		lastCaptureVer = version;
 		int w = getWidth();
 		int h = getHeight();
 		if(w>0) {
@@ -154,17 +168,25 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
 			}
 			int targetW = (int)(w*factor);
 			int targetH = (int)(h*factor);
-			boolean reset = bitmap==null || bitmap.getWidth()!=targetW||bitmap.getHeight()!=targetH;
+			int needRam = targetW*targetH*2;
+			Bitmap bmItem = bm.get();
+			boolean reset = bmItem==null||!bmItem.isMutable()||bmItem.getAllocationByteCount()<needRam;
 			if(reset) {
-				if(bitmap!=null) {
-					bitmap.recycle();
+				if(bmItem!=null) {
+					//CMN.Log("bmItem reset");
+					if(bmItem.isMutable()) //todo recycle all. ( this fixs the bug below )
+					// todo currently there's a  bug when you click on the tabs manager btn before the page finished on a second launch of this app then switch to another tab and switch back and quickly show the tabs manager again that displays a blank image erroneously.
+					bmItem.recycle();
 				}
-				bitmap = Bitmap.createBitmap(targetW, targetH, Bitmap.Config.RGB_565);
+				bmItem = Bitmap.createBitmap(targetW, targetH, Bitmap.Config.RGB_565);
+			} else if(bmItem.getWidth()!=targetW||bmItem.getHeight()!=targetH) {
+				bmItem.reconfigure(targetW, targetH, Bitmap.Config.RGB_565);
 			}
+			bmItem.eraseColor(Color.WHITE);
 			if(canvas==null) {
-				canvas = new Canvas(bitmap);
+				canvas = new Canvas(bmItem);
 			} else if(reset) {
-				canvas.setBitmap(bitmap);
+				canvas.setBitmap(bmItem);
 			}
 			canvas.setMatrix(Utils.IDENTITYXIRTAM);
 			canvas.scale(factor, factor);
@@ -172,10 +194,40 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
 			long st = System.currentTimeMillis();
 			draw(canvas);
 			CMN.Log("绘制时间：", System.currentTimeMillis()-st);
+			bm = new WeakReference<>(bmItem);
+			CMN.Log("复制时间：", System.currentTimeMillis()-st);
 		}
 	}
 	
-	public Bitmap bitmap;
+	public Bitmap saveBitmap() {
+		Bitmap bmItem = bm.get();
+		if(bmItem==null) {
+			return null;
+		}
+		long st = System.currentTimeMillis();
+		ReusableByteOutputStream bos1 = WebViewmy.bos1;
+		if(bos1==null) {
+			return null;
+		}
+		bos1.reset();
+		bos1.ensureCapacity((int) (bmItem.getAllocationByteCount()*0.5));
+		bmItem.compress(Bitmap.CompressFormat.JPEG, 95, bos1);
+		long tabID_Fetcher = holder.id;
+		CMN.Log(tabID_Fetcher, "压缩时间：", System.currentTimeMillis()-st);
+		byte[] data = bos1.toByteArray();
+		ContentValues values = new ContentValues();
+		values.put("title", holder.title);
+		values.put("url", holder.url);
+		values.put("thumbnail", data);
+		LexicalDBHelper.getInstancedDb().update("webtabs", values, "id=?", new String[]{String.valueOf(tabID_Fetcher)});
+		CMN.Log(tabID_Fetcher, "入表时间：", System.currentTimeMillis()-st, data.length, (int) (bmItem.getAllocationByteCount()*0.50), bos1.data().length);
+		bos1.close();
+		return bmItem;
+	}
+	
+	//public static Bitmap bitmap = Bitmap.createBitmap(1,1,Bitmap.Config.RGB_565);
+	
+	public WeakReference<Bitmap> bm = Utils.DummyBMRef;
 	public Canvas canvas;
 	static Bitmap b = Bitmap.createBitmap(1,1,Bitmap.Config.RGB_565);
 	static long bindId;
@@ -234,6 +286,18 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
 		return null;
 	}
 	
+	public void incrementVerIfAtNormalPage() {
+		if(!"网页无法打开".equals(getTitle())) {
+			version++;
+		}
+	}
+	
+	public void setBMRef(WeakReference<Bitmap> tmpBmRef) {
+		if(bm==DummyBMRef && tmpBmRef.get()!=null) {
+			bm = tmpBmRef;
+		}
+	}
+	
 	@SuppressLint("NewApi")
 	private class AdvancedWebViewCallback extends ActionMode.Callback2 {
 		ArrayList<ViewGroup> popupDecorVies = new ArrayList<>();
@@ -242,7 +306,7 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
 			callback=callher;
 			return this;
 		}
-   
+  
 		@Override
 		public boolean onCreateActionMode(ActionMode mode, Menu menu) {
 			CMN.Log("onCreateActionMode…");
@@ -660,6 +724,7 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
 				isWebHold=true;
 				orgY = lastY;
 				orgX = lastX;
+				incrementVerIfAtNormalPage();
 			break;
 			case MotionEvent.ACTION_MOVE:
 				if (dealWithCM && bIsActionMenuShownNew && (Math.abs(lastY - orgY) > GlobalOptions.density * 5 || Math.abs(lastX - orgX) > GlobalOptions.density * 5)) {

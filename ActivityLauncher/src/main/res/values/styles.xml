@@ -17,6 +17,18 @@
         <!-- All customizations that are NOT specific to a particular API-level can go here. -->
     </style>
 
+
+	<style name="DialogAnimation" parent="android:Animation">
+		<item name="android:windowEnterAnimation">@anim/abc_popup_enter</item>
+<!--		<item name="android:windowExitAnimation">@anim/abc_popup_exit</item>-->
+		<item name="android:windowExitAnimation">@anim/animnull</item>
+	</style>
+
+    <!-- Application theme. -->
+    <style name="Dialog" parent="AppThemeRaw">
+		<item name="android:windowAnimationStyle">@style/DialogAnimation</item>
+    </style>
+
 	<style name="AppThemeTranslucent" parent="AppThemeRaw">
 		<item name="android:windowTranslucentStatus">true</item>
 		<item name="android:windowIsTranslucent">true</item>
@@ -28,6 +40,7 @@
 
 	<style name="AppThemeRaw" parent="Theme.AppCompat.Light.NoActionBar">
 		<!-- Customize your theme here. -->
+		<item name="android:configChanges">orientation|keyboardHidden|screenSize|smallestScreenSize|screenLayout|uiMode|locale|layoutDirection</item>
 		<item name="colorAccent">@color/colorAccent</item>
 		<item name="colorPrimary">@color/colorPrimary</item>
 		<item name="colorPrimaryDark">@color/colorPrimaryDark</item>
@@ -40,9 +53,9 @@
 		<item name="android:windowBackground">#fff</item>
 		<item name="ic_launch">@mipmap/ic_launcher</item>
 
-		<item name="android:textSelectHandleLeft">@drawable/drawable_handle_selection_l</item>
-		<item name="android:textSelectHandleRight">@drawable/drawable_handle_selection_r</item>
-		<item name="android:textSelectHandle">@drawable/drawable_handle_selection_m</item>
+<!--		<item name="android:textSelectHandleLeft">@drawable/drawable_handle_selection_l</item>-->
+<!--		<item name="android:textSelectHandleRight">@drawable/drawable_handle_selection_r</item>-->
+<!--		<item name="android:textSelectHandle">@drawable/drawable_handle_selection_m</item>-->
 
 		<item name="android:textSelectHandleWindowStyle">@style/no_animation_th_window</item>
 	</style>
@@ -130,11 +143,23 @@
 		<item name="android:windowBackground">@drawable/flash_screen</item>
 	</style>
 
+	<style name="ActivityFloatTheme" parent="AppTheme">
+		<item name="android:windowBackground">@drawable/flash_screen</item>
+		<item name="android:windowIsTranslucent">true</item>
+		<item name="android:windowNoTitle">true</item>
+	</style>
+
+	<style name="FloatAppTheme" parent="AppTheme">
+		<item name="android:windowBackground">@android:color/transparent</item>
+		<item name="android:windowIsTranslucent">true</item>
+	</style>
+
 	<style name="scroll" parent="ActivityTheme">
 		<item name="colorPrimary">@android:color/white</item>
 	</style>
 
 	<style name="toolbarBaseTheme" parent="AppTheme">
+		<item name="colorControlNormal">#fff</item>
 		<item name="android:textColorSecondary">@android:color/white</item>
 		<item name="colorAccent">@color/colorHeaderBlue</item>
 		<item name="actionOverflowMenuStyle">@style/OverflowMenuStyle</item>

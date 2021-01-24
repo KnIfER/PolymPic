@@ -8,6 +8,7 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Color;
@@ -25,7 +26,6 @@ import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -33,14 +33,13 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.GlobalOptions;
-import androidx.appcompat.widget.Toolbar;
 
+import com.bumptech.glide.load.engine.cache.DiskCache;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.Options;
 import com.knziha.polymer.widgets.EditTextmy;
 import com.knziha.polymer.widgets.SimpleTextNotifier;
 import com.knziha.polymer.widgets.Utils;
-import com.bumptech.glide.load.engine.cache.DiskCache;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -50,6 +49,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.lang.ref.WeakReference;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -59,14 +59,14 @@ import java.util.regex.Pattern;
 
 public class Toastable_Activity extends AppCompatActivity {
 	public boolean systemIntialized;
-	protected String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE,Manifest.permission.READ_EXTERNAL_STORAGE};
+	public String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE,Manifest.permission.READ_EXTERNAL_STORAGE};
 
 	private static boolean MarginChecked;
 	private static int DockerMarginL;
 	private static int DockerMarginR;
 	private static int DockerMarginT;
 	private static int DockerMarginB;
-	protected ViewGroup root;
+	public ViewGroup root;
 	//public dictionary_App_Options opt;
 	//public List<mdict> md = new ArrayList<mdict>();//Collections.synchronizedList(new ArrayList<mdict>());
 
@@ -74,6 +74,7 @@ public class Toastable_Activity extends AppCompatActivity {
 	public DisplayMetrics dm;
 	public LayoutInflater inflater;
 	public InputMethodManager imm;
+	public int mStatusBarH;
 
 	public long lastClickTime=0;
 
@@ -90,12 +91,21 @@ public class Toastable_Activity extends AppCompatActivity {
 	protected EditTextmy etSearch;
 
 	protected ObjectAnimator objectAnimator;
-
+	
+	public Resources mResource;
+	
 	public Dialog d;
 	public View dv;
 	public Configuration mConfiguration;
 	boolean isDarkStamp;
 	ViewConfiguration ViewConfigDefault;
+	
+	protected WeakReference[] WeakReferencePool = new WeakReference[WeakReferenceHelper.poolSize];
+	protected boolean requireStorage;
+	
+	public void post(Runnable runnable) {
+		root.post(runnable);
+	}
 	
 	static class BaseHandler extends Handler {
 		float animator = 0.1f;
@@ -128,7 +138,8 @@ public class Toastable_Activity extends AppCompatActivity {
 			GlobalOptions.densityDpi = dm.densityDpi;
 		}
 		display.getMetrics(dm);
-		dm = getResources().getDisplayMetrics();
+		mResource = getResources();
+		dm = mResource.getDisplayMetrics();
 		super.onCreate(savedInstanceState);
 		FFStamp=opt.getFirstFlag();
 		SFStamp=opt.getSecondFlag();
@@ -137,6 +148,7 @@ public class Toastable_Activity extends AppCompatActivity {
 		imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
 
 		mConfiguration = new Configuration(getResources().getConfiguration());
+		GlobalOptions.isLarge = (mConfiguration.screenLayout & Configuration.SCREENLAYOUT_SIZE_MASK) >=3;
 		if(Build.VERSION.SDK_INT>=29){
 			GlobalOptions.isDark = (mConfiguration.uiMode & Configuration.UI_MODE_NIGHT_MASK)==Configuration.UI_MODE_NIGHT_YES;
 		}else
@@ -154,7 +166,7 @@ public class Toastable_Activity extends AppCompatActivity {
 		if(Options.getKeepScreen())
 			getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-		opt.mConfiguration = mConfiguration = new Configuration(getResources().getConfiguration());
+		opt.mConfiguration = mConfiguration;
 		Options.isLarge = (getResources().getConfiguration().screenLayout & Configuration.SCREENLAYOUT_SIZE_MASK) >=3 ;
 		checkLanguage();
 	}
@@ -285,7 +297,11 @@ public class Toastable_Activity extends AppCompatActivity {
 	}
 
 	protected void checkLaunch(Bundle savedInstanceState) {
-		further_loading(savedInstanceState);
+		if (requireStorage && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && checkSelfPermission(permissions[0]) != PackageManager.PERMISSION_GRANTED) {
+			requestPermissions(permissions, 321);
+		} else {
+			further_loading(savedInstanceState);
+		}
 	}
 
 
@@ -540,5 +556,15 @@ public class Toastable_Activity extends AppCompatActivity {
 			targetView.setLayoutParams(lp);
 		}
 	}
-
+	
+	protected Object getReferencedObject(int id) {
+		if(WeakReferencePool[id] == null) {
+			return null;
+		}
+		return WeakReferencePool[id].get();
+	}
+	
+	protected void putReferencedObject(int id, Object object) {
+		WeakReferencePool[id] = new WeakReference(object);
+	}
 }

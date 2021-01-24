@@ -4,10 +4,6 @@ import android.content.res.Resources;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.appcompat.widget.AppCompatDrawableManager;
-
-import com.bumptech.glide.load.engine.Resource;
-
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.Arrays;
@@ -16,7 +12,6 @@ import java.util.HashMap;
 
 //common
 public class CMN {
-	public static Options opt;
     public final static String replaceReg =  " |:|\\.|,|-|\'|(|)";
     public final static String emptyStr = "";
     public static final HashMap<String, String> AssetMap = new HashMap<>();
@@ -44,6 +39,7 @@ public class CMN {
 	public static long stst_add;
 	public static boolean testing;
 	public static Resources mResource;
+	public static int browserTaskId;
 	
 	public static void rt(Object... o) {
 		ststrt = System.currentTimeMillis();
@@ -52,7 +48,13 @@ public class CMN {
 	public static void pt(Object...args) {
 		CMN.Log(Arrays.toString(args)+" "+(System.currentTimeMillis()-ststrt));
 	}
-
+	
+	static XYTouchRecorder xyt;
+	public static XYTouchRecorder XYTouchRecorder() {
+		if(xyt==null) xyt = new XYTouchRecorder();
+		return xyt;
+	}
+	
 	///*[!0] Start debug flags and methods
 	public static boolean testFLoatSearch;
 	public static boolean editAll;

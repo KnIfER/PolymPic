@@ -12,7 +12,7 @@
 	splitview:handle="@+id/bottombar"
 	splitview:secondaryContent="@+id/bottombar"
 	splitview:CompensationTop="80dp"
-	android:fitsSystemWindows="true"
+	android:fitsSystemWindows="false"
 	>
 	<com.knziha.polymer.widgets.WindowHacker
 		android:id="@+id/toptop"
@@ -58,6 +58,8 @@
 			android:layout_centerInParent="true"
 			android:layout_marginHorizontal="25dp"
 			android:paddingStart="20dp"
+			android:imeOptions="flagNoExtractUi|actionSearch"
+			android:singleLine="true"
 			/>
 	</com.knziha.polymer.widgets.WindowHacker>
 

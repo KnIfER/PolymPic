@@ -1,5 +1,7 @@
+<layout>
 <LinearLayout
 	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:tools="http://schemas.android.com/tools"
 	android:id="@+id/dialog"
 	android:layout_width="match_parent"
 	android:layout_height="wrap_content"
@@ -32,10 +34,13 @@
 			android:layout_weight="1"
 			android:textColor="#ffffff"
 			android:background="@drawable/abc_edit_text_material"
-			android:singleLine="false"
+			android:singleLine="true"
 			android:minHeight="50dp"
 			android:imeOptions="flagNoExtractUi"
 			android:textIsSelectable="true"
+			android:theme="@style/toolbarBaseTheme"
+			android:paddingStart="10dp"
+			tools:text="lovecc.mp3"
 			/>
 		<ImageView
 			android:id="@+id/close"
@@ -46,7 +51,8 @@
 			android:textColor="#888"
 			android:gravity="center"
 			android:padding="5dp"
-			android:src="@drawable/close_toobar"
+			android:src="@drawable/ic_baseline_switch"
+			android:visibility="invisible"
 			/>
 	</LinearLayout>
 	<LinearLayout
@@ -69,7 +75,8 @@
 			android:orientation="horizontal"
 			android:background="#38E4FFF7"
 			android:layout_gravity="center"
-			>
+			android:clickable="true"
+			android:focusable="true">
 			<ImageView
 				android:layout_width="wrap_content"
 				android:layout_height="match_parent"
@@ -106,10 +113,38 @@
 		android:paddingEnd="8dp"
 		>
 		<TextView
+			android:id="@+id/open"
+			android:layout_width="match_parent"
+			android:layout_height="65dp"
+			android:text="打开已下载文件…"
+			android:paddingTop="10dp"
+			android:paddingBottom="10dp"
+			android:drawableLeft="@drawable/ic_baseline_folder_open_solid_gray"
+			android:textColor="#666"
+			android:textSize="17sp"
+			android:drawablePadding="38dp"
+			android:gravity="center_vertical"
+			android:background="?attr/listChoiceBackgroundIndicator"
+			/>
+		<TextView
+			android:id="@+id/replace"
+			android:layout_width="match_parent"
+			android:layout_height="65dp"
+			android:text="重新下载"
+			android:paddingTop="10dp"
+			android:paddingBottom="10dp"
+			android:drawableLeft="@drawable/ic_refresh_24dp"
+			android:textColor="#666"
+			android:textSize="17sp"
+			android:drawablePadding="38dp"
+			android:gravity="center_vertical"
+			android:background="?attr/listChoiceBackgroundIndicator"
+			/>
+		<TextView
 			android:id="@+id/download"
 			android:layout_width="match_parent"
 			android:layout_height="65dp"
-			android:text="下载（ 256 KB ）"
+			tools:text="下载（ 256 KB ）"
 			android:paddingTop="10dp"
 			android:paddingBottom="10dp"
 			android:drawableLeft="@drawable/ic_file_download_black_24dp"
@@ -137,5 +172,5 @@
 
 </LinearLayout>
 
-
+</layout>
 

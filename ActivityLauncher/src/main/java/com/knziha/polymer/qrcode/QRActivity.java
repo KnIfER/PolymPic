@@ -86,7 +86,7 @@ import static com.knziha.polymer.widgets.Utils.setOnClickListenersOneDepth;
  *&nbsp;&nbsp;{@link Options#getContinuousFocus 支持三种对焦模式}<br>
  *&nbsp;&nbsp;{@link #onPause 支持熄屏/退入后台时暂停} ，{@link #onResume 恢复时立马继续扫码} 。<br>
  *&nbsp;&nbsp;{@link QRCameraManager#decorateCameraSettings 已考虑曝光值、闪光灯等的配置。}<br> */
-public final class QRActivity extends Activity implements View.OnClickListener, OptionProcessor {
+public /*final*/ class QRActivity extends Activity implements View.OnClickListener, OptionProcessor {
 	private final static String[] permissions = new String[]{Manifest.permission.CAMERA};
 	
 	Options opt;
@@ -125,13 +125,13 @@ public final class QRActivity extends Activity implements View.OnClickListener, 
 	
 	private TextView toast_tv;
 	private View toast_tv_p;
-	private final Intent intent = new Intent();
 	
+	public static String StaticTextExtra;
 	@Override
 	public void onConfigurationChanged(@NonNull Configuration newConfig) {
 		super.onConfigurationChanged(newConfig);
 		
-		getDisplay().getMetrics(dm);
+		dm.setTo(getResources().getDisplayMetrics());
 		
 		calcScreenOrientation();
 		
@@ -145,8 +145,6 @@ public final class QRActivity extends Activity implements View.OnClickListener, 
 	@Override
 	public void onCreate(Bundle icicle) {
 		super.onCreate(icicle);
-		
-		setResult(RESULT_OK, intent);
 		
 		opt = new Options(this);
 		FFStamp=opt.getFirstFlag();
@@ -651,8 +649,13 @@ public final class QRActivity extends Activity implements View.OnClickListener, 
 	
 	public void onDecodeSuccess(Result rawResult) {
 		String text = rawResult.getText();
+		Intent intent = new Intent();
 		intent.putExtra(Intent.EXTRA_TEXT, text);
-		//CMN.Log("sendText", CMN.id(text));
+		//CMN.Log("sendText", CMN.id(text), text);
+		if(Utils.littleCat) {
+			StaticTextExtra = text;
+		}
+		setResult(RESULT_OK, intent);
 		if(opt.getOneShotAndReturn()) {
 			finish();
 		} else {

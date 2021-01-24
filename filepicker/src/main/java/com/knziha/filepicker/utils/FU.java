@@ -1,5 +1,6 @@
 package com.knziha.filepicker.utils;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.ContentUris;
@@ -171,6 +172,10 @@ public class FU {
     }
 
     public static final int checkSdcardPermission(Context context, File new_Folder) {
+		return checkSdcardPermission(context, new_Folder, R.string.pls_pick_sdcard, 700, null);
+    }
+	
+	public static final int checkSdcardPermission(Context context, File new_Folder, int resId, int code, Uri rawUri) {
         //if(Build.VERSION.SDK_INT<Build.VERSION_CODES.N)return  0;
         String filePath = new_Folder.getAbsolutePath();
 		if(!filePath.startsWith("/sdcard/") && !filePath.startsWith("/storage/emulated/0/"))
@@ -195,7 +200,7 @@ public class FU {
                             }
                         }
                     }
-                } catch (Exception e) { e.printStackTrace(); }
+                } catch (Exception e) { CMNF.Log(e); }
             }
             if(!isPrimary){
                 if(uuid!=null) {
@@ -205,21 +210,22 @@ public class FU {
                     //url.append(filePath.replace("/","%2F"));
                     Uri uri_start = Uri.parse(url.toString());
                     DocumentFile doc = DocumentFile.fromSingleUri(context, uri_start);
-                    if(!doc.canWrite()) {
+                    if(!doc.canWrite())
+                    {
                         if(context instanceof Activity) {
                             Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-                            ((Activity) context).startActivityForResult(intent, 700);
-                            Toast.makeText(context, "请选择目标sd卡路径", Toast.LENGTH_LONG).show();
+                            ((Activity) context).startActivityForResult(intent, code);
+                            Toast.makeText(context, resId, Toast.LENGTH_LONG).show();
                         }
                         return -1;
-                    }else {
+                    } else {
                         return 0;
                     }
                 }
             }
             //return -4;
         } catch (Exception e) {
-            e.printStackTrace();
+			CMNF.Log(e);
         }
 		return 0;
 	}
@@ -298,6 +304,66 @@ public class FU {
 		return file.renameTo(new_Folder) ?0:-6;
 	}
 
+	public static Uri buildContentUrl(Context context, String filePath) {
+		if (filePath!=null && !filePath.startsWith("/sdcard/") && !filePath.startsWith("/storage/emulated/0/"))
+		if(bKindButComplexSdcardAvailable) {
+			File pathFile = new File(filePath);
+			String fnParent = pathFile.getParentFile().getAbsolutePath();
+			StorageManager sm = (StorageManager) context.getSystemService(Context.STORAGE_SERVICE);
+			boolean isPrimary = false; String uuid = null;
+			if (bGoodStorageAvailable) {
+				StorageVolume sv = sm != null ? sm.getStorageVolume(pathFile) : null;
+				if (sv != null) {
+					isPrimary = sv.isPrimary();
+					uuid = sv.getUuid();
+				}
+			}
+			if (uuid == null) {//反射大法
+				try {
+					if (csw.init()) {
+						Object[] results = (Object[]) csw.getVolumeList.invoke(sm);
+						if (results != null) {
+							for (Object rI : results) {
+								isPrimary = (boolean) csw.getIsPrimary.invoke(rI);
+								String path = (String) csw.getPath.invoke(rI);
+								if (filePath.startsWith(path = new File(path).getAbsolutePath())) {
+									uuid = (String) csw.getUuid.invoke(rI);
+									filePath = filePath.substring(path.length());
+									fnParent = fnParent.substring(path.length());
+								}
+							}
+						}
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+			if (uuid == null) {
+				return null; // todo handle  /external/file/546329
+			}
+			if (bGoodStorageAvailable) {
+				int index = filePath.indexOf(uuid);
+				if (index != -1) {
+					filePath = filePath.substring(index + uuid.length());
+					fnParent = fnParent.substring(index + uuid.length());
+				}
+			}
+			StringBuilder url;
+			Uri uri_start;
+			url = new StringBuilder(256);
+			url.setLength(0);
+			url.append(DOCUMENTTREEURIBASE)
+					.append(uuid).append(COLON).append(DOCUMENT).append(uuid).append(COLON);
+			
+			url.append(filePath.replace("/", SLANT)/*URLEncoder.encode(fnParent,"utf8")*/);
+			uri_start = Uri.parse(url.toString());
+			
+			return uri_start;
+		}
+		return null;
+	}
+	
+	
     public static int mkdir5(Context context, File new_Folder, boolean bCreateFileButNotFolder) {
         String filePath = new_Folder.getAbsolutePath();
         String fnParent = new_Folder.getParentFile().getAbsolutePath();
@@ -350,7 +416,7 @@ public class FU {
                         fnParent = fnParent.substring(index + uuid.length());
                     }
                 }
-				StringBuilder url = new StringBuilder(256);
+				StringBuilder url;
 				Uri uri_start;
                 url = new StringBuilder(256);
                 url.setLength(0);
@@ -802,8 +868,15 @@ public class FU {
         dest.getParentFile().mkdirs();
         return file.renameTo(dest)==true?0:-6;
     }
-
-    public static class CrudeStorageWork{
+	
+	public static File getFile(String path) {
+    	if(path.startsWith("file")) {
+    		return new File(Uri.parse(path).getPath());
+		}
+		return new File(path);
+	}
+	
+	public static class CrudeStorageWork{
         public Method getVolumeList;
         public Method getIsPrimary;
         public Method getPath;
@@ -1353,4 +1426,21 @@ public class FU {
     public static boolean isGooglePhotosUri(Uri uri) {
         return "com.google.android.apps.photos.content".equals(uri.getAuthority());
     }
+	
+	@SuppressLint("DefaultLocale")
+	public static String formatSize(long size) {
+		String tailing;
+		if (size >= 1099511627776L) {
+			tailing = String.format("%.2f TB", (float)size * 1.0F / 1.09951163E12F);
+		} else if (size >= 1073741824L) {
+			tailing = String.format("%.2f GB", (float)size * 1.0F / 1.07374182E9F);
+		} else if (size >= 1048576L) {
+			tailing = String.format("%.2f MB", (float)size * 1.0F / 1048576.0F);
+		} else if (size >= 1024L) {
+			tailing = String.format("%.2f KB", (float)size * 1.0F / 1024.0F);
+		} else {
+			tailing = size + "B";
+		}
+		return tailing;
+	}
 }

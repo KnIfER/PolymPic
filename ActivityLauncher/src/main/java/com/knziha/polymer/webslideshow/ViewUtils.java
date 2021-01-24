@@ -5,6 +5,8 @@ import android.view.View;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.knziha.polymer.Utils.CMN;
+
 public class ViewUtils {
 
     /**
@@ -35,6 +37,28 @@ public class ViewUtils {
                     return recyclerView.getChildAdapterPosition(child);
                 }
             }
+        }
+        return ((LinearLayoutManager)recyclerView.getLayoutManager()).findFirstVisibleItemPosition();
+    }
+    
+    public static View getCenterXChildV1(RecyclerViewPager recyclerView) {
+        int childCount = recyclerView.getChildCount();
+		int middleX = recyclerView.getWidth() / 2;
+		View child;
+		int pad = recyclerView.itemPad/2;
+		for (int i = 0; i < childCount; i++) {
+			child = recyclerView.getChildAt(i);
+			if (child.getRight()+pad>middleX) {
+				return child;
+			}
+		}
+        return null;
+    }
+    
+    public static int getCenterXChildPositionV1(RecyclerViewPager recyclerView) {
+        View childView = getCenterXChildV1(recyclerView);
+        if (childView!=null) {
+			return recyclerView.getChildAdapterPosition(childView);
         }
         return ((LinearLayoutManager)recyclerView.getLayoutManager()).findFirstVisibleItemPosition();
     }
@@ -70,7 +94,30 @@ public class ViewUtils {
         }
         return childCount;
     }
-
+	
+	public static View getCenterYChildV1(RecyclerViewPager recyclerView) {
+		int childCount = recyclerView.getChildCount();
+		int middleY = recyclerView.getHeight() / 2;
+		if (childCount > 0) {
+			View child;
+			for (int i = 0; i < childCount; i++) {
+				child = recyclerView.getChildAt(i);
+				if (child.getBottom()>middleY) {
+					return child;
+				}
+			}
+		}
+		return null;
+	}
+	
+	public static int getCenterYChildPositionV1(RecyclerViewPager recyclerView) {
+		View childView = getCenterYChildV1(recyclerView);
+		if (childView!=null) {
+			return recyclerView.getChildAdapterPosition(childView);
+		}
+		return recyclerView.getChildCount();
+	}
+	
     public static boolean isChildInCenterX(RecyclerView recyclerView, View view) {
         int childCount = recyclerView.getChildCount();
         int[] lvLocationOnScreen = new int[2];

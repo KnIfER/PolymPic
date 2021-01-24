@@ -3,6 +3,8 @@
 	xmlns:tools="http://schemas.android.com/tools"
 	xmlns:android="http://schemas.android.com/apk/res/android"
 	package="com.knziha.polymer">
+
+	<uses-permission android:name="android.permission.REORDER_TASKS" />
 	<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 	<uses-permission android:name="android.permission.SYSTEM_OVERLAY_WINDOW" />
 	<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
@@ -12,10 +14,8 @@
 	<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 	<uses-permission android:name="android.permission.INTERNET" />
 	<uses-permission android:name="android.permission.READ_PHONE_STATE" />
-	<uses-permission android:name="android.permission.READ_LOGS" />
 	<uses-permission android:name="android.permission.VIBRATE" />
-	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-	<uses-permission android:name="android.permission.WRITE_SETTINGS" />
+	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 	<uses-permission android:name="android.permission.WAKE_LOCK" />
 
 	<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
@@ -24,6 +24,26 @@
 	<uses-permission android:name="android.permission.CAMERA" />
 
 	<uses-permission android:name="android.permission.FLASHLIGHT" />
+
+	<uses-permission android:name="com.android.launcher.permission.INSTALL_SHORTCUT" /><!-- 添加快捷方式 -->
+	<uses-permission android:name="com.android.launcher.permission.UNINSTALL_SHORTCUT" /><!-- 移除快捷方式 -->
+	<uses-permission android:name="android.permission.INSTALL_SHORTCUT" />
+	<uses-permission android:name="android.permission.UNINSTALL_SHORTCUT" />
+
+	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+
+	<!-- 查询快捷方式2.1以下 -->
+	<uses-permission android:name="com.android.launcher.permission.READ_SETTINGS" />
+	<uses-permission android:name="com.android.launcher.permission.WRITE_SETTINGS" />
+	<!-- 查询快捷方式4.4及以下 -->
+	<uses-permission android:name="com.android.launcher2.permission.READ_SETTINGS" />
+	<uses-permission android:name="com.android.launcher2.permission.WRITE_SETTINGS" />
+	<!-- 查询快捷方式4.4以上 -->
+	<uses-permission android:name="com.android.launcher3.permission.READ_SETTINGS" />
+	<uses-permission android:name="com.android.launcher3.permission.WRITE_SETTINGS" />
+
+	<uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
 	<application
 		android:allowBackup="true"
@@ -54,11 +74,14 @@
 			android:label="@string/app_name"
 			android:configChanges="orientation|keyboardHidden|screenSize|smallestScreenSize|screenLayout|uiMode|locale|layoutDirection"
 			android:theme="@style/ActivityTheme"
+			android:launchMode="singleInstance"
+			android:taskAffinity=""
+			android:windowSoftInputMode="adjustPan"
 			>
-<!--			<intent-filter>-->
-<!--				<action android:name="android.intent.action.MAIN" />-->
-<!--				<category android:name="android.intent.category.LAUNCHER" />-->
-<!--			</intent-filter>-->
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+			</intent-filter>
 		</activity>
 
 		<activity
@@ -71,18 +94,49 @@
 			>
 		</activity>
 
+		<activity
+			android:name=".PDocViewerActivity"
+			android:label="@string/app_name"
+			android:theme="@style/ActivityTheme"
+			android:taskAffinity=""
+			android:configChanges="orientation|keyboardHidden|screenSize|smallestScreenSize|screenLayout|uiMode|locale|layoutDirection"
+
+			>
+<!--			<intent-filter>-->
+<!--				<action android:name="android.intent.action.MAIN" />-->
+<!--				<category android:name="android.intent.category.LAUNCHER" />-->
+<!--			</intent-filter>-->
+		</activity>
 
 		<activity
-			android:name=".pdviewer.PDocViewerActivity"
-			android:label="@string/app_name"
-			android:configChanges="orientation|keyboardHidden|screenSize|smallestScreenSize|screenLayout|uiMode|locale|layoutDirection"
-			android:theme="@style/ActivityTheme"
+			android:name=".pdviewer.PDocHistoryActivity"
+			android:theme="@style/AppTheme"
+			>
+		</activity>
+
+		<activity android:name=".PolyShareActivity"
+			android:theme="@style/FloatAppTheme"
+			android:configChanges="layoutDirection|locale|keyboardHidden|orientation|screenSize"
+			android:launchMode="standard"
 			>
 			<intent-filter>
-				<action android:name="android.intent.action.MAIN" />
-				<category android:name="android.intent.category.LAUNCHER" />
+				<action android:name="android.intent.action.SEND"/>
+				<category android:name="android.intent.category.DEFAULT" />
+				<data android:mimeType="text/plain" />
+			</intent-filter>
+			<intent-filter
+				tools:ignore="AppLinkUrlError">
+				<action android:name="android.intent.action.VIEW" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<data android:mimeType="application/pdf" />
 			</intent-filter>
 		</activity>
+
+		<activity android:name=".PDocShortCutActivity"
+			android:theme="@style/ActivityFloatTheme"
+			android:taskAffinity=""
+			android:exported="true"
+			/>
 
 		<activity android:name=".pdviewer.PDocBenchMarkctivity"
 			android:label="@string/app_name"
@@ -132,8 +186,21 @@
 			android:excludeFromRecents="false"
 			android:screenOrientation="portrait"
 			android:theme="@style/AppTheme"
+			android:process=":browser"
+			android:exported="true"
 			>
+				<intent-filter>
+					<action android:name="knziha.task" />
+					<category android:name="knziha.task" />
+				</intent-filter>
 		</activity>
+
+		<activity
+			android:name=".qrcode.QRActivityPlus"
+			android:theme="@style/AppThemeTranslucent"
+			android:configChanges="orientation|keyboardHidden|screenSize|smallestScreenSize|screenLayout|uiMode|locale|layoutDirection"
+			android:process=":browser"
+			/>
 
 		<activity android:name="com.knziha.polymer.flowtextview.sample.MainActivity"
 			android:label="@string/app_name"
@@ -156,15 +223,63 @@
 		</activity>
 
 		<activity
+			android:name=".pdviewer.bookmarks.BookMarkActivity"
+			android:label="@string/app_name"
+			android:launchMode="standard"
+			android:configChanges="keyboardHidden|orientation|screenSize"
+			android:theme="@style/ActivityTheme">
+<!--						<intent-filter>-->
+<!--							<action android:name="android.intent.action.MAIN" />-->
+<!--							<category android:name="android.intent.category.LAUNCHER" />-->
+<!--						</intent-filter>-->
+		</activity>
+
+		<activity
 			android:name=".qrcode.QRActivity"
 			android:theme="@style/AppThemeTranslucent"
 			android:configChanges="orientation|keyboardHidden|screenSize|smallestScreenSize|screenLayout|uiMode|locale|layoutDirection"
 			/>
 
+		<activity
+			android:name=".qrcode.QRGenerator"
+			android:theme="@style/AppThemeTranslucent"
+			android:configChanges="orientation|keyboardHidden|screenSize|smallestScreenSize|screenLayout|uiMode|locale|layoutDirection"
+			/>
 
-<!--		<service-->
-<!--			android:name="com.knziha.polymer.SimpleService">-->
-<!--		</service>-->
+		<activity
+			android:name=".LauncherActivity"
+			android:label="@string/app_name"
+			android:launchMode="singleInstance"
+			android:configChanges="orientation|keyboardHidden|screenSize|uiMode|locale|layoutDirection"
+			android:excludeFromRecents="false"
+			android:theme="@style/ActivityTheme"
+			android:process=":knziha.peruse"
+			>
+			<!--            <intent-filter>-->
+			<!--                <action android:name="android.intent.action.MAIN" />-->
+			<!--                <category android:name="android.intent.category.LAUNCHER" />-->
+			<!--            </intent-filter>-->
+		</activity>
+
+		<service
+			android:name="com.knziha.polymer.browser.SimpleService"
+			android:process=":knziha.peruse"
+			>
+		</service>
+		<service android:name=".browser.ServiceEnhancer" />
+
+		<receiver android:name=".Utils.MyReceiver" />
+		<receiver android:name=".browser.BrowseReceiver" />
+
+		<provider
+			android:name="androidx.core.content.FileProvider"
+			android:authorities="com.knziha.polymer.fileprovider"
+			android:grantUriPermissions="true"
+			android:exported="false">
+			<meta-data
+				android:name="android.support.FILE_PROVIDER_PATHS"
+				android:resource="@xml/file_paths" />
+		</provider>
 	</application>
 
 </manifest>

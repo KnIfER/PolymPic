@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?><!--androidx.drawerlayout.widget.DrawerLayout  xml version="1.0" encoding="utf-8"?-->
+<layout>
+	<com.knziha.polymer.widgets.LinearFramer
+		xmlns:android="http://schemas.android.com/apk/res/android"
+		xmlns:app="http://schemas.android.com/apk/res-auto"
+		android:id="@+id/root"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:orientation="vertical"
+		android:fitsSystemWindows="true"
+		>
+
+		<androidx.appcompat.widget.Toolbar
+			android:id="@+id/toolbar"
+			android:layout_width="match_parent"
+			android:layout_height="50dp"
+			android:background="#8f8f8f"
+			android:paddingTop="2dp"
+			/>
+
+		<androidx.viewpager.widget.ViewPager
+			android:id="@+id/viewpager"
+			android:layout_width="match_parent"
+			android:layout_height="0dp"
+			android:layout_weight="1"
+			android:flipInterval="30"
+			android:persistentDrawingCache="animation"
+			android:background="#fff"
+			/>
+
+		<FrameLayout
+			android:layout_width="match_parent"
+			android:layout_height="50dp"
+			android:background="#8f8f8f"
+			>
+			<com.google.android.material.tabs.TabLayout
+				android:id="@+id/mTabLayout"
+				android:layout_width="wrap_content"
+				android:layout_height="match_parent"
+				app:tabTextColor="@android:color/white"
+				app:tabSelectedTextColor="@android:color/white"
+				app:tabMode="scrollable"
+				android:layout_gravity="center"
+				android:paddingStart="5dp"
+				android:paddingEnd="5dp"
+				/>
+		</FrameLayout>
+
+	</com.knziha.polymer.widgets.LinearFramer>
+</layout>

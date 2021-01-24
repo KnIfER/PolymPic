@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="app_name">PolymPic</string>
+	<string name="hello_world">Hello world!</string>
+	<string name="action_settings">Settings</string>
+	<string name="tools">工具</string>
+
+
+	<string name="stg_require">Please grant storage permission.</string>
+	<string name="stg_statement">This app cannot work without storage permission.</string>
+	<string name="stg_grantnow">Grant now</string>
+	<string name="trialin">Trial…… #</string>
+	<string name="stgerr_fail">Sorry, but cannot use this app on you device.</string>
+
+	<string name="lorem"><![CDATA[<html>Lorem <b>ipsum dolor</b> sit amet, consectetur adipiscing elit. <a href="http://www.google.com">In sed massa diam</a>. Integer leo tortor, sagittis eget blandit et, malesuada id odio. Proin gravida dui imperdiet, tempor augue eu, euismod odio. Vivamus nec euismod neque. Nam sed turpis ac arcu consectetur tristique sed et odio. Vivamus posuere aliquet mi vitae bibendum. Suspendisse potenti. Morbi mattis sed nisl sit amet tristique. Nunc mattis porta sem, nec eleifend metus pellentesque non. Mauris tincidunt justo eu magna bibendum feugiat. Suspendisse semper risus dui, non ullamcorper metus scelerisque eu. Proin suscipit nisi non arcu egestas, in adipiscing neque pharetra. Praesent ullamcorper hendrerit enim. Donec in est eget ligula fringilla dictum. Maecenas sodales sem in lacus imperdiet convallis.
+
+Vestibulum urna mi, eleifend vel massa ut, facilisis lacinia lacus. Mauris sodales dolor eu ligula placerat, et interdum lectus mattis. Nulla tempor hendrerit odio, et suscipit enim convallis in. Morbi vehicula risus lectus. Integer mattis, lacus tincidunt tristique egestas, orci lorem tristique dolor, quis aliquam sem arcu nec eros. Aenean dui est, adipiscing quis massa id, scelerisque euismod orci. Fusce in lacus id nisi hendrerit elementum. In nec lacus luctus, volutpat odio ut, ullamcorper enim. Pellentesque dapibus massa ut magna rutrum, in accumsan lorem feugiat. Vivamus luctus elit tellus.
+
+Fusce sit amet tempus libero. Nunc feugiat dignissim purus vitae tempus. Nam adipiscing nulla ac urna congue, sed pulvinar lacus sagittis. Curabitur venenatis elit eget scelerisque ultrices. Ut porta magna pellentesque, convallis metus at, laoreet leo. Sed ac cursus mi. Maecenas mauris diam, luctus ac tortor aliquet, pretium laoreet odio. Nunc tincidunt a sem ut ornare. Donec suscipit tincidunt lacus, in consectetur neque facilisis eget.
+
+Nullam imperdiet quam in dolor venenatis, sit amet venenatis nisi <b>eleifend</b>. Maecenas ligula lorem, egestas ut adipiscing in, gravida a est. Nam luctus massa in quam viverra, et suscipit nulla cursus. Ut ut vulputate enim. Mauris vulputate felis a quam varius sodales sit amet et augue. Proin sagittis mollis tempor. Curabitur nec quam in risus volutpat sagittis quis placerat sapien. Proin vulputate, ante vitae commodo auctor, quam nisi convallis lectus, eget sodales ligula arcu ac nulla. Praesent vulputate nec libero vel pulvinar.
+
+Donec feugiat ac nunc vel laoreet. In laoreet pretium fringilla. Suspendisse potenti. Praesent nec justo sagittis, scelerisque sem in, <b>egestas</b> massa. Vestibulum sed massa quis velit vehicula hendrerit vitae eget dui. Ut fringilla, lectus eget tristique tristique, orci urna consequat ligula, vitae hendrerit ipsum dui non sem. Duis lacinia arcu at libero dignissim facilisis. Quisque in ullamcorper dui.</html>]]></string>
+	<string name="ak_no_inst">未安装Anki笔记！</string>
+	<string name="pd_no_inst">未安装平典！</string>
+	<string name="gt_no_inst">未安装谷歌翻译！</string>
+	<string name="share_link">分享链接：</string>
+	<string name="highlight">高亮</string>
+	<string name="global_vs_tabs">全局设定/标签设定</string>
+	<string name="qr_settings">扫码选项</string>
+	<string name="plain_dict">平典</string>
+	<string name="pls_pick_permission">请选择包含该文档的储存卡，以允许修改文档内容。</string>
+	<string name="pdf_internal_open">调用内置管理器打开PDF文档</string>
+	<string name="pdf_external_open">调用系统管理器打开PDF文档</string>
+	<string name="pdf_create_shortcut">为阅读器创建桌面图标</string>
+	<string name="pdf_try">我要试用浏览器功能……</string>
+	<string name="pdf_app">本APP的主体是网页浏览器，但尚未完成。已完成的功能是PDF阅读/批注部分。</string>
+	<string name="pdf_hint">注：若用系统文件管理器调用多聚浏览打开PDF文档，不赋予存储权限，也可以使用。</string>
+	<string name="history">历史记录</string>
+	<string name="downloadWithSz">下载（ %s ）</string>
+	<string name="downloadingWithSz">正在下载 （%s）</string>
+
+
+</resources>

@@ -15,7 +15,7 @@ public class MyX509TrustManager implements X509TrustManager {
  
     @Override
     public X509Certificate[] getAcceptedIssuers() {
-        // TODO Auto-generated method stub
-        return new java.security.cert.X509Certificate[] {};
+        //return new java.security.cert.X509Certificate[] {};
+        return null;
     }
 }

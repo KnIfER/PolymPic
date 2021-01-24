@@ -3,10 +3,12 @@ package com.knziha.filepicker.model;
 import android.media.MediaMetadataRetriever;
 
 import androidx.annotation.NonNull;
+import androidx.preference.CMN;
 
 import com.bumptech.glide.Priority;
 import com.bumptech.glide.load.DataSource;
 import com.bumptech.glide.load.data.DataFetcher;
+import com.knziha.filepicker.utils.CMNF;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
@@ -28,6 +30,7 @@ public class AudioCoverFetcher implements DataFetcher<InputStream> {
 	@Override
 	public void loadData(@NonNull Priority priority, @NonNull DataFetcher.DataCallback<? super InputStream> callback) {
 		mRetriever = new MediaMetadataRetriever();
+		CMNF.Log("AudioCoverFetcher loadData...", model.path);
 		try {
 			mRetriever.setDataSource(model.path);
 			byte[] picture = mRetriever.getEmbeddedPicture();

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="match_parent"
+	android:layout_height="65dp"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:orientation="horizontal"
+	android:gravity="center"
+	android:layout_marginStart="50dp"
+	android:layout_marginEnd="50dp"
+	android:layout_marginBottom="100dp"
+	android:layout_gravity="bottom|center"
+	android:background="@drawable/capsule_dark"
+	android:elevation="20dp"
+	>
+	<TextView
+		android:id="@+id/text1"
+		tools:text="Bilibili 请求打开外部APP"
+		android:layout_width="0dp"
+		android:layout_weight="1"
+		android:layout_height="match_parent"
+		android:gravity="center"
+		android:textColor="#fff"
+		android:paddingStart="18dp"
+		android:singleLine="true"
+		android:ellipsize="middle"
+		/>
+	<TextView
+		android:id="@+id/confirm_button"
+		android:text="继续"
+		android:padding="10dp"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:textColor="#00E1FF"
+		android:paddingStart="15dp"
+		android:paddingEnd=  "15dp"
+		android:layout_marginEnd="18dp"
+		android:background="?attr/listChoiceBackgroundIndicator"
+		android:textStyle="bold"
+		android:clickable="true"
+		/>
+</LinearLayout>

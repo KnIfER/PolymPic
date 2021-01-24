@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:tools="http://schemas.android.com/tools"
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	tools:ignore="AppCompatResource" >
+
+	<item android:id="@+id/bm_exp_all" android:title="全部展开" android:icon="@drawable/ic_baseline_unfold_more_24"
+		app:showAsAction="never"/>
+
+	<item android:id="@+id/bm_csp_all" android:title="全部折叠" android:icon="@drawable/ic_baseline_unfold_more_24"
+		app:showAsAction="never"/>
+<!--
+
+	<item android:id="@+id/bm_exp_0" android:title="[展开](至)第几层" android:icon="@drawable/ic_baseline_unfold_more_24"
+		app:showAsAction="never"/>
+
+	<item android:id="@+id/bm_exp_1" android:title="展开第一层" android:icon="@drawable/ic_baseline_unfold_more_24"
+		app:showAsAction="never"/>
+
+	<item android:id="@+id/bm_exp_2" android:title="展开第二层" android:icon="@drawable/ic_baseline_unfold_more_24"
+		app:showAsAction="never"/>
+
+	<item android:id="@+id/bm_exp_3" android:title="展开第三层" android:icon="@drawable/ic_baseline_unfold_more_24"
+		app:showAsAction="never"/>
+
+	<item android:id="@+id/bm_exp_4" android:title="展开第四层" android:icon="@drawable/ic_baseline_unfold_more_24"
+		app:showAsAction="never"/>
+
+	<item android:id="@+id/bm_exp_5" android:title="展开第五层" android:icon="@drawable/ic_baseline_unfold_more_24"
+		app:showAsAction="never"/>
+
+	<item android:id="@+id/bm_exp_6" android:title="展开第六层" android:icon="@drawable/ic_baseline_unfold_more_24"
+		app:showAsAction="never"/>
+-->
+
+
+</menu>

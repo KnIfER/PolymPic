@@ -1,0 +1,67 @@
+<layout xmlns:app="http://schemas.android.com/apk/res-auto">
+<LinearLayout
+	xmlns:tools="http://schemas.android.com/tools"
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:id="@+id/history"
+	android:layout_height="match_parent"
+	android:layout_width="match_parent"
+	android:background="#fff"
+	android:orientation="vertical"
+	>
+	<androidx.appcompat.widget.Toolbar
+		android:id="@+id/toolbar"
+		android:layout_width="match_parent"
+		android:layout_height="@dimen/_45_"
+		android:theme="@style/toolbarBaseTheme"
+		app:contentInsetLeft="0dp"
+		app:contentInsetStart="0dp"
+		app:contentInsetStartWithNavigation="0dp"
+		android:background="#8f8f8f"
+		app:elevation="5dp"
+		app:layout_scrollFlags="scroll|enterAlways|snap"
+		>
+		<com.knziha.polymer.widgets.LineaSlidog
+			android:id="@+id/toolbar_content"
+			android:layout_width="match_parent"
+			android:layout_height="match_parent"
+			android:orientation="horizontal">
+			<View
+				android:id="@+id/etSearchp"
+				android:layout_width="0dp"
+				android:layout_height="match_parent"
+				android:layout_weight="1"
+				/>
+			<ImageView
+				android:id="@+id/search"
+				android:layout_width="@dimen/_45_"
+				android:layout_height="match_parent"
+				android:src="@drawable/ic_baseline_search_24"
+				android:background="?actionBarItemBackground"
+				android:padding="6dp"
+				android:layout_marginRight="8dp"
+				android:longClickable="true"
+				android:visibility="gone"
+				/>
+			<ImageView
+				android:id="@+id/refresh"
+				android:layout_width="@dimen/_45_"
+				android:layout_height="match_parent"
+				android:src="@drawable/ic_refresh_black_24dp"
+				android:background="?actionBarItemBackground"
+				android:padding="6dp"
+				android:layout_marginRight="8dp"
+				android:longClickable="true"
+				android:visibility="gone"
+				/>
+		</com.knziha.polymer.widgets.LineaSlidog>
+	</androidx.appcompat.widget.Toolbar>
+
+	<androidx.recyclerview.widget.RecyclerView
+		android:id="@+id/historyRv"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		tools:listitem="@layout/history_item"
+		/>
+
+</LinearLayout>
+</layout>

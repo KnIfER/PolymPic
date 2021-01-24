@@ -16,51 +16,78 @@
 
 package com.knziha.polymer.widgets;
 
+import android.annotation.TargetApi;
+import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
+import android.content.res.Resources;
 import android.database.AbstractWindowedCursor;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
+import android.net.Uri;
 import android.os.Build;
-import android.text.SpannableStringBuilder;
+import android.os.Environment;
+import android.os.StrictMode;
+import android.os.storage.StorageManager;
+import android.os.storage.StorageVolume;
+import android.provider.DocumentsContract;
+import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.LayoutDirection;
 import android.util.SparseArray;
 import android.util.TypedValue;
+import android.view.Surface;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.EditText;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.GlobalOptions;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.knziha.polymer.Toastable_Activity;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.Options;
 
-import org.apache.commons.lang3.ObjectUtils;
-
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.InputStream;
+import java.lang.ref.WeakReference;
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import static com.knziha.polymer.Utils.IU.parseInt;
 
 public class Utils {
+	public static final int RequsetUrlFromCamera=1101;
+	public static final int RequsetUrlFromStorage=1102;
 	public final static Matrix IDENTITYXIRTAM = new Matrix();
 	public final static Object DummyTransX = new Object(){
 		public void setTranslationX(float val) { }
+		public void setTranslationY(float val) { }
+		public void setScaleX(float val) { }
+		public void setScaleY(float val) { }
+		public void setAlpha(float val) { }
 	};
 	public final static Cursor EmptyCursor=new AbstractWindowedCursor() {
 		@Override
@@ -72,6 +99,14 @@ public class Utils {
 		}
 	};
 	public static Rect rect = new Rect();
+	public static final boolean littleCat = Build.VERSION.SDK_INT<=Build.VERSION_CODES.KITKAT;
+	public static final boolean littleCake = Build.VERSION.SDK_INT<=21;
+	public static final boolean bigMountain = Build.VERSION.SDK_INT>22;
+	public static final boolean bigMouth = Build.VERSION.SDK_INT>=Build.VERSION_CODES.O;
+	public static final boolean hugeHimalaya = Build.VERSION.SDK_INT>=Build.VERSION_CODES.P;
+	public static final boolean metaKill = Build.VERSION.SDK_INT>=Build.VERSION_CODES.Q;
+	//public static final boolean isHuawei = Build.MANUFACTURER.contains("HUAWEI");
+	public static final WeakReference<Bitmap> DummyBMRef = new WeakReference<>(null);
 	
 	/**
      * @param dp Desired size in dp (density-independent pixels)
@@ -175,6 +210,187 @@ public class Utils {
 		}
 	}
 	
+	public static String getSuffix(String path) {
+		int idx=path.lastIndexOf(".");
+		if(idx>=0) {
+			return  path.substring(idx).toLowerCase();
+		}
+		return null;
+	}
+	
+	public static String getRunTimePath(Uri uri) {
+		String path  = uri.getPath();
+		if(TextUtils.isEmpty(path)) {
+			path = uri.toString();
+		}
+		return path;
+	}
+	
+	public static String getPath(final Context context, final Uri uri) {
+		if (DocumentsContract.isDocumentUri(context, uri)) {
+			//CMN.Log("getPath autho", uri.getAuthority());
+			// ExternalStorageProvider
+			if ("com.android.externalstorage.documents".equals(uri.getAuthority()))
+			{
+				final String docId = DocumentsContract.getDocumentId(uri);
+				final String[] split = docId.split(":");
+				final String type = split[0];
+				System.out.println("getPath() docId: " + docId + ", split: " + split.length + ", type: " + type);
+				
+				// This is for checking Main Memory
+				if ("primary".equalsIgnoreCase(type)) {
+					if (split.length > 1) {
+						return Environment.getExternalStorageDirectory() + "/" + split[1] + "/";
+					} else {
+						return Environment.getExternalStorageDirectory() + "/";
+					}
+					// This is for checking SD Card
+				} else {
+					return "storage" + "/" + docId.replace(":", "/");
+				}
+				
+			}
+		}
+		if("content".equals(uri.getScheme())) {
+			return resolveContentUri(context, uri);
+		}
+		return null;
+	}
+	
+	static String resolveContentUri(Context a, Uri uri) {
+		String filePath = null;
+		try {
+			if (uri != null) {
+				Cursor cursor = a.getContentResolver().query(uri, new String[] { android.provider.MediaStore.Images.ImageColumns.DATA }, null, null, null);
+				if(cursor.moveToNext() && cursor.getColumnCount()==1) {
+					filePath = cursor.getString(0);
+				}
+				cursor.close();
+			}
+		} catch (Exception e) {
+			CMN.Log(e);
+		}
+		return filePath;
+	}
+	
+	/** Simplify content uri to file uri if permitted */
+	public static Uri getSimplifiedUrl(Activity a, Uri data) {
+		try {
+			Uri symda = data;
+			String path = data.toString();
+			if(path.contains("content:")) {
+				//CMN.Log("path 1", path); CMN.Log();
+				path = URLDecoder.decode(data.toString(), "utf8");;
+				//CMN.Log("path 2", path); CMN.Log();
+				int idx = path.indexOf("content://com.android.externalstorage");
+				if(idx>0) {
+					symda = Uri.parse(path.substring(idx));
+				}
+				path = getPath(a, symda);
+				if(path!=null) {
+					File f = new File(path).getAbsoluteFile();
+					CMN.Log("getSimplifiedUrl", path, f, symda.getAuthority());
+					return Uri.fromFile(f);
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return data;
+	}
+	
+	public static void UnZipAssetsFolder(Context context, String zipAsset, File outPath) {
+		try {
+			ZipInputStream inZip = new ZipInputStream(context.getAssets().open(zipAsset));
+			ZipEntry zipEntry;
+			String entryName;
+			while ((zipEntry = inZip.getNextEntry()) != null) {
+				entryName = zipEntry.getName();
+				if (zipEntry.isDirectory()) {
+					entryName = entryName.substring(0, entryName.length() - 1);
+					File folder = new File(outPath, entryName);
+					folder.mkdirs();
+				} else {
+					File file = new File(outPath, entryName);
+					if (!file.exists()) {
+						file.getParentFile().mkdirs();
+						file.createNewFile();
+					}
+					FileOutputStream out = new FileOutputStream(file);
+					int len;
+					byte[] buffer = new byte[1024];
+					while ((len = inZip.read(buffer)) != -1) {
+						out.write(buffer, 0, len);
+						out.flush();
+					}
+					out.close();
+				}
+			}
+			inZip.close();
+		} catch (Exception e) {
+			CMN.Log(e);
+		}
+	}
+	
+	public static File preparePDFGuide(Activity a) {
+		final String name = "indir.pdf";
+		File guide = new File(a.getExternalFilesDir(null), name);
+		if(!guide.exists()) {
+			//UnZipAssetsFolder(a, "pdf.zip", a.getExternalFilesDir(null));
+			try {
+				InputStream is = a.getAssets().open(name);
+				FileOutputStream fos = new FileOutputStream(guide);
+				byte[] buffer = new byte[1024];
+				int byteCount;
+				while ((byteCount = is.read(buffer)) != -1) {
+					fos.write(buffer, 0, byteCount);
+				}
+				fos.flush();
+				is.close();
+				fos.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		return guide;
+	}
+	
+	public static void blameAndroidIfNeeded(Context a) {
+		if(a instanceof Toastable_Activity) {
+			((Toastable_Activity)a).showT("Permission denied. Blame Android! ");
+		}
+	}
+	
+	static boolean vmFucked;
+	
+	public static void fuckVM() {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && !vmFucked) {
+			StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder().build());
+			vmFucked = true;
+		}
+	}
+	
+	public static int httpIndex(String url) {
+		int idx = url==null?0:url.indexOf("://");
+		if(idx>=4&&url.charAt(0)=='h') {
+			return idx+2;
+		}
+		return -1;
+	}
+	
+	public static String getSubStrWord(String text, int start, int end) {
+		char c = text.charAt(start);
+		if(c>='a'&&c<='z') {
+			return Character.toUpperCase(c)+text.substring(start+1, end);
+		}
+		return text.substring(start, end);
+	}
+	
+	public static boolean actualLandscapeMode(Context c) {
+		int angle = ((WindowManager)c.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay().getRotation();
+		return angle==Surface.ROTATION_90||angle==Surface.ROTATION_270;
+	}
+	
 	public static class DummyOnClick implements View.OnClickListener {
 		@Override
 		public void onClick(View v) {
@@ -185,9 +401,8 @@ public class Utils {
 	public static boolean isKeyboardShown(View rootView) {
 		final int softKeyboardHeight = 100;
 		rootView.getWindowVisibleDisplayFrame(rect);
-		DisplayMetrics dm = rootView.getResources().getDisplayMetrics();
 		int heightDiff = rootView.getBottom() - rect.bottom;
-		return heightDiff > softKeyboardHeight * dm.density;
+		return heightDiff > softKeyboardHeight * GlobalOptions.density;
 	}
 	
 	static class ViewConfigurationDog extends ViewConfiguration{
@@ -302,19 +517,27 @@ public class Utils {
 	public static void setOnClickListenersOneDepth(ViewGroup vg, View.OnClickListener clicker, int depth, Object[] viewFetcher) {
 		int cc = vg.getChildCount();
 		View ca;
+		boolean longClickable = clicker instanceof View.OnLongClickListener;
 		for (int i = 0; i < cc; i++) {
 			ca = vg.getChildAt(i);
 			//CMN.Log("setOnClickListenersOneDepth", ca, (i+1)+"/"+(cc));
 			if(ca instanceof ViewGroup) {
 				if(--depth>0) {
-					setOnClickListenersOneDepth((ViewGroup) ca, clicker, depth, viewFetcher);
+					if(ca.isClickable()) {
+						ca.setOnClickListener(clicker);
+						if(longClickable&&ca.isLongClickable()) {
+							ca.setOnLongClickListener((View.OnLongClickListener) clicker);
+						}
+					} else {
+						setOnClickListenersOneDepth((ViewGroup) ca, clicker, depth, viewFetcher);
+					}
 				}
 			} else {
 				int id = ca.getId();
 				if(ca.getId()!=View.NO_ID){
 					if(!(ca instanceof EditText) && ca.isEnabled()) {
 						ca.setOnClickListener(clicker);
-						if(clicker instanceof View.OnLongClickListener && ca.isLongClickable()) {
+						if(longClickable && ca.isLongClickable()) {
 							ca.setOnLongClickListener((View.OnLongClickListener) clicker);
 						}
 					}
@@ -330,5 +553,180 @@ public class Utils {
 			}
 		}
 	}
-
+	
+	public static boolean removeIfParentBeOrNotBe(View view, ViewGroup parent, boolean tobe) {
+		if(view!=null) {
+			ViewParent svp = view.getParent();
+			if(parent==svp ^ !tobe) {
+				if(svp!=null) {
+					((ViewGroup)svp).removeView(view);
+				}
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	public static boolean addViewToParent(View view2Add, ViewGroup parent) {
+		if(removeIfParentBeOrNotBe(view2Add, parent, false)) {
+			parent.addView(view2Add);
+			return true;
+		}
+		return false;
+	}
+	
+	static int resourceId=-1;
+	public static int getStatusBarHeight(Resources resources) {
+		if(resourceId==-1)
+			try {
+				resourceId = resources.getIdentifier("status_bar_height", "dimen", "android");
+			} catch (Exception ignored) { }
+		if (resourceId != -1) {
+			return resources.getDimensionPixelSize(resourceId);
+		}
+		return 0;
+	}
+	
+	private static final String PRIMARY_VOLUME_NAME = "primary";
+	
+	@Nullable
+	public static String getFullPathFromTreeUri(Context con, @Nullable final Uri treeUri) {
+		if (treeUri == null) return null;
+		String volumePath = getVolumePath(getVolumeIdFromTreeUri(treeUri),con);
+		if (volumePath == null) return File.separator;
+		if (volumePath.endsWith(File.separator))
+			volumePath = volumePath.substring(0, volumePath.length() - 1);
+		
+		String documentPath = getDocumentPathFromTreeUri(treeUri);
+		if (documentPath.endsWith(File.separator))
+			documentPath = documentPath.substring(0, documentPath.length() - 1);
+		
+		if (documentPath.length() > 0) {
+			if (documentPath.startsWith(File.separator))
+				return volumePath + documentPath;
+			else
+				return volumePath + File.separator + documentPath;
+		}
+		else return volumePath;
+	}
+	
+	private static String getVolumePath(final String volumeId, Context context) {
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
+			return null;
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+			return getVolumePathForAndroid11AndAbove(volumeId, context);
+		else
+			return getVolumePathBeforeAndroid11(volumeId, context);
+	}
+	
+	private static String getVolumePathBeforeAndroid11(final String volumeId, Context context){
+		try {
+			StorageManager mStorageManager = (StorageManager) context.getSystemService(Context.STORAGE_SERVICE);
+			Class<?> storageVolumeClazz = Class.forName("android.os.storage.StorageVolume");
+			Method getVolumeList = mStorageManager.getClass().getMethod("getVolumeList");
+			Method getUuid = storageVolumeClazz.getMethod("getUuid");
+			Method getPath = storageVolumeClazz.getMethod("getPath");
+			Method isPrimary = storageVolumeClazz.getMethod("isPrimary");
+			Object result = getVolumeList.invoke(mStorageManager);
+			
+			final int length = Array.getLength(result);
+			for (int i = 0; i < length; i++) {
+				Object storageVolumeElement = Array.get(result, i);
+				String uuid = (String) getUuid.invoke(storageVolumeElement);
+				Boolean primary = (Boolean) isPrimary.invoke(storageVolumeElement);
+				if (primary && PRIMARY_VOLUME_NAME.equals(volumeId))    // primary volume?
+					return (String) getPath.invoke(storageVolumeElement);
+				if (uuid != null && uuid.equals(volumeId))    // other volumes?
+					return (String) getPath.invoke(storageVolumeElement);
+			}
+			// not found.
+			return null;
+		} catch (Exception ex) {
+			return null;
+		}
+	}
+	
+	@TargetApi(Build.VERSION_CODES.R)
+	private static String getVolumePathForAndroid11AndAbove(final String volumeId, Context context) {
+		try {
+			StorageManager mStorageManager = (StorageManager) context.getSystemService(Context.STORAGE_SERVICE);
+			List<StorageVolume> storageVolumes = mStorageManager.getStorageVolumes();
+			for (StorageVolume storageVolume : storageVolumes) {
+				// primary volume?
+				if (storageVolume.isPrimary() && PRIMARY_VOLUME_NAME.equals(volumeId))
+					return storageVolume.getDirectory().getPath();
+				
+				// other volumes?
+				String uuid = storageVolume.getUuid();
+				if (uuid != null && uuid.equals(volumeId))
+					return storageVolume.getDirectory().getPath();
+				
+			}
+			// not found.
+			return null;
+		} catch (Exception ex) {
+			return null;
+		}
+	}
+	
+	@TargetApi(Build.VERSION_CODES.LOLLIPOP)
+	private static String getVolumeIdFromTreeUri(final Uri treeUri) {
+		final String docId = DocumentsContract.getTreeDocumentId(treeUri);
+		final String[] split = docId.split(":");
+		if (split.length > 0) return split[0];
+		else return null;
+	}
+	
+	
+	@TargetApi(Build.VERSION_CODES.LOLLIPOP)
+	private static String getDocumentPathFromTreeUri(final Uri treeUri) {
+		final String docId = DocumentsContract.getTreeDocumentId(treeUri);
+		final String[] split = docId.split(":");
+		if ((split.length >= 2) && (split[1] != null)) return split[1];
+		else return File.separator;
+	}
+	
+	public static int hashCode(String toHash, int start, int len) {
+		int h=0;
+		len = Math.min(toHash.length(), len);
+		for (int i = start; i < len; i++) {
+			h = 31 * h + Character.toLowerCase(toHash.charAt(i));
+		}
+		return h;
+	}
+	
+	public static class RecyclerViewDivider extends RecyclerView.ItemDecoration {
+		static RecyclerViewDivider INSTANCE;
+		final ColorDrawable mDivider = new ColorDrawable(Color.GRAY);
+		final int mDividerHeight = 1;
+		@Override
+		public void onDrawOver(@NonNull Canvas c, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
+			final int childCount = parent.getChildCount();
+			final int width = parent.getWidth();
+			for (int childViewIndex = 0; childViewIndex < childCount; childViewIndex++) {
+				final View view = parent.getChildAt(childViewIndex);
+				if (shouldDrawDividerBelow(view, parent)) {
+					int top = (int) view.getY() + view.getHeight();
+					mDivider.setBounds(0, top, width, top + mDividerHeight);
+					mDivider.draw(c);
+				}
+			}
+		}
+		@Override
+		public void getItemOffsets(@NonNull Rect outRect, @NonNull View view, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
+			if (shouldDrawDividerBelow(view, parent)) {
+				outRect.bottom = mDividerHeight;
+			}
+		}
+		private boolean shouldDrawDividerBelow(View view, RecyclerView parent) {
+			//return parent.getChildViewHolder(view).getLayoutPosition()<parent.getChildCount()-1;
+			return parent.getChildViewHolder(view).getBindingAdapterPosition()<parent.getAdapter().getItemCount()-1;
+		}
+		public static RecyclerViewDivider getInstance() {
+			if(INSTANCE==null) {
+				INSTANCE = new RecyclerViewDivider();
+			}
+			return INSTANCE;
+		}
+	}
 }

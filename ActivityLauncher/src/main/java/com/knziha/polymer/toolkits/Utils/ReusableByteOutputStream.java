@@ -59,10 +59,11 @@ public class ReusableByteOutputStream extends OutputStream {
         int newcount = space + this.count;
         if (newcount > this.buf.length) {
             byte[] newbuf = new byte[Math.max(this.buf.length << 1, newcount)];
-            System.arraycopy(this.buf, 0, newbuf, 0, this.count);
+            if(this.count>0) {
+				System.arraycopy(this.buf, 0, newbuf, 0, this.count);
+			}
             this.buf = newbuf;
         }
-
     }
 
     public void write(byte[] b, int off, int len) {
@@ -120,4 +121,5 @@ public class ReusableByteOutputStream extends OutputStream {
     public int getCount() {
         return this.count;
     }
+    
 }

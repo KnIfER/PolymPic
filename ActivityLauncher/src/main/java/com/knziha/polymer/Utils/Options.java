@@ -16,15 +16,15 @@ import com.knziha.filepicker.model.GlideCacheModule;
 import com.knziha.filepicker.settings.FilePickerOptions;
 import com.knziha.filepicker.utils.CMNF;
 import com.knziha.polymer.BrowserActivity;
+import com.knziha.polymer.pdviewer.bookdata.BookOptions;
 import com.knziha.polymer.widgets.XYTouchRecorder;
 
 import org.adrianwalker.multilinestring.Multiline;
 
 //@SuppressWarnings("ALL")
-public class Options implements WebOptions
-{
+public class Options implements WebOptions, BookOptions {
 	
-	private final SharedPreferences defaultReader;
+	public final SharedPreferences defaultReader;
 	public DisplayMetrics dm;
 	public static boolean isLarge;
 	private static long FirstFlag;
@@ -50,6 +50,14 @@ public class Options implements WebOptions
 	}
 	public int getHintsLimitation() {
 		return defaultReader.getInt("hints",16);
+	}
+	
+	public String getOpenedTabs() {
+		return defaultReader.getString("tabs", "");
+	}
+	
+	public void putOpenedTabs(String val) {
+		defaultReader.edit().putString("tabs", val).apply();
 	}
 
 	public String pathToGlide(@NonNull Context context) {
@@ -140,7 +148,7 @@ public class Options implements WebOptions
 		return SecondFlag;
 	}
 	private void putSecondFlag(long val) {
-		defaultReader.edit().putLong("MSF",SecondFlag=val).commit();
+		defaultReader.edit().putLong("MSF",SecondFlag=val).apply();
 	}
 	public void putSecondFlag() {
 		putSecondFlag(SecondFlag);
@@ -168,6 +176,9 @@ public class Options implements WebOptions
 	@Multiline(flagPos=53, debug=1) public static boolean getRebuildToast(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=55, shift=1) public static boolean getToastRoundedCorner(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
 	
+	@Multiline(flagPos=56) public boolean getLaunchView(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=56) public boolean toggleLaunchView(){ SecondFlag=SecondFlag; throw new IllegalArgumentException(); }
+	
 	
 	/////////////////////End Second Flag////////////////////////////////////
 	/////////////////////Start Third Flag////////////////////////////////////
@@ -176,19 +187,10 @@ public class Options implements WebOptions
 		if(ThirdFlag==null) {
 			return ThirdFlag=defaultReader.getLong("MTF",0);
 		}
-		return SecondFlag;
-	}
-	private void putThirdFlag(long val) {
-		defaultReader.edit().putLong("MTF",ThirdFlag=val).commit();
-	}
-	public void putThirdFlag() {
-		putThirdFlag(ThirdFlag);
+		return ThirdFlag;
 	}
 	public Long ThirdFlag() {
 		return ThirdFlag;
-	}
-	public static void ThirdFlag(long _SecondFlag) {
-		ThirdFlag=_SecondFlag;
 	}
 	
 	@Multiline(flagPos=2) public boolean getForbidLocalStorage(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
@@ -207,6 +209,41 @@ public class Options implements WebOptions
 	@Multiline(flagPos=12) public boolean getForbitNetworkImage(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=13) public boolean getPremature(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
 	
+	// 管理标签动画效果
+	@Multiline(flagPos=14, shift=1, debug=1) public boolean getShowWebCoverDuringTransition(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=15, debug=0) public boolean getAlwaysPostAnima(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=16, shift=1, debug=1) public boolean getAnimateTabsManager(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
+	
+	@Multiline(flagPos=17, shift=1, debug=0) public boolean getUseStdViewAnimator(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
+	
+	@Multiline(flagPos=18, shift=0, debug=0) public boolean getUpdateUALowEnd(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=18, shift=0) public void setUpdateUALowEnd(boolean val){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
+	
+	@Multiline(flagPos=19, debug=0) public boolean getAlwaysShowWebCoverDuringTransition(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=20, debug=0) public boolean getHideWebViewWhenShowingWebCoverDuringTransition(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
+	/** Need to Rearrange ViewPager's View order. */
+	@Multiline(flagPos=21, debug=0) public boolean getAnimateImageviewAlone(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
+	
+	
+	/////////////////////End Third Flag////////////////////////////////////
+	/////////////////////Start Fourth Flag////////////////////////////////////
+	public static Long FourthFlag=null;
+	public long getFourthFlag() {
+		if(FourthFlag==null) {
+			return FourthFlag=defaultReader.getLong("MQF",0);
+		}
+		return FourthFlag;
+	}
+	public Long FourthFlag() {
+		return FourthFlag;
+	}
+	
+	@Multiline(flagPos=0, shift=1) public void setPDocImmersive(boolean val){ FourthFlag=FourthFlag; throw new IllegalArgumentException(); }
+	
+	@Multiline(flagPos=1, shift=0) public void getPDocImmersiveAutoHideMenu(boolean val){ FourthFlag=FourthFlag; throw new IllegalArgumentException(); }
+	
+	
+	/////////////////////End Fourth Flag////////////////////////////////////
 	
 	static XYTouchRecorder xyt;
 	public static  XYTouchRecorder XYTouchRecorder() {
@@ -228,6 +265,8 @@ public class Options implements WebOptions
 	
 	public long Flag(BrowserActivity a, int flagIndex) {
 		switch (flagIndex){
+			case -2:
+				return a.currentWebView.getDomainFlag();
 			case -1:
 				return a.currentWebView.holder.flag;
 			case 1:
@@ -242,6 +281,9 @@ public class Options implements WebOptions
 	
 	public void Flag(BrowserActivity a, int flagIndex, long val) {
 		switch (flagIndex){
+			case -2:
+				a.currentWebView.setDomainFlag(val);
+			break;
 			case -1:
 				a.currentWebView.holder.flag=val;
 			break;
@@ -255,5 +297,23 @@ public class Options implements WebOptions
 				ThirdFlag=val;
 			break;
 		}
+	}
+	
+	public long getLastOpendPDocID() {
+		return defaultReader.getLong("docId", -1);
+	}
+	
+	public void putLastOpendPDocID(long rowID) {
+		defaultReader.edit().putLong("docId", rowID).apply();
+	}
+	
+	@Override
+	public boolean getSingleTapSelWord() {
+		return true;
+	}
+	
+	@Override
+	public boolean getSingleTapClearSel() {
+		return true;
 	}
 }

@@ -261,7 +261,7 @@ public final class JavacMultilineProcessor extends AbstractProcessor {
 									
 									JCExpression core = maker.Assignop(Tag.BITAND_ASG, flag, maker.Literal(~maskVal));
 									
-									JCExpression FlagMaskPosPutOne = maker.Binary(Tag.SL, maker.Literal(1), maker.Literal(flagPos));
+									JCExpression FlagMaskPosPutOne = maker.Binary(Tag.SL, maker.Literal((long)1), maker.Literal(flagPos));
 									
 									FlagMaskPosPutOne = maker.Assignop(Tag.BITOR_ASG, flag, FlagMaskPosPutOne);
 									
@@ -276,7 +276,7 @@ public final class JavacMultilineProcessor extends AbstractProcessor {
 											maker.If(maker.Parens(bEmptyEval), maker.Exec(FlagMaskPosPutOne), null), //如果原来为空，现在不为空
 											maker.Return(finalExpr)
 									}));
-									//CMN.Log("TogglePosFlag2", metDcl.body.toString());
+									CMN.Log("TogglePosFlag2", metDcl.body.toString());
 								} else {
 									JCBinary core = maker.Binary(Tag.BITAND, flag, maker.Literal(maskVal));
 									JCExpression finalExpr = maker.Binary(shift==0?Tag.NE:Tag.EQ, maker.Parens(core), maker.Literal(0));
@@ -284,6 +284,7 @@ public final class JavacMultilineProcessor extends AbstractProcessor {
 										finalExpr = maker.Literal(debugVal==1);
 									}
 									metDcl.body = maker.Block(0, List.from(new JCStatement[]{maker.Return(finalExpr)}));
+									//CMN.Log("getPosBooleanFlag", metDcl.body.toString());
 								}
 							}
 							else if(RETType.typetag==TypeTag.VOID) {

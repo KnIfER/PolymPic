@@ -17,7 +17,9 @@
 			layout="@layout/viewpager_holder"
 			android:layout="@layout/viewpager_holder"
 			android:layout_width="match_parent"
-			android:layout_height="match_parent"/>
+			android:layout_height="match_parent"
+			android:alpha="0.5"
+			/>
 
 		<androidx.coordinatorlayout.widget.CoordinatorLayout
 			android:id="@+id/webcoord"
@@ -114,6 +116,9 @@
 				</androidx.appcompat.widget.Toolbar>
 			</com.google.android.material.appbar.AppBarLayout>
 
+
+
+
 			<LinearLayout
 				android:id="@+id/searchbar"
 				android:layout_width="match_parent"
@@ -121,6 +126,7 @@
 				app:layout_behavior="@string/appbar_scrolling_view_behavior"
 				android:orientation="vertical"
 				android:visibility="invisible"
+				tools:visibility="visible"
 				>
 				<View
 					android:layout_width="match_parent"
@@ -183,6 +189,17 @@
 			<!--			app:layout_behavior="@string/appbar_scrolling_view_behavior"-->
 			<!--			/>-->
 
+
+			<ViewStub
+				android:id="@+id/menu_grid"
+				android:layout="@layout/menu_grid"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:layout_gravity="bottom|end"
+				android:elevation="3dp"
+				tools:layout_width="250dp"
+				/>
+
 			<com.knziha.polymer.widgets.LineaSlidog
 				android:id="@+id/bottombar2"
 				android:layout_width="match_parent"
@@ -193,7 +210,7 @@
 				android:layout_gravity="bottom"
 				android:gravity="bottom|center_vertical|fill_horizontal"
 				app:layout_behavior="com.knziha.polymer.widgets.BottomNavigationBehavior"
-				android:elevation="5dp"
+				android:elevation="10dp"
 				>
 				<android.widget.ImageView
 					android:id="@+id/browser_widget7"
@@ -201,7 +218,6 @@
 					android:layout_height="match_parent"
 					android:layout_weight="1"
 					android:background="@drawable/surrtrip1"
-					android:clickable="true"
 					android:src="@drawable/chevron_recess" />
 				<android.widget.ImageView
 					android:id="@+id/browser_widget8"
@@ -209,14 +225,12 @@
 					android:layout_height="match_parent"
 					android:layout_weight="1"
 					android:background="@drawable/surrtrip1"
-					android:clickable="true"
 					android:src="@drawable/chevron_forward" />
 				<android.widget.ImageView
 					android:id="@+id/browser_widget9"
 					android:layout_width="0dp"
 					android:layout_height="match_parent"
 					android:layout_weight="1"
-					android:clickable="true"
 					android:background="@drawable/surrtrip1"
 					android:src="@drawable/ic_home_black_24dp" />
 				<com.knziha.polymer.widgets.DescriptiveImageView
@@ -224,8 +238,6 @@
 					android:layout_width="0dp"
 					android:layout_height="match_parent"
 					android:layout_weight="1"
-					android:background="@drawable/surrtrip1"
-					android:clickable="true"
 					android:layout_y="-1px"
 					android:src="@drawable/ic_window_black_24dp" />
 				<android.widget.ImageView
@@ -234,7 +246,6 @@
 					android:layout_weight="1"
 					android:layout_height="match_parent"
 					android:background="@drawable/surrtrip1"
-					android:clickable="true"
 					android:src="@drawable/ic_menu_black_24dp" />
 			</com.knziha.polymer.widgets.LineaSlidog>
 
@@ -248,6 +259,7 @@
 				/>
 		</androidx.coordinatorlayout.widget.CoordinatorLayout>
 
+
 		<com.knziha.polymer.widgets.PopupBackground
 			android:id="@+id/layoutListener"
 			android:layout_width="match_parent"
@@ -256,12 +268,24 @@
 			/>
 
 		<ViewStub
-			android:id="@+id/menu_grid"
-			android:layout="@layout/menu_grid"
+			android:id="@+id/tutorials"
+			android:layout="@layout/launch_tutorials"
 			android:layout_width="match_parent"
-			android:layout_height="wrap_content"
-			android:layout_gravity="bottom"
-			android:layout_marginBottom="@dimen/_45_"
+			android:layout_height="match_parent"
 			/>
+
+		<ViewStub
+			android:id="@+id/app_toast"
+			android:layout="@layout/app_toast"
+			android:layout_width="match_parent"
+			android:layout_height="65dp"
+			android:orientation="horizontal"
+			android:gravity="center"
+			android:layout_marginStart="50dp"
+			android:layout_marginEnd=  "50dp"
+			android:layout_marginBottom="100dp"
+			android:layout_gravity="bottom|center"
+			/>
+
 	</FrameLayout>
 </layout>

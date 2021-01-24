@@ -8,8 +8,8 @@ android {
         minSdkVersion ver_minsdk
         targetSdkVersion ver_aimsdk
         versionCode 1
-        versionName "1.0"
-        vectorDrawables.generatedDensities = ['hdpi']
+        versionName "0.1.alpha1"
+        vectorDrawables.generatedDensities = ['hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi']
         ndk {
             abiFilters 'x86', 'x86_64', 'armeabi-v7a', 'arm64-v8a'
         }
@@ -34,6 +34,7 @@ android {
         release {
             minifyEnabled false
             useProguard = false
+            jniDebuggable true
             //proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard.cfg'
             //signingConfig signingConfigs.release
         }
@@ -42,12 +43,24 @@ android {
     lintOptions {
         abortOnError false
     }
-
+    packagingOptions {
+        exclude 'META-INF/DEPENDENCIES'
+        exclude 'META-INF/NOTICE'
+        exclude 'META-INF/LICENSE'
+        exclude 'META-INF/LICENSE.txt'
+        exclude 'META-INF/NOTICE.txt'
+    }
 }
 
 dependencies {
+    //noinspection DuplicatePlatformClasses
+    api 'org.apache.httpcomponents:httpclient:4.3.5'
+    api 'commons-io:commons-io:2.8.0'
+
     api 'com.alibaba:fastjson:1.2.72'
     api project(':GlideModule:glide')
+    implementation files('libs\\core-3.3.3.jar')
+    implementation files('libs\\tbs_sdk_thirdapp_v4.3.0.67_43967_sharewithdownloadwithfile_withoutGame_obfs_20200923_120452.jar')
     testImplementation 'junit:junit:4.13'
     //annotationProcessor libs_glide
     api project(':LibPdfium')
@@ -88,6 +101,8 @@ dependencies {
     } else {
         api(project(':AppPreference'))
     }
+
+    api project(':twowaygridview')
 
     api fileTree(dir: 'libs', include: ['*.jar'])
 }

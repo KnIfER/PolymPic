@@ -27,9 +27,19 @@ Donec feugiat ac nunc vel laoreet. In laoreet pretium fringilla. Suspendisse pot
 	<string name="share_link">分享链接：</string>
 	<string name="highlight">高亮</string>
 	<string name="global_vs_tabs">全局设定/标签设定</string>
-	<string name="coef">&#160;×_ √</string>
+	<string name="coef" translatable="false">&#160;×_ √_ --</string>
 	<string name="qr_settings">扫码选项</string>
 	<string name="plain_dict">平典</string>
+	<string name="pls_pick_permission">please pick a sdcard to grant write permission. </string>
 
+	<string name="pdf_internal_open">Use built-in manager to open PDFs</string>
+	<string name="pdf_external_open">Use system manager to open PDFs</string>
 
+	<string name="pdf_create_shortcut">Create a desktop icon for the reader</string>
+	<string name="pdf_try">I want to try the browser......</string>
+	<string name="pdf_app">The main body of this APP is a web browser, but it has not yet been completed. The completed function is the PDF reading/annotating part. </string>
+	<string name="pdf_hint">Note: If you use the system file manager to call PolymPic to invoke the PDF document, you can use it without storage permission. </string>
+	<string name="history">History</string>
+	<string name="downloadWithSz">Download ( %s )</string>
+	<string name="downloadingWithSz">Downloading （%s）</string>
 </resources>

@@ -46,12 +46,16 @@ public class DescriptiveImageView extends ImageView {
 		mText = a.getString(R.styleable.DescriptiveImageView_android_text);
 		offsetY = a.getDimension(R.styleable.DescriptiveImageView_android_layout_y, 0);
 		a.recycle();
+		if(isInEditMode()) {
+			textPainter = createTextPainter();
+		}
 	}
 	
 	public static TextPaint createTextPainter() {
 		TextPaint textPainter = new TextPaint();
 		textPainter.setColor(Color.WHITE);
-		textPainter.setTextSize(GlobalOptions.density*12);
+		textPainter.setTextSize(GlobalOptions.density*(GlobalOptions.isLarge?16:12));
+		textPainter.setAntiAlias(true);
 		return textPainter;
 	}
 	
