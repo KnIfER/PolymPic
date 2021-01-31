@@ -42,6 +42,7 @@ import com.knziha.polymer.toolkits.MyX509TrustManager;
 import com.knziha.polymer.toolkits.Utils.BU;
 import com.knziha.polymer.toolkits.Utils.ReusableByteOutputStream;
 import com.knziha.polymer.widgets.Utils;
+import com.knziha.polymer.widgets.WebFrameLayout;
 import com.knziha.polymer.widgets.WebViewmy;
 
 import org.adrianwalker.multilinestring.Multiline;
@@ -378,7 +379,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 			CMN.Log("OPC::", newProgress, Thread.currentThread().getId());
 			AdvancedBrowserWebView mWebView = (AdvancedBrowserWebView) view;
 			if(mWebView==a.currentWebView && mWebView.PageStarted) {
-				a.viewpager_holder_hasTag=true;
+				a.tabsManagerIsDirty =true;
 				mWebView.isloading=true;
 				boolean premature=mWebView.getDelegate(BackendSettings).getPremature();
 				int lowerBound = mWebView.EnRipenPercent;
@@ -1101,7 +1102,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	public void SaveAnnots(long tabID, String annots, String texts) {
 		CMN.Log("SaveAnnots", tabID, annots, texts, a.historyCon.isOpen());
 		//if(true) return;
-		AdvancedBrowserWebView mWebView = a.id_table.get(tabID);
+		AdvancedBrowserWebView mWebView = a.getWebViewFromID(tabID);
 		if(mWebView!=null && mWebView.HLED) {
 			mWebView.HLED=false;
 			//a.root.removeCallbacks()
@@ -1133,7 +1134,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	
 	@JavascriptInterface
 	public void sendup(long id) {
-		AdvancedBrowserWebView mWebView = a.id_table.get(id);
+		AdvancedBrowserWebView mWebView = a.getWebViewFromID(id);
 		if(mWebView==a.currentWebView) {
 			//if(false)
 			mWebView.postDelayed(new Runnable() {

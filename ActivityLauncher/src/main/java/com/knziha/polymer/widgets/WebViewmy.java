@@ -52,9 +52,7 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
 	public BrowserActivity.TabHolder holder;
 	public BrowserActivity context;
 	public long time;
-	public int lastCaptureVer;
 	public int lastSaveVer;
-	public int version;
 	public int lastScroll;
 	public boolean stackloaded;
 	public String targetUa;
@@ -158,8 +156,8 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
 	/** Recapture Thumnails as a bitmap. There's no point in doing this asynchronously.
 	 * 		draw(canvas) will block the UI even when it's called in another thread. */
 	public void recaptureBitmap() {
-		CMN.Log("recaptureBitmap...", holder.id, version);
-		lastCaptureVer = version;
+		CMN.Log("recaptureBitmap...", holder.id, holder.version);
+		holder.lastCaptureVer = holder.version;
 		int w = getWidth();
 		int h = getHeight();
 		if(w>0) {
@@ -289,7 +287,7 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
 	
 	public void incrementVerIfAtNormalPage() {
 		if(!"网页无法打开".equals(getTitle())) {
-			version++;
+			holder.version++;
 		}
 	}
 	

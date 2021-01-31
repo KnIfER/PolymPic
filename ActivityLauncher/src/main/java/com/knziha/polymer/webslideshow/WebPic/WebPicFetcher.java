@@ -13,6 +13,7 @@ import com.bumptech.glide.load.data.DataFetcher;
 import com.knziha.polymer.AdvancedBrowserWebView;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.database.LexicalDBHelper;
+import com.knziha.polymer.widgets.WebFrameLayout;
 
 
 public class WebPicFetcher implements DataFetcher<Bitmap> {
@@ -31,12 +32,12 @@ public class WebPicFetcher implements DataFetcher<Bitmap> {
 		byte[] data=null;
 		long tabID_Fetcher = pic.tabID;
 		String[] where = new String[]{String.valueOf(tabID_Fetcher)};
-		AdvancedBrowserWebView wv = pic.id_table.get(tabID_Fetcher);
+		WebFrameLayout wv = pic.id_table.get(tabID_Fetcher);
 		if(wv!=null) {
 			bm = wv.saveBitmap();
 			if(bm!=null)
 			{
-				pic.version = wv.version;
+				pic.version = wv.holder.version;
 			}
 		}
 		if(bm==null) {

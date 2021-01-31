@@ -5,6 +5,7 @@ import androidx.annotation.Nullable;
 import com.bumptech.glide.load.engine.ResourceKeyOutdating;
 import com.bumptech.glide.load.model.Model;
 import com.knziha.polymer.AdvancedBrowserWebView;
+import com.knziha.polymer.widgets.WebFrameLayout;
 
 import java.util.Map;
 import java.util.Objects;
@@ -15,9 +16,9 @@ public class WebPic implements ResourceKeyOutdating, Model {
 	public final static ConcurrentHashMap<Long, Integer> versionMap = new ConcurrentHashMap<>();
 	public final long tabID;
 	public int version;
-	public final Map<Long, AdvancedBrowserWebView> id_table;
+	public final Map<Long, WebFrameLayout> id_table;
 	
-	public WebPic(long tabID, int version, Map<Long, AdvancedBrowserWebView> id_table) {
+	public WebPic(long tabID, int version, Map<Long, WebFrameLayout> id_table) {
 		this.tabID = tabID;
 		this.version = version;
 		this.id_table = id_table;

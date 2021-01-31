@@ -1,18 +1,20 @@
 package com.knziha.polymer.widgets;
 
 import android.content.Context;
-import android.util.AttributeSet;
+import android.graphics.Bitmap;
 import android.view.View;
 import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import com.knziha.polymer.AdvancedBrowserWebView;
+import com.knziha.polymer.BrowserActivity;
 import com.knziha.polymer.databinding.ActivityMainBinding;
 
 public class WebFrameLayout extends FrameLayout {
+	public BrowserActivity.TabHolder holder;
 	public AdvancedBrowserWebView mWebView;
+	public View implView;
 	public int offsetTopAndBottom;
 	public int legalPad;
 	public int legalPart;
@@ -20,16 +22,9 @@ public class WebFrameLayout extends FrameLayout {
 	public boolean PadPartPadBar = false;  // 响应式。
 	public boolean recover;
 	
-	public WebFrameLayout(@NonNull Context context) {
+	public WebFrameLayout(@NonNull Context context, BrowserActivity.TabHolder holder) {
 		super(context);
-	}
-	
-	public WebFrameLayout(@NonNull Context context, @Nullable AttributeSet attrs) {
-		super(context, attrs);
-	}
-	
-	public WebFrameLayout(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
-		super(context, attrs, defStyleAttr);
+		this.holder = holder;
 	}
 	
 	
@@ -91,6 +86,48 @@ public class WebFrameLayout extends FrameLayout {
 		}
 		if(legalPad!=getPaddingBottom()) {
 			setPadding(0, 0, 0, legalPad);
+		}
+	}
+	
+	public void destroy() {
+		if(mWebView!=null) {
+			mWebView.destroy();
+		}
+	}
+	
+	public void deconstruct() {
+		mWebView.deconstruct();
+	}
+	
+	public Bitmap getBitmap() {
+		return mWebView.bm.get();
+	}
+	
+	public boolean lazyLoad() {
+		return mWebView.loadIfNeeded();
+	}
+	
+	public void saveIfNeeded() {
+		mWebView.saveIfNeeded();
+	}
+	
+	public void recaptureBitmap() {
+		mWebView.recaptureBitmap();
+	}
+	
+	public Bitmap saveBitmap() {
+		return mWebView.saveBitmap();
+	}
+	
+	/** source 1=animation */
+	public void onViewAttached(int source) {
+		if(source!=1) {
+			mWebView.setStorageSettings();
+		}
+		if(holder.paused) {
+			mWebView.resumeTimers();
+			mWebView.onResume();
+			mWebView.holder.paused=false;
 		}
 	}
 }

@@ -43,8 +43,8 @@ public class SardineCloud implements Runnable {
 	volatile TaskType task;
 	volatile TaskType runningTask;
 	private boolean stopped;
-	String username = " ";
-	String password = " ";
+	String username = "302772670@qq.com";
+	String password = "ae9jp9qnwgbj639a";
 	String webdavServer = "https://dav.jianguoyun.com/dav";
 	
 	public void scheduleTask(BrowserActivity a, TaskType taskType) {
