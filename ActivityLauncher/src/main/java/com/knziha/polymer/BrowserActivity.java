@@ -1,189 +1,194 @@
- package com.knziha.polymer;
+package com.knziha.polymer;
 
 
- import android.animation.Animator;
- import android.animation.AnimatorListenerAdapter;
- import android.animation.AnimatorSet;
- import android.animation.ObjectAnimator;
- import android.animation.PropertyValuesHolder;
- import android.animation.ValueAnimator;
- import android.annotation.SuppressLint;
- import android.app.Activity;
- import android.app.Dialog;
- import android.app.PendingIntent;
- import android.content.ClipData;
- import android.content.ClipboardManager;
- import android.content.Context;
- import android.content.Intent;
- import android.content.res.Configuration;
- import android.content.res.Resources;
- import android.database.Cursor;
- import android.graphics.Bitmap;
- import android.graphics.Color;
- import android.graphics.Paint;
- import android.graphics.PorterDuff;
- import android.graphics.Rect;
- import android.graphics.drawable.BitmapDrawable;
- import android.graphics.drawable.ColorDrawable;
- import android.graphics.drawable.Drawable;
- import android.graphics.drawable.LayerDrawable;
- import android.graphics.drawable.RotateDrawable;
- import android.net.Uri;
- import android.os.Build;
- import android.os.Bundle;
- import android.os.CancellationSignal;
- import android.os.Environment;
- import android.os.Message;
- import android.provider.DocumentsContract;
- import android.text.Editable;
- import android.text.Spannable;
- import android.text.SpannableStringBuilder;
- import android.text.Spanned;
- import android.text.TextPaint;
- import android.text.TextUtils;
- import android.text.TextWatcher;
- import android.text.style.ClickableSpan;
- import android.text.style.ForegroundColorSpan;
- import android.view.ActionMode;
- import android.view.GestureDetector;
- import android.view.LayoutInflater;
- import android.view.Menu;
- import android.view.MenuItem;
- import android.view.MotionEvent;
- import android.view.View;
- import android.view.ViewGroup;
- import android.view.ViewPropertyAnimator;
- import android.view.Window;
- import android.view.WindowManager;
- import android.view.animation.AccelerateDecelerateInterpolator;
- import android.view.animation.AnimationUtils;
- import android.view.animation.LayoutAnimationController;
- import android.view.animation.LinearInterpolator;
- import android.view.inputmethod.EditorInfo;
- import android.webkit.JavascriptInterface;
- import android.webkit.ValueCallback;
- import android.webkit.WebBackForwardList;
- import android.webkit.WebHistoryItem;
- import android.webkit.WebSettings;
- import android.webkit.WebView;
- import android.widget.AdapterView;
- import android.widget.ArrayAdapter;
- import android.widget.FrameLayout;
- import android.widget.ImageView;
- import android.widget.LinearLayout;
- import android.widget.ListView;
- import android.widget.PopupWindow;
- import android.widget.TextView;
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
+import android.animation.PropertyValuesHolder;
+import android.animation.ValueAnimator;
+import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.app.Dialog;
+import android.app.PendingIntent;
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
+import android.content.Intent;
+import android.content.res.Configuration;
+import android.content.res.Resources;
+import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.PorterDuff;
+import android.graphics.Rect;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.LayerDrawable;
+import android.graphics.drawable.RotateDrawable;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Bundle;
+import android.os.CancellationSignal;
+import android.os.Environment;
+import android.os.Message;
+import android.provider.DocumentsContract;
+import android.text.Editable;
+import android.text.Spannable;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
+import android.text.TextPaint;
+import android.text.TextUtils;
+import android.text.TextWatcher;
+import android.text.method.LinkMovementMethod;
+import android.text.style.ClickableSpan;
+import android.text.style.ForegroundColorSpan;
+import android.text.style.RelativeSizeSpan;
+import android.view.ActionMode;
+import android.view.GestureDetector;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.MotionEvent;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.ViewPropertyAnimator;
+import android.view.Window;
+import android.view.WindowManager;
+import android.view.animation.AccelerateDecelerateInterpolator;
+import android.view.animation.AnimationUtils;
+import android.view.animation.LayoutAnimationController;
+import android.view.animation.LinearInterpolator;
+import android.view.inputmethod.EditorInfo;
+import android.webkit.JavascriptInterface;
+import android.webkit.ValueCallback;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.BaseAdapter;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ListView;
+import android.widget.PopupWindow;
+import android.widget.TextView;
 
- import androidx.annotation.AnyThread;
- import androidx.annotation.NonNull;
- import androidx.annotation.Nullable;
- import androidx.annotation.RequiresApi;
- import androidx.appcompat.app.AlertDialog;
- import androidx.appcompat.app.GlobalOptions;
- import androidx.appcompat.widget.ListPopupWindow;
- import androidx.coordinatorlayout.widget.CoordinatorLayout;
- import androidx.core.content.pm.ShortcutInfoCompat;
- import androidx.core.content.pm.ShortcutManagerCompat;
- import androidx.core.graphics.drawable.IconCompat;
- import androidx.databinding.DataBindingUtil;
- import androidx.databinding.ViewDataBinding;
- import androidx.recyclerview.widget.GridLayoutManager;
- import androidx.recyclerview.widget.ItemTouchHelper;
- import androidx.recyclerview.widget.LinearLayoutManager;
- import androidx.recyclerview.widget.RecyclerView;
+import androidx.annotation.AnyThread;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.GlobalOptions;
+import androidx.appcompat.widget.ListPopupWindow;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
+import androidx.core.content.pm.ShortcutInfoCompat;
+import androidx.core.content.pm.ShortcutManagerCompat;
+import androidx.core.graphics.drawable.IconCompat;
+import androidx.databinding.DataBindingUtil;
+import androidx.databinding.ViewDataBinding;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.ItemTouchHelper;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
- import com.bumptech.glide.Glide;
- import com.bumptech.glide.Priority;
- import com.bumptech.glide.RequestBuilder;
- import com.bumptech.glide.load.DecodeFormat;
- import com.bumptech.glide.load.engine.DiskCacheStrategy;
- import com.bumptech.glide.request.RequestOptions;
- import com.bumptech.glide.request.target.Target;
- import com.google.android.material.appbar.AppBarLayout;
- import com.google.android.material.bottomsheet.BottomSheetBehavior;
- import com.google.android.material.bottomsheet.BottomSheetDialog;
- import com.google.android.material.math.MathUtils;
- import com.knziha.filepicker.model.DialogConfigs;
- import com.knziha.filepicker.model.DialogProperties;
- import com.knziha.filepicker.model.DialogSelectionListener;
- import com.knziha.filepicker.utils.FU;
- import com.knziha.filepicker.view.FilePickerDialog;
- import com.knziha.polymer.Utils.CMN;
- import com.knziha.polymer.Utils.MyReceiver;
- import com.knziha.polymer.Utils.OptionProcessor;
- import com.knziha.polymer.Utils.Options;
- import com.knziha.polymer.Utils.RgxPlc;
- import com.knziha.polymer.Utils.WebOptions;
- import com.knziha.polymer.browser.DownloadHandlerStd;
- import com.knziha.polymer.database.LexicalDBHelper;
- import com.knziha.polymer.databinding.ActivityMainBinding;
- import com.knziha.polymer.databinding.DownloadBottomSheetBinding;
- import com.knziha.polymer.databinding.SearchHintsItemBinding;
- import com.knziha.polymer.databinding.WebPageItemBinding;
- import com.knziha.polymer.qrcode.QRActivity;
- import com.knziha.polymer.toolkits.Utils.BU;
- import com.knziha.polymer.toolkits.Utils.ReusableByteOutputStream;
- import com.knziha.polymer.webslideshow.CenterLinearLayoutManager;
- import com.knziha.polymer.webslideshow.RecyclerViewPager;
- import com.knziha.polymer.webslideshow.ViewPagerTouchHelper;
- import com.knziha.polymer.webslideshow.ViewUtils;
- import com.knziha.polymer.webslideshow.WebPic.WebPic;
- import com.knziha.polymer.webstorage.BrowserDownloads;
- import com.knziha.polymer.webstorage.BrowserHistory;
- import com.knziha.polymer.webstorage.WebStacksSer;
- import com.knziha.polymer.widgets.AppIconsAdapter;
- import com.knziha.polymer.widgets.DescriptiveImageView;
- import com.knziha.polymer.widgets.DialogWithTag;
- import com.knziha.polymer.widgets.ScrollViewTransparent;
- import com.knziha.polymer.widgets.PopupBackground;
- import com.knziha.polymer.widgets.PrintPdfAgentActivity;
- import com.knziha.polymer.widgets.SpacesItemDecoration;
- import com.knziha.polymer.widgets.TwoColumnAdapter;
- import com.knziha.polymer.widgets.Utils;
- import com.knziha.polymer.widgets.WebFrameLayout;
- import com.knziha.polymer.widgets.WebViewmy;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.Priority;
+import com.bumptech.glide.RequestBuilder;
+import com.bumptech.glide.load.DecodeFormat;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.request.RequestOptions;
+import com.bumptech.glide.request.target.Target;
+import com.google.android.material.appbar.AppBarLayout;
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.google.android.material.math.MathUtils;
+import com.knziha.filepicker.model.DialogConfigs;
+import com.knziha.filepicker.model.DialogProperties;
+import com.knziha.filepicker.model.DialogSelectionListener;
+import com.knziha.filepicker.utils.FU;
+import com.knziha.filepicker.view.FilePickerDialog;
+import com.knziha.polymer.Utils.CMN;
+import com.knziha.polymer.Utils.IU;
+import com.knziha.polymer.Utils.MyReceiver;
+import com.knziha.polymer.Utils.OptionProcessor;
+import com.knziha.polymer.Utils.Options;
+import com.knziha.polymer.Utils.RgxPlc;
+import com.knziha.polymer.Utils.WebOptions;
+import com.knziha.polymer.browser.DownloadHandlerStd;
+import com.knziha.polymer.database.LexicalDBHelper;
+import com.knziha.polymer.databinding.ActivityMainBinding;
+import com.knziha.polymer.databinding.DownloadBottomSheetBinding;
+import com.knziha.polymer.databinding.SearchHintsItemBinding;
+import com.knziha.polymer.databinding.WebPageItemBinding;
+import com.knziha.polymer.qrcode.QRActivity;
+import com.knziha.polymer.toolkits.Utils.BU;
+import com.knziha.polymer.toolkits.Utils.ReusableByteOutputStream;
+import com.knziha.polymer.webslideshow.CenterLinearLayoutManager;
+import com.knziha.polymer.webslideshow.RecyclerViewPager;
+import com.knziha.polymer.webslideshow.ViewPagerTouchHelper;
+import com.knziha.polymer.webslideshow.ViewUtils;
+import com.knziha.polymer.webslideshow.WebPic.WebPic;
+import com.knziha.polymer.webstorage.BrowserDownloads;
+import com.knziha.polymer.webstorage.BrowserHistory;
+import com.knziha.polymer.webstorage.SardineCloud;
+import com.knziha.polymer.webstorage.WebStacksSer;
+import com.knziha.polymer.widgets.AppIconsAdapter;
+import com.knziha.polymer.widgets.DescriptiveImageView;
+import com.knziha.polymer.widgets.DialogWithTag;
+import com.knziha.polymer.widgets.PopupBackground;
+import com.knziha.polymer.widgets.PrintPdfAgentActivity;
+import com.knziha.polymer.widgets.ScrollViewTransparent;
+import com.knziha.polymer.widgets.SpacesItemDecoration;
+import com.knziha.polymer.widgets.TwoColumnAdapter;
+import com.knziha.polymer.widgets.Utils;
+import com.knziha.polymer.widgets.WebFrameLayout;
+import com.knziha.polymer.widgets.WebViewmy;
 
- import org.adrianwalker.multilinestring.Multiline;
- import org.apache.commons.lang3.StringUtils;
- import org.apache.commons.text.StringEscapeUtils;
+import org.adrianwalker.multilinestring.Multiline;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
 
- import java.io.File;
- import java.io.FileInputStream;
- import java.io.FileOutputStream;
- import java.io.InputStream;
- import java.lang.ref.WeakReference;
- import java.net.HttpURLConnection;
- import java.net.URL;
- import java.util.ArrayList;
- import java.util.Collection;
- import java.util.Collections;
- import java.util.HashMap;
- import java.util.HashSet;
- import java.util.LinkedList;
- import java.util.Map;
- import java.util.regex.Matcher;
- import java.util.regex.Pattern;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.lang.ref.WeakReference;
+import java.lang.reflect.Field;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
- import static androidx.appcompat.app.GlobalOptions.realWidth;
- import static com.knziha.polymer.Utils.Options.getLimitHints;
- import static com.knziha.polymer.Utils.Options.getTransitSearchHints;
- import static com.knziha.polymer.Utils.WebOptions.BackendSettings;
- import static com.knziha.polymer.Utils.WebOptions.StorageSettings;
- import static com.knziha.polymer.WeakReferenceHelper.topDomainNamesMap;
- import static com.knziha.polymer.WebCompoundListener.CustomViewHideTime;
- import static com.knziha.polymer.WebCompoundListener.PrintStartTime;
- import static com.knziha.polymer.WebCompoundListener.httpPattern;
- import static com.knziha.polymer.WebCompoundListener.requestPattern;
- import static com.knziha.polymer.widgets.Utils.DummyBMRef;
- import static com.knziha.polymer.widgets.Utils.DummyTransX;
- import static com.knziha.polymer.widgets.Utils.RequsetUrlFromCamera;
- import static com.knziha.polymer.widgets.Utils.RequsetUrlFromStorage;
- import static com.knziha.polymer.widgets.Utils.getSimplifiedUrl;
- import static com.knziha.polymer.widgets.Utils.getViewItemByPath;
- import static com.knziha.polymer.widgets.Utils.indexOf;
- import static com.knziha.polymer.widgets.Utils.isKeyboardShown;
- import static com.knziha.polymer.widgets.Utils.setOnClickListenersOneDepth;
+import static androidx.appcompat.app.GlobalOptions.realWidth;
+import static com.knziha.polymer.Utils.Options.getLimitHints;
+import static com.knziha.polymer.Utils.Options.getTransitSearchHints;
+import static com.knziha.polymer.Utils.WebOptions.BackendSettings;
+import static com.knziha.polymer.Utils.WebOptions.StorageSettings;
+import static com.knziha.polymer.WeakReferenceHelper.topDomainNamesMap;
+import static com.knziha.polymer.WebCompoundListener.CustomViewHideTime;
+import static com.knziha.polymer.WebCompoundListener.PrintStartTime;
+import static com.knziha.polymer.WebCompoundListener.httpPattern;
+import static com.knziha.polymer.WebCompoundListener.requestPattern;
+import static com.knziha.polymer.widgets.Utils.DummyBMRef;
+import static com.knziha.polymer.widgets.Utils.DummyTransX;
+import static com.knziha.polymer.widgets.Utils.RequsetUrlFromCamera;
+import static com.knziha.polymer.widgets.Utils.RequsetUrlFromStorage;
+import static com.knziha.polymer.widgets.Utils.getSimplifiedUrl;
+import static com.knziha.polymer.widgets.Utils.getViewItemByPath;
+import static com.knziha.polymer.widgets.Utils.indexOf;
+import static com.knziha.polymer.widgets.Utils.isKeyboardShown;
+import static com.knziha.polymer.widgets.Utils.setOnClickListenersOneDepth;
 @SuppressWarnings({"rawtypes","ClickableViewAccessibility"
 		,"IntegerDivisionInFloatingPointContext"
 		,"NonConstantResourceId"
@@ -205,7 +210,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	Map<Long, AdvancedBrowserWebView> id_table = Collections.synchronizedMap(new HashMap<>(1024));
 	ArrayList<AdvancedBrowserWebView> Pages = new ArrayList<>(1024);
 	//private ArrayList<WebViewmy> WebPool = new ArrayList<>(1024);
-	private ArrayList<TabHolder> TabHolders = new ArrayList<>(1024);
+	public ArrayList<TabHolder> TabHolders = new ArrayList<>(1024);
 	HashMap<Long, TabHolder> allTabs;
 	private HashSet<AdvancedBrowserWebView> checkWebViewDirtyMap = new HashSet<>();
 	boolean tabsRead = false;
@@ -248,7 +253,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	float printScale;
 	private BrowserSlider mBrowserSlider;
 	private boolean etSearch_scrolled;
-	LexicalDBHelper historyCon;
+	public LexicalDBHelper historyCon;
 	
 	int HintConstituents =0;
 	private Cursor ActiveUrlCursor=Utils.EmptyCursor;
@@ -294,6 +299,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	private final int softModeResize = WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN|WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE;
 	private boolean MainMenuListVis;
 	private boolean MenuClicked;
+	private SardineCloud syncHandler;
 	
 	
 	@Override
@@ -570,6 +576,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				for(TabHolder tabHolder:TabHolders) {
 					stringBuilder.append(tabHolder.id).append(" ");
 				}
+				CMN.Log("tabs::", stringBuilder);
 				opt.putOpenedTabs(stringBuilder.toString());
 				tabsDirty = false;
 			}
@@ -607,6 +614,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				holder.page_search_term = tabsCursor.getString(3);
 				holder.flag = tabsCursor.getLong(4);
 				holder.rank = tabsCursor.getLong(5);
+				holder.creation = tabsCursor.getLong(6);
 				allTabs.put(holder.id, holder);
 			}
 			tabsCursor.close();
@@ -614,6 +622,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		}
 		
 		String tabs = opt.getOpenedTabs();
+		CMN.Log("tabs::", tabs);
 		if(TextUtils.isEmpty(tabs)) {
 			TabHolders.addAll(allTabs.values());
 			tabsDirty = true;
@@ -622,7 +631,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			for(String tabsI:tabsArr) {
 				try {
 					long id = Long.parseLong(tabsI);
-					TabHolder tabI = allTabs.get(id);
+					TabHolder tabI = allTabs.remove(id);
 					if(tabI!=null) {
 						TabHolders.add(tabI);
 					}
@@ -707,7 +716,14 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		});
 		//tg
 		CMN.Log("device density is ::", GlobalOptions.density);
+
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+			}
+		}).start();
 		
+		//AdvancedBrowserWebView.enableSlowWholeDocumentDraw();
 		//TestHelper.async(TestHelper::downloadlink);
 		//TestHelper.savePngBitmap(this, R.drawable.polymer, 150, 150, "/sdcard/150.png");
 
@@ -715,7 +731,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 //		holder.init_web_configs(true, 1);
 //		holder.dlg.show();
 		
-		WebView.setWebContentsDebuggingEnabled(true);
+		//WebView.setWebContentsDebuggingEnabled(true);
 		
 		//TestHelper.insertMegaUrlDataToHistory(historyCon, 2500);
 		
@@ -837,6 +853,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		historyCon.queryDomain(mWebView, url);
 		boolean pcMode = false;
 		//pcMode = url!=null && url.contains("www.baidu");
+		//pcMode = true;
 		String targetUa;
 		if(pcMode) {
 			targetUa = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36";
@@ -916,6 +933,102 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			starting_progressbar.setVisibility(View.GONE);
 			UIData.ivRefresh.setImageResource(R.drawable.ic_refresh_black_24dp);
 		}
+	}
+	
+	// lectus synca
+	Runnable selectSyncTabsRunnable = () -> {
+		AlertDialog alert = buildSyncInterface();
+		View[] items = (View[]) alert.tag;
+		items[0].setEnabled(false);
+		((TextView)items[4]).setVisibility(View.VISIBLE);
+		((TextView)items[5]).setText("选择同步目标");
+		ListView lv;
+		boolean newbie=items[1]==null;
+		if(newbie) {
+			items[1] = lv = new ListView(alert.getContext());
+			View.OnClickListener clicker = new View.OnClickListener(){
+				@Override
+				public void onClick(View v) {
+					if(v.getId()==R.id.type) {
+						showT("TYPE");
+					} else {
+					
+					}
+				}
+			};
+			lv.setAdapter(new BaseAdapter() {
+				@Override
+				public int getCount() {
+					return syncHandler.mergedTabs.size();
+				}
+				@Override
+				public Object getItem(int position) {
+					return null;
+				}
+				@Override
+				public long getItemId(int position) {
+					return position;
+				}
+				@Override
+				public View getView(int position, View convertView, ViewGroup parent) {
+					if(convertView==null) {
+						convertView = LayoutInflater.from(parent.getContext())
+								.inflate(R.layout.sync_tabs_item, parent, false);
+						setOnClickListenersOneDepth((ViewGroup) convertView, clicker, 1, null);
+					}
+					ViewGroup vh = (ViewGroup) convertView;
+					vh.setTag(position);
+					SardineCloud.TabBean item = syncHandler.mergedTabs.get(position);
+					((TextView)vh.getChildAt(1)).setText(item.title);
+					int type = item.type;
+					if(type==1) {
+						type = R.drawable.sync_tabs_add;
+					} else if(type==-1){
+						type = R.drawable.sync_tabs_close;
+					} else if(type==2){
+						type = R.drawable.sync_tabs_changed;
+					} else if(type==3){
+						type = R.drawable.sync_tabs_lag;
+					} else {
+						type = 0;
+					}
+					((ImageView)vh.getChildAt(2)).setImageResource(type);
+					return convertView;
+				}
+			});
+			((ViewGroup) items[2]).addView(lv);
+			lv.setPadding(0, 0, 0, (int) (GlobalOptions.density*10));
+			//lv.setBackgroundColor(0xffffffff);
+		} else {
+			lv = (ListView) items[1];
+			newbie=lv.getVisibility()!=View.VISIBLE;
+		}
+		if(newbie) {
+			items[3].setVisibility(View.VISIBLE);
+			lv.setVisibility(View.VISIBLE);
+		}
+	};
+	
+	private AlertDialog buildSyncInterface() {
+		AlertDialog alert = (AlertDialog) getReferencedObject(WeakReferenceHelper.sync_interface);
+		if(alert==null) {
+			alert = new AlertDialog.Builder(this)
+					.setView(R.layout.sync_interface)
+					.create();
+			alert.show();
+			ViewGroup root = alert.findViewById(R.id.root);
+			alert.tag = new View[]{root.findViewById(R.id.wave), null, root, root.getChildAt(1), root.findViewById(R.id.start), root.findViewById(R.id.title)};
+			putReferencedObject(WeakReferenceHelper.sync_interface, alert);
+		} else {
+			alert.setCancelable(true);
+			alert.setCanceledOnTouchOutside(true);
+			alert.show();
+		}
+		return alert;
+	}
+	
+	public void postSelectSyncTabs() {
+		root.post(selectSyncTabsRunnable);
 	}
 	
 	class BrowserSlider implements View.OnTouchListener {
@@ -1517,6 +1630,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					String title=holder.title;
 					if(title==null||title.equals("")) title=holder.url;
 					vh.title.setText(title);
+					vh.title.setText(holder.id+" :  "+title);
 					int version = mWebView==null?0:(int) mWebView.version;
 					//CMN.Log("setImageBitmap__", iv);
 					glide.load(new WebPic(holder.id, version, id_table))
@@ -1531,7 +1645,17 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				}
 			}
 			
-			public long getItemId(int position) { return position; }
+			public long getItemId(int position) {
+				position-=1;
+				if(position>=0&&position<TabHolders.size()) {
+					TabHolder holder = TabHolders.get(position);
+					return holder.id;
+				}
+				if(position==TabHolders.size()) {
+					return -2;
+				}
+				return position;
+			}
 			
 			View.OnClickListener ocl = new View.OnClickListener() {
 				@Override
@@ -1566,6 +1690,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		recyclerViewPager.setAdapter(adaptermy);
 		layoutManager = new CenterLinearLayoutManager(this);
 		layoutManager.setOrientation(LinearLayoutManager.HORIZONTAL);
+		//recyclerViewPager.setHasFixedSize(true);
 		recyclerViewPager.setLayoutManager(layoutManager);
 		recyclerViewPager.addItemDecoration(new SpacesItemDecoration(itemPad));
 		
@@ -1574,7 +1699,6 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			public void onItemSwipe(ViewDataHolder vh) {
 				closeTabAt(vh.position, 1);
 			}
-			
 			@Override
 			public void onItemSlide(ViewDataHolder fromPosition, int toPosition) {
 				CMN.Log("onMove");
@@ -2478,15 +2602,54 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				top_menu.show();
 				break;
 			case R.id.browser_widget7:
+				if (!DismissingViewHolder) {
+					Integer arrayId = R.array.sync_tabs;
+					// mResource.getString(R.string.sync_tabs)
+					AlertDialog alert = getOptionListDialog(WeakReferenceHelper.opt_list_main, 0, arrayId, null);
+					if(!arrayId.equals(alert.tag)) {
+						ListView lv = alert.getListView();
+						lv.setOnItemClickListener((parent, view, position, vid) -> {
+							switch (position) {
+								case -1:
+									
+								break;
+								/* 同步上传标签页 */
+								case 0:{
+								
+								} break;
+								/* 同步下载标签页 */
+								case 1:{
+									//postSelectSyncTabs();
+									AlertDialog syncInterface = buildSyncInterface();
+									View[] items = (View[]) syncInterface.tag;
+									items[4].setVisibility(View.GONE);
+									((TextView)items[5]).setText("获取同步信息中...");
+									if(syncHandler ==null) {
+										syncHandler = new SardineCloud();
+									}
+									items[0].setEnabled(true);
+									syncHandler.scheduleTask(this, SardineCloud.TaskType.pullTabs);
+								} break;
+								/* 同步设置 */
+								case 2:{
+								
+								} break;
+							}
+							//alert.dismiss();
+						});
+						alert.tag = arrayId;
+					}
+					break;
+				}
 				AdvancedBrowserWebView wv = currentWebView;
 				boolean backable = wv.canGoBack();
 				CMN.Log("backable::", backable, wv.getThisIdx(), wv.getUrl());
 				if(backable) {
 					if(true) {
-						WebBackForwardList stacks = wv.saveState(new Bundle());
-						WebHistoryItem bfItem = stacks.getItemAtIndex(stacks.getCurrentIndex() - 1);
-						mWebListener.lastTitleSuppressTime = CMN.now();
-						webtitle.setText(bfItem.getTitle());
+						webtitle.setText(wv.navigateHistory(this, -1));
+					}
+					if(true) {
+						wv.stopLoading();
 					}
 					wv.goBack();
 				}
@@ -2523,16 +2686,20 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				CMN.Log("backed::", wv.getUrl());
 				break;
 			case R.id.browser_widget8:
+				if (!DismissingViewHolder) {
+					
+					break;
+				}
 				wv = currentWebView;
 				boolean added = false;
 				boolean forwadable = wv.canGoForward();
 				CMN.Log("forwadable::", forwadable, wv.getThisIdx(), wv.getUrl());
 				if(forwadable) {
 					if(true) {
-						WebBackForwardList stacks = wv.saveState(new Bundle());
-						WebHistoryItem bfItem = stacks.getItemAtIndex(stacks.getCurrentIndex() + 1);
-						mWebListener.lastTitleSuppressTime = CMN.now();
-						webtitle.setText(bfItem.getTitle());
+						webtitle.setText(wv.navigateHistory(this, 1));
+					}
+					if(true) {
+						wv.stopLoading();
 					}
 					wv.goForward();
 				}
@@ -2670,6 +2837,21 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				}
 			} break;
 		}
+	}
+	
+	Runnable postRectifyWebTitleRunnable = () -> {
+		if(DismissingViewHolder) {
+			String title = currentWebView.transientTitle;
+			if(title!=null) {
+				webtitle.setText(currentWebView.rectifyWebStacks(title));
+			} else {
+				postRectifyWebTitle();
+			}
+		}
+	};
+	void postRectifyWebTitle() {
+		root.removeCallbacks(postRectifyWebTitleRunnable);
+		root.postDelayed(postRectifyWebTitleRunnable, 500);
 	}
 	
 	private void toggleMenuGrid() {
@@ -3595,11 +3777,13 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					if(id!=-1) {
 						holder.url=defaultUrl;
 						holder.id=id;
-						TabHolders.add(holder);
 						TabHolders.add(newtabloc, holder);
 						Pages.add(newtabloc, null);
 					}
 					AttachWebAt(newtabloc, 0);
+					if(adaptermy!=null) {
+						adaptermy.notifyDataSetChanged();
+					}
 				} catch (IllegalArgumentException e) {
 					showT("Hello Future!");
 					break;
@@ -3644,6 +3828,247 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		currentWebView = mWebView;
 	}
 	
+	HtmlObjectHandler mHtmlObjectHandler = new HtmlObjectHandler();
+	class HtmlObjectHandler implements View.OnLongClickListener {
+		@Override
+		public boolean onLongClick(View v) {
+			WebViewmy _mWebView = (WebViewmy) v;
+			WebViewmy.HitTestResult result = _mWebView.getHitTestResult();
+			if (null == result) return false;
+			int type = result.getType();
+			//CMN.Log("getHitTestResult", type, result.getExtra());
+			switch (type) {
+				/* 长按下载图片 */
+				case WebViewmy.HitTestResult.SRC_IMAGE_ANCHOR_TYPE:
+				case WebViewmy.HitTestResult.IMAGE_TYPE:{
+//					String url = result.getExtra();
+//					AlertDialog.Builder builder3 = new AlertDialog.Builder(BrowserActivity.this);
+//					builder3.setSingleChoiceItems(new String[] {}, 0,
+//							(dialog, pos) -> {
+//								switch(pos) {
+//									case 0:{
+//									} break;
+//									case 1:{
+//										SelectHtmlObject(a, _mWebView, 1);
+//									} break;
+//								}
+//								dialog.dismiss();
+//							});
+//					SpannableStringBuilder ssb = new SpannableStringBuilder();
+//					int start = ssb.length();
+//
+//					ssb.append(url);
+//					int end=ssb.length();
+//
+//					ssb.setSpan(new RelativeSizeSpan(0.63f), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+//					ssb.setSpan(new ClickableSpan() {
+//						@Override
+//						public void onClick(@NonNull View widget) {//打开链接
+//							Intent intent = new Intent();
+//							intent.setData(Uri.parse(url));
+//							intent.setAction(Intent.ACTION_VIEW);
+//							startActivity(intent);
+//						}
+//					}, start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+//
+//					builder3.setTitle(ssb);
+//
+//					String[] Menus = getResources().getStringArray(
+//							R.array.config_images);
+//					List<String> arrMenu = Arrays.asList(Menus);
+//					AlertDialog dd = builder3.create();
+//					dd.show();
+//					dd.setOnDismissListener(dialog -> {
+//					});
+//					dd.getListView().setAdapter(new ArrayAdapter<>(a,
+//							R.layout.singlechoice_plain, android.R.id.text1, arrMenu) );
+//					View dcv = dd.getWindow().getDecorView();
+//					TextView titleView = dcv.findViewById(R.id.alertTitle);
+//					//titleView.setSingleLine(false);
+//					dcv.findViewById(R.id.topPanel).getLayoutParams().height=titleView.getHeight()/2;
+//					titleView.setMovementMethod(LinkMovementMethod.getInstance());
+				}
+				return true;
+				/* 长按anchor */
+				case WebViewmy.HitTestResult.SRC_ANCHOR_TYPE:{
+					String url = result.getExtra();
+					Integer arrayId = R.array.config_links;
+					AlertDialog alert = getOptionListDialog(WeakReferenceHelper.opt_list_main, 0, arrayId, url);
+					if(!arrayId.equals(alert.tag)) {
+						ListView lv = alert.getListView();
+						lv.setOnItemClickListener((parent, view, position, id) -> {
+							switch (position) {
+								case -1:
+								
+								break;
+								/* 复制链接 */
+								case 0:{
+									try {
+										ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+										if(cm!=null){
+											cm.setPrimaryClip(ClipData.newPlainText(null, url));
+											showT("已复制");
+										}
+									} catch (Exception e) {
+										showT(e+"");
+									}
+								} break;
+								/* 复制链接文本 */
+								case 1:{
+									if(url!=null) {
+										currentWebView.evaluateJavascript("window._ttarget?window._ttarget.innerText:''", new ValueCallback<String>() {
+											@Override
+											public void onReceiveValue(String value) {
+												value= StringEscapeUtils.unescapeJava(value.substring(1,value.length()-1));
+												ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+												if(cm!=null){
+													cm.setPrimaryClip(ClipData.newPlainText(null, value));
+													showT(value);
+												}
+											}
+										});
+									}
+								} break;
+								/* 选择链接文本 */
+								case 2:{
+									if(url!=null) {
+										SelectHtmlObject(BrowserActivity.this, currentWebView, 0);
+									}
+								} break;
+							}
+							alert.dismiss();
+						});
+						alert.tag = arrayId;
+					}
+				}
+				return true;
+			}
+			return false;
+		}
+	}
+	
+	void SelectHtmlObject(BrowserActivity a, WebViewmy final_mWebView, int source) {
+		WebViewmy.HighlightBuilder.setLength(0);
+		WebViewmy.HighlightBuilder.append(WebViewmy.TouchTargetIncantation);
+		/* Some sdk version need to manually bing up the selection handle. */
+		final boolean fakePopHandles = Utils.version > 21 && Utils.version!=23;
+		if(source==0&&!fakePopHandles) {
+			source=1;
+		}
+		WebViewmy.HighlightBuilder.append("selectTouchtarget(").append(source).append(")");
+		final_mWebView.evaluateJavascript(WebViewmy.HighlightBuilder.toString(), new ValueCallback<String>() {
+			@Override
+			public void onReceiveValue(String value) {
+				CMN.Log("selectTouchtarget", value);
+				int len = IU.parsint(value, 0);
+				if(len>0) {
+					/* bring in action mode by a fake click on the programmatically  selected text. */
+					if(fakePopHandles) {
+						final_mWebView.forbidLoading=true;
+						final_mWebView.getSettings().setJavaScriptEnabled(false);
+						final_mWebView.getSettings().setJavaScriptEnabled(false);
+						long time = CMN.now();
+						MotionEvent evt = MotionEvent.obtain(time, time,MotionEvent.ACTION_DOWN, final_mWebView.lastX, final_mWebView.lastY, 0);
+						final_mWebView.dispatchTouchEvent(evt);
+						evt.setAction(MotionEvent.ACTION_UP);
+						final_mWebView.dispatchTouchEvent(evt);
+						evt.recycle();
+						/* restore href attribute */
+					}
+				} else {
+					a.showT("选择失败");
+				}
+				if(fakePopHandles) {
+					final_mWebView.postDelayed(() -> {
+						final_mWebView.forbidLoading=false;
+						final_mWebView.getSettings().setJavaScriptEnabled(true);
+						final_mWebView.evaluateJavascript("window._ttlck=!1;var t=w._ttarget;if(t._thref)t.href=t._thref", null);
+					}, 300);
+				} else {
+					final_mWebView.evaluateJavascript("window._ttlck=!1;var t=w._ttarget;if(t._thref)t.href=t._thref", null);
+				}
+			}
+		});
+	}
+	
+	Field mObjectsF=null;
+	
+	/** 天下第一舍我其谁！ */
+	public AlertDialog getOptionListDialog(int id
+			, int titleId
+			, Integer arrayId
+			, String titleTail) {
+		AlertDialog dialog = (AlertDialog) getReferencedObject(id);
+		ListView lv=null;
+		boolean bNeedReset = true;
+		CharSequence title = "";
+		if(dialog!=null) {
+			lv = dialog.getListView();
+			if(bNeedReset = !arrayId.equals(dialog.tag)) { //相异
+				if(lv.getAdapter() instanceof ArrayAdapter) {
+					try {
+						if(mObjectsF==null) {
+							mObjectsF = ArrayAdapter.class.getDeclaredField("mObjects");
+							mObjectsF.setAccessible(true);
+						}
+						mObjectsF.set(lv.getAdapter(), Arrays.asList(mResource.getStringArray(arrayId)));
+					} catch (Exception e) {
+						//CMN.Log(e);
+					}
+				}
+				lv.setTag(null);
+				dialog.tag=null;
+				if(mObjectsF==null) {
+					dialog=null;
+				}
+			}
+		}
+		if(bNeedReset) {
+			title = getString(titleId==0?R.string.empty__:titleId);
+			if(titleTail!=null) {
+				SpannableStringBuilder ssb = new SpannableStringBuilder(title);
+				int start = ssb.length();
+				ssb.append(titleTail);
+				int end=ssb.length();
+				ssb.setSpan(new RelativeSizeSpan(0.63f), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+				ssb.setSpan(new ClickableSpan() {
+					@Override
+					public void onClick(@NonNull View v) {
+						AlertDialog dialog = (AlertDialog) getReferencedObject(id);
+						if(dialog!=null) {
+							ListView lv = dialog.getListView();
+							lv.getOnItemClickListener().onItemClick(lv, null, -1, -1);
+						}
+					}
+				}, start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+				title = ssb;
+			}
+		}
+		if(dialog==null) {
+			CMN.Log("重建 alert……");
+			dialog = new AlertDialog.Builder(this)
+					.setSingleChoiceLayout(R.layout.singlechoice_plain)
+					.setSingleChoiceItems(arrayId, 0, null)
+					.setTitle(title).create();
+			dialog.show();
+			TextView titleView = dialog.findViewById(R.id.alertTitle);
+			if(titleTail!=null) {
+				titleView.setMovementMethod(LinkMovementMethod.getInstance());
+			}
+			if(titleId==0) {
+				dialog.findViewById(R.id.topPanel).getLayoutParams().height=titleView.getHeight()/2;
+			}
+			titleView.setSingleLine(titleId==0);
+			putReferencedObject(id, dialog);
+		} else {
+			if(bNeedReset) {
+				dialog.setTitle(title);
+			}
+			dialog.show();
+		}
+		return dialog; // returns the universal dialog
+	}
+	
 	private AdvancedBrowserWebView new_AdvancedNestScrollWebView(TabHolder holder, AdvancedBrowserWebView patWeb) {
 		AdvancedBrowserWebView mWebView = null;
 		WebFrameLayout layout = null;
@@ -3661,6 +4086,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		//Utils.sendog(opt);
 		if(mWebView==null) {
 			mWebView = new AdvancedBrowserWebView(this);
+			mWebView.setOnLongClickListener(mHtmlObjectHandler);
 		}
 		//mWebView.clearCache(true);
 		//CMN.Log("new mWebView::ua::", mWebView.getSettings().getUserAgentString());
@@ -3935,6 +4361,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		public long flag;
 		public long rank;
 		public long id;
+		public long creation;
 		public final TabIdentifier TabID = new TabIdentifier();
 		public boolean paused;
 		

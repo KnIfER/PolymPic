@@ -34,6 +34,8 @@ import java.util.Locale;
 public class WaveView extends View {
 	private boolean shutUp;
 	
+	float textSizeRatio=1;
+	
 	/*類型常數*/
     public enum Shape {
         CIRCLE(1), SQUARE(2), HEART(3), STAR(4);
@@ -128,6 +130,7 @@ public class WaveView extends View {
         mShapePadding = attributes.getDimension(R.styleable.YPWaveView_shapePadding, DEFAULT_PADDING);
         isAnimation = attributes.getBoolean(R.styleable.YPWaveView_animatorEnable, DEFAULT_ENABLE_ANIMATION);
         isHideText = attributes.getBoolean(R.styleable.YPWaveView_textHidden, DEFAULT_HIDE_TEXT);
+		textSizeRatio = attributes.getFloat(R.styleable.YPWaveView_textSizeRatio, 1);
 
         /*設定抗鋸齒 & 設定為"線"*/
         mBorderPaint.setAntiAlias(true);
@@ -561,7 +564,7 @@ public class WaveView extends View {
             if (mShape == Shape.STAR) {
                 textPaint.setTextSize((Math.min(screenSize.x, screenSize.y) / 2f) / 3);
             } else {
-                textPaint.setTextSize((Math.min(screenSize.x, screenSize.y) / 2f) / 2);
+                textPaint.setTextSize((Math.min(screenSize.x, screenSize.y) / 2f) / 2 * textSizeRatio);
             }
 
             textPaint.setAntiAlias(true);
@@ -591,5 +594,11 @@ public class WaveView extends View {
     public void setProgressVis(boolean val) {
     	shutUp = !val;
     	invalidate();
+	}
+	
+	@Override
+	public void setEnabled(boolean enabled) {
+		setProgressVis(enabled);
+		super.setEnabled(enabled);
 	}
 }

@@ -5,8 +5,8 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 
-import com.alibaba.fastjson.JSONObject;
 import com.knziha.polymer.Utils.CMN;
+import com.knziha.polymer.Utils.JSONObjectWrap;
 import com.knziha.polymer.database.LexicalDBHelper;
 import com.knziha.polymer.pdviewer.PDFPageParms;
 
@@ -93,15 +93,21 @@ public class PDocBookInfo {
 			if(text!=null) {
 				values.put("text", text);
 			}
-			JSONObject obj = JSONObject.parseObject(parms.toString());
-			obj.put("ss", selStart);
-			obj.put("se", selEnd);
+			JSONObjectWrap obj = null;
+			
+			try {
+				obj = new JSONObjectWrap(parms.toString());
+				obj.put("ss", selStart);
+				obj.put("se", selEnd);
+			} catch (Exception e) {
+				CMN.Log(e);
+			}
 			
 			int flag=writeToFile?1:0;
 			values.put("type", 1);
 			values.put("f1", flag);
 			values.put("color", colorInt);
-			values.put("parms", obj.toString());
+			if(obj!=null) values.put("parms", obj.toString());
 			values.put("creation_time", System.currentTimeMillis());
 			
 			database.insert(tableName, null, values);

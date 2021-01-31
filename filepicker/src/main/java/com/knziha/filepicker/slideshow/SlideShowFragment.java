@@ -1,13 +1,12 @@
 package com.knziha.filepicker.slideshow;
 
-import android.graphics.Point;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -15,12 +14,6 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
 
-import com.alexvasilkov.gestures.Settings;
-import com.alexvasilkov.gestures.State;
-import com.alexvasilkov.gestures.animation.ViewPositionAnimator;
-import com.alexvasilkov.gestures.commons.RecyclePagerAdapter;
-import com.alexvasilkov.gestures.utils.GravityUtils;
-import com.alexvasilkov.gestures.views.GestureImageView;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.Priority;
 import com.bumptech.glide.load.DecodeFormat;
@@ -149,32 +142,25 @@ public class SlideShowFragment extends Fragment {
     }
 
     MyRequestListener<Drawable> myreqL2 = new MyRequestListener<>();
-    class ViewHolder2 extends RecyclePagerAdapter.ViewHolder {
-        GestureImageView image;
-        ViewHolder2(ViewGroup container) {
-            //super(Views.inflate(container, R.layout.layout_pager_item));
-            super(new GestureImageView(container.getContext()));
-            image= (GestureImageView) itemView;
-        }
-    }
     class ViewHolder extends RecyclerView.ViewHolder {
-        GestureImageView image;
+        //GestureImageView image;
+        ImageView image;
         ViewHolder(ViewGroup container) {
             //super(Views.inflate(container, R.layout.layout_pager_item));
             super(new FrameLayout(container.getContext()));
-            image = new GestureImageView(container.getContext());
-            ((FrameLayout)itemView).addView(image);
-            image.getController().getSettings()
-                    .setZoomEnabled(true)
-                    .setMaxZoom(100).setDoubleTapZoom(10)
-                    .setOverscrollDistance(getContext(), 12, 0)
-                    .setOverzoomFactor(1.2f)
-                    .setFitMethod(Settings.Fit.INSIDE).setExitEnabled(true).setExitType(Settings.ExitType.SCROLL)
-                    .setGravity(Gravity.CENTER);
-            //image.setBackgroundColor(Color.RED);
-            //image.getController().enableScrollInViewPager();
-
-            image.setTag(R.id.home, false);
+//            image = new GestureImageView(container.getContext());
+//            ((FrameLayout)itemView).addView(image);
+//            image.getController().getSettings()
+//                    .setZoomEnabled(true)
+//                    .setMaxZoom(100).setDoubleTapZoom(10)
+//                    .setOverscrollDistance(getContext(), 12, 0)
+//                    .setOverzoomFactor(1.2f)
+//                    .setFitMethod(Settings.Fit.INSIDE).setExitEnabled(true).setExitType(Settings.ExitType.SCROLL)
+//                    .setGravity(Gravity.CENTER);
+//            //image.setBackgroundColor(Color.RED);
+//            //image.getController().enableScrollInViewPager();
+//
+//            image.setTag(R.id.home, false);
         }
     }
 
@@ -182,47 +168,5 @@ public class SlideShowFragment extends Fragment {
 	public void onActivityCreated(@Nullable Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
 	}
-
-	public class ZoomOnExit implements ViewPositionAnimator.PositionUpdateListener {
-
-        private static final float MIN_ZOOM_FACTOR = 0.6f;
-
-        private final Point tmpPivot = new Point();
-        private final ViewPositionAnimator animator;
-
-        public ZoomOnExit(ViewPositionAnimator animator, GestureImageView image) {
-            this.animator = animator;
-            view=image;
-        }
-
-        GestureImageView view;
-        @Override
-        public void onPositionUpdate(float position, boolean isLeaving) {
-
-            if (view != null) {
-                // Zoom-to-exit gesture will not work with this class, allowing only scroll-to-exit
-                view.getController().getSettings().setExitType(Settings.ExitType.SCROLL);
-
-                // Indirectly checking if we are in exit gesture
-                float pos = view.getPositionAnimator().getPosition();
-                float posTo = view.getPositionAnimator().getToPosition();
-                boolean isExitGesture = pos < 1f && State.equals(pos, posTo);
-
-                if (isExitGesture) {
-                    // Calculating new zoom level
-                    State state = view.getController().getState();
-                    float minZoom = view.getController().getStateController().getMinZoom(state);
-                    float zoom = minZoom * (MIN_ZOOM_FACTOR + pos * (1f - MIN_ZOOM_FACTOR));
-
-                    // Calculating pivot point
-                    GravityUtils.getDefaultPivot(view.getController().getSettings(), tmpPivot);
-
-                    // Applying new zoom level
-                    state.zoomTo(zoom, tmpPivot.x, tmpPivot.y);
-                    view.getController().updateState();
-                }
-            }
-        }
-    }
-
+	
 }

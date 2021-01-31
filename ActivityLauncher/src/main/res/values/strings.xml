@@ -42,4 +42,6 @@ Donec feugiat ac nunc vel laoreet. In laoreet pretium fringilla. Suspendisse pot
 	<string name="history">History</string>
 	<string name="downloadWithSz">Download ( %s )</string>
 	<string name="downloadingWithSz">Downloading （%s）</string>
+	<string name="empty__" translatable="false" />
+	<string name="sync_tabs">同步标签页</string>
 </resources>

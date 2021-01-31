@@ -1,5 +1,9 @@
 package com.knziha.polymer.wget;
 
+import com.knziha.polymer.wget.info.DownloadInfo;
+import com.knziha.polymer.wget.info.URLInfo;
+import com.knziha.polymer.wget.info.ex.DownloadInterruptedError;
+
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -7,12 +11,6 @@ import java.io.RandomAccessFile;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import org.apache.commons.io.FileUtils;
-
-import com.knziha.polymer.wget.info.DownloadInfo;
-import com.knziha.polymer.wget.info.URLInfo;
-import com.knziha.polymer.wget.info.ex.DownloadInterruptedError;
 
 public class DirectRange extends Direct {
 
@@ -39,7 +37,7 @@ public class DirectRange extends Direct {
             File f = target;
             if (!f.exists())
                 f.createNewFile();
-            info.setCount(FileUtils.sizeOf(f));
+            info.setCount(f.length());
 
             if (info.getCount() >= info.getLength()) {
                 notify.run();

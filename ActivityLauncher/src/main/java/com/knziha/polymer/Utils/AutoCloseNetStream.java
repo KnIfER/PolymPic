@@ -1,6 +1,5 @@
 package com.knziha.polymer.Utils;
 
-import org.apache.commons.io.input.AutoCloseInputStream;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,5 +22,6 @@ public class AutoCloseNetStream extends AutoCloseInputStream {
 	public void close() throws IOException {
 		super.close();
 		connection.disconnect();
+		//CMN.Log("自动关闭连接……");
 	}
 }

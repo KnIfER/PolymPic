@@ -24,7 +24,7 @@ dependencies {
     if(use_compat_official=='1'){
         api (libs_compat)
     }else{
-        implementation  project(':AxtAppCompat')
+        api  project(':AxtAppCompat')
     }
     api fileTree(dir: 'libs', include: ['*.jar'])
     if(use_mat_official=='1'){
@@ -52,15 +52,16 @@ dependencies {
         api libs_glide
         annotationProcessor libs_glide
     }else{
-        compileOnly "com.google.auto.service:auto-service:1.0-rc6"
-        compileOnly "com.squareup:javapoet:1.10.0"
+        //compileOnly "com.google.auto.service:auto-service:1.0-rc6"
+        //compileOnly "com.squareup:javapoet:1.10.0"
         compileOnly project(path: ':GlideModule:annotation:compiler')
         annotationProcessor project(path: ':GlideModule:annotation:compiler')
-        implementation project(path: ':GlideModule:glide')
+        api project(path: ':GlideModule:glide')
+        //implementation 'com.knziha.glidemodule:GlideModule:1.0@aar'
     }
 
     annotationProcessor "com.google.auto.service:auto-service:1.0-rc6"
-    implementation project(path: ':GestureView')
+    //implementation project(path: ':GestureView')
 
 
 }

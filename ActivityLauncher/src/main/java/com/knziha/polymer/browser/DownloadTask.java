@@ -4,14 +4,16 @@ import android.content.ContentValues;
 import android.database.sqlite.SQLiteDatabase;
 import android.text.TextUtils;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
 import com.knziha.polymer.Utils.CMN;
+import com.knziha.polymer.Utils.JSONObjectWrap;
 import com.knziha.polymer.wget.WGet;
 import com.knziha.polymer.wget.info.DownloadInfo;
 import com.knziha.polymer.wget.info.ex.DownloadInterruptedError;
 import com.knziha.polymer.wget.info.ex.DownloadMoved;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.File;
 import java.lang.ref.WeakReference;
@@ -39,7 +41,7 @@ public class DownloadTask implements Runnable{
 	ArrayList<ExtRule> ext2;
 	final float maxWaitTime;
 	final int lives;
-	JSONObject extObj;
+	JSONObjectWrap extObj;
 	AtomicBoolean abort = new AtomicBoolean();
 	Thread t;
 	
@@ -72,11 +74,11 @@ public class DownloadTask implements Runnable{
 			this.maxLen = max;
 		}
 		
-		public ExtRule(JSONObject obj) {
+		public ExtRule(JSONObject obj) throws JSONException {
 			this(obj.getString("ext")
 					, obj.getString("p")
-					, obj.containsKey("min")?obj.getIntValue("min"):0
-					, obj.containsKey("max")?obj.getIntValue("max"):Integer.MAX_VALUE
+					, obj.has("min")?obj.getInt("min"):0
+					, obj.has("max")?obj.getInt("max"):Integer.MAX_VALUE
 					);
 		}
 		
@@ -113,12 +115,12 @@ public class DownloadTask implements Runnable{
 		this.flag1 = flag1;
 		this.ext = ext1;
 		try {
-			extObj = JSON.parseObject(ext1);
+			extObj = new JSONObjectWrap(ext1);
 		} catch (Exception e) {
 			CMN.Log(e);
 		}
 		if(extObj==null) {
-			extObj = new JSONObject();
+			extObj = new JSONObjectWrap();
 		}
 		this.ext1 = extObj.getString("ext1");
 		String ext = extObj.getString("ext");
@@ -129,7 +131,7 @@ public class DownloadTask implements Runnable{
 		JSONArray extX = extObj.getJSONArray("etx");
 		if(extX!=null) {
 			if(this.ext2==null) this.ext2 = new ArrayList<>();
-			for (int i = 0; i < extX.size(); i++) {
+			for (int i = 0; i < extX.length(); i++) {
 				try {
 					this.ext2.add(new ExtRule(extX.getJSONObject(i)));
 				} catch (Exception e) {
@@ -138,11 +140,11 @@ public class DownloadTask implements Runnable{
 			}
 		}
 		
-		this.fifoL = extObj.getBooleanValue("L");
+		this.fifoL = extObj.has("L") && extObj.getBoolean("L");
 		this.shotExt = extObj.getString("shot");
 		this.ua = extObj.getString("ua");
-		this.lives = extObj.containsKey("life")?extObj.getIntValue("life"):5;
-		this.maxWaitTime = extObj.containsKey("wait")?Math.max(0.03f, Math.min(5, extObj.getFloatValue("wait"))):1.5f;
+		this.lives = extObj.has("life")?extObj.getInt("life"):5;
+		this.maxWaitTime = extObj.has("wait")?Math.max(0.03f, Math.min(5, extObj.getFloat("wait"))):1.5f;
 	}
 	
 	public void updateTitle(String newTitle) {

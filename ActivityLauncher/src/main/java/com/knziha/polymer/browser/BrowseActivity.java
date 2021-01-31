@@ -60,14 +60,6 @@ import com.knziha.polymer.toolkits.MyX509TrustManager;
 import com.knziha.polymer.widgets.DescriptiveImageView;
 import com.knziha.polymer.widgets.Utils;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.util.EntityUtils;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -1211,44 +1203,44 @@ public class BrowseActivity extends Toastable_Activity
 	
 	/** https://www.cnblogs.com/hhhshct/p/8523697.html */
 	public static String get_content(String url, HashMap<String, String> headers) {
-		CloseableHttpClient httpClient = null;
-		CloseableHttpResponse response = null;
 		String result = "";
-		try {
-			CMN.Log("result?1?", result);
-			httpClient = HttpClients.createDefault();
-			HttpGet httpGet = new HttpGet(url);
-			httpGet.setHeader("Authorization", "Bearer da3efcbf-0845-4fe3-8aba-ee040be542c0");
-			if(headers!=null) {
-				for(String key:headers.keySet()) {
-					httpGet.setHeader(key, headers.get(key));
-				}
-			}
-			RequestConfig requestConfig =
-					RequestConfig.custom()
-							.setConnectTimeout(35000)// 连接主机服务超时时间
-							.setConnectionRequestTimeout(35000)// 请求超时时间
-							.setSocketTimeout(60000)// 数据读取超时时间
-							.build();
-			httpGet.setConfig(requestConfig);
-			response = httpClient.execute(httpGet);
-			HttpEntity entity = response.getEntity();
-			result = EntityUtils.toString(entity);
-		} catch (Exception e) {
-			CMN.Log(e);
-		} finally {
-			// 关闭资源
-			if (null != response) {
-				try {
-					response.close();
-				} catch (IOException ignored) { }
-			}
-			if (null != httpClient) {
-				try {
-					httpClient.close();
-				} catch (IOException ignored) { }
-			}
-		}
+//		CloseableHttpClient httpClient = null;
+//		CloseableHttpResponse response = null;
+//		try {
+//			CMN.Log("result?1?", result);
+//			httpClient = HttpClients.createDefault();
+//			HttpGet httpGet = new HttpGet(url);
+//			httpGet.setHeader("Authorization", "Bearer da3efcbf-0845-4fe3-8aba-ee040be542c0");
+//			if(headers!=null) {
+//				for(String key:headers.keySet()) {
+//					httpGet.setHeader(key, headers.get(key));
+//				}
+//			}
+//			RequestConfig requestConfig =
+//					RequestConfig.custom()
+//							.setConnectTimeout(35000)// 连接主机服务超时时间
+//							.setConnectionRequestTimeout(35000)// 请求超时时间
+//							.setSocketTimeout(60000)// 数据读取超时时间
+//							.build();
+//			httpGet.setConfig(requestConfig);
+//			response = httpClient.execute(httpGet);
+//			HttpEntity entity = response.getEntity();
+//			result = EntityUtils.toString(entity);
+//		} catch (Exception e) {
+//			CMN.Log(e);
+//		} finally {
+//			// 关闭资源
+//			if (null != response) {
+//				try {
+//					response.close();
+//				} catch (IOException ignored) { }
+//			}
+//			if (null != httpClient) {
+//				try {
+//					httpClient.close();
+//				} catch (IOException ignored) { }
+//			}
+//		}
 		return result;
 	}
 }

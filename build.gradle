@@ -2,6 +2,7 @@ buildscript {
     repositories {
         google()
         jcenter()
+        maven {url 'file://' + "$rootDir" + '/mavenLocalDir'}
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:4.0.1'
@@ -12,12 +13,14 @@ ext{
     //compileSdkVersion = 28
     //minSdkVersion = 19
     //targetSdkVersion = 28
+    MAVEN_LOCAL_PATH='file://' + "$rootDir" + '/mavenLocalDir'
 }
 
 allprojects {
     repositories {
         google()
         jcenter()
+        maven {url 'file://' + "$rootDir" + '/mavenLocalDir'}
     }
 }
 

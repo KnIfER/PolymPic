@@ -1602,23 +1602,6 @@ if(window.Wαrk==undefined) {
     window.Wαrk=Maya()
 }
 window._PPMInst = new window.Wαrk(document);
-var igNoreNextClick=0;
-window.addEventListener('click',function(e){
-  if(e.target.className=='PLOD_HL') {
-    if(igNoreNextClick) {
-      igNoreNextClick=0;
-    } else {
-      var sel = getSelection();
-      sel.empty();
-      var range = new Range();
-      range.selectNode(e.target);
-      sel.addRange(range);
-      polyme.sendup(chrmtd.get());
-      igNoreNextClick=1;
-    }
-  }
-  //console.log(e.target)
-});
 
 polyme.craft("style", "mark{background:yellow;}mark.current{background:orange;}"+
   ".PLOD_HL{position:relative;background:#ffaaaa;}.PLOD_HL::after{"+

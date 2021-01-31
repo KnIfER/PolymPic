@@ -114,4 +114,16 @@
 		<item></item>
 		<item></item>
 	</string-array>
+
+	<string-array name="config_links">
+		<item>复制链接</item>
+		<item>复制文本</item>
+		<item>选择文本</item>
+	</string-array>
+
+	<string-array name="sync_tabs">
+		<item>同步上传标签页</item>
+		<item>同步下载标签页</item>
+		<item>同步设置</item>
+	</string-array>
 </resources>

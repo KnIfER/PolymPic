@@ -107,6 +107,7 @@ public class Utils {
 	public static final boolean metaKill = Build.VERSION.SDK_INT>=Build.VERSION_CODES.Q;
 	//public static final boolean isHuawei = Build.MANUFACTURER.contains("HUAWEI");
 	public static final WeakReference<Bitmap> DummyBMRef = new WeakReference<>(null);
+	public static final int version = Build.VERSION.SDK_INT;
 	
 	/**
      * @param dp Desired size in dp (density-independent pixels)
@@ -518,16 +519,16 @@ public class Utils {
 		int cc = vg.getChildCount();
 		View ca;
 		boolean longClickable = clicker instanceof View.OnLongClickListener;
+		if(vg.isClickable()) {
+			click(vg, clicker, longClickable);
+		}
 		for (int i = 0; i < cc; i++) {
 			ca = vg.getChildAt(i);
 			//CMN.Log("setOnClickListenersOneDepth", ca, (i+1)+"/"+(cc));
 			if(ca instanceof ViewGroup) {
 				if(--depth>0) {
 					if(ca.isClickable()) {
-						ca.setOnClickListener(clicker);
-						if(longClickable&&ca.isLongClickable()) {
-							ca.setOnLongClickListener((View.OnLongClickListener) clicker);
-						}
+						click(ca, clicker, longClickable);
 					} else {
 						setOnClickListenersOneDepth((ViewGroup) ca, clicker, depth, viewFetcher);
 					}
@@ -536,10 +537,7 @@ public class Utils {
 				int id = ca.getId();
 				if(ca.getId()!=View.NO_ID){
 					if(!(ca instanceof EditText) && ca.isEnabled()) {
-						ca.setOnClickListener(clicker);
-						if(longClickable && ca.isLongClickable()) {
-							ca.setOnLongClickListener((View.OnLongClickListener) clicker);
-						}
+						click(ca, clicker, longClickable);
 					}
 					if(viewFetcher!=null) {
 						for (int j = 0; j < viewFetcher.length; j++) {
@@ -551,6 +549,13 @@ public class Utils {
 					}
 				}
 			}
+		}
+	}
+	
+	private static void click(View ca, View.OnClickListener clicker, boolean longClickable) {
+		ca.setOnClickListener(clicker);
+		if(longClickable&&ca.isLongClickable()) {
+			ca.setOnLongClickListener((View.OnLongClickListener) clicker);
 		}
 	}
 	

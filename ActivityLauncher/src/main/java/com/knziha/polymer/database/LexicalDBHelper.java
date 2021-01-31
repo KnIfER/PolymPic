@@ -195,19 +195,19 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 				"id INTEGER PRIMARY KEY AUTOINCREMENT," + // 0
 				"title TEXT," + // 1
 				"url TEXT NOT NULL," + // 2
-				"search TEXT," + // 1
-				"page_info TEXT," + // 3 页面位置的记忆
-				"zoom_info TEXT," + // 4 缩放信息 TODO
-				"thumbnail BLOB," + // 7
+				"search TEXT," + // 3
+				"page_info TEXT," + // 4 页面位置的记忆
+				"zoom_info TEXT," + // 5 缩放信息 TODO
+				"thumbnail BLOB," + // 6
 				"webstack BLOB," + // 7
 				"ext1 TEXT,"+ // 8 comments
 				"f1 INTEGER DEFAULT 0 NOT NULL," + // 9
 				"f2 INTEGER DEFAULT 0 NOT NULL," +  // 10
 				"favor INTEGER DEFAULT 0 NOT NULL," +  // 11 喜爱等级 TODO
-				"visit_count INTEGER DEFAULT 0 NOT NULL,"+ // 14
-				"rank INTEGER DEFAULT 0 NOT NULL," + // 15
-				"creation_time INTEGER DEFAULT 0 NOT NULL," + // 15
-				"last_visit_time INTEGER DEFAULT 0 NOT NULL" + // 16
+				"visit_count INTEGER DEFAULT 0 NOT NULL,"+ // 12
+				"rank INTEGER DEFAULT 0 NOT NULL," + // 13
+				"creation_time INTEGER DEFAULT 0 NOT NULL," + // 14
+				"last_visit_time INTEGER DEFAULT 0 NOT NULL" + // 15 最后有效入库时间
 				")";
 		db.execSQL(createWebTable);
 		
@@ -234,7 +234,7 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
     }
 	
 	public Cursor queryTabs() {
-		return database.rawQuery("select id,title,url,search,f1,rank from webtabs order by rank", null);
+		return database.rawQuery("select id,title,url,search,f1,rank,creation_time from webtabs order by rank", null);
 	}
 	
 	public long insertNewTab(String defaultUrl) {

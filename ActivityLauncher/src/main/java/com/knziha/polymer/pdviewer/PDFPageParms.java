@@ -2,8 +2,8 @@ package com.knziha.polymer.pdviewer;
 
 import androidx.annotation.NonNull;
 
-import com.alibaba.fastjson.JSONObject;
 import com.knziha.polymer.Utils.CMN;
+import com.knziha.polymer.Utils.JSONObjectWrap;
 
 public class PDFPageParms {
 	public int pageIdx;
@@ -13,9 +13,9 @@ public class PDFPageParms {
 	public PDFPageParms(String val) {
 		if(val!=null) {
 			try {
-				CMN.Log("parsing...", val);
-				JSONObject obj = JSONObject.parseObject(val);
-				set(obj.getIntValue("p"), obj.getIntValue("x"), obj.getIntValue("y"), obj.getFloatValue("s"));
+				//CMN.Log("parsing...", val);
+				JSONObjectWrap obj = new JSONObjectWrap(val);
+				set(obj.getInt("p"), obj.getInt("x"), obj.getInt("y"), obj.getFloat("s"));
 			} catch (Exception e) {
 				CMN.Log(e);
 			}

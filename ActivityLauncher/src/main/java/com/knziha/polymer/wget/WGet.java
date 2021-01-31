@@ -3,9 +3,6 @@ package com.knziha.polymer.wget;
 import com.knziha.polymer.wget.info.DownloadInfo;
 import com.knziha.polymer.wget.info.ex.DownloadInterruptedError;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -111,7 +108,7 @@ public class WGet {
         // 2) to exisiting file
         // 3) to non existing file
 
-        String name = null;
+        String name;
 
         name = info.getContentFilename();
 
@@ -124,25 +121,28 @@ public class WGet {
             throw new RuntimeException(e);
         }
 
-        String nameNoExt = FilenameUtils.removeExtension(name);
-        String ext = FilenameUtils.getExtension(name);
-
-        File targetFile = null;
+        String nameNoExt = name,ext;
+        int idx = name.lastIndexOf(name);
+        if(idx>0) {
+			ext = nameNoExt.substring(idx+1);
+			nameNoExt = nameNoExt.substring(0, idx);
+		} else {
+			ext = "";
+		}
+        File targetFile;
 
         if (target.isDirectory()) {
-            targetFile = FileUtils.getFile(target, name);
+            targetFile = new File(target, name);
             int i = 1;
             while (targetFile.exists()) {
-                targetFile = FileUtils.getFile(target, nameNoExt + " (" + i + ")." + ext);
+                targetFile = new File(target, nameNoExt + " (" + i + ")." + ext);
                 i++;
             }
         } else {
-            try {
-                FileUtils.forceMkdir(new File(target.getParent()));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-
+			targetFile = target.getParentFile();
+			if(targetFile==null||!targetFile.isDirectory()) {
+				throw new RuntimeException(info.toString());
+			}
             targetFile = target;
         }
 

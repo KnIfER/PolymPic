@@ -16,13 +16,17 @@ public class WebStacksSer implements WebStacks{
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();
 		try (ObjectOutputStream oos = new ObjectOutputStream(bos)){
 			oos.writeObject(123456789);
+			Object item;
 			for(String key:bundle.keySet()) {
-				oos.writeObject(key);
-				try {
-					oos.writeObject(bundle.get(key));
-				} catch (Exception e) {
-					oos.writeObject(0);
-					CMN.Log(e);
+				item = bundle.get(key);
+				if(item instanceof Serializable) {
+					oos.writeObject(key);
+					try {
+						oos.writeObject(item);
+					} catch (Exception e) {
+						oos.writeObject(0);
+						CMN.Log(e);
+					}
 				}
 			}
 		} catch (Exception e) {
@@ -32,17 +36,20 @@ public class WebStacksSer implements WebStacks{
 	}
 	
 	public void readData(Bundle bundle, byte[] data) {
-		ByteArrayInputStream bos = new ByteArrayInputStream(data);
-		try (ObjectInputStream oos = new ObjectInputStream(bos)){
+		readStream(bundle, new ByteArrayInputStream(data));
+	}
+	
+	private void readStream(Bundle bundle, ByteArrayInputStream input) {
+		try (ObjectInputStream oos = new ObjectInputStream(input)){
 			Object len = oos.readObject();
 			if(!((Integer)123456789).equals(len)) {
 				CMN.Log("wrong format...");
 				return;
 			}
-			while(bos.available()>0) {
+			while(input.available()>0) {
 				String key = (String) oos.readObject();
 				Object val = oos.readObject();
-				if(key!=null && val!=null && !((Integer)0).equals(val)) {
+				if(key!=null && val instanceof Serializable && !((Integer)0).equals(val)) {
 					bundle.putSerializable(key, (Serializable) val);
 				}
 			}

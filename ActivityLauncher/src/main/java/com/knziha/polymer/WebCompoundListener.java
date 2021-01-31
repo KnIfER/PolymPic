@@ -87,6 +87,8 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	
 	BrowserActivity a;
 	
+	Object k3client;
+	
 	static class SubStringKey {
 		final int st;
 		final int ed;
@@ -254,6 +256,13 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	}
 	
 	public void parseJinKe() {
+		try {
+			SSLContext sslcontext = SSLContext.getInstance("TLS");
+			sslcontext.init(null, new TrustManager[]{new MyX509TrustManager()}, new java.security.SecureRandom());
+			HttpsURLConnection.setDefaultSSLSocketFactory(sslcontext.getSocketFactory());
+		} catch (Exception e) {
+			CMN.Log(e);
+		}
 		jinkeSheaths.clear();
 		File f = new File(a.getExternalFilesDir(null), "hosts");
 		if(f.isFile()) {
@@ -347,13 +356,16 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		@Override
 		public void onReceivedTitle(WebView view, String title) {
 			AdvancedBrowserWebView mWebView = (AdvancedBrowserWebView) view;
+			mWebView.transientTitle = title;
 			mWebView.holder.title = title;
 			if(mWebView==a.currentWebView) {
 				if(lastTitleSuppressTime !=0) {
-					if(CMN.now()- lastTitleSuppressTime <200) {
+					if(CMN.now()-lastTitleSuppressTime<400) {
 						return;
 					}
 					lastTitleSuppressTime =0;
+					a.root.removeCallbacks(a.postRectifyWebTitleRunnable);
+					title = mWebView.rectifyWebStacks(title);
 				}
 				a.webtitle.setText(title);
 			}
@@ -395,7 +407,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 						animating_progressbar.setVisibility(View.VISIBLE);
 					}
 					animating_progressbar.setAlpha(1);
-					a.progressProceed.pause();
+					//a.progressProceed.pause();
 					a.progressProceed.setIntValues(start, end);
 					a.progressProceed.setDuration((end-start)/10);
 					a.progressProceed.start();
@@ -437,7 +449,6 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	public void onPageStarted(WebView view, String url, Bitmap favicon) {
 		CMN.Log("onPageStarted……", url, view.getUrl(), Thread.currentThread().getId());
 		AdvancedBrowserWebView mWebView = (AdvancedBrowserWebView) view;
-		
 		if(!a.opt.getUpdateUALowEnd()) {
 			a.updateUserAgentString(mWebView, url);
 		}
@@ -450,6 +461,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		mWebView.layout.syncBarType(hideBarType, PadPartPadBar, a.UIData);
 		
 		//((ViewGroup.MarginLayoutParams)mWebView.layout.getLayoutParams()).bottomMargin=2*a.UIData.bottombar2.getHeight();
+		mWebView.transientTitle=null;
 		mWebView.holder.url=url;
 		startHostMatcher.set(url);
 		ArrayList<SiteRule> sm = SiteConfigs.get(startHostMatcher);
@@ -515,8 +527,30 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 					}
 				}
 			});
-			window.addEventListener('load', function(e) {
+	 		w.igNNC=0;
+			w.addEventListener('click',function(e){
+	 			console.log('click::'+w._ttlck);
+	          //if(w._ttlck) {} else
+			  if(igNNC) igNNC=0; else
+			  if(e.target.className=='PLOD_HL') {
+				  var sel = getSelection();
+				  sel.empty();
+				  var range = new Range();
+				  range.selectNode(e.target);
+				  sel.addRange(range);
+				  polyme.sendup(chrmtd.get());
+				  igNNC=1;
+			  } else return;
+			  e.preventDefault();
+			  //console.log(e.target)
+			});
+			w.addEventListener('load', function(e) {
 				console.log('onload !!!');
+			});
+	 		w.addEventListener('touchstart', function(e){
+				if(!w._ttlck && e.touches.length==1){
+					w._ttarget = e.touches[0].target;
+				}
 			});
 			var d = document;
 			var h = d.head;
@@ -610,6 +644,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 			mWebView.PageStarted=false;
 			mWebView.holder.url=url;
 			String title = mWebView.getTitle();
+			mWebView.transientTitle=title;
 			mWebView.holder.title=title;
 			mWebView.time=System.currentTimeMillis();
 			mWebView.incrementVerIfAtNormalPage();
@@ -670,7 +705,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 				});
 			
 			if(mWebView==a.currentWebView) {
-				a.webtitle.setText(title);
+				//a.webtitle.setText(title);
 				if(a.webtitle.getVisibility()==View.VISIBLE) {
 					a.etSearch.setText(url);
 				}
@@ -713,6 +748,10 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	public boolean shouldOverrideUrlLoading(WebView view, String url)
 	{
 		CMN.Log("SOUL::", url, Thread.currentThread().getId());
+		AdvancedBrowserWebView mWebView = (AdvancedBrowserWebView) view;
+		if(mWebView.forbidLoading) {
+			return true;
+		}
 		if(!url.regionMatches(false, 0, "http", 0, 4)
 				&&!url.regionMatches(false, 0, "https", 0, 5)) {
 			//if(a.webtitle.getVisibility()== View.VISIBLE) a.etSearch.setText(url);
@@ -768,11 +807,11 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 			}
 			return true;
 		}
-		AdvancedBrowserWebView mWebView = (AdvancedBrowserWebView) view;
 		if(mWebView==a.currentWebView && mWebView.holder.getLuxury()) {
 			long now = CMN.now();
 			if(now>0&&now-a.supressingNxtLux<350) {
 				CMN.Log("supressingNxtLux", url);
+				mWebView.setNavStacksDirty();
 				return false;
 			}
 			a.supressingNxtLux = now;
@@ -785,6 +824,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		}
 		
 		//view.loadUrl(url);
+		mWebView.setNavStacksDirty();
 		return false;
 	}
 	
@@ -1095,16 +1135,18 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	public void sendup(long id) {
 		AdvancedBrowserWebView mWebView = a.id_table.get(id);
 		if(mWebView==a.currentWebView) {
-			mWebView.post(new Runnable() {
+			//if(false)
+			mWebView.postDelayed(new Runnable() {
 				@Override
 				public void run() {
-					MotionEvent evt = MotionEvent.obtain(0,0,MotionEvent.ACTION_DOWN, mWebView.lastX, mWebView.lastY, 0);
+					long time = CMN.now();
+					MotionEvent evt = MotionEvent.obtain(time, time,MotionEvent.ACTION_DOWN, mWebView.lastX, mWebView.lastY, 0);
 					mWebView.dispatchTouchEvent(evt);
 					evt.setAction(MotionEvent.ACTION_UP);
 					mWebView.dispatchTouchEvent(evt);
 					evt.recycle();
 				}
-			});
+			}, Utils.version>=29?0:150);
 		}
 	}
 }

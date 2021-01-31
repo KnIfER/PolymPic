@@ -129,6 +129,7 @@
 	<attr name="textHidden" format="boolean" />
 	<attr name="shapePadding" format="dimension" />
 	<attr name="shutUpDrawable" format="reference" />
+	<attr name="textSizeRatio" format="float" />
 
 	<declare-styleable name="YPWaveView">
 		<attr name="progress" />
@@ -144,5 +145,6 @@
 		<attr name="shapeType" />
 		<attr name="textHidden" />
 		<attr name="shapePadding" />
+		<attr name="textSizeRatio" />
 	</declare-styleable>
 </resources>

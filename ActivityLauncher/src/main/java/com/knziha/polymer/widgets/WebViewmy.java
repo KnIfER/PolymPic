@@ -38,7 +38,6 @@ import com.knziha.polymer.toolkits.Utils.ReusableByteOutputStream;
 import org.adrianwalker.multilinestring.Multiline;
 import org.apache.commons.lang3.StringUtils;
 
-import java.io.File;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -59,6 +58,8 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
 	public int lastScroll;
 	public boolean stackloaded;
 	public String targetUa;
+	public String transientTitle;
+	public boolean forbidLoading;
 	private boolean invalidable = true;
 	public boolean HLED;
 	public float lastX;
@@ -327,6 +328,7 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
 //							CMN.Log(e);
 //						}
 						//任尔东西
+						if(Utils.version>28)
 						try {
 							Field f_Alpha = dragDrawableEntity.getClass().getDeclaredField("mDrawable");
 							f_Alpha.setAccessible(true);
@@ -639,7 +641,7 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
    @Multiline(trim=true)
 	private final static String commonIcan = StringUtils.EMPTY;
  
-	private static StringBuilder HighlightBuilder = new StringBuilder();
+	public static StringBuilder HighlightBuilder = new StringBuilder();
 
 	/**
 	 if(script) {
@@ -689,6 +691,57 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
 	 */
 	@Multiline(trim=true)
 	private final static  String DeHighLightIncantation="DEHI";
+	
+	/**
+	function selectTouchtarget(e){
+		var ret = selectTouchtarget_internal(e);
+		if(ret<=0||e==1) {
+			w._ttlck=!1;
+			w._ttarget=null;
+		}
+		return ret;
+	}
+	function NoneSelectable(e){
+		return getComputedStyle(e).userSelect=='none'
+	}
+	function selectTouchtarget_internal(e){
+		w._ttlck=!0;
+		var tt = w._ttarget;
+		var t0 = tt;
+		if(tt){
+			var fc = 0;
+			tt.userSelect='text';
+			while(tt.tagName!="A"&&(w==0||tt.tagName!="IMG")) {
+				tt = tt.parentElement;
+				if(tt==null||++fc>=9)return -3;
+				tt.userSelect='text';
+			}
+			if(NoneSelectable(tt)) {
+				var sty = document.createElement("style");
+				sty.innerHTML = "*{user-select:text !important}";
+				document.head.appendChild(sty);
+				if(NoneSelectable(tt)) {
+					return -1;
+				}
+			}
+			if(fc>0) {
+				w._ttarget=tt;
+			}
+			if(e==0)tt._thref = tt.getAttribute("href");
+			var sel = w.getSelection();
+			var range = document.createRange();
+			range.selectNodeContents(t0);
+			sel.removeAllRanges();
+			sel.addRange(range);
+			var ret = sel.toString().length;
+			if(e==0&&ret>0)tt.removeAttribute("href");
+			return ret;
+		}
+		return -2;
+	}
+	 */
+	@Multiline(trim=true)
+	public final static String TouchTargetIncantation=StringUtils.EMPTY;
 	
 	public static String getResoreHighLightIncantation(String jsonData) {
 		HighlightBuilder.setLength(0);

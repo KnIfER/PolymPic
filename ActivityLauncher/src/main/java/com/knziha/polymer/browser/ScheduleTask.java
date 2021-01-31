@@ -18,7 +18,7 @@ public class ScheduleTask extends DownloadTask{
 	
 	public ScheduleTask(BrowseActivity a, long id, String url, File download_path, String title, int flag1, String ext1) {
 		super(a, null, id, url, download_path, title, flag1, ext1);
-		leapToDay = extObj.getBooleanValue("leap");
+		leapToDay = extObj.has("leap") && extObj.getBoolean("leap");
 		String val = extObj.getString("seq");
 		if(!TextUtils.isEmpty(val)) {
 			Matcher m = Pattern.compile("\\((.*?)\\)x([0-9]*)").matcher(val);

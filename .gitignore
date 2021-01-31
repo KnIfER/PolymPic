@@ -39,3 +39,4 @@ ODPlayer/src/main/jniLibs/x86/*.so
 
 *.log
 *.jar
+mavenLocalDir

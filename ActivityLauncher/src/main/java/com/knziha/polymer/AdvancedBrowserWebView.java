@@ -22,8 +22,10 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.os.Build;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.MotionEvent;
 import android.webkit.WebBackForwardList;
+import android.webkit.WebHistoryItem;
 import android.webkit.WebSettings;
 
 import androidx.core.view.MotionEventCompat;
@@ -73,6 +75,66 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 	private boolean dragged;
 	private long lastRawYTime;
 	
+	WebBackForwardList nav_stacks;
+	int nav_stacks_idx;
+	
+	/** Use to mark that the back/forward is changed. */
+	public boolean nav_stacks_dirty;
+	
+	/** Use to fast preview title while going back/forward. */
+	public String navigateHistory(BrowserActivity a, int delta) {
+		if(nav_stacks==null)
+		{
+			nav_stacks = saveState(new Bundle());
+			nav_stacks_idx = nav_stacks.getCurrentIndex();
+		}
+		WebHistoryItem bfItem;
+		if(false) {
+			bfItem = nav_stacks.getItemAtIndex(nav_stacks_idx);
+			String currentUrl = holder.url;
+			if(!bfItem.getUrl().equals(currentUrl)) {
+				if(nav_stacks_idx>0&&nav_stacks.getItemAtIndex(nav_stacks_idx-1).getUrl().equals(currentUrl)) {
+					nav_stacks_idx--;
+				}
+				else if(nav_stacks_idx<nav_stacks.getSize() - 1&&nav_stacks.getItemAtIndex(nav_stacks_idx+1).getUrl().equals(currentUrl)) {
+					nav_stacks_idx++;
+				}
+				else {
+					nav_stacks = saveState(new Bundle());
+					nav_stacks_idx = nav_stacks.getCurrentIndex();
+				}
+			}
+		}
+		nav_stacks_idx = Math.max(0, Math.min(nav_stacks.getSize() - 1, nav_stacks_idx + delta));
+		bfItem = nav_stacks.getItemAtIndex(nav_stacks_idx);
+		listener.lastTitleSuppressTime = CMN.now();
+		a.postRectifyWebTitle();
+		return nav_stacks_idx+" - "+bfItem.getTitle();
+	}
+	
+	/** Use to rectify the title since the android tech above is not very reliable. */
+	public String rectifyWebStacks(String title) {
+		if(nav_stacks!=null) {
+			WebHistoryItem bfItem = nav_stacks.getItemAtIndex(nav_stacks_idx);
+			String currentUrl = holder.url;
+			if(!bfItem.getUrl().equals(currentUrl)||!TextUtils.equals(bfItem.getTitle(), holder.title)) {
+				nav_stacks = saveState(new Bundle());
+				nav_stacks_idx = nav_stacks.getCurrentIndex();
+				bfItem = nav_stacks.getItemAtIndex(nav_stacks_idx);
+			}
+			return bfItem.getTitle();
+		}
+		return title;
+	}
+	
+	/** Reset the flag. */
+	public void setNavStacksDirty() {
+		nav_stacks_dirty = true;
+		if(nav_stacks!=null) {
+			nav_stacks = null;
+		}
+	}
+	
 	public static class DomainInfo {
 		public long rowID;
 		public long f1;
@@ -103,7 +165,9 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 	
 	static final WebStacks webStacksWriterStd = new WebStacksStd();
 	
-	public static WebStacks webStacksWriter = webStacksWriterStd;
+	public static final WebStacks webStacksWriterSer = new WebStacksStd();
+	
+	public WebStacks webStacksWriter = webStacksWriterSer;
 	
 	public AdvancedBrowserWebView(Context context) {
 		super(context);
@@ -154,7 +218,7 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 		
 		webScale=getResources().getDisplayMetrics().density;
 		
-		settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
+		settings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
 		
 		//setLayerType(View.LAYER_TYPE_HARDWARE, null);
 	}
@@ -206,7 +270,7 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 				float dRawY = rawY - OrgRawY;
 				long evTime = limitSpd?event.getEventTime():0;
 				if(layout.getTop()==0&&!dragged) {
-					float dstFactor=0.75f;
+					float dstFactor=0.45f;
 					if(limitSpd&&(rawY-lastRawY)/(evTime-lastRawYTime)<1.15) {
 						OrgRawY += rawY-lastRawY;
 					} else // Math.abs
@@ -439,6 +503,11 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 				//BU.printFile(data, "/storage/emulated/0/myFolder/w");
 				ContentValues values = new ContentValues();
 				values.put("webstack", data);
+				if(nav_stacks_dirty) {
+					nav_stacks_dirty = false;
+					values.put("last_visit_time", CMN.now());
+					CMN.Log("入库入库");
+				}
 				LexicalDBHelper.getInstancedDb().update("webtabs", values, "id=?", new String[]{""+holder.id});
 				if(preserve>=0) {
 					PolymerBackList.subList(preserve, PolymerBackList.size()).clear();
@@ -525,6 +594,9 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 		settings.setDomStorageEnabled(enabled?!delegate.getForbidDom():true);
 		settings.setAppCacheEnabled(enabled?!delegate.getForbidDatabase():true);
 		settings.setDatabaseEnabled(enabled?!delegate.getForbidDatabase():true);
+		settings.setDomStorageEnabled(true);
+		settings.setAppCacheEnabled(true);
+		settings.setDatabaseEnabled(true);
 	}
 	
 	public void setBackEndSettings() {

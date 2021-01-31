@@ -7,8 +7,6 @@ package com.knziha.polymer;
 
 import android.util.Log;
 
-import com.alibaba.fastjson.JSON;
-
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.File;
@@ -89,7 +87,7 @@ public class HttpRequestUtil {
     public static void main(String[] args) throws Exception {
         HeadRequestResponse headRequestResponse = performHeadRequest("https://disp.titan.mgtv.com/vod.do?fmt=4&pno=1121&fid=3BBD5FD649B8DEB99DBDE005F7304103&file=/c1/2017/08/30_0/3BBD5FD649B8DEB99DBDE005F7304103_20170830_1_1_644.mp4");
         System.out.println(headRequestResponse.getRealUrl());
-        System.out.println(JSON.toJSONString(headRequestResponse.getHeaderMap()));
+        //System.out.println(JSON.toJSONString(headRequestResponse.getHeaderMap()));
     }
 
     public static URLConnection sendGetRequest(String url, Map<String, String> params, Map<String, String> headers) throws IOException {
