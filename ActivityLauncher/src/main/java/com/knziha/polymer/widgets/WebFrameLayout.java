@@ -130,4 +130,12 @@ public class WebFrameLayout extends FrameLayout {
 			mWebView.holder.paused=false;
 		}
 	}
+	
+	public String getTitle() {
+		return mWebView.getTitle();
+	}
+	
+	public int getImplHeight() {
+		return mWebView.getHeight();
+	}
 }

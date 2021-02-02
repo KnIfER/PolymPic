@@ -36,6 +36,15 @@ public class WaveView extends View {
 	
 	float textSizeRatio=1;
 	
+	public void setMaxAndProgress(int max, int progress) {
+		if(mMax!=max) {
+			mMax=max;
+		}
+		if(mProgress!=max) {
+			setProgress(progress);
+		}
+	}
+	
 	/*類型常數*/
     public enum Shape {
         CIRCLE(1), SQUARE(2), HEART(3), STAR(4);

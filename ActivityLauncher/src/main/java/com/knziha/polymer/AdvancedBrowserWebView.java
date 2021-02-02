@@ -165,7 +165,7 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 	
 	static final WebStacks webStacksWriterStd = new WebStacksStd();
 	
-	public static final WebStacks webStacksWriterSer = new WebStacksStd();
+	public static final WebStacksSer webStacksWriterSer = new WebStacksSer();
 	
 	public WebStacks webStacksWriter = webStacksWriterSer;
 	
@@ -395,21 +395,21 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 	/** 从磁盘加载网页前进/回退栈 */
 	public boolean loadIfNeeded() {
 		CMN.Log("loadIfNeeded", holder.url);
-		if(holder.url!=null && !holder.url.equals(getTag())){
-			if(!stackloaded) {
-				stackloaded = true;
-				Cursor stackcursor = LexicalDBHelper.getInstancedDb()
-						.rawQuery("select webstack from webtabs where id=? limit 1"
-								, new String[]{""+holder.id});
-				if(stackcursor.moveToFirst()
+		if(!stackloaded) {
+			stackloaded = true;
+			Cursor stackcursor = LexicalDBHelper.getInstancedDb()
+					.rawQuery("select webstack from webtabs where id=? limit 1"
+							, new String[]{""+holder.id});
+			if(stackcursor.moveToFirst()
 					&&parseBundleFromData(stackcursor.getBlob(0))) {
-					return true;
-				}
-				CMN.Log("再生……", holder.url);
-				loadUrl(holder.url);
 				return true;
 			}
+			CMN.Log("再生……", holder.url);
+			loadUrl(holder.url);
+			return true;
 		}
+//		if(holder.url!=null && !holder.url.equals(getTag())){ todo remove tag
+//		}
 		return false;
 	}
 	

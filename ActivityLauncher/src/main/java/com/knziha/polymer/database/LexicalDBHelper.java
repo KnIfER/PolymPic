@@ -90,6 +90,7 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 	
 	public synchronized void try_close() {
 		if(--INSTANCE_COUNT<=0) {
+			closeCursors();
 			close();
 			INSTANCE=null;
 			INSTANCE_COUNT=0;
@@ -227,7 +228,7 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 			db.execSQL("CREATE INDEX if not exists pdoc_progress_index ON pdoc (progress)");
 		}
 		//db.execSQL("CREATE INDEX if not exists pdoc_url_index ON pdoc (url)");
-		db.execSQL("CREATE INDEX if not exists webtabs_rank_index ON webtabs (rank)");
+		db.execSQL("CREATE INDEX if not exists webtabs_time_index ON webtabs (creation_time)");
 		
 		
 		CMN.Log("onDbCreate..done");
@@ -237,9 +238,11 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 		return database.rawQuery("select id,title,url,search,f1,rank,creation_time from webtabs order by rank", null);
 	}
 	
-	public long insertNewTab(String defaultUrl) {
+	public long insertNewTab(String defaultUrl, long creation) {
 		ContentValues values = new ContentValues();
 		values.put("url", defaultUrl);
+		values.put("creation_time", creation);
+		values.put("last_visit_time", creation);
 		return database.insert("webtabs", null, values);
 	}
 	

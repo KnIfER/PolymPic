@@ -84,6 +84,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	public boolean bShowCustomView;
 	public static long CustomViewHideTime;
 	public static long PrintStartTime;
+	public boolean upsended;
 	private int mOldOri;
 	
 	BrowserActivity a;
@@ -386,11 +387,11 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 				if(lowerBound<=10) {
 					lowerBound=98;
 				}
-				if(premature) {
-					lowerBound=Math.min(80, lowerBound);
-				}
+//				if(premature) {
+//					lowerBound=Math.min(80, lowerBound);
+//				}
 				if(newProgress>=lowerBound){
-					CMN.Log("newProgress>=98", newProgress);
+					CMN.Log("newProgress>=98", newProgress, premature, lowerBound);
 					a.fadeOutProgressbar();
 					if(mWebView.PageStarted) {
 						mWebView.postFinished();
@@ -530,9 +531,10 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 			});
 	 		w.igNNC=0;
 			w.addEventListener('click',function(e){
-	 			console.log('click::'+w._ttlck);
+	 			console.log('click::'+w._ttlck, e);
+			  //getSelection().empty();
 	          //if(w._ttlck) {} else
-			  if(igNNC) igNNC=0; else
+			  if(igNNC) {igNNC=0;} else
 			  if(e.target.className=='PLOD_HL') {
 				  var sel = getSelection();
 				  sel.empty();
@@ -1137,6 +1139,8 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		AdvancedBrowserWebView mWebView = a.getWebViewFromID(id);
 		if(mWebView==a.currentWebView) {
 			//if(false)
+			//if(!mWebView.bIsActionMenuShown)
+			upsended = true;
 			mWebView.postDelayed(new Runnable() {
 				@Override
 				public void run() {

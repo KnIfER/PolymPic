@@ -8,10 +8,13 @@
 	android:background="?attr/listChoiceBackgroundIndicator"
 	tools:background="#8f8f8f"
 	android:clickable="true"
-	android:focusable="true">
+	android:focusable="true"
+	android:paddingTop="4dp"
+	android:paddingBottom="4dp"
+	>
 
 	<ImageView
-		android:id="@+id/done"
+		android:id="@+id/check1"
 		android:layout_width="wrap_content"
 		android:layout_height="match_parent"
 		android:clickable="true"

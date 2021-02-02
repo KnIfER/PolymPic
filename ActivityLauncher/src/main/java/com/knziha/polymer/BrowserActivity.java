@@ -65,7 +65,6 @@ import android.view.inputmethod.EditorInfo;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebSettings;
-import android.webkit.WebView;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
@@ -144,6 +143,7 @@ import com.knziha.polymer.widgets.ScrollViewTransparent;
 import com.knziha.polymer.widgets.SpacesItemDecoration;
 import com.knziha.polymer.widgets.TwoColumnAdapter;
 import com.knziha.polymer.widgets.Utils;
+import com.knziha.polymer.widgets.WaveView;
 import com.knziha.polymer.widgets.WebFrameLayout;
 import com.knziha.polymer.widgets.WebViewmy;
 
@@ -207,9 +207,11 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	
 	private int adapter_idx;
 	boolean focused = true;
-	Map<Long, WebFrameLayout> id_table = Collections.synchronizedMap(new HashMap<>(1024));
+	public Map<Long, WebFrameLayout> id_table = Collections.synchronizedMap(new HashMap<>(1024));
 	//private ArrayList<WebViewmy> WebPool = new ArrayList<>(1024);
 	public ArrayList<TabHolder> TabHolders = new ArrayList<>(1024);
+	public ArrayList<TabHolder> closedTabs = new ArrayList<>(1024);
+	public ArrayList<TabHolder> activeClosedTabs = new ArrayList<>(1024);
 	HashMap<Long, TabHolder> allTabs;
 	private HashSet<WebFrameLayout> checkWebViewDirtyMap = new HashSet<>();
 	boolean tabsRead = false;
@@ -300,6 +302,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	private boolean MainMenuListVis;
 	private boolean MenuClicked;
 	private SardineCloud syncHandler;
+	private WaveView waveView;
 	
 	
 	@Override
@@ -460,7 +463,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		checkLog(savedInstanceState);
 		CrashHandler.getInstance(this, opt).TurnOn();
 		setStatusBarColor(getWindow());
-		WebView.setWebContentsDebuggingEnabled(true);
+		//WebView.setWebContentsDebuggingEnabled(true);
 		mHandler = new MyHandler(this);
 		CMN.browserTaskId = getTaskId();
 		Utils.PadWindow(root);
@@ -614,7 +617,6 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				holder.page_search_term = tabsCursor.getString(3);
 				holder.flag = tabsCursor.getLong(4);
 				holder.rank = tabsCursor.getLong(5);
-				holder.creation = tabsCursor.getLong(6);
 				allTabs.put(holder.id, holder);
 			}
 			tabsCursor.close();
@@ -638,23 +640,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				} catch (Exception ignored) { }
 			}
 		}
+		closedTabs = new ArrayList<>(Arrays.asList(allTabs.values().toArray(new TabHolder[]{})));
 		
-		/* !!!原装 */
-		if(TabHolders.size()==0) {
-			String defaultUrl = getDefaultPage();
-			TabHolder tab0=new TabHolder();
-			long id = historyCon.insertNewTab(defaultUrl);
-			CMN.Log("insertNewTab", id);
-			if(id!=-1) {
-				tab0.url=defaultUrl;
-				tab0.id=id;
-				TabHolders.add(tab0);
-			}
-			tabsDirty=true;
-		}
-		CMN.Log("ini.初始化完毕", TabHolders.size());
-		adapter_idx=0;
-		AttachWebAt(adapter_idx, 0);
+		checkTabs(true);
 		//SetupPasteBin();
 		
 		webtitle.setOnClickListener(this);
@@ -727,8 +715,6 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 //		holder.init_web_configs(true, 1);
 //		holder.dlg.show();
 		
-		//WebView.setWebContentsDebuggingEnabled(true);
-		
 		//TestHelper.insertMegaUrlDataToHistory(historyCon, 2500);
 		
 		root.getViewTreeObserver().addOnGlobalLayoutListener(() -> {
@@ -745,6 +731,30 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		});
 		
 		systemIntialized=true;
+	}
+	
+	private void checkTabs(boolean init) {
+		/* !!!原装 */
+		if(TabHolders.size()==0) {
+			String defaultUrl = getDefaultPage();
+			TabHolder tab0=new TabHolder();
+			long id = historyCon.insertNewTab(defaultUrl, CMN.now());
+			CMN.Log("insertNewTab", id);
+			if(id!=-1) {
+				tab0.url=defaultUrl;
+				tab0.id=id;
+				TabHolders.add(tab0);
+			}
+			tabsDirty=true;
+		}
+		CMN.Log("ini.初始化完毕", TabHolders.size());
+		if(currentViewImpl==null) {
+			int idx=adapter_idx;
+			if(layoutManager!=null) {
+				idx = Math.max(0, Math.min(layoutManager.targetPos, TabHolders.size()));
+			}
+			AttachWebAt(idx, init?0:3);
+		}
 	}
 	
 	private void updateQRBtn() {
@@ -936,26 +946,37 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		AlertDialog alert = buildSyncInterface();
 		View[] items = (View[]) alert.tag;
 		items[0].setEnabled(false);
-		((TextView)items[4]).setVisibility(View.VISIBLE);
+		items[4].setVisibility(View.VISIBLE);
 		((TextView)items[5]).setText("选择同步目标");
 		ListView lv;
 		boolean newbie=items[1]==null;
 		if(newbie) {
 			items[1] = lv = new ListView(alert.getContext());
+			lv.setTag(syncHandler.mergedTabs);
 			View.OnClickListener clicker = new View.OnClickListener(){
 				@Override
 				public void onClick(View v) {
-					if(v.getId()==R.id.type) {
+					int id = v.getId();
+					if(id==R.id.type) {
 						showT("TYPE");
 					} else {
-					
+						ViewGroup vg;
+						if(id==R.id.check1) {
+							vg = (ViewGroup) v.getParent();
+						} else {
+							vg = (ViewGroup) v;
+						}
+						int position = (int) vg.getTag();
+						SardineCloud.TabBean item = syncHandler.mergedTabs.get(position);
+						item.selected=!item.selected;
+						vg.getChildAt(0).setAlpha(item.selected?1:0.06f);
 					}
 				}
 			};
 			lv.setAdapter(new BaseAdapter() {
 				@Override
 				public int getCount() {
-					return syncHandler.mergedTabs.size();
+					return ((ArrayList<SardineCloud.TabBean>)lv.getTag()).size();
 				}
 				@Override
 				public Object getItem(int position) {
@@ -974,8 +995,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					}
 					ViewGroup vh = (ViewGroup) convertView;
 					vh.setTag(position);
-					SardineCloud.TabBean item = syncHandler.mergedTabs.get(position);
-					((TextView)vh.getChildAt(1)).setText(item.title);
+					SardineCloud.TabBean item = ((ArrayList<SardineCloud.TabBean>)lv.getTag()).get(position);
+					((TextView)vh.getChildAt(1)).setText(item.toString());
 					int type = item.type;
 					if(type==1) {
 						type = R.drawable.sync_tabs_add;
@@ -988,12 +1009,13 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					} else {
 						type = 0;
 					}
-					((ImageView)vh.getChildAt(2)).setImageResource(type);
+					((ImageView) vh.getChildAt(2)).setImageResource(type);
+					vh.getChildAt(0).setAlpha(item.selected?1:0.06f);
 					return convertView;
 				}
 			});
 			((ViewGroup) items[2]).addView(lv);
-			lv.setPadding(0, 0, 0, (int) (GlobalOptions.density*10));
+			//lv.setPadding(0, 0, 0, (int) (GlobalOptions.density*10));
 			//lv.setBackgroundColor(0xffffffff);
 		} else {
 			lv = (ListView) items[1];
@@ -1002,7 +1024,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		if(newbie) {
 			items[3].setVisibility(View.VISIBLE);
 			lv.setVisibility(View.VISIBLE);
+			lv.setTag(syncHandler.mergedTabs);
 		}
+		((BaseAdapter)lv.getAdapter()).notifyDataSetChanged();
 	};
 	
 	private AlertDialog buildSyncInterface() {
@@ -1013,7 +1037,29 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					.create();
 			alert.show();
 			ViewGroup root = alert.findViewById(R.id.root);
-			alert.tag = new View[]{root.findViewById(R.id.wave), null, root, root.getChildAt(1), root.findViewById(R.id.start), root.findViewById(R.id.title)};
+			View[] items = new View[]{root.findViewById(R.id.wave), null, root, root.getChildAt(1), root.findViewById(R.id.start), root.findViewById(R.id.title)};
+			
+			View.OnClickListener clicker = new View.OnClickListener() {
+				@Override
+				public void onClick(View v) {
+					if(v==items[0]) {
+					
+					} else {
+						if(syncHandler!=null) {
+							if(((Integer)0).equals(v.getTag())) {
+								initWaveProgressView(items);
+								syncHandler.scheduleTask(BrowserActivity.this, SardineCloud.TaskType.uploadTabs);
+							} else {
+								initWaveProgressView(items);
+								syncHandler.scheduleTask(BrowserActivity.this, SardineCloud.TaskType.syncTabs);
+							}
+						}
+					}
+				}
+			};
+			items[0].setOnClickListener(clicker);
+			items[4].setOnClickListener(clicker);
+			alert.tag = items;
 			putReferencedObject(WeakReferenceHelper.sync_interface, alert);
 		} else {
 			alert.setCancelable(true);
@@ -1025,6 +1071,32 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	
 	public void postSelectSyncTabs() {
 		root.post(selectSyncTabsRunnable);
+	}
+	
+	Runnable doneSyncTabsRunnable = () -> {
+		AlertDialog alert = (AlertDialog) getReferencedObject(WeakReferenceHelper.sync_interface);
+		if(alert!=null) {
+			alert.dismiss();
+		}
+		showT("同步成功！");
+		this.waveView=null;
+		if(tabsManagerIsDirty&&adaptermy!=null) {
+			adaptermy.notifyDataSetChanged();
+			tabsManagerIsDirty=false;
+			currentViewImpl = null;
+			currentWebView = null;
+			// attach new tabs
+			//if(currentViewImpl.destoryed())
+		}
+	};
+	
+	public void postDoneSyncing(SardineCloud.TaskType type) {
+		root.removeCallbacks(doneSyncTabsRunnable);
+		root.post(doneSyncTabsRunnable);
+		if(type==SardineCloud.TaskType.syncTabs) {
+			tabsManagerIsDirty = true;
+			tabsDirty = true;
+		}
 	}
 	
 	public AdvancedBrowserWebView getWebViewFromID(long tabID) {
@@ -1097,6 +1169,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		@Override
 		public boolean onTouch(View v, MotionEvent event) {
 			int evt = event.getActionMasked();
+			if(currentViewImpl==null) {
+				return false;
+			}
 			switch (evt) {
 				case MotionEvent.ACTION_DOWN:
 					//CMN.Log("ACTION_DOWN");
@@ -1201,7 +1276,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 							isPaused=true;
 							//animator.cancel();
 							//CMN.Log("draggging", getCurrentFocus());
-							View layout = currentWebView.layout;
+							View layout = currentViewImpl;
 							float newTX = layout.getTranslationX()+lastX-this.lastX;
 							layout.setTranslationX(newTX);
 							if(search_bar_vis()) {
@@ -1251,7 +1326,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 						event.setLocation(lastX*simovefactor, 0);
 						recyclerView.dispatchTouchEvent(event);
 					} else {
-						View layout = currentWebView.layout;
+						View layout = currentViewImpl;
 						float tx = layout.getTranslationX();
 						if(dragging||tx!=0&&layout.getScaleX()==1) {
 							int W = root.getWidth();
@@ -1292,7 +1367,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 						}
 						if(v==UIData.toolbarContent&&search_bar_vis()) {
 							//float delta = Math.abs(event.getX()-orgX);
-							float delta = Math.abs(currentWebView.layout.getTranslationX());
+							float delta = Math.abs(currentViewImpl.getTranslationX());
 							if(delta>5*GlobalOptions.density) {
 								hideKeyboard();
 								//if(delta>30*GlobalOptions.density)
@@ -1713,10 +1788,14 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	private void closeTabAt(int positon, int source) {
 		if(positon>=0 && positon<TabHolders.size()) {
 			TabHolder tab = TabHolders.remove(positon);
-			id_table.remove(tab.id);
-			if (tab.viewImpl != null) {
-				tab.viewImpl.destroy();
+			if(opt.getDelayRemovingClosedTabs()) {
+				activeClosedTabs.add(tab);
+			} else {
+				id_table.remove(tab.id);
+				tab.close();
 			}
+			//todo update last_visit_time and sort the closed tabs according to the time.
+			closedTabs.add(tab);
 			//todo delete stuffs but keep a stack record for re-coverage
 			adapter_idx = Math.min(adapter_idx, TabHolders.size());
 			if (adaptermy != null) {
@@ -1731,7 +1810,6 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					viewpager_holder.post(MoveRangeIvalidator);
 				}
 			}
-			
 			tabsDirty = true;
 		}
 	}
@@ -1822,6 +1900,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	/** 列表化/窗口化标签管理 */
 	private void toggleTabView(int fromClick, View v) {
 		//todo 仿效 opera 浏览后直接显示 webview 难度 level up ⭐⭐⭐⭐⭐
+		if(currentViewImpl==null) {
+			checkTabs(false);
+		}
 		if(webtitle.getVisibility()!=View.VISIBLE) {
 			webtitle_setVisibility(false);
 		}
@@ -1829,7 +1910,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			webtitle.setText("标签页管理");
 			setSoftInputMode(softModeResize);
 		} else {
-			webtitle.setText(currentWebView.getTitle());
+			webtitle.setText(currentViewImpl.getTitle());
 			if(fromClick==-1) {
 				int fvp = layoutManager.findFirstVisibleItemPosition();
 				int target = layoutManager.targetPos;
@@ -1898,6 +1979,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 //			mWebView.onPause();
 //			mWebView.holder.paused=true;
 //		}
+		if(currentViewImpl==null) return;
 		TabHolder holder = currentViewImpl.holder;
 		if(reason!=1)
 			if(holder.lastCaptureVer!=holder.version) {
@@ -2084,8 +2166,11 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			//ttY=(currentWebView.layout.getHeight()*(1-targetScale))/2+(+titleH-viewpager_holder.getPaddingBottom())/2-appbar.getHeight()-appbar.getTop();
 			
 			//ttY=-((currentWebView.getHeight()*targetScale)/2-appbar.getHeight()/2)+(root.getHeight()+titleH-viewpager_holder.getPaddingBottom())/2;
-			
-			ttY=(H+titleH-viewpager_holder.getPaddingBottom()-currentWebView.getHeight()*targetScale)/2-10;
+			int tabH = currentViewImpl.getImplHeight();
+			if(tabH==0) {
+				tabH = UIData.webcoord.getHeight()-currentViewImpl.getPaddingBottom();
+			}
+			ttY=(H+titleH-viewpager_holder.getPaddingBottom()-tabH*targetScale)/2-10;
 			
 			if(!anioutTopBotForTab) {
 				ttY+=-appbar.getHeight()-appbar.getTop();
@@ -2135,8 +2220,6 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		} else {
 			animatorObj.setTarget(layout);
 		}
-		layout.setPivotX(0);
-		layout.setPivotY(0);
 		alpha2.setFloatValues(1, 1);
 		int bottombar2_alpha = bottombar2Background().getAlpha();
 		float appbar_alpha = appbar.getAlpha();
@@ -2286,6 +2369,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					viewImpl = new WebFrameLayout(getBaseContext(), holder); //ttt
 					viewImpl.setBackgroundColor(Color.WHITE);
 					viewImpl.setPadding(0, 0, 0, _45_);
+					viewImpl.setPivotX(0);
+					viewImpl.setPivotY(0);
 					viewImpl.mWebView = new_AdvancedNestScrollWebView(holder, viewImpl, null);
 				} else {
 					// ???
@@ -2327,34 +2412,37 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		weblayout.setVisibility(View.VISIBLE);
 		weblayout.setScaleX(1);
 		weblayout.setScaleY(1);
+		boolean attachView = pseudoAdd!=3;
 		boolean add = true;
-		//if(pseudoAdd==0)
-		{
-			int cc=UIData.webcoord.getChildCount();
-			View ca;
-			for (int j = 0; j < cc; j++) {
-				if((ca=UIData.webcoord.getChildAt(j))instanceof WebFrameLayout
-						&&ca!=weblayout
-						&&(pseudoAdd==0||ca!=mBrowserSlider.webla&&ca!=currentWebView.layout)
-				) {
-					UIData.webcoord.removeViewAt(j);
-					j--;
-					cc--;
+		if(attachView) {
+			//if(pseudoAdd==0)
+			{
+				int cc=UIData.webcoord.getChildCount();
+				View ca;
+				for (int j = 0; j < cc; j++) {
+					if((ca=UIData.webcoord.getChildAt(j))instanceof WebFrameLayout
+							&&ca!=weblayout
+							&&(pseudoAdd==0||ca!=mBrowserSlider.webla&&ca!=currentWebView.layout)
+					) {
+						UIData.webcoord.removeViewAt(j);
+						j--;
+						cc--;
+					}
 				}
 			}
-		}
-		ViewGroup svp = (ViewGroup) weblayout.getParent();
-		if(svp!=null) { // sanity check
-			if(add=svp!=UIData.webcoord) {
-				svp.removeView(weblayout);
+			ViewGroup svp = (ViewGroup) weblayout.getParent();
+			if(svp!=null) { // sanity check
+				if(add=svp!=UIData.webcoord) {
+					svp.removeView(weblayout);
+				}
 			}
+			if(add) {
+				//UIData.webcoord.addView(weblayout);
+				UIData.webcoord.addView(weblayout, 0);
+			}
+			decideWebviewPadding(weblayout);
+			weblayout.onViewAttached(0);
 		}
-		if(add) {
-			//UIData.webcoord.addView(weblayout);
-			UIData.webcoord.addView(weblayout, 0);
-		}
-		decideWebviewPadding(weblayout);
-		weblayout.onViewAttached(0);
 		if(pseudoAdd==1) {
 			return false;
 		}
@@ -2598,24 +2686,33 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 						lv.setOnItemClickListener((parent, view, position, vid) -> {
 							switch (position) {
 								case -1:
-									
 								break;
 								/* 同步上传标签页 */
-								case 0:{
-								
-								} break;
+								case 0:
 								/* 同步下载标签页 */
-								case 1:{
-									//postSelectSyncTabs();
+								case 1: {
 									AlertDialog syncInterface = buildSyncInterface();
 									View[] items = (View[]) syncInterface.tag;
-									items[4].setVisibility(View.GONE);
-									((TextView)items[5]).setText("获取同步信息中...");
-									if(syncHandler ==null) {
+									if(items[1]!=null) {
+										items[1].setVisibility(View.GONE);
+									}
+									int tid;
+									if(syncHandler==null) {
 										syncHandler = new SardineCloud();
 									}
-									items[0].setEnabled(true);
-									syncHandler.scheduleTask(this, SardineCloud.TaskType.pullTabs);
+									if(position==0) {
+										tid = R.string.sync_dddot;
+										items[0].setEnabled(false);
+										items[4].setVisibility(View.VISIBLE);
+									} else {
+										tid = R.string.fetch_syn_info;
+										items[4].setVisibility(View.GONE);
+										initWaveProgressView(items);
+										syncHandler.scheduleTask(this, SardineCloud.TaskType.pullTabs);
+									}
+									items[4].setTag(position);
+									//postSelectSyncTabs();
+									((TextView)items[5]).setText(tid);
 								} break;
 								/* 同步设置 */
 								case 2:{
@@ -2824,6 +2921,15 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				}
 			} break;
 		}
+	}
+	
+	private void initWaveProgressView(View[] items) {
+		WaveView waveView = (WaveView) items[0];
+		this.waveView = waveView;
+		waveView.setMax(100);
+		waveView.setProgress(0);
+		waveView.setEnabled(true);
+		mHandler.sendEmptyMessageDelayed(11576, 100);
 	}
 	
 	Runnable postRectifyWebTitleRunnable = () -> {
@@ -3758,7 +3864,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					int newtabloc = adapter_idx+1;
 					String defaultUrl = getDefaultPage();
 					TabHolder holder=new TabHolder();
-					long id = historyCon.insertNewTab(defaultUrl);
+					long id = historyCon.insertNewTab(defaultUrl, CMN.now());
 					tabsDirty=true;
 					CMN.Log("insertNewTab", id);
 					if(id!=-1) {
@@ -4336,7 +4442,15 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 							}
 						}
 					}).start();
-					break;
+				break;
+				case 11576: {
+					removeMessages(11576);
+					if(a.waveView!=null) {
+						a.waveView.setMaxAndProgress(a.syncHandler.progressMax
+							,a.syncHandler.progress);
+						sendEmptyMessageDelayed(11576, 160);
+					}
+				} break;
 			}
 		}
 	}
@@ -4349,7 +4463,6 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		public long flag;
 		public long rank;
 		public long id;
-		public long creation;
 		public final TabIdentifier TabID = new TabIdentifier();
 		public boolean paused;
 		WebFrameLayout viewImpl;
@@ -4383,11 +4496,28 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			return false;
 		}
 		
+		public void close() {
+			if (viewImpl != null) {
+				viewImpl.destroy();
+				viewImpl = null;
+			}
+		}
+		
 		class TabIdentifier{
 			@JavascriptInterface
 			public long get() {
 				return id;
 			}
+		}
+		
+		@Override
+		public String toString() {
+			return "TabHolder{" +
+					"url='" + url + '\'' +
+					", title='" + title + '\'' +
+					", id=" + id +
+					", viewImpl=" + viewImpl +
+					'}';
 		}
 	}
 	
@@ -4747,6 +4877,10 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		if(getCurrentFocus() == currentWebView){
 			if(currentWebView.bIsActionMenuShown){
 				currentWebView.clearFocus();
+				if(mWebListener.upsended) {
+					currentWebView.evaluateJavascript("igNNC=0", null);
+					mWebListener.upsended=false;
+				}
 				return true;
 			}
 		}

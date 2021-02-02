@@ -1,16 +1,23 @@
 package com.knziha.polymer.webstorage;
 
+import android.content.ContentValues;
 import android.database.Cursor;
 import android.os.Bundle;
 
 import com.knziha.polymer.BrowserActivity;
 import com.knziha.polymer.Utils.BufferedReader;
 import com.knziha.polymer.Utils.CMN;
+import com.knziha.polymer.Utils.ReusabeBufferedInputStream;
+import com.knziha.polymer.database.LexicalDBHelper;
+import com.knziha.polymer.pdviewer.pagecover.PageCover;
+import com.knziha.polymer.widgets.WebFrameLayout;
 import com.thegrizzlylabs.sardineandroid.DavResource;
 import com.thegrizzlylabs.sardineandroid.Sardine;
 import com.thegrizzlylabs.sardineandroid.impl.OkHttpSardine;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -31,8 +38,8 @@ public class SardineCloud implements Runnable {
 	volatile boolean threadSuspended;
 	private AtomicBoolean abort;
 	private AtomicBoolean mayAbort;
-	int progress;
-	int progressMax;
+	public int progress;
+	public int progressMax;
 	
 	public enum TaskType {
 		idle,
@@ -52,7 +59,7 @@ public class SardineCloud implements Runnable {
 		if(stopped) {
 			return;
 		}
-		if(aRef.get()==null&&a!=null) {
+		if(aRef.get()==null) {
 			aRef = new WeakReference<>(a);
 		}
 		task = TaskType.idle;
@@ -71,7 +78,11 @@ public class SardineCloud implements Runnable {
 			}
 			task = taskType;
 			threadSuspended = false;
-			notify();
+			try {
+				t.notify();
+			} catch (Exception ignored) {
+				t.interrupt();
+			}
 		}
 	}
 	
@@ -81,15 +92,19 @@ public class SardineCloud implements Runnable {
 			runningTask = task;
 			mayAbort = new AtomicBoolean(true);
 			abort = new AtomicBoolean();
-			handleTask(abort, mayAbort);
+			try {
+				handleTask(abort, mayAbort);
+			} catch (Exception e) {
+				CMN.Log(e);
+			}
 			abort.set(true);
 			threadSuspended = true;
 			try {
 				Thread.sleep(1000);
 				if(threadSuspended) {
-					synchronized(this) {
+					synchronized(t) {
 						while (threadSuspended && t!=null)
-							wait();
+							t.wait();
 					}
 				}
 			} catch (InterruptedException e) {
@@ -125,12 +140,17 @@ public class SardineCloud implements Runnable {
 		public final long creation;
 		public final long token;
 		public final String title;
+		public final String url;
 		public long id;
 		public int type;
-		TabBean(long creation, long token, String title) {
+		public boolean selected;
+		public long flag;
+		
+		TabBean(long creation, long token, String title, String url) {
 			this.creation = creation;
 			this.token = token;
 			this.title = title;
+			this.url = url;
 		}
 		
 		@Override
@@ -205,6 +225,8 @@ public class SardineCloud implements Runnable {
 						} else {
 							sb.append(title);
 						}
+						sb.append(";");
+						sb.append(thI.url);
 						sb.append("\n");
 					}
 					cursor.close();
@@ -217,7 +239,7 @@ public class SardineCloud implements Runnable {
 				progress+=10;
 			}
 			
-			
+			a.postDoneSyncing(TaskType.uploadTabs);
 			//CMN.Log("exists::", sardine.exists("https://dav.jianguoyun.com/dav"));
 			//sardine.put("https://dav.jianguoyun.com/dav/PLBrowser/test.txt", " hello webdav ".getBytes());
 
@@ -242,13 +264,14 @@ public class SardineCloud implements Runnable {
 			while((line=bufferedReader.readLine())!=null) {
 				if(abort.get()) return;
 				String[] arr = line.split(";");
-				if(arr.length>=3) {
+				if(arr.length>=4) {
 					try {
 						long creationTime = Long.parseLong(arr[0]);
 						long last_visit_time = Long.parseLong(arr[1]);
 						String title = arr[2];
+						String url = arr[3];
 						if(!pulledTabsTable.containsKey(creationTime)){
-							TabBean tb = new TabBean(creationTime, last_visit_time, title);
+							TabBean tb = new TabBean(creationTime, last_visit_time, title, url);
 							pulledTabs.add(tb);
 							pulledTabsTable.put(creationTime, tb);
 						}
@@ -259,7 +282,8 @@ public class SardineCloud implements Runnable {
 	}
 	
 	public void pullTabs(AtomicBoolean abort, AtomicBoolean mayAbort) {
-		mergedTabs.clear();
+		//if(true) return;
+		ArrayList<TabBean> mergedTabs = new ArrayList<>();
 		pulledTabs.clear();
 		pulledTabsTable.clear();
 		BrowserActivity a = aRef.get();
@@ -283,42 +307,184 @@ public class SardineCloud implements Runnable {
 		// merge by creation time
 		for (BrowserActivity.TabHolder tbI:a.TabHolders) {
 			long id = tbI.id;
-			Cursor cursor = a.historyCon.getDB().rawQuery("select * from webtabs where id=? limit 1", new String[]{""+id});
-			TabBean itemInTheRecord = pulledTabsTable.remove(tbI.creation);
-			long last_visit_time = cursor.moveToNext()?cursor.getLong(cursor.getColumnIndex("last_visit_time")):0;
+			Cursor cursor = a.historyCon.getDB().rawQuery("select creation_time,last_visit_time from webtabs where id=? limit 1", new String[]{""+id});
+			long creation_time = 0, last_visit_time=0;
+			if(cursor.moveToNext()) {
+				creation_time = cursor.getLong(0);
+				last_visit_time = cursor.getLong(1);
+			}
+			TabBean itemInTheRecord = pulledTabsTable.remove(creation_time);
 			cursor.close();
 			if(itemInTheRecord==null) {
 				// delete
-				itemInTheRecord = new TabBean(tbI.creation, last_visit_time, tbI.title);
+				itemInTheRecord = new TabBean(creation_time, last_visit_time, tbI.title, tbI.url);
 				itemInTheRecord.type = -1;
+				itemInTheRecord.selected=false;
 				// todo verify
 			} else {
-				itemInTheRecord.id = id;
 				if(itemInTheRecord.token!=last_visit_time) {
 					// 入库时间不同
-					itemInTheRecord.type = itemInTheRecord.token>last_visit_time?2:3;
+					itemInTheRecord.selected=itemInTheRecord.token>last_visit_time;
+					itemInTheRecord.type = itemInTheRecord.selected?2:3;
 				}
 				// TabBean.type==0 means no change
 			}
+			itemInTheRecord.id = id;
 			mergedTabs.add(itemInTheRecord);
 		}
 		int cc=0;
 		for (TabBean ptI:pulledTabs) {
 			if(pulledTabsTable.get(ptI.creation)!=null) {
 				// create new
+				Cursor cursor = a.historyCon.getDB().rawQuery("select id from webtabs where creation_time=? limit 1", new String[]{""+ptI.creation});
+				if(cursor.moveToNext()) {
+					ptI.id = cursor.getLong(0);
+				}
+				cursor.close();
 				ptI.type=1;
+				ptI.selected=true;
 				mergedTabs.add(Math.min(cc, mergedTabs.size()), ptI);
 			}
 			cc++;
 		}
+		this.mergedTabs = mergedTabs;
 		a.postSelectSyncTabs();
 	}
 	
 	public void syncTabs(AtomicBoolean abort, AtomicBoolean mayAbort) {
-	
+		ArrayList<TabBean> mergedTabs = this.mergedTabs;
+		progressMax = mergedTabs.size()*25+30;
+		progress=30;
+		BrowserActivity a = aRef.get();
+		if(a==null) {
+			return;
+		}
+		ArrayList<BrowserActivity.TabHolder> newHolders = new ArrayList<>((int)(mergedTabs.size()*1.5));
+		
+		int LEN_PLBR_TABS = 0;
+		ReusabeBufferedInputStream input=null;
+		Bundle bundle = new Bundle();
+		try {
+			if(pollSardineDirectories(sardine, webdavServer, false, pathBuilder, "/PLBrowser/", "tabs/")) {
+				LEN_PLBR_TABS = pathBuilder.length();
+			}
+			input = new ReusabeBufferedInputStream(null);
+		} catch (IOException e) {
+			CMN.Log(e);
+		}
+		int deltaProgress;
+		HashMap<Long, BrowserActivity.TabHolder> allTabsMap = new HashMap<>();
+		for(BrowserActivity.TabHolder tbI:a.closedTabs) {
+			allTabsMap.put(tbI.id, tbI);
+		}
+		for(BrowserActivity.TabHolder tbI:a.TabHolders) {
+			allTabsMap.put(tbI.id, tbI);
+		}
+		for(TabBean tbI:mergedTabs) {
+			if(abort.get()) {
+				return;
+			}
+			BrowserActivity.TabHolder tabI = null;
+			WebFrameLayout weblayout = a.id_table.get(tbI.id);
+			if(weblayout!=null) {
+				tabI = weblayout.holder;
+			}
+			if(tabI==null) {
+				tabI = allTabsMap.get(tbI.id);
+			}
+			deltaProgress=25;
+			CMN.Log("同步中...", tbI.selected, tbI.type, tbI);
+			CMN.Log("同步中???", tabI);
+			if(tbI.type<0) { // 删除
+				if(tabI!=null) {
+					if(tbI.selected) {
+						// todo apply close
+						if(a.opt.getDelayRemovingClosedTabs()) {
+							a.activeClosedTabs.add(tabI);
+						} else {
+							a.id_table.remove(tabI.id);
+							tabI.close();
+						}
+					} else {
+						newHolders.add(tabI);
+					}
+				}
+			}
+			else if(tbI.type==0) { // 不变
+				if(tabI!=null) {
+					newHolders.add(tabI);
+				}
+			}
+			else { // 1 新建	2/3 改
+				if(tbI.selected) {
+					deltaProgress=0;
+					long creationTime = tbI.creation;
+					if(tabI==null) {
+						tabI = new BrowserActivity.TabHolder();
+					}
+					if(tabI.id==0) {
+						tabI.id=tbI.id;
+					}
+					if(tabI.id==0) {
+						tabI.id = a.historyCon.insertNewTab(tbI.url, creationTime);
+					}
+					ContentValues values = new ContentValues();
+					values.put("url", tbI.url);
+					values.put("creation_time", creationTime);
+					values.put("last_visit_time", tbI.token);
+					progress+=10;
+					if(input!=null) {
+						pathBuilder.setLength(LEN_PLBR_TABS);
+						try{
+							InputStream stream = sardine.get(pathBuilder.append("tab_")
+									.append(creationTime)
+									.append(".bin").toString());
+							input.reuse(stream);
+							bundle.clear();
+							webStacksWriterSer.readStream(bundle, input);
+							if(tbI.token==0)values.put("last_visit_time", bundle.getLong("last_visit_time", 0));
+							if(creationTime==0)values.put("creation_time", bundle.getLong("creation_time", 0));
+							values.put("f1", tbI.flag=bundle.getLong("f1", 0));
+							values.put("favor", bundle.getLong("favor", 0));
+							values.put("visit_count", bundle.getLong("visit_count", 0));
+							values.put("thumbnail", bundle.getByteArray("thumbnail"));
+							values.put("webstack", bundle.getByteArray("webstack"));
+							values.put("url", bundle.getString("url", tbI.url));
+							values.put("title", bundle.getString("title", tbI.title));
+							values.put("ext1", bundle.getString("ext1", null));
+							stream.close();
+						} catch (Exception e) {
+							CMN.Log(e);
+						}
+					}
+					a.historyCon.getDB().update("webtabs", values, "id=?", new String[]{""+tabI.id});
+					progress+=15;
+					tabI.url = tbI.url;
+					tabI.title = tbI.title;
+					tabI.flag = tbI.flag;
+					tabI.lastCaptureVer = 0;
+					newHolders.add(tabI);
+				} else { // 不变
+					if(tbI.type>1) {
+						newHolders.add(tabI);
+					}
+				}
+			}
+			progress+=deltaProgress;
+		}
+		allTabsMap.clear();
+		if(abort.get()) {
+			return;
+		}
+		mayAbort.set(false);
+		a.TabHolders = newHolders;
+		CMN.Log("标签页同步完毕::"); CMN.Log(newHolders.toArray());
+		a.postDoneSyncing(TaskType.syncTabs);
 	}
 	
 	private boolean pollSardineDirectories(Sardine sardine, String path, boolean create, StringBuilder pathBuilder, String...parts) throws IOException {
+		int length = path.length();
+		pathBuilder.setLength(length);
 		for(String sI:parts) {
 			pathBuilder.append(sI);
 		}
@@ -328,7 +494,7 @@ public class SardineCloud implements Runnable {
 		if(!create) {
 			return false;
 		}
-		pathBuilder.setLength(path.length());
+		pathBuilder.setLength(length);
 		for(String sI:parts) {
 			pathBuilder.append(sI);
 			path = pathBuilder.toString();

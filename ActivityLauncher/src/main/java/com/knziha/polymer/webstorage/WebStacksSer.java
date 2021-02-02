@@ -6,6 +6,7 @@ import com.knziha.polymer.Utils.CMN;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
@@ -39,7 +40,7 @@ public class WebStacksSer implements WebStacks{
 		readStream(bundle, new ByteArrayInputStream(data));
 	}
 	
-	private void readStream(Bundle bundle, ByteArrayInputStream input) {
+	public void readStream(Bundle bundle, InputStream input) {
 		try (ObjectInputStream oos = new ObjectInputStream(input)){
 			Object len = oos.readObject();
 			if(!((Integer)123456789).equals(len)) {

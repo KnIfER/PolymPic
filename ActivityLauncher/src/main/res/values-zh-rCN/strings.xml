@@ -40,6 +40,8 @@ Donec feugiat ac nunc vel laoreet. In laoreet pretium fringilla. Suspendisse pot
 	<string name="downloadWithSz">下载（ %s ）</string>
 	<string name="downloadingWithSz">正在下载 （%s）</string>
 	<string name="sync_tabs">同步标签页</string>
+	<string name="fetch_syn_info">获取同步信息中...</string>
+	<string name="sync_dddot">同步...</string>
 
 
 </resources>
