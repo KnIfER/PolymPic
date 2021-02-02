@@ -163,7 +163,7 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 	
 	public boolean PageFinishedPosted;
 	
-	static final WebStacks webStacksWriterStd = new WebStacksStd();
+	public static final WebStacks webStacksWriterStd = new WebStacksStd();
 	
 	public static final WebStacksSer webStacksWriterSer = new WebStacksSer();
 	
@@ -418,12 +418,9 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 			return false;
 		}
 		try {
-		WebStacks stateReader = webStacksWriterStd;
-		if(data.length>4) {
-			int magic = BU.getInt(data, 0);
-			if(magic==123456789) {
-				stateReader = new WebStacksSer();
-			}
+		WebStacks stateReader = webStacksWriterSer;
+		if(data.length>8 && BU.getInt(data, 4)!=0x4C444E42) {
+			stateReader = webStacksWriterStd;
 		}
 		Bundle bundle = new Bundle();
 		stateReader.readData(bundle, data);
@@ -499,8 +496,9 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 				}
 			}
 			if(NeedSave) {
-				byte[] data = webStacksWriter.bakeData(bundle);
+				byte[] data = webStacksWriterSer.bakeData(bundle);
 				//BU.printFile(data, "/storage/emulated/0/myFolder/w");
+				//BU.printFile(webStacksWriterStd.bakeData(bundle), "/storage/emulated/0/myFolder/w");
 				ContentValues values = new ContentValues();
 				values.put("webstack", data);
 				if(nav_stacks_dirty) {
