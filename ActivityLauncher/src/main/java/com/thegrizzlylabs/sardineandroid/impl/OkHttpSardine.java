@@ -2,6 +2,9 @@ package com.thegrizzlylabs.sardineandroid.impl;
 
 import android.text.TextUtils;
 
+import com.knziha.polymer.BrowserActivity;
+import com.knziha.polymer.Utils.CMN;
+import com.knziha.polymer.toolkits.MyX509TrustManager;
 import com.thegrizzlylabs.sardineandroid.DavAce;
 import com.thegrizzlylabs.sardineandroid.DavAcl;
 import com.thegrizzlylabs.sardineandroid.DavPrincipal;
@@ -45,11 +48,14 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
 import javax.xml.namespace.QName;
 
 import okhttp3.Credentials;
@@ -73,14 +79,21 @@ public class OkHttpSardine implements Sardine {
         this.client = new OkHttpClient.Builder().build();
     }
     
-    public OkHttpSardine(String username, String password, boolean isPreemptive) {
+    public OkHttpSardine(BrowserActivity a, String username, String password, boolean isPreemptive) {
 		OkHttpClient.Builder builder = new OkHttpClient.Builder();
 		if (isPreemptive) {
 			builder.addInterceptor(new AuthenticationInterceptor(username, password));
 		} else {
 			builder.authenticator(new BasicAuthenticator(username, password));
 		}
-		
+		try {
+			SSLContext sslcontext = SSLContext.getInstance("TLS");
+			MyX509TrustManager tm = new MyX509TrustManager();
+			sslcontext.init(null, new TrustManager[]{tm}, new java.security.SecureRandom());
+			builder.sslSocketFactory(sslcontext.getSocketFactory(), tm);
+		} catch (Exception e) {
+			CMN.Log(e);
+		}
 		this.client = builder.build();
     }
 

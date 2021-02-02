@@ -261,6 +261,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		try {
 			SSLContext sslcontext = SSLContext.getInstance("TLS");
 			sslcontext.init(null, new TrustManager[]{new MyX509TrustManager()}, new java.security.SecureRandom());
+			
 			HttpsURLConnection.setDefaultSSLSocketFactory(sslcontext.getSocketFactory());
 		} catch (Exception e) {
 			CMN.Log(e);
@@ -614,9 +615,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	 		w._docAnnots="";
 	 		w._docAnnott="";
 		}
-	 	var test = ['1','2','3'];
-	 	polyme.logm(test);
-	 	polyme.logm(test);
+	 	polyme.logm('1','2','3');
 	 */
 	@Multiline(trim=true, compile=true)
 	public final static String PRI = "Primary Rule Insersion";

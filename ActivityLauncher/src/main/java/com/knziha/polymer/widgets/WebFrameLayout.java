@@ -90,13 +90,10 @@ public class WebFrameLayout extends FrameLayout {
 	}
 	
 	public void destroy() {
+		removeViews(0, getChildCount());
 		if(mWebView!=null) {
 			mWebView.destroy();
 		}
-	}
-	
-	public void deconstruct() {
-		mWebView.deconstruct();
 	}
 	
 	public Bitmap getBitmap() {
@@ -137,5 +134,9 @@ public class WebFrameLayout extends FrameLayout {
 	
 	public int getImplHeight() {
 		return mWebView.getHeight();
+	}
+	
+	public void stopLoading() {
+		mWebView.stopLoading();
 	}
 }

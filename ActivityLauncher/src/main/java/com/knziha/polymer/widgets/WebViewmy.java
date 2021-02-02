@@ -817,4 +817,11 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
 		}
 		return super.postDelayed(action, delayMillis);
 	}
+	
+	@Override
+	public void destroy() {
+		super.destroy();
+		setWebChromeClient(null);
+		setWebViewClient(null);
+	}
 }

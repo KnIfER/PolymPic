@@ -41,6 +41,7 @@ import com.knziha.polymer.toolkits.Utils.BU;
 import com.knziha.polymer.webstorage.WebStacks;
 import com.knziha.polymer.webstorage.WebStacksSer;
 import com.knziha.polymer.webstorage.WebStacksStd;
+import com.knziha.polymer.widgets.Utils;
 import com.knziha.polymer.widgets.WebFrameLayout;
 import com.knziha.polymer.widgets.WebViewmy;
 
@@ -218,7 +219,7 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 		
 		webScale=getResources().getDisplayMetrics().density;
 		
-		settings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
+		//settings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
 		
 		//setLayerType(View.LAYER_TYPE_HARDWARE, null);
 	}
@@ -419,7 +420,7 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 		}
 		try {
 		WebStacks stateReader = webStacksWriterSer;
-		if(data.length>8 && BU.getInt(data, 4)!=0x4C444E42) {
+		if(data.length>8 && BU.getInt(data, 4)==0x4C444E42) {
 			stateReader = webStacksWriterStd;
 		}
 		Bundle bundle = new Bundle();
@@ -445,7 +446,9 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 			}
 		}
 		else {
+			CMN.Log("大风起兮……");
 			WebBackForwardList stacks = restoreState(bundle);
+			CMN.Log("云飞扬……", stacks);
 			if(stacks!=null && stacks.getSize()>0) {
 				CMN.Log("复活……", stacks.getSize());
 				return true;
@@ -497,7 +500,7 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 			}
 			if(NeedSave) {
 				byte[] data = webStacksWriterSer.bakeData(bundle);
-				//BU.printFile(data, "/storage/emulated/0/myFolder/w");
+				//BU.printFile(data, "/storage/emulated/0/myFolder/w_"+Utils.version);
 				//BU.printFile(webStacksWriterStd.bakeData(bundle), "/storage/emulated/0/myFolder/w");
 				ContentValues values = new ContentValues();
 				values.put("webstack", data);
@@ -513,7 +516,7 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 				// "w:" test
 //				WebStacksSer wss = new WebStacksSer();
 //				data = wss.bakeData(bundle);
-//				BU.printFile(data, "/storage/emulated/0/myFolder/w1");
+				//BU.printFile(data, "/storage/emulated/0/myFolder/w1");
 //				CMN.Log("data.length", data.length);
 //				BU.printBytes(data, 0, Math.min(data.length, 100));
 //				bundle.clear();
@@ -548,10 +551,6 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 	
 	private boolean isUrlValid(String url) {
 		return url!=null&&!url.equals("about:blank");
-	}
-	
-	public void deconstruct() {
-		layout.removeViews(0, layout.getChildCount());
 	}
 	
 	public boolean equalsUrl(String text) {

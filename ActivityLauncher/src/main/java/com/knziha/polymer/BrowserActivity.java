@@ -65,6 +65,7 @@ import android.view.inputmethod.EditorInfo;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebSettings;
+import android.webkit.WebView;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
@@ -390,7 +391,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		
 		root=UIData.root;
 		
-		mWebListener = new WebCompatListener(this);
+		mWebListener = Utils.version>=21?new WebCompatListener(this):new WebCompoundListener(this);
 		
 		imageViewCover = new ImageView(this);
 		imageViewCover1 = new ImageView(this);
@@ -463,7 +464,6 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		checkLog(savedInstanceState);
 		CrashHandler.getInstance(this, opt).TurnOn();
 		setStatusBarColor(getWindow());
-		//WebView.setWebContentsDebuggingEnabled(true);
 		mHandler = new MyHandler(this);
 		CMN.browserTaskId = getTaskId();
 		Utils.PadWindow(root);
@@ -700,13 +700,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		});
 		//tg
 		CMN.Log("device density is ::", GlobalOptions.density);
+		CMN.Log("device version is ::", Utils.version);
 
-		new Thread(new Runnable() {
-			@Override
-			public void run() {
-			}
-		}).start();
-		
 		//AdvancedBrowserWebView.enableSlowWholeDocumentDraw();
 		//TestHelper.async(TestHelper::downloadlink);
 		//TestHelper.savePngBitmap(this, R.drawable.polymer, 150, 150, "/sdcard/150.png");
@@ -1788,12 +1783,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	private void closeTabAt(int positon, int source) {
 		if(positon>=0 && positon<TabHolders.size()) {
 			TabHolder tab = TabHolders.remove(positon);
-			if(opt.getDelayRemovingClosedTabs()) {
-				activeClosedTabs.add(tab);
-			} else {
-				id_table.remove(tab.id);
-				tab.close();
-			}
+			setTabClosed(tab);
 			//todo update last_visit_time and sort the closed tabs according to the time.
 			closedTabs.add(tab);
 			//todo delete stuffs but keep a stack record for re-coverage
@@ -1812,6 +1802,19 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			}
 			tabsDirty = true;
 		}
+	}
+	
+	public void setTabClosed(TabHolder tab) {
+		if(tab.viewImpl==currentViewImpl) {
+			currentViewImpl=null;
+		}
+		if(opt.getDelayRemovingClosedTabs()) {
+			activeClosedTabs.add(tab);
+		} else {
+			id_table.remove(tab.id);
+			tab.close();
+		}
+		// todo apply close
 	}
 	
 	@Override
@@ -4178,6 +4181,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		}
 		//Utils.sendog(opt);
 		if(mWebView==null) {
+			WebView.setWebContentsDebuggingEnabled(true);
 			mWebView = new AdvancedBrowserWebView(this);
 			mWebView.setOnLongClickListener(mHtmlObjectHandler);
 		}
@@ -4254,7 +4258,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			closing=true;
 			Collection<WebFrameLayout> values = id_table.values();
 			for (WebFrameLayout wfl:values) {
-				wfl.deconstruct();
+				wfl.destroy();
 			}
 			WebPic.versionMap.clear();
 			id_table.clear();
@@ -4498,6 +4502,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		
 		public void close() {
 			if (viewImpl != null) {
+				viewImpl.stopLoading();
 				viewImpl.destroy();
 				viewImpl = null;
 			}
@@ -4874,7 +4879,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	}
 	
 	public boolean checkWebSelection() {
-		if(getCurrentFocus() == currentWebView){
+		if(getCurrentFocus() == currentWebView && currentWebView!=null){
 			if(currentWebView.bIsActionMenuShown){
 				currentWebView.clearFocus();
 				if(mWebListener.upsended) {

@@ -8,14 +8,12 @@ import com.knziha.polymer.BrowserActivity;
 import com.knziha.polymer.Utils.BufferedReader;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.ReusabeBufferedInputStream;
-import com.knziha.polymer.database.LexicalDBHelper;
-import com.knziha.polymer.pdviewer.pagecover.PageCover;
+import com.knziha.polymer.webslideshow.WebPic.WebPic;
 import com.knziha.polymer.widgets.WebFrameLayout;
 import com.thegrizzlylabs.sardineandroid.DavResource;
 import com.thegrizzlylabs.sardineandroid.Sardine;
 import com.thegrizzlylabs.sardineandroid.impl.OkHttpSardine;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -66,7 +64,7 @@ public class SardineCloud implements Runnable {
 		if(t==null) {
 			task = taskType;
 			t = new Thread(this);
-			sardine = new OkHttpSardine(username, password, false);
+			sardine = new OkHttpSardine(a, username, password, false);
 			pathBuilder = new StringBuilder(webdavServer);
 			t.start();
 		} else {
@@ -227,11 +225,11 @@ public class SardineCloud implements Runnable {
 						}
 						sb.append(";");
 						sb.append(thI.url);
-						sb.append("\n");
+						sb.append("\r");
 					}
 					cursor.close();
 					progress+=25;
-					break;
+					//break; // early break test.
 				}
 				mayAbort.set(false);
 				// 上传标签页列表
@@ -262,8 +260,10 @@ public class SardineCloud implements Runnable {
 			BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(sardine.get(PLBR_TABS_ALL)));
 			String line;
 			while((line=bufferedReader.readLine())!=null) {
+				line = line.trim();
 				if(abort.get()) return;
 				String[] arr = line.split(";");
+				CMN.Log("sardine.line=", line, arr);
 				if(arr.length>=4) {
 					try {
 						long creationTime = Long.parseLong(arr[0]);
@@ -393,18 +393,14 @@ public class SardineCloud implements Runnable {
 				tabI = allTabsMap.get(tbI.id);
 			}
 			deltaProgress=25;
-			CMN.Log("同步中...", tbI.selected, tbI.type, tbI);
-			CMN.Log("同步中???", tabI);
+			if(tbI.type==1) {
+				CMN.Log("同步中...", tbI.selected, tbI.type, tbI);
+				CMN.Log("同步中???", tabI);
+			}
 			if(tbI.type<0) { // 删除
 				if(tabI!=null) {
 					if(tbI.selected) {
-						// todo apply close
-						if(a.opt.getDelayRemovingClosedTabs()) {
-							a.activeClosedTabs.add(tabI);
-						} else {
-							a.id_table.remove(tabI.id);
-							tabI.close();
-						}
+						a.setTabClosed(tabI);
 					} else {
 						newHolders.add(tabI);
 					}
@@ -439,7 +435,9 @@ public class SardineCloud implements Runnable {
 							InputStream stream = sardine.get(pathBuilder.append("tab_")
 									.append(creationTime)
 									.append(".bin").toString());
-							input.reuse(stream);
+							//input.reuse(stream);
+							input = input.reconstruct(stream);
+							//input = new ReusabeBufferedInputStream(stream);
 							bundle.clear();
 							webStacksWriterSer.readStream(bundle, input);
 							if(tbI.token==0)values.put("last_visit_time", bundle.getLong("last_visit_time", 0));
@@ -462,7 +460,9 @@ public class SardineCloud implements Runnable {
 					tabI.url = tbI.url;
 					tabI.title = tbI.title;
 					tabI.flag = tbI.flag;
-					tabI.lastCaptureVer = 0;
+					tabI.lastCaptureVer = -1;
+					tabI.version = -1;
+					WebPic.versionMap.put(tabI.id, -1); // 虚高？
 					newHolders.add(tabI);
 				} else { // 不变
 					if(tbI.type>1) {

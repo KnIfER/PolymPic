@@ -47,7 +47,15 @@ public class WebPic implements ResourceKeyOutdating, Model {
 	public boolean isOutDated() {
 		Integer ver = versionMap.get(tabID);
 		//CMN.Log(tabID, "isOutDated__", ver!=null&&ver>version, version, ver);
-		return ver!=null&&ver>version;
+		if(ver!=null) {
+			if(ver>version) {
+				return true;
+			} else if(ver==-1) {
+				versionMap.remove(tabID);
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	@Override
