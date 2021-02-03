@@ -287,7 +287,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	
 	public File downloadTargetDir;
 	
-	private RequestBuilder<Drawable> glide;
+	public RequestBuilder<Drawable> glide;
 	public String android_ua = "Mozilla/5.0 (Linux; Android " + Build.VERSION.RELEASE + "; " + Build.MODEL + ") AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Mobile Safari/537.36 OPR/58.2.2878.53403";
 	
 	
@@ -574,16 +574,22 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			if (currentWebView != null) {
 				currentWebView.saveIfNeeded();
 			}
-			if(tabsDirty) {
-				StringBuilder stringBuilder = new StringBuilder();
-				for(TabHolder tabHolder:TabHolders) {
-					stringBuilder.append(tabHolder.id).append(" ");
-				}
-				CMN.Log("tabs::", stringBuilder);
-				opt.putOpenedTabs(stringBuilder.toString());
-				tabsDirty = false;
+			if(opt.checkTabsOnPause()) {
+				checkTabs();
 			}
-			if(mWebListener!=null) mWebListener.parseJinKe();
+			if(false&&mWebListener!=null) mWebListener.parseJinKe();
+		}
+	}
+	
+	private void checkTabs() {
+		if(tabsDirty) {
+			StringBuilder stringBuilder = new StringBuilder();
+			for(TabHolder tabHolder:TabHolders) {
+				stringBuilder.append(tabHolder.id).append(" ");
+			}
+			CMN.Log("tabs::", stringBuilder);
+			opt.putOpenedTabs(stringBuilder.toString());
+			tabsDirty = false;
 		}
 	}
 	
@@ -642,7 +648,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		}
 		closedTabs = new ArrayList<>(Arrays.asList(allTabs.values().toArray(new TabHolder[]{})));
 		
-		checkTabs(true);
+		checkCurrentTab(true);
 		//SetupPasteBin();
 		
 		webtitle.setOnClickListener(this);
@@ -728,7 +734,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		systemIntialized=true;
 	}
 	
-	private void checkTabs(boolean init) {
+	private void checkCurrentTab(boolean init) {
 		/* !!!原装 */
 		if(TabHolders.size()==0) {
 			String defaultUrl = getDefaultPage();
@@ -746,7 +752,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		if(currentViewImpl==null) {
 			int idx=adapter_idx;
 			if(layoutManager!=null) {
-				idx = Math.max(0, Math.min(layoutManager.targetPos, TabHolders.size()));
+				idx = layoutManager.targetPos = ViewUtils.getCenterXChildPositionV1(recyclerView);
+				idx = Math.max(0, Math.min(idx, TabHolders.size()-1));
 			}
 			AttachWebAt(idx, init?0:3);
 		}
@@ -872,7 +879,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	
 	private void webtitle_setVisibility(boolean invisible) {
 		int targetVis = invisible ? View.INVISIBLE : View.VISIBLE;
-		CMN.Log("webtitle_setVisibility", invisible);
+		//CMN.Log("webtitle_setVisibility", invisible);
 		if(targetVis!=webtitle.getVisibility()) {
 			if(invisible) {
 				String urlNow=currentWebView.getUrl();
@@ -1747,13 +1754,14 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		recyclerViewPager.setLayoutManager(layoutManager);
 		recyclerViewPager.addItemDecoration(new SpacesItemDecoration(itemPad));
 		
-		ItemTouchHelper.Callback callback=new ViewPagerTouchHelper(new ViewPagerTouchHelper.ItemTouchHelperCallback<ViewDataHolder>() {
+		ItemTouchHelper.Callback callback=new ViewPagerTouchHelper(new ViewPagerTouchHelper.ItemTouchHelperCallback<ViewDataHolder<WebPageItemBinding>>() {
 			@Override
-			public void onItemSwipe(ViewDataHolder vh) {
+			public void onItemSwipe(ViewDataHolder<WebPageItemBinding> vh) {
+				//CMN.Log("vh.data.iv.getTag()", vh.data.iv.getTag(com.bumptech.glide.R.id.glide_custom_view_target_tag));
 				closeTabAt(vh.position, 1);
 			}
 			@Override
-			public void onItemSlide(ViewDataHolder fromPosition, int toPosition) {
+			public void onItemSlide(ViewDataHolder<WebPageItemBinding> fromPosition, int toPosition) {
 				CMN.Log("onMove");
 			}
 		});
@@ -1787,7 +1795,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			//todo update last_visit_time and sort the closed tabs according to the time.
 			closedTabs.add(tab);
 			//todo delete stuffs but keep a stack record for re-coverage
-			adapter_idx = Math.min(adapter_idx, TabHolders.size());
+			adapter_idx = Math.min(adapter_idx, TabHolders.size()-1);
 			if (adaptermy != null) {
 				//todo add fast un-close button
 				positon++;
@@ -1807,6 +1815,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	public void setTabClosed(TabHolder tab) {
 		if(tab.viewImpl==currentViewImpl) {
 			currentViewImpl=null;
+			adapter_idx = -1;
 		}
 		if(opt.getDelayRemovingClosedTabs()) {
 			activeClosedTabs.add(tab);
@@ -1902,10 +1911,14 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	
 	/** 列表化/窗口化标签管理 */
 	private void toggleTabView(int fromClick, View v) {
-		//todo 仿效 opera 浏览后直接显示 webview 难度 level up ⭐⭐⭐⭐⭐
+		//CMN.Log("toggleTabView???", currentViewImpl==null?"noImpl":"hasImpl", adapter_idx);
 		if(currentViewImpl==null) {
-			checkTabs(false);
+			checkCurrentTab(false);
+			if(adaptermy!=null) {
+				adaptermy.notifyDataSetChanged();
+			}
 		}
+		//CMN.Log("toggleTabView", currentViewImpl==null?"noImpl":"hasImpl", adapter_idx);
 		if(webtitle.getVisibility()!=View.VISIBLE) {
 			webtitle_setVisibility(false);
 		}
@@ -1999,7 +2012,11 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		if(reason==3||reason==0) {
 			//CMN.Log("onLeaveCurrentTab", mWebView.version);
 			if(holder.version>1) {
-				checkWebViewDirtyMap.add(currentViewImpl);
+				if(opt.saveTabsOnPause()) {
+					checkWebViewDirtyMap.add(currentViewImpl);
+				} else {
+					currentViewImpl.saveIfNeeded();
+				}
 			}
 			//mWebView.saveIfNeeded();
 		}
@@ -2013,21 +2030,21 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				targetPos = fromClick;
 			}
 			if(targetPos<0) targetPos=0;
-			if(targetPos!=adapter_idx) {
+			if(targetPos!=adapter_idx||currentViewImpl==null||currentViewImpl.getParent()==null) {
 				boolean added = AttachWebAt(targetPos, 0);
 				currentWebView.setBMRef(tmpBmRef);
-				coverupTheTab(currentWebView.layout, added);
+				coverupTheTab(currentViewImpl, added);
 				uncoverTheTab(225);
 			} else {
-				currentWebView.layout.setVisibility(View.VISIBLE);
+				currentViewImpl.setVisibility(View.VISIBLE);
 			}
-			currentWebView.layout.setTranslationX(0);
-			currentWebView.layout.setTranslationY(0);
+			currentViewImpl.setTranslationX(0);
+			currentViewImpl.setTranslationY(0);
 			viewpager_holder.setVisibility(View.GONE); // 放
 		} else {
 			scrollHereRunnnable.run();
 			viewpager_holder.setVisibility(View.VISIBLE); // 收
-			currentWebView.layout.setVisibility(View.INVISIBLE);
+			currentViewImpl.setVisibility(View.INVISIBLE);
 			if(recyclerView.getTag(R.id.home)==null) {
 				//recyclerView.scrollToPosition(adapter_idx + 1);
 				recyclerView.setTag(R.id.home, false);
@@ -2074,7 +2091,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		tabsAnimator.start();
 	};
 	private void startAnimation(boolean post) {
-		CMN.Log("动画咯", post);
+		//CMN.Log("动画咯", post);
 		if(post) {
 			root.removeCallbacks(startAnimationRunnable);
 			root.postDelayed(startAnimationRunnable, 160);
@@ -2173,13 +2190,15 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			if(tabH==0) {
 				tabH = UIData.webcoord.getHeight()-currentViewImpl.getPaddingBottom();
 			}
+			
 			ttY=(H+titleH-viewpager_holder.getPaddingBottom()-tabH*targetScale)/2-10;
 			
 			if(!anioutTopBotForTab) {
 				ttY+=-appbar.getHeight()-appbar.getTop();
 			}
 			
-			CMN.Log(H, mStatusBarH, UIData.bottombar2.getHeight(), "appbar.h="+appbar.getHeight(), "appbar.top="+appbar.getTop(), "titleH="+titleH, "bottom.h="+appbar.getTop(), "idealItemHeight2="+currentWebView.getHeight()*targetScale);
+			//CMN.Log("AAHH", currentViewImpl.getImplHeight(), UIData.webcoord.getHeight()-currentViewImpl.getPaddingBottom());
+			//CMN.Log(H, mStatusBarH, UIData.bottombar2.getHeight(), "appbar.h="+appbar.getHeight(), "appbar.top="+appbar.getTop(), "titleH="+titleH, "bottom.h="+appbar.getTop(), "idealItemHeight2="+currentWebView.getHeight()*targetScale);
 			
 			
 			//ttY=(currentWebView.getHeight()*(1-targetScale))/2;
@@ -2195,6 +2214,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		}
 		
 		if(!DismissingViewHolder) {
+			//CMN.Log("预放计算::", layoutManager.targetPos-1, fromClick, adapter_idx);
 			int targetPos = layoutManager.targetPos-1;
 			if(targetPos<0) targetPos=0;
 			int bcc=0;
@@ -2203,12 +2223,12 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				ttX += (mItemWidth+2*itemPad)*bcc;
 				targetPos = fromClick;
 			}
-			if(targetPos!=adapter_idx)
+			if(targetPos!=adapter_idx||currentViewImpl==null||currentViewImpl.getParent()==null)
 			{
 				//added = TabHolders.get(targetPos)!=null;
 				added = AttachWebAt(targetPos, 0);
-				layout = currentWebView.layout;
-				currentWebView.setBMRef(tmpBmRef);
+				layout = currentViewImpl;
+				layout.setBMRef(tmpBmRef);
 				layout.setScaleX(targetScale);
 				layout.setScaleY(targetScale);
 				layout.setTranslationY(ttY);
@@ -2356,6 +2376,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	
 	
 	private boolean AttachWebAt(int i, int pseudoAdd) {
+		CMN.Log("AttachWebAt", i, "pseudoAdd", pseudoAdd);
 		int size = TabHolders.size()-1; // sanity check
 		if(size<0) return pseudoAdd!=0;
 		if(i<0) i=0;
@@ -2457,7 +2478,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		//if(pseudoAdd==0)
 		updateProgressUI();
 		if(adapter_idx!=i || add) {
-			adapter_idx=i;
+			adapter_idx = i;
 			etSearch.setText(holder.url);
 		}
 		UIData.browserWidget10.setText(Integer.toString(i));
@@ -4256,6 +4277,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			onLeaveCurrentTab(2);
 			Glide.get(this).clearMemory();
 			closing=true;
+			if(!opt.checkTabsOnPause()) {
+				checkTabs();
+			}
 			Collection<WebFrameLayout> values = id_table.values();
 			for (WebFrameLayout wfl:values) {
 				wfl.destroy();
@@ -4471,6 +4495,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		public boolean paused;
 		WebFrameLayout viewImpl;
 		int type;
+		public int lastSaveVer;
 		public int lastCaptureVer;
 		public int version;
 		

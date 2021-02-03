@@ -261,7 +261,6 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		try {
 			SSLContext sslcontext = SSLContext.getInstance("TLS");
 			sslcontext.init(null, new TrustManager[]{new MyX509TrustManager()}, new java.security.SecureRandom());
-			
 			HttpsURLConnection.setDefaultSSLSocketFactory(sslcontext.getSocketFactory());
 		} catch (Exception e) {
 			CMN.Log(e);

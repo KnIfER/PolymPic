@@ -52,7 +52,6 @@ public class WebViewmy extends WebView implements MenuItem.OnMenuItemClickListen
 	public BrowserActivity.TabHolder holder;
 	public BrowserActivity context;
 	public long time;
-	public int lastSaveVer;
 	public int lastScroll;
 	public boolean stackloaded;
 	public String targetUa;

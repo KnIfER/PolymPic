@@ -11,6 +11,8 @@ import com.knziha.polymer.AdvancedBrowserWebView;
 import com.knziha.polymer.BrowserActivity;
 import com.knziha.polymer.databinding.ActivityMainBinding;
 
+import java.lang.ref.WeakReference;
+
 public class WebFrameLayout extends FrameLayout {
 	public BrowserActivity.TabHolder holder;
 	public AdvancedBrowserWebView mWebView;
@@ -138,5 +140,9 @@ public class WebFrameLayout extends FrameLayout {
 	
 	public void stopLoading() {
 		mWebView.stopLoading();
+	}
+	
+	public void setBMRef(WeakReference<Bitmap> tmpBmRef) {
+		mWebView.setBMRef(tmpBmRef);
 	}
 }

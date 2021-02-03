@@ -87,7 +87,12 @@ public class OkHttpSardine implements Sardine {
 			builder.authenticator(new BasicAuthenticator(username, password));
 		}
 		try {
-			SSLContext sslcontext = SSLContext.getInstance("TLS");
+			SSLContext sslcontext;
+			try {
+				sslcontext = SSLContext.getInstance("TLS");
+			} catch (NoSuchAlgorithmException e) {
+				sslcontext = SSLContext.getInstance("SSL");
+			}
 			MyX509TrustManager tm = new MyX509TrustManager();
 			sslcontext.init(null, new TrustManager[]{tm}, new java.security.SecureRandom());
 			builder.sslSocketFactory(sslcontext.getSocketFactory(), tm);
@@ -133,6 +138,7 @@ public class OkHttpSardine implements Sardine {
 
         @Override
         public Response intercept(Chain chain) throws IOException {
+        	// todo is it safe?
             Request request = chain.request().newBuilder().addHeader("Authorization", Credentials.basic(userName, password, SardineUtil.standardUTF8())).build();
             return chain.proceed(request);
         }

@@ -1,3 +1,4 @@
+
 package com.knziha.polymer.webstorage;
 
 import android.content.ContentValues;
@@ -34,8 +35,8 @@ public class SardineCloud implements Runnable {
 	HashMap<Long, TabBean> pulledTabsTable = new HashMap<>();
 	WeakReference<BrowserActivity> aRef = new WeakReference<>(null);
 	volatile boolean threadSuspended;
-	private AtomicBoolean abort;
-	private AtomicBoolean mayAbort;
+	private volatile AtomicBoolean abort;
+	private volatile AtomicBoolean mayAbort;
 	public int progress;
 	public int progressMax;
 	
@@ -460,9 +461,10 @@ public class SardineCloud implements Runnable {
 					tabI.url = tbI.url;
 					tabI.title = tbI.title;
 					tabI.flag = tbI.flag;
-					tabI.lastCaptureVer = -1;
-					tabI.version = -1;
-					WebPic.versionMap.put(tabI.id, -1); // 虚高？
+					Integer ver = WebPic.versionMap.remove(tabI.id); // 虚高？
+					tabI.version = ver==null?0:ver;
+					tabI.version++;
+					tabI.lastCaptureVer = tabI.lastSaveVer = tabI.version;
 					newHolders.add(tabI);
 				} else { // 不变
 					if(tbI.type>1) {

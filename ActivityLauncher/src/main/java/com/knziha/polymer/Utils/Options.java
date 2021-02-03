@@ -224,6 +224,8 @@ public class Options implements WebOptions, BookOptions {
 	/** Need to Rearrange ViewPager's View order. */
 	@Multiline(flagPos=21, debug=0) public boolean getAnimateImageviewAlone(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=22, debug=0) public boolean getDelayRemovingClosedTabs(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=23, debug=0) public boolean checkTabsOnPause(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=24) public boolean saveTabsOnPause(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
 	
 	
 	/////////////////////End Third Flag////////////////////////////////////

@@ -230,6 +230,9 @@ public class DownloadTask implements Runnable{
 			if(!TextUtils.isEmpty(shotFn)) {
 				fn = shotFn;
 			}
+			if(fn.length()>18) {
+				fn = fn.substring(0, 18);
+			}
 			while((target=new File(download_path, fn+"."+cc+ext)).exists()) {
 			//while((target=new File("storage/sdcard1/vtech/"+title+"."+cc+".flv")).exists()) {
 				cc++;

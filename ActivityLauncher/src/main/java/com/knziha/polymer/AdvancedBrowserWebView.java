@@ -462,8 +462,8 @@ public class AdvancedBrowserWebView extends WebViewmy implements NestedScrolling
 	
 	/** 持久化保存网页前进/回退栈 */
 	public void saveIfNeeded() { //WEBVIEW_CHROMIUM_STATE
-		if(holder.version>1 && lastSaveVer<holder.version && stackloaded) {
-			lastSaveVer = holder.version;
+		if(holder.version>1 && holder.lastSaveVer<holder.version && stackloaded) {
+			holder.lastSaveVer = holder.version;
 			Bundle bundle = new Bundle();
 			CMN.Log("saveIfNeeded", holder.getLuxury());
 //			int stacksCount=0;

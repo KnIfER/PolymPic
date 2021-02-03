@@ -1,5 +1,7 @@
 package com.thegrizzlylabs.sardineandroid.impl;
 
+import com.knziha.polymer.Utils.CMN;
+
 import okhttp3.Authenticator;
 import okhttp3.Credentials;
 import okhttp3.Request;
@@ -22,11 +24,11 @@ class BasicAuthenticator implements Authenticator {
     @Override
     public Request authenticate(Route route, Response response) {
         if (response.request().header("Authorization") != null) {
+			//CMN.Log("SSX::already authenticated.");
             return null; // Give up, we've already attempted to authenticate.
         }
-
-        System.out.println("Authenticating for response: " + response);
-        System.out.println("Challenges: " + response.challenges());
+		//CMN.Log("SSX::Authenticating for response: " + response);
+		CMN.Log("SSX::Challenges: " + response.challenges());
         String credential = Credentials.basic(userName, password);
         return response.request().newBuilder()
                 .header("Authorization", credential)
