@@ -223,7 +223,7 @@ public class Options implements WebOptions, BookOptions {
 	@Multiline(flagPos=20, debug=0) public boolean getHideWebViewWhenShowingWebCoverDuringTransition(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
 	/** Need to Rearrange ViewPager's View order. */
 	@Multiline(flagPos=21, debug=0) public boolean getAnimateImageviewAlone(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
-	@Multiline(flagPos=22, debug=0) public boolean getDelayRemovingClosedTabs(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=22, debug=1) public boolean getDelayRemovingClosedTabs(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=23, debug=0) public boolean checkTabsOnPause(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=24) public boolean saveTabsOnPause(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
 	
@@ -269,9 +269,9 @@ public class Options implements WebOptions, BookOptions {
 	public long Flag(BrowserActivity a, int flagIndex) {
 		switch (flagIndex){
 			case -2:
-				return a.currentWebView.getDomainFlag();
+				return a.currentViewImpl.getDomainFlag();
 			case -1:
-				return a.currentWebView.holder.flag;
+				return a.currentViewImpl.holder.flag;
 			case 1:
 				return FirstFlag;
 			case 2:
@@ -285,10 +285,10 @@ public class Options implements WebOptions, BookOptions {
 	public void Flag(BrowserActivity a, int flagIndex, long val) {
 		switch (flagIndex){
 			case -2:
-				a.currentWebView.setDomainFlag(val);
+				a.currentViewImpl.setDomainFlag(val);
 			break;
 			case -1:
-				a.currentWebView.holder.flag=val;
+				a.currentViewImpl.holder.flag=val;
 			break;
 			case 1:
 				FirstFlag=val;

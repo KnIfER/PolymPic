@@ -4,6 +4,7 @@ package com.knziha.polymer.webstorage;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.text.TextUtils;
 
 import com.knziha.polymer.BrowserActivity;
 import com.knziha.polymer.Utils.BufferedReader;
@@ -24,7 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.knziha.polymer.AdvancedBrowserWebView.webStacksWriterSer;
+import static com.knziha.polymer.widgets.WebFrameLayout.webStacksWriterSer;
 
 public class SardineCloud implements Runnable {
 	OkHttpSardine sardine;
@@ -191,6 +192,9 @@ public class SardineCloud implements Runnable {
 						long creationTime = cursor.getLong(cursor.getColumnIndex("creation_time"));
 						long last_visit_time = cursor.getLong(cursor.getColumnIndex("last_visit_time"));
 						String title = cursor.getString(cursor.getColumnIndex("title"));
+						if(TextUtils.isEmpty(title)) {
+							title = "Untitled";
+						}
 						TabBean tb = pulledTabsTable.get(creationTime);
 						if(tb==null||last_visit_time!=tb.token) { // 最后入库时大于读取值时，需要上传
 							bundle.putLong("last_visit_time", last_visit_time);
@@ -250,6 +254,8 @@ public class SardineCloud implements Runnable {
 //					}
 		} catch (Exception e) {
 			CMN.Log(e);
+			// todo handle error
+			a.postDoneSyncing(TaskType.uploadTabs);
 		}
 	}
 	
@@ -360,6 +366,13 @@ public class SardineCloud implements Runnable {
 		if(a==null) {
 			return;
 		}
+		if(a.checkWebViewDirtyMap.size()>0) {
+			WebFrameLayout[] arr = a.checkWebViewDirtyMap.toArray(new WebFrameLayout[]{});
+			a.checkWebViewDirtyMap.clear();
+			for(WebFrameLayout wfl:arr) {
+				wfl.saveIfNeeded();
+			}
+		}
 		ArrayList<BrowserActivity.TabHolder> newHolders = new ArrayList<>((int)(mergedTabs.size()*1.5));
 		
 		int LEN_PLBR_TABS = 0;
@@ -465,6 +478,9 @@ public class SardineCloud implements Runnable {
 					tabI.version = ver==null?0:ver;
 					tabI.version++;
 					tabI.lastCaptureVer = tabI.lastSaveVer = tabI.version;
+					if(tabI.last_visit_time!=tbI.token) {
+						tabI.onSalvaged();
+					}
 					newHolders.add(tabI);
 				} else { // 不变
 					if(tbI.type>1) {

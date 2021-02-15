@@ -8,6 +8,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 
 //common
@@ -16,7 +18,10 @@ public class CMN {
     public final static String emptyStr = "";
     public static final HashMap<String, String> AssetMap = new HashMap<>();
 	public static final Boolean OccupyTag = true;
-    
+	
+	public static final Lock lock = new ReentrantLock();
+	public static android.webkit.WebView dummyWV;
+	
 	public static int GlobalPageBackground = 0;
 	public static int MainBackground = 0;
 	public static int FloatBackground;

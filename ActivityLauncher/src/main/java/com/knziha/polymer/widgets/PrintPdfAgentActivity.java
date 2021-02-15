@@ -8,6 +8,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.print.PrintAttributes;
 import android.print.PrintManager;
+import android.webkit.WebView;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
@@ -17,15 +18,15 @@ import com.knziha.polymer.BrowserActivity;
 import java.util.List;
 
 public class PrintPdfAgentActivity extends Activity {
-	public static WebViewmy webview;
+	public static WebView webview;
 	private boolean startLis;
 	
-	public static void printPDF(Activity context, WebViewmy currentWebView) {
+	public static void printPDF(Activity context, WebView currentWebView) {
 		if(context instanceof PrintPdfAgentActivity) {
-			String name = currentWebView.getTitle()+".pdf";
-			PrintManager printManager = (PrintManager) context.getSystemService(Context.PRINT_SERVICE);
-			printManager.print("Print", currentWebView.createPrintDocumentAdapter(name)
-					, new PrintAttributes.Builder().setColorMode(PrintAttributes.COLOR_MODE_COLOR).build());
+//			String name = currentWebView.getTitle()+".pdf";
+//			PrintManager printManager = (PrintManager) context.getSystemService(Context.PRINT_SERVICE);
+//			printManager.print("Print", currentWebView.createPrintDocumentAdapter(name)
+//					, new PrintAttributes.Builder().setColorMode(PrintAttributes.COLOR_MODE_COLOR).build());
 		} else {
 			webview = currentWebView;
 			context.startActivity(new Intent(context, PrintPdfAgentActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));

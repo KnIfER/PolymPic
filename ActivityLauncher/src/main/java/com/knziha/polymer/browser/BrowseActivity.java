@@ -26,6 +26,7 @@ import android.os.SystemClock;
 import android.text.TextPaint;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -54,11 +55,15 @@ import com.knziha.polymer.PDocViewerActivity;
 import com.knziha.polymer.R;
 import com.knziha.polymer.Toastable_Activity;
 import com.knziha.polymer.Utils.CMN;
+import com.knziha.polymer.browser.webkit.WebViewImplExt;
+import com.knziha.polymer.browser.webkit.XPlusWebView;
 import com.knziha.polymer.databinding.BrowseMainBinding;
 import com.knziha.polymer.databinding.TaskItemsBinding;
 import com.knziha.polymer.toolkits.MyX509TrustManager;
 import com.knziha.polymer.widgets.DescriptiveImageView;
 import com.knziha.polymer.widgets.Utils;
+import com.knziha.polymer.widgets.WebFrameLayout;
+import com.tencent.smtt.sdk.QbSdk;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -94,11 +99,10 @@ public class BrowseActivity extends Toastable_Activity
 		implements View.OnClickListener, View.OnLongClickListener {
 	BrowseMainBinding UIData;
 	
-	WebView webview_Player;
-	com.tencent.smtt.sdk.WebView x5_webview_Player;
+	WebViewImplExt webview_Player;
+	XPlusWebView x5_webview_Player;
 	
 	WebBrowseListener listener;
-	WebBrowseListenerX5 listenerX5;
 	
 	BrowseTaskExecutor taskExecutor;
 	private File download_path;
@@ -133,14 +137,35 @@ public class BrowseActivity extends Toastable_Activity
 		}
 	}
 	
-	private void initX5WebStation() {
-		x5_webview_Player = new com.tencent.smtt.sdk.WebView(this);
+	private void initX5WebStation() throws IOException {
+		
+		
+		QbSdk.PreInitCallback cb = new QbSdk.PreInitCallback() {
+			@Override
+			public void onViewInitFinished(boolean arg0) {
+				// TODO Auto-generated method stub
+				//x5內核初始化完成的回调，为true表示x5内核加载成功，否则表示x5内核加载失败，会自动切换到系统内核。
+				CMN.Log( " onViewInitFinished is " + arg0);
+				
+			}
+			
+			@Override
+			public void onCoreInitFinished() {
+				// TODO Auto-generated method stub
+			}
+		};
+		//x5内核初始化接口
+		QbSdk.initX5Environment(getApplicationContext(),  cb);
+		
+		
+		CMN.Log("initX5WebStation");
+		x5_webview_Player = new XPlusWebView(BrowseActivity.this);
 		Utils.addViewToParent(x5_webview_Player, UIData.webStation);
-		listenerX5 = new WebBrowseListenerX5(this, x5_webview_Player);
+		listener = new WebBrowseListener(BrowseActivity.this, x5_webview_Player);
 	}
 	
 	private void initStdWebStation() {
-		webview_Player = new WebView(this);
+		webview_Player = new WebViewImplExt(this);
 		Utils.addViewToParent(webview_Player, UIData.webStation);
 		listener = new WebBrowseListener(this, webview_Player);
 	}
@@ -218,6 +243,7 @@ public class BrowseActivity extends Toastable_Activity
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		
 		PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
 		mWakeLock = pm.newWakeLock(PowerManager.FULL_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP | PowerManager.ON_AFTER_RELEASE, "servis:SimpleTimer");
 		UIData = DataBindingUtil.setContentView(this, R.layout.browse_main);
@@ -354,8 +380,16 @@ public class BrowseActivity extends Toastable_Activity
 		} catch (IOException e) {
 			//CMN.Log(e);
 		}
-		if(Utils.littleCat) {
-			initX5WebStation();
+		boolean x5 = Utils.littleCat;
+		x5 = true;
+		//CMN.Log("111111");
+		if(x5) {
+			try {
+				initX5WebStation();
+			} catch (IOException e) {
+				CMN.Log(e);
+				initStdWebStation();
+			}
 		} else {
 			initStdWebStation();
 		}
@@ -529,25 +563,11 @@ public class BrowseActivity extends Toastable_Activity
 	}
 	
 	public void stopWebView() {
-		boolean x5 = listenerX5!=null;
-		if(x5) {
-			if(listenerX5!=null)
-				listenerX5.stopWebview();
-		} else {
-			if(listener!=null)
-				listener.stopWebview();
-		}
+		listener.stopWebview();
 	}
 	
 	public void clearWebview() {
-		boolean x5 = listenerX5!=null;
-		if(x5) {
-			if(listenerX5!=null)
-				listenerX5.clearWebview();
-		} else {
-			if(listener!=null)
-				listener.clearWebview();
-		}
+		listener.clearWebview();
 	}
 	
 	public void updateTitleForRow(long id, String newTitle) {
@@ -883,7 +903,6 @@ public class BrowseActivity extends Toastable_Activity
 	
 	// 任务启动，添加记录至图
 	DownloadTask startTaskForDB(BrowseTaskExecutor taskExecutor, Cursor cursor) {
-		boolean x5 = listenerX5!=null;
 		long id = cursor.getLong(0);
 		DownloadTask task = taskMap.get(id);
 		if(task!=null) {
@@ -905,11 +924,7 @@ public class BrowseActivity extends Toastable_Activity
 		if(ext!=null) {
 			if(task.ext1!=null || task.ext2!=null) {
 				UIData.root.post(() -> {
-					if(x5) {
-						listenerX5.loadUrl(url, finalTask);
-					} else {
-						listener.loadUrl(url, finalTask);
-					}
+					listener.loadUrl(url, finalTask);
 				});
 				started=true;
 			}

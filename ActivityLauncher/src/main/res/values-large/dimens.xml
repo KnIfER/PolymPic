@@ -2,5 +2,5 @@
 <resources>
 	<dimen name="_20_">25dp</dimen>
 	<dimen name="_65_">90dp</dimen>
-	<dimen name="_90_">120dp</dimen>
+	<dimen name="_90_">150dp</dimen>
 </resources>

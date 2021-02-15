@@ -58,10 +58,8 @@ dependencies {
     //api 'org.apache.httpcomponents:httpclient:4.3.5'
     //api 'commons-io:commons-io:2.8.0'
 
-    //api 'com.alibaba:fastjson:1.2.72'
 
     implementation files('libs\\core-3.3.3.jar')
-    implementation files('libs\\tbs_sdk_thirdapp_v4.3.0.67_43967_sharewithdownloadwithfile_withoutGame_obfs_20200923_120452.jar')
     testImplementation 'junit:junit:4.13'
     //annotationProcessor libs_glide
     api project(':LibPdfium')
@@ -98,11 +96,14 @@ dependencies {
 
     api fileTree(dir: 'libs', include: ['*.jar'])
 
+    //api 'com.alibaba:fastjson:1.2.72'
+
     implementation 'com.squareup.okhttp3:okhttp:3.12.13'
     //implementation 'com.squareup.okhttp3:okhttp:3.14.2' // Expected Android API level 21+ but was 19. okhttp you betrayer!
     //implementation 'com.squareup.okhttp3:okhttp:4.7.2' // kotlin you betrayer, introducing 7000+ methods!
     //implementation 'com.squareup.okhttp3:okhttp:3.11.0'
     implementation 'org.simpleframework:simple-xml:2.7.1'
+
     //implementation 'com.thegrizzlylabs.sardine-android:sardine-android:0.7'
 
     //implementation 'com.android.support:multidex:1.0.3'

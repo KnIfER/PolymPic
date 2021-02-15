@@ -108,6 +108,24 @@
 <!--			</intent-filter>-->
 		</activity>
 
+
+		<activity
+			android:name=".browser.benchmarks.V8Benchmark"
+			android:label="WebViewBenchMarks"
+			android:theme="@style/ActivityTheme"
+			android:taskAffinity=""
+			android:configChanges="orientation|keyboardHidden|screenSize|smallestScreenSize|screenLayout|uiMode|locale|layoutDirection"
+			android:exported="true"
+			/>
+		<activity
+			android:name=".browser.benchmarks.V8BenchmarkX5"
+			android:label="WebViewBenchMarks"
+			android:theme="@style/ActivityTheme"
+			android:taskAffinity=""
+			android:configChanges="orientation|keyboardHidden|screenSize|smallestScreenSize|screenLayout|uiMode|locale|layoutDirection"
+			android:exported="true"
+			/>
+
 		<activity
 			android:name=".pdviewer.PDocHistoryActivity"
 			android:theme="@style/AppTheme"

@@ -111,13 +111,15 @@ import com.knziha.filepicker.model.DialogSelectionListener;
 import com.knziha.filepicker.utils.FU;
 import com.knziha.filepicker.view.FilePickerDialog;
 import com.knziha.polymer.Utils.CMN;
-import com.knziha.polymer.Utils.IU;
 import com.knziha.polymer.Utils.MyReceiver;
 import com.knziha.polymer.Utils.OptionProcessor;
 import com.knziha.polymer.Utils.Options;
 import com.knziha.polymer.Utils.RgxPlc;
 import com.knziha.polymer.Utils.WebOptions;
 import com.knziha.polymer.browser.DownloadHandlerStd;
+import com.knziha.polymer.browser.webkit.UniversalWebviewInterface;
+import com.knziha.polymer.browser.WebBrowseListener;
+import com.knziha.polymer.browser.webkit.XPlusWebView;
 import com.knziha.polymer.database.LexicalDBHelper;
 import com.knziha.polymer.databinding.ActivityMainBinding;
 import com.knziha.polymer.databinding.DownloadBottomSheetBinding;
@@ -139,14 +141,14 @@ import com.knziha.polymer.widgets.AppIconsAdapter;
 import com.knziha.polymer.widgets.DescriptiveImageView;
 import com.knziha.polymer.widgets.DialogWithTag;
 import com.knziha.polymer.widgets.PopupBackground;
-import com.knziha.polymer.widgets.PrintPdfAgentActivity;
 import com.knziha.polymer.widgets.ScrollViewTransparent;
 import com.knziha.polymer.widgets.SpacesItemDecoration;
 import com.knziha.polymer.widgets.TwoColumnAdapter;
 import com.knziha.polymer.widgets.Utils;
 import com.knziha.polymer.widgets.WaveView;
 import com.knziha.polymer.widgets.WebFrameLayout;
-import com.knziha.polymer.widgets.WebViewmy;
+import com.knziha.polymer.browser.webkit.WebViewHelper;
+import com.tencent.smtt.sdk.QbSdk;
 
 import org.adrianwalker.multilinestring.Multiline;
 import org.apache.commons.lang3.StringUtils;
@@ -155,6 +157,7 @@ import org.apache.commons.text.StringEscapeUtils;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
@@ -190,6 +193,8 @@ import static com.knziha.polymer.widgets.Utils.getViewItemByPath;
 import static com.knziha.polymer.widgets.Utils.indexOf;
 import static com.knziha.polymer.widgets.Utils.isKeyboardShown;
 import static com.knziha.polymer.widgets.Utils.setOnClickListenersOneDepth;
+import static com.knziha.polymer.browser.webkit.WebViewHelper.bAdvancedMenu;
+
 @SuppressWarnings({"rawtypes","ClickableViewAccessibility"
 		,"IntegerDivisionInFloatingPointContext"
 		,"NonConstantResourceId"
@@ -214,7 +219,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	public ArrayList<TabHolder> closedTabs = new ArrayList<>(1024);
 	public ArrayList<TabHolder> activeClosedTabs = new ArrayList<>(1024);
 	HashMap<Long, TabHolder> allTabs;
-	private HashSet<WebFrameLayout> checkWebViewDirtyMap = new HashSet<>();
+	public HashSet<WebFrameLayout> checkWebViewDirtyMap = new HashSet<>();
 	boolean tabsRead = false;
 	private int padWidth;
 	private int itemPad;
@@ -225,7 +230,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	MyHandler mHandler;
 	
 	public WebFrameLayout currentViewImpl;
-	public AdvancedBrowserWebView currentWebView;
+	public UniversalWebviewInterface currentWebView;
 	
 	ArrayList<String> WebDicts = new  ArrayList<>(64);
 	private RecyclerView.Adapter/*<ViewDataHolder<WebPageItemBinding>>*/ adaptermy;
@@ -391,7 +396,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		
 		root=UIData.root;
 		
-		mWebListener = Utils.version>=21?new WebCompatListener(this):new WebCompoundListener(this);
+		//mWebListener = Utils.version>=21?new WebCompatListener(this):new WebCompoundListener(this);
+		mWebListener = new WebCompoundListener(this);
 		
 		imageViewCover = new ImageView(this);
 		imageViewCover1 = new ImageView(this);
@@ -571,8 +577,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				}
 				checkWebViewDirtyMap.clear();
 			}
-			if (currentWebView != null) {
-				currentWebView.saveIfNeeded();
+			if (currentViewImpl != null) {
+				currentViewImpl.saveIfNeeded();
 			}
 			if(opt.checkTabsOnPause()) {
 				checkTabs();
@@ -608,7 +614,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		CheckGlideJournal();
 		checkMargin(this);
 		_45_ = (int) mResource.getDimension(R.dimen._45_);
-		WebViewmy.minW = Math.min(512, Math.min(dm.widthPixels, dm.heightPixels));
+		WebViewHelper.minW = Math.min(512, Math.min(dm.widthPixels, dm.heightPixels));
 		menu_grid_painter = DescriptiveImageView.createTextPainter();
 		UIData.browserWidget10.textPainter = menu_grid_painter;
 		
@@ -707,7 +713,61 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		//tg
 		CMN.Log("device density is ::", GlobalOptions.density);
 		CMN.Log("device version is ::", Utils.version);
-
+		
+		if(false)
+		root.postDelayed(() -> {
+			Bundle save = new Bundle();
+			currentWebView.saveState(save);
+			try {
+				
+				QbSdk.initX5Environment(getApplicationContext(),  null);
+				
+				XPlusWebView wv = new XPlusWebView(this);
+				root.addView(wv);
+				new WebBrowseListener(null, wv);
+				
+				//wv.restoreState(save);
+				wv.loadUrl("https://www.baidu.com");
+				
+			} catch (IOException e) {
+				CMN.Log(e);
+			}
+		}, 2000);
+		
+		try {
+			Class<?> c = Class.forName("android.webkit.WebViewUpdateService");
+			
+			
+			
+		} catch (Exception e) {
+		
+		}
+		
+		
+//		DialogProperties properties = new DialogProperties();
+//		properties.selection_mode = DialogConfigs.SINGLE_MODE;
+//		properties.selection_type = DialogConfigs.FILE_SELECT;
+//		properties.root = new File("/");
+//		properties.error_dir = Environment.getExternalStorageDirectory();
+//		properties.offset = new File("/data/data/com.knziha.polymer/");
+//		properties.opt_dir=new File(getExternalFilesDir(null), "favorite_dirs");
+//		properties.opt_dir.mkdirs();
+//		properties.extensions = new HashSet<>();
+//		properties.extensions.add("*");
+//		properties.extensions.add(".pdf");
+//		properties.title_id = R.string.pdf_internal_open;
+//		properties.isDark = AppWhite==Color.BLACK;
+//		FilePickerDialog dialog = new FilePickerDialog(this, properties);
+//		dialog.show();
+//		dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
+		
+		
+		//CMN.Log("webview package is ::", AdvancedBrowserWebView.getCurrentWebViewPackage().packageName+":"+AdvancedBrowserWebView.getCurrentWebViewPackage().versionName);
+		
+		//TestHelper.createWVBSC(this, false);
+		TestHelper.createWVBSC(this, true);
+		
+		//TestHelper.createWVBSC(this, true);
 		//AdvancedBrowserWebView.enableSlowWholeDocumentDraw();
 		//TestHelper.async(TestHelper::downloadlink);
 		//TestHelper.savePngBitmap(this, R.drawable.polymer, 150, 150, "/sdcard/150.png");
@@ -841,24 +901,24 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			}
 		}
 		CMN.Log("isUrl", isUrl, text, currentWebView.getOriginalUrl());
-		if(currentWebView.holder.getLuxury() && !currentWebView.equalsUrl(text)) {
-			LuxuriouslyLoadUrl(currentWebView, text);
+		if(currentViewImpl.holder.getLuxury() && !currentViewImpl.equalsUrl(text)) {
+			//LuxuriouslyLoadUrl(currentViewImpl.mWebView, text);
 		} else {
-			loadUrl(currentWebView, text);
+			loadUrl(currentViewImpl, text);
 		}
 		webtitle_setVisibility(false);
 		etSearch_clearFocus();
 	}
 	
-	private void loadUrl(AdvancedBrowserWebView mWebView, String url) {
+	private void loadUrl(WebFrameLayout layout, String url) {
 		if(opt.getUpdateUALowEnd()) {
-			updateUserAgentString(mWebView, url);
+			updateUserAgentString(layout, url);
 		}
-		mWebView.loadUrl(url);
+		layout.loadUrl(url);
 	}
 	
-	public void updateUserAgentString(AdvancedBrowserWebView mWebView, String url) {
-		historyCon.queryDomain(mWebView, url);
+	public boolean updateUserAgentString(WebFrameLayout layout, String url) {
+		historyCon.queryDomain(layout, url);
 		boolean pcMode = false;
 		//pcMode = url!=null && url.contains("www.baidu");
 		//pcMode = true;
@@ -868,13 +928,16 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		} else {
 			//CMN.Log("android_ua", android_ua);
 			targetUa = android_ua;
+			//targetUa = null;
 		}
-		mWebView.targetUa = targetUa;
-		WebSettings settings = mWebView.getSettings();
-		if(!TextUtils.equals(settings.getUserAgentString(), mWebView.targetUa)) {
+		layout.targetUa = targetUa;
+		WebSettings settings = layout.mWebView.getSettings();
+		if(!TextUtils.equals(settings.getUserAgentString(), layout.targetUa)) {
 			CMN.Log("测试 ua 设置处……");
-			settings.setUserAgentString(mWebView.targetUa);
+			settings.setUserAgentString(layout.targetUa);
+			return true;
 		}
+		return false;
 	}
 	
 	private void webtitle_setVisibility(boolean invisible) {
@@ -928,14 +991,14 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	}
 	
 	public void updateProgressUI() {
-		AdvancedBrowserWebView mWebView = currentWebView;
+		WebFrameLayout layout = currentViewImpl;
 		View starting_progressbar = UIData.progressbar;
-		if(mWebView.PageStarted) {
+		if(layout.PageStarted) {
 		//if(mWebView.getProgress()<100) {
 			starting_progressbar.setAlpha(1);
 			starting_progressbar.setVisibility(View.VISIBLE);
 			//progressbar_background.setLevel(Math.min(progressbar_background.getLevel(), 2500));
-			progressbar_background.setLevel(mWebView.getProgress()*100);
+			progressbar_background.setLevel(layout.mWebView.getProgress()*100);
 			UIData.ivRefresh.setImageResource(R.drawable.ic_close_white_24dp);
 		} else {
 			starting_progressbar.setVisibility(View.GONE);
@@ -1101,9 +1164,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		}
 	}
 	
-	public AdvancedBrowserWebView getWebViewFromID(long tabID) {
-		WebFrameLayout wfl = id_table.get(tabID);
-		return wfl==null?null:wfl.mWebView;
+	public WebFrameLayout getWebViewFromID(long tabID) {
+		return id_table.get(tabID);
 	}
 	
 	class BrowserSlider implements View.OnTouchListener {
@@ -1116,8 +1178,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		private float lastY;
 		private View webla;
 		private int adapter_to;
-		ObjectAnimator resitu = ObjectAnimator.ofFloat(currentWebView.layout, "translationX", 0, 0);
-		ObjectAnimator resitu1 = ObjectAnimator.ofFloat(currentWebView.layout, "translationX", 0, 0);
+		ObjectAnimator resitu = ObjectAnimator.ofFloat(currentViewImpl, "translationX", 0, 0);
+		ObjectAnimator resitu1 = ObjectAnimator.ofFloat(currentViewImpl, "translationX", 0, 0);
 		ObjectAnimator resitu2 = ObjectAnimator.ofFloat(DummyTransX, "translationX", 0, 0);
 		AnimatorSet animator;
 		boolean forceNxtEukatch=false;
@@ -1295,9 +1357,10 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 							webla=null;
 							if(attachIdx>=0&&attachIdx<TabHolders.size()) {
 								AttachWebAt(attachIdx, 1);
-								AdvancedBrowserWebView attachLayout = TabHolders.get(attachIdx).viewImpl.mWebView;
+								WebFrameLayout layoutAttach = TabHolders.get(attachIdx).viewImpl;
+								View attachLayout = layoutAttach.implView;
 								if(attachLayout!=null) {
-									webla = attachLayout.layout;
+									webla = layoutAttach;
 									webla.setBackgroundColor(Color.WHITE);
 									webla.setTranslationX(newTX+root.getWidth()*(newTX>0?-1:1));
 									webla.setTranslationY(layout.getTranslationY());
@@ -1816,14 +1879,21 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		if(tab.viewImpl==currentViewImpl) {
 			currentViewImpl=null;
 			adapter_idx = -1;
+			//Utils.removeIfParentBeOrNotBe(imageViewCover, null, false);
 		}
 		if(opt.getDelayRemovingClosedTabs()) {
 			activeClosedTabs.add(tab);
+			// todo delay
+			if(tab.viewImpl!=null) {
+				tab.viewImpl.resetBitmap();
+			}
 		} else {
 			id_table.remove(tab.id);
 			tab.close();
 		}
 		// todo apply close
+		// need to set database::last_visit_time
+		
 	}
 	
 	@Override
@@ -1954,7 +2024,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			//alpha.setTarget(viewpager_holder);
 			alpha1 = ObjectAnimator.ofInt(bottombar2Background().mutate(), "alpha", 1, 0);
 			alpha3 = ObjectAnimator.ofFloat(UIData.appbar, "alpha", 0, 1);
-			animatorObj = ObjectAnimator.ofPropertyValuesHolder(currentWebView.layout, scaleX, scaleY, translationX, translationY/*, alpha*//*, alpha2*//*, alpha3*/);
+			animatorObj = ObjectAnimator.ofPropertyValuesHolder(currentViewImpl, scaleX, scaleY, translationX, translationY/*, alpha*//*, alpha2*//*, alpha3*/);
 			//webAnimators = new ObjectAnimator[]{scaleX, scaleY, translationX, translationY, alpha1, alpha2};
 			//if(false)
 			animatorObj.addListener(animatorLis);
@@ -1967,7 +2037,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			tabsAnimator = animatorObj;
 			
 			tabsAnimator.setDuration(350);
-			tabsAnimator.setTarget(currentWebView.layout);
+			tabsAnimator.setTarget(currentViewImpl);
 		} else {
 			tabsAnimator.setDuration(235); // 220
 		}
@@ -2032,7 +2102,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			if(targetPos<0) targetPos=0;
 			if(targetPos!=adapter_idx||currentViewImpl==null||currentViewImpl.getParent()==null) {
 				boolean added = AttachWebAt(targetPos, 0);
-				currentWebView.setBMRef(tmpBmRef);
+				currentViewImpl.setBMRef(tmpBmRef);
 				coverupTheTab(currentViewImpl, added);
 				uncoverTheTab(225);
 			} else {
@@ -2103,9 +2173,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		@Override
 		public void onAnimationStart(Animator animation) {
 			super.onAnimationStart(animation);
-			//currentWebView.layout.removeView(currentWebView);
 			if(opt.getHideWebViewWhenShowingWebCoverDuringTransition()) {
-				currentWebView.setVisibility(View.INVISIBLE);
+				currentViewImpl.implView.setVisibility(View.INVISIBLE);
 			}
 		}
 		
@@ -2124,14 +2193,13 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				currentViewImpl.setVisibility(View.INVISIBLE);
 				//etSearch.setText("标签模式");
 			}
-			currentWebView.setVisibility(View.VISIBLE);
+			currentViewImpl.implView.setVisibility(View.VISIBLE);
 			currentViewImpl.onViewAttached(1);
 			//v.setBackgroundResource(R.drawable.surrtrip1);
-			//currentWebView.onResume();
 		}
 	};
 	private void toggleInternalTabViewAnima(int fromClick, View v) {
-		WebFrameLayout layout = currentWebView.layout;
+		WebFrameLayout layout = currentViewImpl;
 		if(opt.getAnimateImageviewAlone()) {
 			if(webFrameLayout==null) {
 				webFrameLayout = new WebFrameLayout(this, new TabHolder());
@@ -2343,7 +2411,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		if(opt.getShowWebCoverDuringTransition()) {
 			WebFrameLayout layout = (WebFrameLayout) imageViewCover.getParent();
 			if(layout==null) {
-				layout = currentWebView.layout;
+				layout = currentViewImpl;
 			}
 			if (Utils.metaKill) layout.suppressLayout(true);
 			Utils.removeIfParentBeOrNotBe(imageViewCover, null, false);
@@ -2389,13 +2457,15 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		if(tabIni.viewImpl==null) {
 			WebFrameLayout viewImpl = id_table.get(holder.id);
 			if(viewImpl==null) {
+				// todo various kinds of browser tabs.
 				if(holder.type==0) {
-					viewImpl = new WebFrameLayout(getBaseContext(), holder); //ttt
+					// type webview
+					viewImpl = new WebFrameLayout(this, holder); //ttt
 					viewImpl.setBackgroundColor(Color.WHITE);
 					viewImpl.setPadding(0, 0, 0, _45_);
 					viewImpl.setPivotX(0);
 					viewImpl.setPivotY(0);
-					viewImpl.mWebView = new_AdvancedNestScrollWebView(holder, viewImpl, null);
+					viewImpl.setImplementation(initWebViewImpl(viewImpl, null, 0));
 				} else {
 					// ???
 				}
@@ -2405,7 +2475,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			tabIni.viewImpl = weblayout = viewImpl;
 		} else {
 			if(pseudoAdd==1 && weblayout!=null && weblayout.getParent()!=null 
-					&& weblayout.mWebView!=null && weblayout.mWebView.getScaleX()==1 && weblayout.mWebView.getVisibility()==View.VISIBLE) {
+					&& weblayout.implView!=null && weblayout.implView.getScaleX()==1 && weblayout.implView.getVisibility()==View.VISIBLE) {
 				return true;
 			}
 		}
@@ -2446,7 +2516,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				for (int j = 0; j < cc; j++) {
 					if((ca=UIData.webcoord.getChildAt(j))instanceof WebFrameLayout
 							&&ca!=weblayout
-							&&(pseudoAdd==0||ca!=mBrowserSlider.webla&&ca!=currentWebView.layout)
+							&&(pseudoAdd==0||ca!=mBrowserSlider.webla&&ca!=currentViewImpl)
 					) {
 						UIData.webcoord.removeViewAt(j);
 						j--;
@@ -2618,7 +2688,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				}
 			} break;
 			case R.id.ivRefresh:
-				AdvancedBrowserWebView mWebView = currentWebView;
+				WebFrameLayout layout = currentViewImpl;
+				UniversalWebviewInterface mWebView = currentWebView;
 				if(UIData.progressbar.getVisibility()==View.VISIBLE) {
 					UIData.progressbar.setVisibility(View.GONE);
 					supressingProgressListener = true;
@@ -2632,7 +2703,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					progressbar_background.setLevel(0);
 					UIData.progressbar.setAlpha(1);
 					if(opt.getUpdateUALowEnd()) {
-						updateUserAgentString(mWebView, mWebView.getUrl());
+						updateUserAgentString(layout, mWebView.getUrl());
 					}
 					mWebView.reload();
 					UIData.ivRefresh.setImageResource(R.drawable.ic_close_white_24dp);
@@ -2690,10 +2761,10 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 						if(hasFocus&&topMenuRequestedInvalidate!=0) {
 							TopMenuClicker.decorateAll();
 							if((topMenuRequestedInvalidate&(1<<StorageSettings))!=0) {
-								currentWebView.setStorageSettings();
+								currentViewImpl.setStorageSettings();
 							}
 							if((topMenuRequestedInvalidate&(1<<BackendSettings))!=0) {
-								currentWebView.setBackEndSettings();
+								currentViewImpl.setBackEndSettings();
 							}
 						}
 					});
@@ -2749,38 +2820,39 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					}
 					break;
 				}
-				AdvancedBrowserWebView wv = currentWebView;
+				WebFrameLayout ly = currentViewImpl;
+				UniversalWebviewInterface wv = currentWebView;
 				boolean backable = wv.canGoBack();
-				CMN.Log("backable::", backable, wv.getThisIdx(), wv.getUrl());
+				CMN.Log("backable::", backable, ly.getThisIdx(), wv.getUrl());
 				if(backable) {
 					if(true) {
-						webtitle.setText(wv.navigateHistory(this, -1));
+						webtitle.setText(ly.navigateHistory(this, -1));
 					}
 					if(true) {
 						wv.stopLoading();
 					}
 					wv.goBack();
 				}
-				else if(wv.holder.getLuxury()) {
+				else if(ly.holder.getLuxury()) {
 					boolean added = false;
-					int idx = wv.getThisIdx();
+					int idx = ly.getThisIdx();
 					if(idx>0) {
-						wv.setVisibility(View.GONE);
-						wv.pauseWeb();
-						currentWebView = (AdvancedBrowserWebView) wv.layout.getChildAt(idx-1);
-						currentWebView.setVisibility(View.VISIBLE);
-						currentWebView.resumeWeb();
+						((View)wv).setVisibility(View.GONE);
+						ly.pauseWeb();
+						currentWebView = (UniversalWebviewInterface) ly.getChildAt(idx-1);
+						currentViewImpl.implView.setVisibility(View.VISIBLE);
+						ly.resumeWeb();
 						added = true;
 					} else {
-						int size = wv.PolymerBackList.size();
+						int size = ly.PolymerBackList.size();
 						if(size>0) {
-							wv.setVisibility(View.GONE);
-							wv.pauseWeb();
-							String backUrl = wv.PolymerBackList.remove(size - 1);
+							((View)wv).setVisibility(View.GONE);
+							ly.pauseWeb();
+							String backUrl = ly.PolymerBackList.remove(size - 1);
 							CMN.Log("--backUrl::", backUrl);
-							currentWebView = new_AdvancedNestScrollWebView(wv.holder, webFrameLayout, wv);
+							currentWebView = initWebViewImpl(ly, wv, 0);
 							currentWebView.loadUrl(backUrl);
-							currentWebView.resumeWeb();
+							ly.resumeWeb();
 							added=true;
 						}
 					}
@@ -2798,28 +2870,29 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					
 					break;
 				}
+				ly = currentViewImpl;
 				wv = currentWebView;
 				boolean added = false;
 				boolean forwadable = wv.canGoForward();
-				CMN.Log("forwadable::", forwadable, wv.getThisIdx(), wv.getUrl());
+				CMN.Log("forwadable::", forwadable, ly.getThisIdx(), wv.getUrl());
 				if(forwadable) {
 					if(true) {
-						webtitle.setText(wv.navigateHistory(this, 1));
+						webtitle.setText(ly.navigateHistory(this, 1));
 					}
 					if(true) {
 						wv.stopLoading();
 					}
 					wv.goForward();
 				}
-				else  if(wv.holder.getLuxury()) {
-					int cc = wv.layout.getChildCount();
-					int idx = wv.getThisIdx();
+				else if(ly.holder.getLuxury()) {
+					int cc = ly.getChildCount();
+					int idx = ly.getThisIdx();
 					if(idx<cc-1) {
-						if(!forwadable||wv.isAtLastStackMinusOne()) {
-							wv.pauseWeb();
-							currentWebView = (AdvancedBrowserWebView) wv.layout.getChildAt(idx+1);
-							currentWebView.setVisibility(View.VISIBLE);
-							currentWebView.resumeWeb();
+						if(!forwadable||ly.isAtLastStackMinusOne()) {
+							ly.pauseWeb();
+							currentWebView = (AdvancedBrowserWebView) ly.getChildAt(idx+1);
+							currentViewImpl.implView.setVisibility(View.VISIBLE);
+							ly.resumeWeb();
 							added = true;
 						}
 					}
@@ -2958,15 +3031,15 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	
 	Runnable postRectifyWebTitleRunnable = () -> {
 		if(DismissingViewHolder) {
-			String title = currentWebView.transientTitle;
+			String title = currentViewImpl.transientTitle;
 			if(title!=null) {
-				webtitle.setText(currentWebView.rectifyWebStacks(title));
+				webtitle.setText(currentViewImpl.rectifyWebStacks(title));
 			} else {
 				postRectifyWebTitle();
 			}
 		}
 	};
-	void postRectifyWebTitle() {
+	public void postRectifyWebTitle() {
 		root.removeCallbacks(postRectifyWebTitleRunnable);
 		root.postDelayed(postRectifyWebTitleRunnable, 500);
 	}
@@ -3071,17 +3144,24 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		if(w>dm.heightPixels) {
 			w -= GlobalOptions.density*18;
 		}
-		int maxWidth = Math.min(w, (int) (GlobalOptions.density*480));
+		int maxWidth = Math.min(w, (int) (GlobalOptions.density*560));
 		if(Utils.actualLandscapeMode(this)) {
 			maxWidth = Math.min(dm.heightPixels, maxWidth);
 		}
 		//if(root.getWidth()>maxWidth)
 		{
 			menu_grid.setBackgroundResource(R.drawable.frame_top_rounded);
-			menu_grid.getLayoutParams().width=maxWidth;
+			ViewGroup.MarginLayoutParams layoutParams = (ViewGroup.MarginLayoutParams) menu_grid.getLayoutParams();
+			layoutParams.width=maxWidth;
 			int shortLim = dm.heightPixels-UIData.bottombar2.getHeight();
 			boolean tooShort = GlobalOptions.density*200>shortLim;
-			menu_grid.getLayoutParams().height=tooShort?shortLim:-2;
+			layoutParams.height=tooShort?shortLim:-2;
+			if(GlobalOptions.isLarge) {
+				layoutParams.setMarginEnd((int) (15*GlobalOptions.density));
+				int pad = (int) (GlobalOptions.density*8);
+				int HPad = (int) (pad*2.25);
+				menu_grid.setPadding(HPad, pad/2, HPad, pad*2);
+			}
 		}
 	}
 	
@@ -3158,9 +3238,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 							dissmiss=false;
 						} else {
 							v.setTag(null);
-							WebOptions delegate = currentWebView.getDelegate(StorageSettings);
+							WebOptions delegate = currentViewImpl.getDelegate(StorageSettings);
 							boolean val = delegate.toggleForbidLocalStorage();
-							currentWebView.setStorageSettings();
+							currentViewImpl.setStorageSettings();
 							showT("已为<标签页>"+(val?"开启":"关闭")+"崭新模式！");
 						}
 					}
@@ -3171,10 +3251,10 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				case R.id.print:
 					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 						CustomViewHideTime = PrintStartTime = System.currentTimeMillis()-3500;
-						printSX = currentWebView.getScrollX();
-						printSY = currentWebView.getScrollY();
-						printScale = currentWebView.getScaleX();
-						PrintPdfAgentActivity.printPDF(BrowserActivity.this, currentWebView);
+						printSX = currentViewImpl.implView.getScrollX();
+						printSY = currentViewImpl.implView.getScrollY();
+						printScale = currentViewImpl.implView.getScaleX();
+						//PrintPdfAgentActivity.printPDF(BrowserActivity.this, currentWebView);
 					}
 				break;
 				case R.id.offline:
@@ -3198,9 +3278,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					if(isLongClicked) {
 						show_web_configs(BackendSettings);
 					} else {
-						WebOptions delegate = currentWebView.getDelegate(BackendSettings);
+						WebOptions delegate = currentViewImpl.getDelegate(BackendSettings);
 						boolean val = delegate.togglePCMode();
-						setUserAgentString(currentWebView, val);
+						setUserAgentString(currentViewImpl, val);
 						currentWebView.reload();
 						decoratePCMode();
 					}
@@ -3286,7 +3366,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		
 		public void decoratePCMode() {
 			LayerDrawable ld = (LayerDrawable) pcmodeicontv.getCompoundDrawables()[0];
-			ld.getDrawable(1).setAlpha(currentWebView.getDelegate(BackendSettings).getPCMode()?255:0);
+			ld.getDrawable(1).setAlpha(currentViewImpl.getDelegate(BackendSettings).getPCMode()?255:0);
 		}
 		
 		@Override
@@ -3295,10 +3375,10 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		}
 		
 		public void decorateAll() {
-			((TextView)vals[0]).setTextColor(currentWebView.getDelegate( StorageSettings).getForbidLocalStorage()?0xff4F7FDF:AppBlack);
+			((TextView)vals[0]).setTextColor(currentViewImpl.getDelegate( StorageSettings).getForbidLocalStorage()?0xff4F7FDF:AppBlack);
 			
 			TextView shareIndicator = (TextView)vals[1];
-			boolean shareText=currentWebView.hasFocus()&&currentWebView.bIsActionMenuShown;
+			boolean shareText=currentViewImpl.implView.hasFocus()&&currentViewImpl.bIsActionMenuShown;
 			shareIndicator.setText(shareText?"分享文本":"分享链接");
 			
 			decoratePCMode();
@@ -3309,7 +3389,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			
 			StandardConfigDialog.buildStandardConfigDialog(BrowserActivity.this, holder, null, R.string.global_vs_tabs);
 			
-			holder.init_web_configs(currentWebView.holder.getApplyRegion(groupID), groupID, 0);
+			holder.init_web_configs(currentViewImpl.holder.getApplyRegion(groupID), groupID, 0);
 			
 			topMenuRequestedInvalidate=0;
 			
@@ -3666,14 +3746,14 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		}
 	}
 	
-	public void setUserAgentString(AdvancedBrowserWebView mWebView, boolean val) {
+	public void setUserAgentString(WebFrameLayout layout, boolean val) {
 		if(android_ua==null) {
 			android_ua = "Mozilla/5.0 (Linux; Android "+Build.VERSION.RELEASE+"; "+Build.MODEL+") AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Mobile Safari/537.36 OPR/58.2.2878.53403";
 			CMN.Log("android_ua", android_ua);
 		}
-		mWebView.getSettings().setUserAgentString(val
+		layout.mWebView.getSettings().setUserAgentString(val
 				?"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36"
-				:android_ua);
+				:null);
 	}
 	
 	private void shareUrlOrText() {
@@ -3692,8 +3772,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	}
 	
 	private void setUrlAndTitle() {
-		webtitle.setText(currentWebView.holder.url=currentWebView.getTitle());
-		etSearch.setText(currentWebView.holder.title=currentWebView.getUrl());
+		webtitle.setText(currentViewImpl.holder.url=currentWebView.getTitle());
+		etSearch.setText(currentViewImpl.holder.title=currentWebView.getUrl());
 	}
 	
 	public void fadeOutProgressbar() {
@@ -3920,43 +4000,43 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	
 	/** Luxuriously Load Url：使用新的WebView打开链接，受Via浏览器启发，用于“返回不重载”。<br/>
 	 *  标签页(tab)处于奢侈模式时({@link TabHolder#getLuxury})，使用此法打开链接。WebView总数有限制，且一段时间内不得打开太多。<br/>
-	 *  前进后退时复用或销毁WebView。复用时，需清理网页回退栈。{@link AdvancedBrowserWebView#clearHistroyRequested}*/
+	 *  前进后退时复用或销毁WebView。复用时，需清理网页回退栈。{@link AdvancedBrowserWebView#2clearHistroyRequested}*/
 	void LuxuriouslyLoadUrl(AdvancedBrowserWebView mWebView, String url) {
-		if(!mWebView.hasValidUrl()) {
-			mWebView.loadUrl(url);
-			mWebView.clearHistroyRequested=true;
-			return;
-		}
-		mWebView.pauseWeb();
-		int idx = mWebView.getThisIdx();
-		int cc = mWebView.layout.getChildCount();
-		if(idx<cc-1) {
-			mWebView = (AdvancedBrowserWebView) mWebView.layout.getChildAt(idx+1);
-			mWebView.setVisibility(View.VISIBLE);
-			mWebView.resumeWeb();
-			mWebView.clearHistroyRequested=true;
-			mWebView.layout.removeViews(idx+2, cc-idx-2);
-		} else {
-			mWebView = new_AdvancedNestScrollWebView(null, webFrameLayout, mWebView);
-		}
-		mWebView.loadUrl(url);
-		//id_table.put(mWebView.holder.id, mWebView);
-		currentWebView = mWebView;
+//		if(!mWebView.hasValidUrl()) {
+//			mWebView.loadUrl(url);
+//			mWebView.clearHistroyRequested=true;
+//			return;
+//		}
+//		mWebView.pauseWeb();
+//		int idx = mWebView.getThisIdx();
+//		int cc = mWebView.layout.getChildCount();
+//		if(idx<cc-1) {
+//			mWebView = (AdvancedBrowserWebView) mWebView.layout.getChildAt(idx+1);
+//			mWebView.setVisibility(View.VISIBLE);
+//			mWebView.resumeWeb();
+//			mWebView.clearHistroyRequested=true;
+//			mWebView.layout.removeViews(idx+2, cc-idx-2);
+//		} else {
+//			mWebView = new_AdvancedNestScrollWebView(null, webFrameLayout, mWebView);
+//		}
+//		mWebView.loadUrl(url);
+//		//id_table.put(mWebView.holder.id, mWebView);
+//		currentWebView = mWebView;
 	}
 	
 	HtmlObjectHandler mHtmlObjectHandler = new HtmlObjectHandler();
 	class HtmlObjectHandler implements View.OnLongClickListener {
 		@Override
 		public boolean onLongClick(View v) {
-			WebViewmy _mWebView = (WebViewmy) v;
-			WebViewmy.HitTestResult result = _mWebView.getHitTestResult();
+			UniversalWebviewInterface _mWebView = (UniversalWebviewInterface) v;
+			Object result = _mWebView.getHitResultObject();
 			if (null == result) return false;
-			int type = result.getType();
+			int type = _mWebView.getHitType(result);
 			//CMN.Log("getHitTestResult", type, result.getExtra());
 			switch (type) {
 				/* 长按下载图片 */
-				case WebViewmy.HitTestResult.SRC_IMAGE_ANCHOR_TYPE:
-				case WebViewmy.HitTestResult.IMAGE_TYPE:{
+				case WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE:
+				case WebView.HitTestResult.IMAGE_TYPE:{
 //					String url = result.getExtra();
 //					AlertDialog.Builder builder3 = new AlertDialog.Builder(BrowserActivity.this);
 //					builder3.setSingleChoiceItems(new String[] {}, 0,
@@ -4006,8 +4086,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				}
 				return true;
 				/* 长按anchor */
-				case WebViewmy.HitTestResult.SRC_ANCHOR_TYPE:{
-					String url = result.getExtra();
+				case WebView.HitTestResult.SRC_ANCHOR_TYPE:{
+					String url = _mWebView.getHitExtra(result);
 					Integer arrayId = R.array.config_links;
 					AlertDialog alert = getOptionListDialog(WeakReferenceHelper.opt_list_main, 0, arrayId, url);
 					if(!arrayId.equals(alert.tag)) {
@@ -4048,7 +4128,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 								/* 选择链接文本 */
 								case 2:{
 									if(url!=null) {
-										SelectHtmlObject(BrowserActivity.this, currentWebView, 0);
+										WebViewHelper.getInstance()
+												.SelectHtmlObject(BrowserActivity.this, currentViewImpl, 0);
 									}
 								} break;
 							}
@@ -4061,50 +4142,6 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			}
 			return false;
 		}
-	}
-	
-	void SelectHtmlObject(BrowserActivity a, WebViewmy final_mWebView, int source) {
-		WebViewmy.HighlightBuilder.setLength(0);
-		WebViewmy.HighlightBuilder.append(WebViewmy.TouchTargetIncantation);
-		/* Some sdk version need to manually bing up the selection handle. */
-		final boolean fakePopHandles = Utils.version > 21 && Utils.version!=23;
-		if(source==0&&!fakePopHandles) {
-			source=1;
-		}
-		WebViewmy.HighlightBuilder.append("selectTouchtarget(").append(source).append(")");
-		final_mWebView.evaluateJavascript(WebViewmy.HighlightBuilder.toString(), new ValueCallback<String>() {
-			@Override
-			public void onReceiveValue(String value) {
-				CMN.Log("selectTouchtarget", value);
-				int len = IU.parsint(value, 0);
-				if(len>0) {
-					/* bring in action mode by a fake click on the programmatically  selected text. */
-					if(fakePopHandles) {
-						final_mWebView.forbidLoading=true;
-						final_mWebView.getSettings().setJavaScriptEnabled(false);
-						final_mWebView.getSettings().setJavaScriptEnabled(false);
-						long time = CMN.now();
-						MotionEvent evt = MotionEvent.obtain(time, time,MotionEvent.ACTION_DOWN, final_mWebView.lastX, final_mWebView.lastY, 0);
-						final_mWebView.dispatchTouchEvent(evt);
-						evt.setAction(MotionEvent.ACTION_UP);
-						final_mWebView.dispatchTouchEvent(evt);
-						evt.recycle();
-						/* restore href attribute */
-					}
-				} else {
-					a.showT("选择失败");
-				}
-				if(fakePopHandles) {
-					final_mWebView.postDelayed(() -> {
-						final_mWebView.forbidLoading=false;
-						final_mWebView.getSettings().setJavaScriptEnabled(true);
-						final_mWebView.evaluateJavascript("window._ttlck=!1;var t=w._ttarget;if(t._thref)t.href=t._thref", null);
-					}, 300);
-				} else {
-					final_mWebView.evaluateJavascript("window._ttlck=!1;var t=w._ttarget;if(t._thref)t.href=t._thref", null);
-				}
-			}
-		});
 	}
 	
 	Field mObjectsF=null;
@@ -4185,26 +4222,39 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		return dialog; // returns the universal dialog
 	}
 	
-	private AdvancedBrowserWebView new_AdvancedNestScrollWebView(TabHolder holder
-			, WebFrameLayout viewImpl, AdvancedBrowserWebView patWeb) {
-		AdvancedBrowserWebView mWebView = null;
-		WebFrameLayout layout = viewImpl;
-		if(layout==null&&patWeb!=null) {
-			layout = patWeb.layout;
-			final int luxLimit = 25;
-			int cc = layout.getChildCount();
-			if (cc > luxLimit) {
-				cc = holder==null?0:cc-1;
-				mWebView = (AdvancedBrowserWebView) layout.getChildAt(cc);
-				mWebView.clearHistroyRequested=true;
-				layout.removeViewAt(cc);
-			}
-		}
+	private UniversalWebviewInterface initWebViewImpl(WebFrameLayout layout, UniversalWebviewInterface patWeb, int type) {
+		UniversalWebviewInterface mWebView = null;
+		TabHolder holder = layout.holder;
+//		if(layout==null&&patWeb!=null) {
+//			layout = patWeb.layout;
+//			final int luxLimit = 25;
+//			int cc = layout.getChildCount();
+//			if (cc > luxLimit) {
+//				cc = holder==null?0:cc-1;
+//				mWebView = (AdvancedBrowserWebView) layout.getChildAt(cc);
+//				layout.clearHistroyRequested=true;
+//				layout.removeViewAt(cc);
+//			}
+//		}
+		type=1;
 		//Utils.sendog(opt);
+		View theView;
 		if(mWebView==null) {
 			WebView.setWebContentsDebuggingEnabled(true);
-			mWebView = new AdvancedBrowserWebView(this);
-			mWebView.setOnLongClickListener(mHtmlObjectHandler);
+			if(type==1) {
+				try {
+					mWebView = new XPlusWebView(this);
+				} catch (IOException e) {
+					type=0;
+				}
+			}
+			if(type==0) {
+				mWebView = new AdvancedBrowserWebView(this);
+			}
+			theView = (View) mWebView;
+			theView.setOnLongClickListener(mHtmlObjectHandler);
+		} else {
+			theView = (View) mWebView;
 		}
 		//mWebView.clearCache(true);
 		//CMN.Log("new mWebView::ua::", mWebView.getSettings().getUserAgentString());
@@ -4212,41 +4262,42 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		
 		int addIdx = -1;
 		if(patWeb!=null) {
-			mWebView.PolymerBackList = patWeb.PolymerBackList;
-			if(holder!=null) {
-				addIdx=0;
-			} else {
-				holder = patWeb.holder;
-			}
+//			if(holder!=null) {
+//				addIdx=0;
+//			} else {
+//				holder = patWeb.holder;
+//			}
 		}
 //		else {
 //			layout = new WebFrameLayout(getBaseContext());
 //			layout.setBackgroundColor(Color.WHITE);
 //			layout.setPadding(0, 0, 0, _45_);
 //		}
-		mWebView.holder = holder;
-		mWebView.appBarLayout = UIData.appbar;
-		mWebView.layout = layout;
-		layout.mWebView = mWebView;
-		layout.addView(mWebView, addIdx, new FrameLayout.LayoutParams(-1, -1));
+		mWebView.setLayoutParent(layout, false);
 		
-		mWebView.setStorageSettings();
-		mWebView.setBackEndSettings();
+		layout.appBarLayout = UIData.appbar;
+		layout.implView = theView;
+		layout.mWebView = mWebView;
+		layout.addView(theView, addIdx, new FrameLayout.LayoutParams(-1, -1));
+		
+		layout.setStorageSettings();
+		layout.setBackEndSettings();
 		
 		mWebView.addJavascriptInterface(mWebListener, "polyme");
 		mWebView.addJavascriptInterface(holder.TabID, "chrmtd");
 		
-		mWebView.setFocusable(true);
-		mWebView.setFocusableInTouchMode(true);
-		mWebView.setOverScrollMode(View.OVER_SCROLL_IF_CONTENT_SCROLLS);
-		mWebView.setOverScrollMode(View.OVER_SCROLL_NEVER);
 		
-		mWebView.setWebViewClient(mWebListener);
+		layout.setWebViewClient(mWebListener);
+		
+		theView.setFocusable(true);
+		theView.setFocusableInTouchMode(true);
+		theView.setOverScrollMode(View.OVER_SCROLL_IF_CONTENT_SCROLLS);
+		theView.setOverScrollMode(View.OVER_SCROLL_NEVER);
 		mWebView.setDownloadListener(mWebListener);
 		mWebView.setOnScrollChangedListener(mWebListener);
-		mWebView.setBackgroundColor(Color.TRANSPARENT);
+		theView.setBackgroundColor(Color.TRANSPARENT);
 		
-		setUserAgentString(mWebView, false);
+		setUserAgentString(layout, false);
 		
 		
 		//mWebView.setLayerType(View.LAYER_TYPE_HARDWARE, paint);
@@ -4494,6 +4545,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		public final TabIdentifier TabID = new TabIdentifier();
 		public boolean paused;
 		WebFrameLayout viewImpl;
+		public long last_visit_time;
 		int type;
 		public int lastSaveVer;
 		public int lastCaptureVer;
@@ -4530,6 +4582,12 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				viewImpl.stopLoading();
 				viewImpl.destroy();
 				viewImpl = null;
+			}
+		}
+		
+		public void onSalvaged() {
+			if (viewImpl != null) {
+				viewImpl.onSalvaged();
 			}
 		}
 		
@@ -4688,7 +4746,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				if(opt.getTextPanel()) {
 					position+=13;
 				}
-				AdvancedBrowserWebView mWebView = currentWebView;
+				UniversalWebviewInterface mWebView = currentWebView;
 				switch (position) {
 					/* 全选 */
 					case 0: {
@@ -4851,8 +4909,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		View v = getCurrentFocus();
 		CMN.Log("-->onActionModeStarted", v);
 		Menu menu;
-		if (v==currentWebView && Build.VERSION.SDK_INT <= Build.VERSION_CODES.M) {
-			AdvancedBrowserWebView wv = currentWebView;
+		if (v==currentWebView && v instanceof AdvancedBrowserWebView && !bAdvancedMenu) {
+			MenuItem.OnMenuItemClickListener listener = this.currentViewImpl;
 			mode.setTitle(null);
 			mode.setSubtitle(null);
 			
@@ -4884,29 +4942,29 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			int ToolsOrder = 0;
 			int af = MenuItem.SHOW_AS_ACTION_ALWAYS | MenuItem.SHOW_AS_ACTION_WITH_TEXT;
 			if (item1 != null) {
-				item = menu.add(0, item1.getItemId(), ++ToolsOrder, item1.getTitle()).setOnMenuItemClickListener(wv)
+				item = menu.add(0, item1.getItemId(), ++ToolsOrder, item1.getTitle()).setOnMenuItemClickListener(listener)
 						.setIcon(item1.getIcon())
 						.setShowAsActionFlags(af);
 			}
 			if (item2 != null) {
-				item = menu.add(0, item2.getItemId(), ++ToolsOrder, item2.getTitle()).setOnMenuItemClickListener(wv)
+				item = menu.add(0, item2.getItemId(), ++ToolsOrder, item2.getTitle()).setOnMenuItemClickListener(listener)
 						.setIcon(item2.getIcon())
 						.setShowAsActionFlags(af);
 			}
 			Drawable hld = mResource.getDrawable(R.drawable.round_corner_dot);
 			hld.setColorFilter(Color.YELLOW, PorterDuff.Mode.SRC_IN);
-			menu.add(0, R.id.toolbar_action0, ++ToolsOrder, "高亮").setOnMenuItemClickListener(wv).setShowAsActionFlags(af).setIcon(hld);
-			menu.add(0, R.id.toolbar_action1, ++ToolsOrder, R.string.tools).setOnMenuItemClickListener(wv).setShowAsActionFlags(af).setIcon(R.drawable.ic_tune_black_24dp);
-			menu.add(0, R.id.toolbar_action3, ++ToolsOrder, "TTS").setOnMenuItemClickListener(wv).setShowAsActionFlags(af).setIcon(R.drawable.voice_ic_big);
+			menu.add(0, R.id.toolbar_action0, ++ToolsOrder, "高亮").setOnMenuItemClickListener(listener).setShowAsActionFlags(af).setIcon(hld);
+			menu.add(0, R.id.toolbar_action1, ++ToolsOrder, R.string.tools).setOnMenuItemClickListener(listener).setShowAsActionFlags(af).setIcon(R.drawable.ic_tune_black_24dp);
+			menu.add(0, R.id.toolbar_action3, ++ToolsOrder, "TTS").setOnMenuItemClickListener(listener).setShowAsActionFlags(af).setIcon(R.drawable.voice_ic_big);
 		}
 		
 		super.onActionModeStarted(mode);
 	}
 	
 	public boolean checkWebSelection() {
-		if(getCurrentFocus() == currentWebView && currentWebView!=null){
-			if(currentWebView.bIsActionMenuShown){
-				currentWebView.clearFocus();
+		if(getCurrentFocus() == currentViewImpl.implView){
+			if(currentViewImpl.bIsActionMenuShown){
+				currentViewImpl.implView.clearFocus();
 				if(mWebListener.upsended) {
 					currentWebView.evaluateJavascript("igNNC=0", null);
 					mWebListener.upsended=false;

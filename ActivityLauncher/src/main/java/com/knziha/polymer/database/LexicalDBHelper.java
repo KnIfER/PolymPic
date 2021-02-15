@@ -16,6 +16,7 @@ import com.knziha.polymer.AdvancedBrowserWebView;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.pdviewer.PDocument;
 import com.knziha.polymer.pdviewer.bookdata.PDocBookInfo;
+import com.knziha.polymer.widgets.WebFrameLayout;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -396,13 +397,13 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 	
 	// 搜索引擎列表，导航页，需要域数据库记录的图标。
 	// 常规访问，updateua (loadurl、刷新、onpagestart之时) 需要域数据库记录的配置信息。
-	public void queryDomain(AdvancedBrowserWebView mWebView, String url) {
+	public void queryDomain(WebFrameLayout layout, String url) {
 		String domain = null;
 		Matcher m = domainPattern.matcher(url);
 		if(m.find()) {
 			domain = m.group();
 		}
-		Cursor infoCursor = mWebView.domainInfoCursor;
+		Cursor infoCursor = layout.domainInfoCursor;
 		if(infoCursor!=null && TextUtils.equals(infoCursor.getString(1), domain)) {
 			return;
 		}
@@ -416,23 +417,23 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 				infoCursor = null;
 			}
 		}
-		mWebView.setDomainCursor(domain, infoCursor);
+		layout.setDomainCursor(domain, infoCursor);
 	}
 	
-	public void updateDomainFlag(AdvancedBrowserWebView mWebView, long val) {
-		String domain = mWebView.domain;
+	public void updateDomainFlag(WebFrameLayout layout, long val) {
+		String domain = layout.domain;
 		if(domain!=null) {
 			ContentValues values = new ContentValues();
 			values.put("url", domain);
 			values.put("f1", val);
-			AdvancedBrowserWebView.DomainInfo domainInfo = mWebView.domainInfo;
+			WebFrameLayout.DomainInfo domainInfo = layout.domainInfo;
 			if(domainInfo!=null) {
 				long rowID = domainInfo.rowID;
 				database.update("domains", values, "id=?", new String[]{""+rowID});
 				domainInfo.f1 = val;
 			} else {
 				long rowID = database.insert("domains", null, values);
-				mWebView.setDomainCursor(mWebView.domain
+				layout.setDomainCursor(layout.domain
 						, database.rawQuery("select * from domains where id=?", new String[]{""+rowID})
 						);
 			}
@@ -440,7 +441,7 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 	}
 	
 	// 配置网址设定、插入图标前，需保证有存储目标
-	public void insertUpdateDomain(AdvancedBrowserWebView mWebView, String url, Long val) {
+	public void insertUpdateDomain(WebFrameLayout layout, String url, Long val) {
 		Matcher m = domainPattern.matcher(url);
 		String domain = null;
 		Cursor infoCursor = null;
@@ -448,8 +449,8 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 			domain = m.group();
 			final String sql = "select * from domains where url = ? ";
 			String[] where = new String[]{domain};
-			if(TextUtils.equals(mWebView.domain, domain)) {
-				infoCursor = mWebView.domainInfoCursor;
+			if(TextUtils.equals(layout.domain, domain)) {
+				infoCursor = layout.domainInfoCursor;
 				if(infoCursor!=null && !infoCursor.moveToFirst()) {
 					infoCursor = null;
 				}
@@ -472,7 +473,7 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 				}
 			}
 		}
-		mWebView.setDomainCursor(domain, infoCursor);
+		layout.setDomainCursor(domain, infoCursor);
 	}
 	
 	public long insertSearchTerm(String lex) {
