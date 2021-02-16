@@ -34,6 +34,7 @@ import android.os.Bundle;
 import android.os.CancellationSignal;
 import android.os.Environment;
 import android.os.Message;
+import android.print.PrintDocumentAdapter;
 import android.provider.DocumentsContract;
 import android.text.Editable;
 import android.text.Spannable;
@@ -141,6 +142,7 @@ import com.knziha.polymer.widgets.AppIconsAdapter;
 import com.knziha.polymer.widgets.DescriptiveImageView;
 import com.knziha.polymer.widgets.DialogWithTag;
 import com.knziha.polymer.widgets.PopupBackground;
+import com.knziha.polymer.widgets.PrintPdfAgentActivity;
 import com.knziha.polymer.widgets.ScrollViewTransparent;
 import com.knziha.polymer.widgets.SpacesItemDecoration;
 import com.knziha.polymer.widgets.TwoColumnAdapter;
@@ -2975,8 +2977,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 						final int selectionEnd = etSearch.getSelectionEnd();
 						text = text.substring(selectionStart, selectionEnd);
 					}
-					ClipboardManager clipboard = (ClipboardManager) this.getSystemService(Context.CLIPBOARD_SERVICE);
-					clipboard.setPrimaryClip(ClipData.newPlainText("PLOD", text));
+					copyText(text);
 				}
 			} break;
 			case R.id.browser_widget3:{
@@ -3018,6 +3019,11 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				}
 			} break;
 		}
+	}
+	
+	public void copyText(String text) {
+		ClipboardManager clipboard = (ClipboardManager) this.getSystemService(Context.CLIPBOARD_SERVICE);
+		clipboard.setPrimaryClip(ClipData.newPlainText("PLOD", text));
 	}
 	
 	private void initWaveProgressView(View[] items) {
@@ -3254,7 +3260,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 						printSX = currentViewImpl.implView.getScrollX();
 						printSY = currentViewImpl.implView.getScrollY();
 						printScale = currentViewImpl.implView.getScaleX();
-						//PrintPdfAgentActivity.printPDF(BrowserActivity.this, currentWebView);
+						PrintPdfAgentActivity.printPDF(BrowserActivity.this, currentWebView);
 					}
 				break;
 				case R.id.offline:
@@ -4028,8 +4034,10 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	class HtmlObjectHandler implements View.OnLongClickListener {
 		@Override
 		public boolean onLongClick(View v) {
+			CMN.Log("onLongClick getHitResultObject", v);
 			UniversalWebviewInterface _mWebView = (UniversalWebviewInterface) v;
 			Object result = _mWebView.getHitResultObject();
+			CMN.Log("getHitResultObject", result);
 			if (null == result) return false;
 			int type = _mWebView.getHitType(result);
 			//CMN.Log("getHitTestResult", type, result.getExtra());
@@ -4953,24 +4961,24 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			}
 			Drawable hld = mResource.getDrawable(R.drawable.round_corner_dot);
 			hld.setColorFilter(Color.YELLOW, PorterDuff.Mode.SRC_IN);
-			menu.add(0, R.id.toolbar_action0, ++ToolsOrder, "高亮").setOnMenuItemClickListener(listener).setShowAsActionFlags(af).setIcon(hld);
-			menu.add(0, R.id.toolbar_action1, ++ToolsOrder, R.string.tools).setOnMenuItemClickListener(listener).setShowAsActionFlags(af).setIcon(R.drawable.ic_tune_black_24dp);
-			menu.add(0, R.id.toolbar_action3, ++ToolsOrder, "TTS").setOnMenuItemClickListener(listener).setShowAsActionFlags(af).setIcon(R.drawable.voice_ic_big);
+			menu.add(0, R.id.web_highlight, ++ToolsOrder, "高亮").setOnMenuItemClickListener(listener).setShowAsActionFlags(af).setIcon(hld);
+			menu.add(0, R.id.web_tools, ++ToolsOrder, R.string.tools).setOnMenuItemClickListener(listener).setShowAsActionFlags(af).setIcon(R.drawable.ic_tune_black_24dp);
+			menu.add(0, R.id.web_tts, ++ToolsOrder, "TTS").setOnMenuItemClickListener(listener).setShowAsActionFlags(af).setIcon(R.drawable.voice_ic_big);
 		}
 		
 		super.onActionModeStarted(mode);
 	}
 	
 	public boolean checkWebSelection() {
-		if(getCurrentFocus() == currentViewImpl.implView){
-			if(currentViewImpl.bIsActionMenuShown){
-				currentViewImpl.implView.clearFocus();
-				if(mWebListener.upsended) {
-					currentWebView.evaluateJavascript("igNNC=0", null);
-					mWebListener.upsended=false;
-				}
-				return true;
+		if(currentViewImpl.bIsActionMenuShown
+				&& getCurrentFocus() == currentViewImpl.mWebView.getView()
+		){
+			currentViewImpl.implView.clearFocus();
+			if(mWebListener.upsended) {
+				currentWebView.evaluateJavascript("igNNC=0", null);
+				mWebListener.upsended=false;
 			}
+			return true;
 		}
 		return false;
 	}

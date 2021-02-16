@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-	<item name="toolbar_action0" type="id" />
-	<item name="toolbar_action1" type="id" />
+	<item name="web_highlight" type="id" />
+	<item name="web_tools" type="id" />
 	<item name="cover" type="id" />
-	<item name="toolbar_action3" type="id" />
+	<item name="web_tts" type="id" />
 	<item name="decode" type="id" />
 	<item name="quit" type="id" />
 	<item name="plaindict" type="id" />

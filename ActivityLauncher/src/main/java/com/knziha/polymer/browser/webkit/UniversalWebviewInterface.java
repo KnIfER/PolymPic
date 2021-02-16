@@ -1,6 +1,8 @@
 package com.knziha.polymer.browser.webkit;
 
 import android.os.Bundle;
+import android.print.PrintDocumentAdapter;
+import android.view.View;
 import android.webkit.DownloadListener;
 import android.webkit.ValueCallback;
 import android.webkit.WebBackForwardList;
@@ -14,6 +16,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.WebCompoundListener;
 import com.knziha.polymer.widgets.WebFrameLayout;
+
+import java.util.Map;
 
 import static com.knziha.polymer.Utils.CMN.dummyWV;
 
@@ -94,6 +98,12 @@ public interface UniversalWebviewInterface {
 	void setDownloadListener(DownloadListener listener);
 	
 	void setOnScrollChangedListener(RecyclerView.OnScrollChangedListener onScrollChangedListener);
+	
+	View getView();
+	
+	Map<String, String> getLastRequestHeaders();
+	
+	PrintDocumentAdapter createPrintDocumentAdapter(String name);
 	
 	//Object getTag();
 }

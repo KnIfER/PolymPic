@@ -1,6 +1,5 @@
 package com.knziha.polymer.widgets;
 
-import android.annotation.SuppressLint;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -29,7 +28,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.GlobalOptions;
 import androidx.core.view.MotionEventCompat;
-import androidx.core.view.NestedScrollingChildHelper;
 import androidx.core.view.ViewCompat;
 
 import com.google.android.material.appbar.AppBarLayout;
@@ -276,7 +274,7 @@ public class WebFrameLayout extends FrameLayout implements MenuItem.OnMenuItemCl
 		return super.dispatchTouchEvent(event);
 	}
 	
-	@SuppressLint("NewApi")
+	//@SuppressLint("NewApi")
 	public void handleSimpleNestedScrolling(View nestedParent, View scrollingView, MotionEvent event) {
 		//		int layoutTop = nestedParent.getTop();
 //			int offset = offsetTopAndBottom;
@@ -791,8 +789,14 @@ public class WebFrameLayout extends FrameLayout implements MenuItem.OnMenuItemCl
 	public void setImplementation(UniversalWebviewInterface view) {
 		implView = (View) view;
 		mWebView = view;
+		mChildHelper.setCurrentView(mWebView.getView());
 	}
-
+	
+	public void copyText(String selectionText) {
+		activity.copyText(selectionText);
+		activity.showT("已复制");
+	}
+	
 	public static class DomainInfo {
 		public long rowID;
 		public long f1;
@@ -929,7 +933,7 @@ public class WebFrameLayout extends FrameLayout implements MenuItem.OnMenuItemCl
 			case R.id.plaindict:{
 				activity.handleVersatileShare(21);
 			} return true;
-			case R.id.toolbar_action0:{
+			case R.id.web_highlight:{
 				HLED=true;
 				listener.ensureMarkJS(activity);
 				mWebView.evaluateJavascript(WebViewHelper.getInstance().getHighLightIncantation(),new ValueCallback<String>() {
@@ -940,7 +944,7 @@ public class WebFrameLayout extends FrameLayout implements MenuItem.OnMenuItemCl
 						invalidate();
 					}});
 			} return true;
-			case R.id.toolbar_action1:{//工具复用，我真厉害啊啊啊啊！
+			case R.id.web_tools:{//工具复用，我真厉害啊啊啊啊！
 				//evaluateJavascript("document.execCommand('selectAll'); console.log('dsadsa')",null);
 				//From normal, from history, from peruse view, [from popup window]
 				/**
@@ -961,7 +965,7 @@ public class WebFrameLayout extends FrameLayout implements MenuItem.OnMenuItemCl
 				 */
 				activity.getUCC().show();
 			} return false;
-			case R.id.toolbar_action3:{//TTS
+			case R.id.web_tts:{//TTS
 				mWebView.evaluateJavascript("if(window.app)app.ReadText(''+window.getSelection())",null);
 			} return false;
 		}
@@ -1069,13 +1073,13 @@ public class WebFrameLayout extends FrameLayout implements MenuItem.OnMenuItemCl
 		
 		OnLongClickListener MenuLongClicker = v -> {
 			switch (v.getId()) {
-				case R.id.toolbar_action0:
+				case R.id.web_highlight:
 					mWebView.evaluateJavascript("if(window.app)app.setTTS()",null);
 					break;
-				case R.id.toolbar_action1:
+				case R.id.web_tools:
 					//evaluateJavascript(getUnderlineIncantation().toString(),null);
 					break;
-				case R.id.toolbar_action3:
+				case R.id.web_tts:
 					break;
 			}
 			return true;

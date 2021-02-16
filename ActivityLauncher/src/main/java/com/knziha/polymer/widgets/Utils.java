@@ -101,6 +101,7 @@ public class Utils {
 	public static Rect rect = new Rect();
 	public static final boolean littleCat = Build.VERSION.SDK_INT<=Build.VERSION_CODES.KITKAT;
 	public static final boolean littleCake = Build.VERSION.SDK_INT<=21;
+	public static final boolean bigCake= Build.VERSION.SDK_INT>=21;
 	public static final boolean bigMountain = Build.VERSION.SDK_INT>22;
 	public static final boolean bigMouth = Build.VERSION.SDK_INT>=Build.VERSION_CODES.O;
 	public static final boolean hugeHimalaya = Build.VERSION.SDK_INT>=Build.VERSION_CODES.P;

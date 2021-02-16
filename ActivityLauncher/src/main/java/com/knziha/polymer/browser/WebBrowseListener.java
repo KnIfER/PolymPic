@@ -243,7 +243,7 @@ public class WebBrowseListener extends WebViewClient implements DownloadListener
 	@Override public void onPageFinished(WebView  view, String url) {
 		UniversalWebviewInterface webviewImpl = (UniversalWebviewInterface) (view instanceof UniversalWebviewInterface?view:view.getTag());
 		View mWebView = (View) webviewImpl;
-		String ordinalUrl=view.getUrl();
+		String ordinalUrl=webviewImpl.getUrl();
 		if(ordinalUrl!=null) {
 			url = ordinalUrl;
 		}

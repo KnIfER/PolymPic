@@ -8,11 +8,11 @@
 
     <item android:id="@+id/ctx_share" android:title="分享" android:showAsAction="never"/>
 
-    <item android:id="@+id/ctx_dictionay" android:title="ColorDict" android:showAsAction="never"/>
+    <item android:id="@+id/plaindict" android:title="ColorDict" android:showAsAction="never"/>
 
     <item android:id="@+id/ctx_translation" android:title="翻译" android:showAsAction="never"/>
 
-    <item android:id="@+id/ctx_hightlight" android:title="高亮" android:showAsAction="never"/>
+    <item android:id="@+id/web_highlight" android:title="高亮" android:showAsAction="never"/>
 
     <item android:id="@+id/ctx_underline" android:title="下划线" android:showAsAction="never"/>
 

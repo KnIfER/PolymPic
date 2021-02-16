@@ -45,7 +45,7 @@ public class WebViewHelper {
 	public int CopyString_Id;
 	
 	private String[] SangeHuoQiangShou;
-	private final int[] DuiYinChengSanRen = new int[]{R.id.toolbar_action0, R.id.toolbar_action1, R.id.toolbar_action3, R.id.plaindict};
+	private final int[] DuiYinChengSanRen = new int[]{R.id.web_highlight, R.id.web_tools, R.id.web_tts, R.id.plaindict};
 	public static boolean bAdvancedMenu = Build.VERSION.SDK_INT>=Build.VERSION_CODES.M;
 	
 	private void getSharedIds() {

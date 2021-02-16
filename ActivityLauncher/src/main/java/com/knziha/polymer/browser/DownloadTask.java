@@ -76,7 +76,7 @@ public class DownloadTask implements Runnable{
 		
 		public ExtRule(JSONObject obj) throws JSONException {
 			this(obj.getString("ext")
-					, obj.getString("p")
+					, obj.has("p")?obj.getString("p"):null
 					, obj.has("min")?obj.getInt("min"):0
 					, obj.has("max")?obj.getInt("max"):Integer.MAX_VALUE
 					);

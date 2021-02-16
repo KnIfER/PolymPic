@@ -5,6 +5,7 @@ import android.content.Context;
 import android.os.Bundle;
 import android.view.ActionMode;
 import android.view.MotionEvent;
+import android.view.View;
 import android.webkit.WebBackForwardList;
 import android.webkit.WebView;
 
@@ -16,6 +17,8 @@ import com.knziha.polymer.BrowserActivity;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.Options;
 import com.knziha.polymer.widgets.WebFrameLayout;
+
+import java.util.Map;
 
 import static com.knziha.polymer.browser.webkit.WebViewHelper.bAdvancedMenu;
 
@@ -54,6 +57,17 @@ public class WebViewImplExt extends WebView implements UniversalWebviewInterface
 	public void setOnScrollChangedListener(RecyclerView.OnScrollChangedListener onSrollChangedListener) {
 		mOnScrollChangeListener =onSrollChangedListener;
 	}
+	
+	@Override
+	public View getView() {
+		return this;
+	}
+	
+	@Override
+	public Map<String, String> getLastRequestHeaders() {
+		return null;
+	}
+	
 	RecyclerView.OnScrollChangedListener mOnScrollChangeListener;
 	
 	public void SafeScrollTo(int x, int y) {

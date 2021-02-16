@@ -14,19 +14,20 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 
 import com.knziha.polymer.BrowserActivity;
+import com.knziha.polymer.browser.webkit.UniversalWebviewInterface;
 
 import java.util.List;
 
 public class PrintPdfAgentActivity extends Activity {
-	public static WebView webview;
+	public static UniversalWebviewInterface webview;
 	private boolean startLis;
 	
-	public static void printPDF(Activity context, WebView currentWebView) {
+	public static void printPDF(Activity context, UniversalWebviewInterface currentWebView) {
 		if(context instanceof PrintPdfAgentActivity) {
-//			String name = currentWebView.getTitle()+".pdf";
-//			PrintManager printManager = (PrintManager) context.getSystemService(Context.PRINT_SERVICE);
-//			printManager.print("Print", currentWebView.createPrintDocumentAdapter(name)
-//					, new PrintAttributes.Builder().setColorMode(PrintAttributes.COLOR_MODE_COLOR).build());
+			String name = currentWebView.getTitle()+".pdf";
+			PrintManager printManager = (PrintManager) context.getSystemService(Context.PRINT_SERVICE);
+			printManager.print("Print", currentWebView.createPrintDocumentAdapter(name)
+					, new PrintAttributes.Builder().setColorMode(PrintAttributes.COLOR_MODE_COLOR).build());
 		} else {
 			webview = currentWebView;
 			context.startActivity(new Intent(context, PrintPdfAgentActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));

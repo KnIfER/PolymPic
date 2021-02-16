@@ -59,9 +59,9 @@ public class AgentApplication extends Application {
 		@Override
 		public Object getTag() {
 			Object ret = tag;
-			try {
-				CMN.lock.unlock();
-			} catch (Exception ignored) { }
+			if(getId()==0) {
+				CMN.tryUnLock();
+			}
 			return ret;
 		}
 	}

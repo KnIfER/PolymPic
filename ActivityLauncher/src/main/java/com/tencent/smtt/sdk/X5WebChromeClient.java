@@ -39,9 +39,11 @@ class X5WebChromeClient extends X5ProxyWebChromeClient {
 		return webChromeClient.getDefaultVideoPoster();
 	}
 	
-	private android.webkit.WebView getLockedView() {
+	private android.webkit.WebView getLockedView(boolean straightParams) {
 		CMN.lock.lock();
-		return getTaggedView();
+		dummyWV.setId(straightParams?0:-1);
+		dummyWV.setTag(webView);
+		return dummyWV;
 	}
 	
 	private void unlock() {
@@ -50,14 +52,13 @@ class X5WebChromeClient extends X5ProxyWebChromeClient {
 		} catch (Exception ignored) { }
 	}
 	
-	private android.webkit.WebView getTaggedView() {
-		dummyWV.setTag(webView);
-		return dummyWV;
-	}
-	
 	public void onCloseWindow(IX5WebViewBase var1) {
 		webView.a(var1);
-		webChromeClient.onCloseWindow(getLockedView());
+		try {
+			webChromeClient.onCloseWindow(getLockedView(true));
+		} catch (Exception e) {
+			CMN.Log(e);
+		}
 		unlock();
 	}
 	
@@ -91,7 +92,12 @@ class X5WebChromeClient extends X5ProxyWebChromeClient {
 			}
 		});
 		var7.obj = var5;
-		boolean ret = webChromeClient.onCreateWindow(getLockedView(), var2, var3, var7);
+		boolean ret = false;
+		try {
+			ret = webChromeClient.onCreateWindow(getLockedView(true), var2, var3, var7);
+		} catch (Exception e) {
+			CMN.Log(e);
+		}
 		unlock();
 		return ret;
 	}
@@ -101,11 +107,8 @@ class X5WebChromeClient extends X5ProxyWebChromeClient {
 	}
 	
 	public void onGeolocationPermissionsShowPrompt(String var1, GeolocationPermissionsCallback geolocationPermissionsCallback) {
-		
-		android.webkit.WebView wv = getLockedView();
 		webView.geolocationPermissionsCallback = geolocationPermissionsCallback;
 		webChromeClient.onGeolocationPermissionsShowPrompt(var1, null);
-		unlock();
 	}
 	
 	public void onHideCustomView() {
@@ -114,20 +117,29 @@ class X5WebChromeClient extends X5ProxyWebChromeClient {
 	
 	public boolean onJsAlert(IX5WebViewBase var1, String var2, String var3, JsResult jsResult) {
 		webView.a(var1);
-		
-		android.webkit.WebView wv = getLockedView();
+		android.webkit.WebView wv = getLockedView(false);
 		webView.jsResult = jsResult;
-		boolean ret = webChromeClient.onJsAlert(wv, var2, var3, null);
+		boolean ret = false;
+		try {
+			ret = webChromeClient.onJsAlert(wv, var2, var3, null);
+		} catch (Exception e) {
+			CMN.Log(e);
+		}
 		unlock();
 		return ret;
 	}
 	
 	public boolean onJsConfirm(IX5WebViewBase var1, String var2, String var3, JsResult jsResult) {
 		webView.a(var1);
-		android.webkit.WebView wv = getLockedView();
+		android.webkit.WebView wv = getLockedView(false);
 		webView.jsResult = jsResult;
 		
-		boolean ret = webChromeClient.onJsConfirm(wv, var2, var3, null);
+		boolean ret = false;
+		try {
+			ret = webChromeClient.onJsConfirm(wv, var2, var3, null);
+		} catch (Exception e) {
+			CMN.Log(e);
+		}
 		unlock();
 		return ret;
 	}
@@ -135,20 +147,30 @@ class X5WebChromeClient extends X5ProxyWebChromeClient {
 	public boolean onJsPrompt(IX5WebViewBase var1, String var2, String var3, String var4, JsPromptResult jsPromptResult) {
 		webView.a(var1);
 		
-		android.webkit.WebView wv = getLockedView();
+		android.webkit.WebView wv = getLockedView(false);
 		webView.jsPromptResult = jsPromptResult;
 		
-		boolean ret = webChromeClient.onJsPrompt(wv, var2, var3, var4, null);
+		boolean ret = false;
+		try {
+			ret = webChromeClient.onJsPrompt(wv, var2, var3, var4, null);
+		} catch (Exception e) {
+			CMN.Log(e);
+		}
 		unlock();
 		return ret;
 	}
 	
 	public boolean onJsBeforeUnload(IX5WebViewBase var1, String var2, String var3, JsResult jsResult) {
 		webView.a(var1);
-		android.webkit.WebView wv = getLockedView();
+		android.webkit.WebView wv = getLockedView(false);
 		webView.jsResult = jsResult;
 		
-		boolean ret = webChromeClient.onJsBeforeUnload(wv, var2, var3, null);
+		boolean ret = false;
+		try {
+			ret = webChromeClient.onJsBeforeUnload(wv, var2, var3, null);
+		} catch (Exception e) {
+			CMN.Log(e);
+		}
 		unlock();
 		return ret;
 	}
@@ -159,7 +181,11 @@ class X5WebChromeClient extends X5ProxyWebChromeClient {
 	
 	public void onProgressChanged(IX5WebViewBase var1, int var2) {
 		webView.a(var1);
-		webChromeClient.onProgressChanged(getLockedView(), var2);
+		try {
+			webChromeClient.onProgressChanged(getLockedView(true), var2);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		unlock();
 	}
 	
@@ -169,25 +195,41 @@ class X5WebChromeClient extends X5ProxyWebChromeClient {
 	
 	public void onReceivedIcon(IX5WebViewBase var1, Bitmap var2) {
 		webView.a(var1);
-		webChromeClient.onReceivedIcon(getLockedView(), var2);
+		try {
+			webChromeClient.onReceivedIcon(getLockedView(true), var2);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		unlock();
 	}
 	
 	public void onReceivedTouchIconUrl(IX5WebViewBase var1, String var2, boolean var3) {
 		webView.a(var1);
-		webChromeClient.onReceivedTouchIconUrl(getLockedView(), var2, var3);
+		try {
+			webChromeClient.onReceivedTouchIconUrl(getLockedView(true), var2, var3);
+		} catch (Exception e) {
+			CMN.Log(e);
+		}
 		unlock();
 	}
 	
 	public void onReceivedTitle(IX5WebViewBase var1, String var2) {
 		webView.a(var1);
-		webChromeClient.onReceivedTitle(getLockedView(), var2);
+		try {
+			webChromeClient.onReceivedTitle(getLockedView(true), var2);
+		} catch (Exception e) {
+			CMN.Log(e);
+		}
 		unlock();
 	}
 	
 	public void onRequestFocus(IX5WebViewBase var1) {
 		webView.a(var1);
-		webChromeClient.onRequestFocus(getLockedView());
+		try {
+			webChromeClient.onRequestFocus(getLockedView(true));
+		} catch (Exception e) {
+			CMN.Log(e);
+		}
 		unlock();
 	}
 	

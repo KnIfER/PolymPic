@@ -406,7 +406,7 @@ public class FilePickerDialog extends AlertDialog implements
         });
 
 
-        folderCover = root.findViewById(R.id.toolbar_action1);
+        folderCover = root.findViewById(R.id.web_tools);
         folderCover.setOnClickListener(this);
         folderCover.setOnLongClickListener(this);
         HeaderView = findViewById(R.id.header);
@@ -1074,7 +1074,7 @@ public class FilePickerDialog extends AlertDialog implements
             mBMAdapter.notifyDataSetChanged();
             return true;
 
-        }else if(id  == R.id.toolbar_action1) {
+        }else if(id  == R.id.web_tools) {
             boolean val;
             if(bottombar2.getVisibility()!=View.VISIBLE) {
                 bottombar2.setVisibility(View.VISIBLE);
@@ -1295,7 +1295,7 @@ public class FilePickerDialog extends AlertDialog implements
 					final ViewGroup dv = (ViewGroup) getLayoutInflater().inflate(R.layout.fp_edittext, null);
 					final EditText etNew = dv.findViewById(R.id.edt_input);
 					final View btn_Done = dv.findViewById(R.id.done);
-					dv.findViewById(R.id.toolbar_action1).setVisibility(View.GONE);
+					dv.findViewById(R.id.web_tools).setVisibility(View.GONE);
 
 					etNew.setText(file_to_rename.getName());
 					etNew.setSingleLine(false); etNew.setGravity(GravityCompat.START);
@@ -1442,7 +1442,7 @@ public class FilePickerDialog extends AlertDialog implements
             popup1.show();
             //popup1.mDropDownList.setScrollbarFadingEnabled(false);
         }
-        else if(id == R.id.toolbar_action1) {//folderCover
+        else if(id == R.id.web_tools) {//folderCover
         	boolean val = opt.getBkmkShown();
             //sn(v);
         	if(val) {
@@ -1651,7 +1651,7 @@ public class FilePickerDialog extends AlertDialog implements
           	final ViewGroup dv = (ViewGroup) getLayoutInflater().inflate(R.layout.fp_edittext, null);
           	final EditText etNew = dv.findViewById(R.id.edt_input);
           	final View btn_Done = dv.findViewById(R.id.done);
-          	final ImageView btn_SwicthFolderCreation = dv.findViewById(R.id.toolbar_action1);
+          	final ImageView btn_SwicthFolderCreation = dv.findViewById(R.id.web_tools);
         	if(opt.getCreatingFile())
 				etNew.setHint(R.string.fp_cf);
         	else
@@ -1732,7 +1732,7 @@ public class FilePickerDialog extends AlertDialog implements
           	final EditText etNew = dv.findViewById(R.id.edt_input);
           	final View btn_Next = dv.findViewById(R.id.toxia);
           	final View btn_Last = dv.findViewById(R.id.toshn);
-          	final ImageView btn_SwicthFolderCreation = dv.findViewById(R.id.toolbar_action1);
+          	final ImageView btn_SwicthFolderCreation = dv.findViewById(R.id.web_tools);
         	if(!opt.getRegexSearch()) {
         		btn_SwicthFolderCreation.setColorFilter(Color.GRAY);
         	}else

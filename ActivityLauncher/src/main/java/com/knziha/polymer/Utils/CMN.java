@@ -69,19 +69,12 @@ public class CMN {
 		if(o!=null)
 		for (Object o1 : o) {
 			if(o1!=null) {
-				if (o1 instanceof Exception) {
+				if (o1 instanceof Throwable) {
 					ByteArrayOutputStream s = new ByteArrayOutputStream();
 					PrintStream p = new PrintStream(s);
-					((Exception) o1).printStackTrace(p);
+					((Throwable) o1).printStackTrace(p);
 					msg.append(s.toString());
-				}
-				if (o1 instanceof Exception) {
-					ByteArrayOutputStream s = new ByteArrayOutputStream();
-					PrintStream p = new PrintStream(s);
-					((Exception) o1).printStackTrace(p);
-					msg.append(s.toString());
-				}
-				if (o1 instanceof int[]) {
+				} else if (o1 instanceof int[]) {
 					msg.append(Arrays.toString((int[]) o1));
 					continue;
 				} else if (o1 instanceof String[]) {
@@ -152,5 +145,11 @@ public class CMN {
 	
 	public static Object tid() {
 		return Thread.currentThread().getId();
+	}
+	
+	public static void tryUnLock() {
+		try {
+			lock.unlock();
+		} catch (Exception ignored) { }
 	}
 }

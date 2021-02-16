@@ -761,7 +761,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 					currentViewer.clearSelection();
 				}
 			} break;
-			case R.id.ctx_hightlight:{
+			case R.id.web_highlight:{
 				currentViewer.highlightSelection();
 			} break;
 			case R.id.ctx_enlarge:{
@@ -770,7 +770,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 			case R.id.ctx_share:{
 				shareUrlOrText(getSelection());
 			} break;
-			case R.id.ctx_dictionay:{
+			case R.id.plaindict:{
 				if(currentViewer.shouldDrawSelection()) {
 					colorForWord(null);
 				}

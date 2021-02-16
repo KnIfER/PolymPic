@@ -1,0 +1,19 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="com.knziha.polymer.LauncherActivity" >
+
+    <item android:id="@+id/ctx_copy" android:title="复制" android:showAsAction="never"/>
+
+	<item android:id="@+id/web_tools" android:title="工具" android:showAsAction="never"/>
+
+	<item android:id="@+id/web_highlight" android:title="高亮" android:showAsAction="never"/>
+
+    <item android:id="@+id/plaindict" android:title="查词" android:showAsAction="never"/>
+
+    <item android:id="@+id/ctx_translation" android:title="翻译" android:showAsAction="never"/>
+
+    <item android:id="@+id/ctx_enlarge" android:title="扩大选择" android:showAsAction="never"/>
+
+    <item android:id="@+id/web_tts" android:title="TTS" android:showAsAction="never"/>
+
+</menu>

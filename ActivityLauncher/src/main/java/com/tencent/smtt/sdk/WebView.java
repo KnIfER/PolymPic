@@ -14,10 +14,10 @@ import android.net.http.SslCertificate;
 import android.os.Build.VERSION;
 import android.os.Bundle;
 import android.os.Message;
+import android.print.PrintDocumentAdapter;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.View.OnLongClickListener;
 import android.view.ViewGroup;
 import android.webkit.WebBackForwardList;
 import android.webkit.WebHistoryItem;
@@ -25,6 +25,7 @@ import android.widget.FrameLayout;
 
 import androidx.annotation.Nullable;
 
+import com.knziha.polymer.Utils.CMN;
 import com.tencent.smtt.export.external.extension.interfaces.IX5WebChromeClientExtension;
 import com.tencent.smtt.export.external.extension.interfaces.IX5WebSettingsExtension;
 import com.tencent.smtt.export.external.extension.interfaces.IX5WebViewClientExtension;
@@ -59,7 +60,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.channels.FileLock;
 import java.util.HashMap;
@@ -69,7 +69,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 @SuppressWarnings({ "unused"})
-public abstract class WebView extends FrameLayout implements OnLongClickListener {
+public abstract class WebView extends FrameLayout {
 	private final String b;
 	public static final String SCHEME_TEL = "tel:";
 	public static final String SCHEME_MAILTO = "mailto:";
@@ -82,9 +82,6 @@ public abstract class WebView extends FrameLayout implements OnLongClickListener
 	public WebResourceRequest wrr;
 	public WebResourceError wre;
 	public HttpAuthHandler httpAuthHandler;
-	public SslErrorHandler sslErrorHandler;
-	public SslError sslError;
-	public ClientCertRequest clientCertRequest;
 	public Bundle bundle;
 	public WebResourceResponse wret;
 	public ConsoleMessage consoleMessage;
@@ -122,7 +119,7 @@ public abstract class WebView extends FrameLayout implements OnLongClickListener
 	public static final int NORMAL_MODE_ALPHA = 255;
 	public static final int NIGHT_MODE_COLOR = -16777216;
 	private Object x;
-	private OnLongClickListener y;
+	private OnLongClickListener longClickListener;
 	
 	public WebView(Context var1, boolean var2) {
 		super(var1);
@@ -140,7 +137,7 @@ public abstract class WebView extends FrameLayout implements OnLongClickListener
 		this.t = "javascript:document.getElementsByTagName('HEAD').item(0).removeChild(document.getElementById('QQBrowserSDKNightMode'));";
 		this.u = "javascript:var style = document.createElement('style');style.type='text/css';style.id='QQBrowserSDKNightMode';style.innerHTML='html,body{background:none !important;background-color: #1d1e2a !important;}html *{background-color: #1d1e2a !important; color:#888888 !important;border-color:#3e4f61 !important;text-shadow:none !important;box-shadow:none !important;}a,a *{border-color:#4c5b99 !important; color:#2d69b3 !important;text-decoration:none !important;}a:visited,a:visited *{color:#a600a6 !important;}a:active,a:active *{color:#5588AA !important;}input,select,textarea,option,button{background-image:none !important;color:#AAAAAA !important;border-color:#4c5b99 !important;}form,div,button,span{background-color:#1d1e2a !important; border-color:#4c5b99 !important;}img{opacity:0.5}';document.getElementsByTagName('HEAD').item(0).appendChild(style);";
 		this.x = null;
-		this.y = null;
+		this.longClickListener = null;
 	}
 	
 	public WebView(Context var1) throws IOException {
@@ -178,7 +175,7 @@ public abstract class WebView extends FrameLayout implements OnLongClickListener
 		this.t = "javascript:document.getElementsByTagName('HEAD').item(0).removeChild(document.getElementById('QQBrowserSDKNightMode'));";
 		this.u = "javascript:var style = document.createElement('style');style.type='text/css';style.id='QQBrowserSDKNightMode';style.innerHTML='html,body{background:none !important;background-color: #1d1e2a !important;}html *{background-color: #1d1e2a !important; color:#888888 !important;border-color:#3e4f61 !important;text-shadow:none !important;box-shadow:none !important;}a,a *{border-color:#4c5b99 !important; color:#2d69b3 !important;text-decoration:none !important;}a:visited,a:visited *{color:#a600a6 !important;}a:active,a:active *{color:#5588AA !important;}input,select,textarea,option,button{background-image:none !important;color:#AAAAAA !important;border-color:#4c5b99 !important;}form,div,button,span{background-color:#1d1e2a !important; border-color:#4c5b99 !important;}img{opacity:0.5}';document.getElementsByTagName('HEAD').item(0).appendChild(style);";
 		this.x = null;
-		this.y = null;
+		this.longClickListener = null;
 		mWebViewCreated = true;
 		if (TbsShareManager.isThirdPartyApp(paramContext)) {
 			TbsLog.setWriteLogJIT(true);
@@ -260,13 +257,17 @@ public abstract class WebView extends FrameLayout implements OnLongClickListener
 		}
 	}
 	
-	public Object createPrintDocumentAdapter(String var1) {
+	public PrintDocumentAdapter createPrintDocumentAdapter(String var1) {
 		try {
-			return this.X5WebView.createPrintDocumentAdapter(var1);
+			Object ret = this.X5WebView.createPrintDocumentAdapter(var1);
+			if(ret instanceof PrintDocumentAdapter)
+				return (PrintDocumentAdapter) ret;
+			else
+				throw new Exception();
 		} catch (Throwable e) {
-			e.printStackTrace();
-			return null;
+			CMN.Log(e);
 		}
+		return null;
 	}
 	
 	public int computeHorizontalScrollOffset() {
@@ -586,14 +587,13 @@ public abstract class WebView extends FrameLayout implements OnLongClickListener
 	}
 	
 	@SuppressLint({"NewApi"})
-	public boolean showDebugView(String var1) {
-		var1 = var1.toLowerCase();
-		if (var1.startsWith("https://debugtbs.qq.com")) {
+	public boolean showDebugView(String url) {
+		if (url.startsWith("https://debugtbs.qq.com")) {
 			this.getView().setVisibility(INVISIBLE);
 			DebugtbsUtil var3 = DebugtbsUtil.getInstance(this.i);
-			var3.showPluginView(var1, this, this.i, TbsHandlerThread.getInstance().getLooper());
+			var3.showPluginView(url, this, this.i, TbsHandlerThread.getInstance().getLooper());
 			return true;
-		} else if (var1.startsWith("https://debugx5.qq.com")) {
+		} else if (url.startsWith("https://debugx5.qq.com")) {
 			return false;
 		} else {
 			return false;
@@ -1370,32 +1370,32 @@ public abstract class WebView extends FrameLayout implements OnLongClickListener
 		NIGHT_MODE_ALPHA = var1;
 	}
 	
-	public boolean onLongClick(View var1) {
-		if (this.y != null) {
-			return !this.y.onLongClick(var1) ? this.a(var1) : true;
-		} else {
-			return this.a(var1);
-		}
-	}
+//	public boolean onLongClick(View var1) {
+//		if (this.longClickListener != null) {
+//			return !this.longClickListener.onLongClick(var1) ? this.a(var1) : true;
+//		} else {
+//			return this.a(var1);
+//		}
+//	}
 	
-	public void setOnLongClickListener(OnLongClickListener var1) {
-		View var2 = this.X5WebView.getView();
-		
-		try {
-			if (this.x == null) {
-				Method var3 = (Method) ReflectionUtils.a(var2, "getListenerInfo");
-				var3.setAccessible(true);
-				Object var4 = var3.invoke(var2, (Object[])null);
-				Field var5 = var4.getClass().getDeclaredField("mOnLongClickListener");
-				var5.setAccessible(true);
-				this.x = var5.get(var4);
-			}
-		} catch (Throwable var6) {
-			return;
-		}
-		
-		this.y = var1;
-		this.getView().setOnLongClickListener(this);
+	public void setOnLongClickListener(OnLongClickListener listener) {
+//		View var2 = this.X5WebView.getView();
+//
+//		try {
+//			if (this.x == null) {
+//				Method var3 = (Method) ReflectionUtils.a(var2, "getListenerInfo");
+//				var3.setAccessible(true);
+//				Object var4 = var3.invoke(var2, (Object[])null);
+//				Field var5 = var4.getClass().getDeclaredField("mOnLongClickListener");
+//				var5.setAccessible(true);
+//				this.x = var5.get(var4);
+//			}
+//		} catch (Throwable var6) {
+//			return;
+//		}
+//
+//		this.y = var1;
+		this.getView().setOnLongClickListener(listener==null?null:v -> listener.onLongClick(WebView.this));
 	}
 	
 	private int e(Context var1) {

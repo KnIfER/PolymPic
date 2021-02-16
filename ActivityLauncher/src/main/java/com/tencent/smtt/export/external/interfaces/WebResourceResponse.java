@@ -1,5 +1,8 @@
 package com.tencent.smtt.export.external.interfaces;
 
+import com.knziha.polymer.browser.webkit.WebResourceResponseCompat;
+import com.knziha.polymer.widgets.Utils;
+
 import java.io.InputStream;
 import java.util.Map;
 
@@ -14,16 +17,16 @@ public class WebResourceResponse {
    public WebResourceResponse() {
    }
 
-   public WebResourceResponse(String var1, String var2, InputStream var3) {
-      this.mMimeType = var1;
-      this.mEncoding = var2;
-      this.setData(var3);
+   public WebResourceResponse(String mMimeType, String mEncoding, InputStream Data) {
+      this.mMimeType = mMimeType;
+      this.mEncoding = mEncoding;
+      this.setData(Data);
    }
 
-   public WebResourceResponse(String var1, String var2, int var3, String var4, Map<String, String> var5, InputStream var6) {
-      this(var1, var2, var6);
-      this.setStatusCodeAndReasonPhrase(var3, var4);
-      this.setResponseHeaders(var5);
+   public WebResourceResponse(String mMimeType, String mEncoding, int StatusCode, String ReasonPhrase, Map<String, String> ResponseHeaders, InputStream Data) {
+      this(mMimeType, mEncoding, Data);
+      this.setStatusCodeAndReasonPhrase(StatusCode, ReasonPhrase);
+      this.setResponseHeaders(ResponseHeaders);
    }
    
 	public static WebResourceResponse new_WebResourceResponse(android.webkit.WebResourceResponse ret) {
@@ -32,6 +35,11 @@ public class WebResourceResponse {
 	
 	public WebResourceResponse(android.webkit.WebResourceResponse ret) {
 		this(ret.getMimeType(), ret.getEncoding(), ret.getData());
+		if(Utils.bigCake) {
+			setResponseHeaders(ret.getResponseHeaders());
+		} else if(ret instanceof WebResourceResponseCompat) {
+			setResponseHeaders(((WebResourceResponseCompat) ret).getResponseHeaders());
+		}
 	}
 	
 	public void setMimeType(String var1) {
