@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:id="@+id/search_engines"
+	android:layout_width="match_parent"
+	android:layout_height="45dp"
+	android:orientation="horizontal"
+	android:background="#ECAAFFFF"
+	android:visibility="gone"
+	tools:visibility="visible">
+	<TextView
+		android:id="@+id/upload"
+		android:text="上传"
+		android:drawableLeft="@drawable/ic_sync_black_24dp"
+		style="@style/sch_eng_morpt"
+		android:textSize="15sp"
+		android:layout_marginLeft="8dp"
+		android:layout_marginRight="8dp"
+		/>
+
+	<TextView
+		android:id="@+id/download"
+		android:text="下载"
+		android:drawableLeft="@drawable/ic_sync_black_24dp"
+		style="@style/sch_eng_morpt"
+		android:textSize="15sp"
+		android:layout_marginLeft="8dp"
+		android:layout_marginRight="8dp"
+		/>
+</LinearLayout>

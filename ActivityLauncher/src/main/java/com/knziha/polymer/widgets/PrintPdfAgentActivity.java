@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.print.PrintAttributes;
+import android.print.PrintDocumentAdapter;
 import android.print.PrintManager;
 import android.webkit.WebView;
 
@@ -26,7 +27,7 @@ public class PrintPdfAgentActivity extends Activity {
 		if(context instanceof PrintPdfAgentActivity) {
 			String name = currentWebView.getTitle()+".pdf";
 			PrintManager printManager = (PrintManager) context.getSystemService(Context.PRINT_SERVICE);
-			printManager.print("Print", currentWebView.createPrintDocumentAdapter(name)
+			printManager.print("Print", (PrintDocumentAdapter) currentWebView.initPrintDocumentAdapter(name)
 					, new PrintAttributes.Builder().setColorMode(PrintAttributes.COLOR_MODE_COLOR).build());
 		} else {
 			webview = currentWebView;

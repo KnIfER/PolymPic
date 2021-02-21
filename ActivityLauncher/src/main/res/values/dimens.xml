@@ -30,6 +30,7 @@
     <dimen name="lvtextsize">16dp</dimen>
     <dimen name="lvsubtextsize">9dp</dimen>
 	<dimen name="_35_">35dp</dimen>
+	<dimen name="_38_">38dp</dimen>
 	<dimen name="_25_">25dp</dimen>
 	<dimen name="_18_">18dp</dimen>
 	<dimen name="_65_">65dp</dimen>

@@ -2110,7 +2110,7 @@ class TbsInstaller {
 		
 		TbsLog.i("TbsInstaller", "Tbsinstaller getTbsCoreRenameFileLock #2  enabled is " + var2);
 		if (!var2) {
-			l = X5CoreEngine.getInstance().b(var1);
+			l = X5CoreEngine.getInstance().tryTbsCoreLoadFileLock(var1);
 		} else {
 			l = FileHelper.getTbsCoreRenameFileLock(var1);
 		}
@@ -2867,12 +2867,14 @@ class TbsInstaller {
 			};
 			File[] var4 = var2.listFiles(var3);
 			int var5 = var4.length;
-			if (VERSION.SDK_INT < 16 && context.getPackageName() != null && context.getPackageName().equalsIgnoreCase("com.tencent.tbs")) {
-				try {
-					Thread.sleep(5000L);
-				} catch (Exception var8) {
-				}
-			}
+//			if (VERSION.SDK_INT < 16
+//					&& context.getPackageName() != null
+//					&& context.getPackageName().equalsIgnoreCase("com.tencent.tbs")) {
+//				try {
+//					Thread.sleep(5000L);
+//				} catch (Exception var8) {
+//				}
+//			}
 			
 			ClassLoader var6 = context.getClassLoader();
 			

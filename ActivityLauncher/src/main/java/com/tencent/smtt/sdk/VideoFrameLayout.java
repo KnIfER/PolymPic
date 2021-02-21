@@ -101,11 +101,9 @@ class VideoFrameLayout extends FrameLayout implements OnErrorListener {
             layoutParams.gravity = 17;
             frameLayout.addView(this.videoView, layoutParams);
          }
-
-         if (VERSION.SDK_INT >= 8) {
-            this.videoView.start();
-         }
-      }
+	
+		  this.videoView.start();
+	  }
 
    }
 

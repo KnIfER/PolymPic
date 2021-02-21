@@ -1,8 +1,6 @@
 package com.tencent.smtt.sdk.stat;
 
 import MTT.ThirdAppInfoNew;
-
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
@@ -42,26 +40,25 @@ import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 import org.json.JSONObject;
 
-public class b {
+public class HttpUtils {
    public static byte[] a = null;
 
    public static void a(final ThirdAppInfoNew var0, final Context var1) {
       (new Thread("HttpUtils") {
-         @SuppressLint("ObsoleteSdkInt")
-		 public void run() {
+         public void run() {
             AppUtil.b(var1, var0.sGuid);
             var0.sCpu = AppUtil.b();
             if (VERSION.SDK_INT >= 8) {
-               if (b.a == null) {
+               if (HttpUtils.a == null) {
                   try {
-                     b.a = "65dRa93L".getBytes("utf-8");
+                     HttpUtils.a = "65dRa93L".getBytes("utf-8");
                   } catch (UnsupportedEncodingException var17) {
-                     b.a = null;
+                     HttpUtils.a = null;
                      TbsLog.e("sdkreport", "Post failed -- get POST_DATA_KEY failed!");
                   }
                }
 
-               if (b.a == null) {
+               if (HttpUtils.a == null) {
                   TbsLog.e("sdkreport", "Post failed -- POST_DATA_KEY is null!");
                } else {
                   String var1x = TbsDownloadConfig.getInstance(var1).mPreferences.getString("tbs_deskey_token", "");
@@ -107,7 +104,7 @@ public class b {
 				   JSONObject var18 = null;
 
                   try {
-                     var18 = b.c(var0, var1);
+                     var18 = HttpUtils.c(var0, var1);
                   } catch (Exception var13) {
                      TbsLog.i(var13);
                   }
@@ -140,8 +137,8 @@ public class b {
                         if (var5.getResponseCode() == 200) {
                            TbsLog.i("sdkreport", "Post successful!");
                            TbsLog.i("sdkreport", "SIGNATURE is " + var18.getString("SIGNATURE"));
-                           String var21 = b.b(var5, var3, var4);
-                           b.b(var1, var21);
+                           String var21 = HttpUtils.getResponseFromConnection(var5, var3, var4);
+                           HttpUtils.b(var1, var21);
                            TbsDownloadUpload var10 = new TbsDownloadUpload(var1);
                            var10.clearUploadCode();
                         } else {
@@ -244,7 +241,7 @@ public class b {
       }
    }
 
-   public static void a(Context var0, String var1, String var2, String var3, int var4, boolean var5, long var6, boolean var8) {
+   public static void doReport(Context var0, String var1, String var2, String var3, int var4, boolean var5, long var6, boolean var8) {
       if (QbSdk.getSettings() != null && QbSdk.getSettings().containsKey("SET_SENDREQUEST_AND_UPLOAD") && QbSdk.getSettings().get("SET_SENDREQUEST_AND_UPLOAD").equals("false")) {
          TbsLog.i("sdkreport", "[HttpUtils.doReport] -- SET_SENDREQUEST_AND_UPLOAD is false");
       } else {
@@ -388,7 +385,7 @@ public class b {
       return null;
    }
 
-   private static String b(HttpURLConnection var0, String var1, boolean var2) {
+   private static String getResponseFromConnection(HttpURLConnection var0, String var1, boolean var2) {
       String var3 = "";
       Object var4 = null;
       ByteArrayOutputStream var5 = null;

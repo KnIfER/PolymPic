@@ -26,7 +26,6 @@ import android.os.SystemClock;
 import android.text.TextPaint;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -45,16 +44,19 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.util.Util;
+import com.google.android.material.appbar.AppBarLayout;
 import com.jess.ui.TwoWayAdapterView;
 import com.jess.ui.TwoWayGridView;
 import com.knziha.filepicker.model.DialogConfigs;
 import com.knziha.filepicker.model.DialogProperties;
 import com.knziha.filepicker.model.DialogSelectionListener;
 import com.knziha.filepicker.view.FilePickerDialog;
+import com.knziha.polymer.BrowserActivity;
 import com.knziha.polymer.PDocViewerActivity;
 import com.knziha.polymer.R;
 import com.knziha.polymer.Toastable_Activity;
 import com.knziha.polymer.Utils.CMN;
+import com.knziha.polymer.browser.webkit.UniversalWebviewInterface;
 import com.knziha.polymer.browser.webkit.WebViewImplExt;
 import com.knziha.polymer.browser.webkit.XPlusWebView;
 import com.knziha.polymer.databinding.BrowseMainBinding;
@@ -89,7 +91,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 
 import static com.knziha.polymer.browser.BrowseFieldHandler.dateToStr;
-import static com.knziha.polymer.qrcode.QRActivity.StaticTextExtra;
 import static com.knziha.polymer.widgets.Utils.RequsetUrlFromCamera;
 
 /** BrowseActivity Is Not The Browser. It is a work station for resource sniffers.
@@ -99,8 +100,7 @@ public class BrowseActivity extends Toastable_Activity
 		implements View.OnClickListener, View.OnLongClickListener {
 	BrowseMainBinding UIData;
 	
-	WebViewImplExt webview_Player;
-	XPlusWebView x5_webview_Player;
+	UniversalWebviewInterface webview_Player;
 	
 	WebBrowseListener listener;
 	
@@ -119,9 +119,6 @@ public class BrowseActivity extends Toastable_Activity
 			CMN.Log(e);
 		}
 	}
-	
-	boolean mWakeLocked;
-	PowerManager.WakeLock mWakeLock;
 	private long deletingRow;
 	private boolean isViewDirty;
 	String SearchText;
@@ -138,17 +135,13 @@ public class BrowseActivity extends Toastable_Activity
 	}
 	
 	private void initX5WebStation() throws IOException {
-		
-		
 		QbSdk.PreInitCallback cb = new QbSdk.PreInitCallback() {
 			@Override
 			public void onViewInitFinished(boolean arg0) {
 				// TODO Auto-generated method stub
 				//x5內核初始化完成的回调，为true表示x5内核加载成功，否则表示x5内核加载失败，会自动切换到系统内核。
 				CMN.Log( " onViewInitFinished is " + arg0);
-				
 			}
-			
 			@Override
 			public void onCoreInitFinished() {
 				// TODO Auto-generated method stub
@@ -156,17 +149,22 @@ public class BrowseActivity extends Toastable_Activity
 		};
 		//x5内核初始化接口
 		QbSdk.initX5Environment(getApplicationContext(),  cb);
-		
-		
 		CMN.Log("initX5WebStation");
-		x5_webview_Player = new XPlusWebView(BrowseActivity.this);
-		Utils.addViewToParent(x5_webview_Player, UIData.webStation);
-		listener = new WebBrowseListener(BrowseActivity.this, x5_webview_Player);
+		WebFrameLayout layout = new WebFrameLayout(this, new BrowserActivity.TabHolder());
+		layout.appBarLayout = new AppBarLayout(this);
+		webview_Player = new XPlusWebView(BrowseActivity.this);
+		layout.appBarLayout = new AppBarLayout(this);
+		webview_Player.setLayoutParent(layout, true);
+		Utils.addViewToParent(layout, UIData.webStation);
+		listener = new WebBrowseListener(BrowseActivity.this, webview_Player);
 	}
 	
 	private void initStdWebStation() {
+		WebFrameLayout layout = new WebFrameLayout(this, new BrowserActivity.TabHolder());
 		webview_Player = new WebViewImplExt(this);
-		Utils.addViewToParent(webview_Player, UIData.webStation);
+		layout.appBarLayout = new AppBarLayout(this);
+		webview_Player.setLayoutParent(layout, true);
+		Utils.addViewToParent(layout, UIData.webStation);
 		listener = new WebBrowseListener(this, webview_Player);
 	}
 	
@@ -198,7 +196,6 @@ public class BrowseActivity extends Toastable_Activity
 	Map<Long, ScheduleTask> scheduleMap = Collections.synchronizedMap(new HashMap<>());
 	Map<Long, PendingIntent> intentMap = Collections.synchronizedMap(new HashMap<>());
 	Map<Long, ViewHolder> viewMap = new HashMap<>();
-	private boolean checkResumeQRText;
 	
 	Random random = new Random();
 	
@@ -244,8 +241,6 @@ public class BrowseActivity extends Toastable_Activity
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
-		PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
-		mWakeLock = pm.newWakeLock(PowerManager.FULL_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP | PowerManager.ON_AFTER_RELEASE, "servis:SimpleTimer");
 		UIData = DataBindingUtil.setContentView(this, R.layout.browse_main);
 		preference = getSharedPreferences("browse", 0);
 		root = UIData.root;
@@ -387,10 +382,11 @@ public class BrowseActivity extends Toastable_Activity
 			try {
 				initX5WebStation();
 			} catch (IOException e) {
+				x5=false;
 				CMN.Log(e);
-				initStdWebStation();
 			}
-		} else {
+		}
+		if(!x5){
 			initStdWebStation();
 		}
 		CMN.Log("启动...");
@@ -421,18 +417,8 @@ public class BrowseActivity extends Toastable_Activity
 	@Override
 	protected void onResume() {
 		super.onResume();
-		if(checkResumeQRText && StaticTextExtra!=null) {
-			editHandler.setText(StaticTextExtra);
-			StaticTextExtra = null;
-		}
 		if(autoRefreshing) {
 			appHandler.sendEmptyMessage(110);
-		}
-		if(mWakeLocked) {
-			try {
-				mWakeLock.release();
-			} catch (Exception ignored) { }
-			mWakeLocked=false;
 		}
 	}
 	
@@ -525,12 +511,13 @@ public class BrowseActivity extends Toastable_Activity
 	}
 	
 	private void searchInDatabase(int start, String kay) {
+		kay = kay.toLowerCase();
 		cursor.moveToPosition(start);
 		int foundIdx=-1;
 		while(cursor.moveToNext()) {
 			String val = cursor.getString(1);
-			if(val!=null&&val.contains(kay)
-					||(val=cursor.getString(2))!=null&&val.contains(kay)) {
+			if(val!=null&&val.toLowerCase().contains(kay)
+					||(val=cursor.getString(2))!=null&&val.toLowerCase().contains(kay)) {
 				foundIdx = cursor.getPosition();
 				break;
 			}
@@ -1035,8 +1022,13 @@ public class BrowseActivity extends Toastable_Activity
 				CMN.Log("接收到任务：", task, CMN.id(this), schedule);
 				queueTaskForDB(task, schedule);
 			}
-			mWakeLock.acquire();
-			mWakeLock.release();
+			try {
+				acquireWakeLock();
+				mWakeLock.release();
+				mWakeLocked = false;
+			} catch (Exception e) {
+				CMN.Log(e);
+			}
 		}
 	}
 	
@@ -1050,9 +1042,14 @@ public class BrowseActivity extends Toastable_Activity
 			if(Utils.littleCat) {
 				checkResumeQRText = true;
 			}
-			if(text!=null) {
-				editHandler.setText(text);
-			}
+			onQRGetText(text);
+		}
+	}
+	
+	@Override
+	protected void onQRGetText(String text) {
+		if(text!=null) {
+			editHandler.setText(text);
 		}
 	}
 	

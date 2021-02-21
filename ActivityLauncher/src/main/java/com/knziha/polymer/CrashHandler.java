@@ -4,6 +4,8 @@ import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.database.sqlite.SQLiteException;
+import android.database.sqlite.SQLiteFullException;
 import android.os.Build;
 import android.util.Log;
 
@@ -94,7 +96,16 @@ public class CrashHandler implements UncaughtExceptionHandler {
 
 	@Override
 	public void uncaughtException(@NonNull Thread thread, @NonNull Throwable exception) {
-		Log.e("ODPlayer","::fatal exception : "+exception.toString());
+		String message = exception.toString();
+		Log.e("ODPlayer","::fatal exception : "+ message);
+//		if(message.contains("disk is full")) {
+//			return;
+//		}
+//		if (exception instanceof SQLiteFullException) {
+//			CMN.Log(exception);
+//			AgentApplication.exception = exception;
+//			return;
+//		}
 		Writer writer = new StringWriter();
 		PrintWriter printWriter = new PrintWriter(writer);
 		exception.printStackTrace(printWriter);
@@ -113,11 +124,13 @@ public class CrashHandler implements UncaughtExceptionHandler {
 			try {
 				File log=new File(log_path);
 				File dir = log.getParentFile();
-				dir.mkdirs();
-				if(log.isDirectory()) log.delete();
-				FileOutputStream fos = new FileOutputStream(log_path);
-				fos.write(info_builder.toString().getBytes()); fos.close();
-				new File(dir, "lock").mkdirs();
+				if(dir.getFreeSpace()>1024*1024) {
+					dir.mkdirs();
+					if(log.isDirectory()) log.delete();
+					FileOutputStream fos = new FileOutputStream(log_path);
+					fos.write(info_builder.toString().getBytes()); fos.close();
+					new File(dir, "lock").mkdirs();
+				}
 			} catch (Exception e) {
 				Log.e(TAG, "an error occured while writing file...", e);
 			}
@@ -131,7 +144,7 @@ public class CrashHandler implements UncaughtExceptionHandler {
 			if(mDefaultHandler != null)
 				mDefaultHandler.uncaughtException(thread, exception);
 			unRegister();
-		}else {
+		} else {
 			unRegister();
 			System.exit(1);
 		}

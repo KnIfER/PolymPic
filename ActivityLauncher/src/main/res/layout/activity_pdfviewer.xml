@@ -127,7 +127,7 @@
 					android:layout_height="match_parent"
 					android:background="@drawable/surrtrip1"
 					android:clickable="true"
-					android:src="@drawable/ic_menu_black_24dp" />
+					android:src="@drawable/ic_menu_24dp" />
 			</com.knziha.polymer.widgets.LineaSlidog>
 		</FrameLayout>
 

@@ -49,12 +49,14 @@ import android.view.ViewParent;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.GlobalOptions;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.knziha.polymer.R;
 import com.knziha.polymer.Toastable_Activity;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.Options;
@@ -391,6 +393,18 @@ public class Utils {
 	public static boolean actualLandscapeMode(Context c) {
 		int angle = ((WindowManager)c.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay().getRotation();
 		return angle==Surface.ROTATION_90||angle==Surface.ROTATION_270;
+	}
+	
+	public static String getTextInView(View view) {
+		return ((TextView)view).getText().toString();
+	}
+	
+	public static String getFieldInView(View view) {
+		return ((TextView)view).getText().toString().trim().replaceAll("[\r\n]", "");
+	}
+	
+	public static String getTextInView(View view, int id) {
+		return ((TextView)view.findViewById(id)).getText().toString();
 	}
 	
 	public static class DummyOnClick implements View.OnClickListener {

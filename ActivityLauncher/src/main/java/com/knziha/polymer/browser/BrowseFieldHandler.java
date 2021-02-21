@@ -6,6 +6,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteFullException;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
@@ -19,6 +20,7 @@ import com.knziha.polymer.R;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.qrcode.QRActivityPlus;
 import com.knziha.polymer.qrcode.QRGenerator;
+import com.knziha.polymer.widgets.TextWatcherAdapter;
 import com.knziha.polymer.widgets.Utils;
 
 import java.text.ParsePosition;
@@ -62,20 +64,9 @@ public class BrowseFieldHandler implements View.OnClickListener, View.OnLongClic
 		});
 		
 		//tc
-		etField.addTextChangedListener(new TextWatcher() {
-			@Override
-			public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-			
-			}
-			
-			@Override
-			public void onTextChanged(CharSequence s, int start, int before, int count) {
-			
-			}
-			
+		etField.addTextChangedListener(new TextWatcherAdapter() {
 			@Override
 			public void afterTextChanged(Editable s) {
-				CMN.Log("afterTextChanged");
 				setGotoQR(s.length()==0);
 			}
 		});
@@ -192,15 +183,19 @@ public class BrowseFieldHandler implements View.OnClickListener, View.OnLongClic
 			return;
 		}
 		if(rowID==-1) return;
-		SQLiteDatabase db = BrowseDBHelper.getInstancedDb();
-		String field = fieldForIndex(index);
-		if (!TextUtils.isEmpty(field)) {
-			ContentValues values = new ContentValues();
-			values.put(field, value);
-			db.update("tasks", values, "id=?", new String[]{"" + rowID});
-			a.updateTaskList();
-			//a.updateViewForRow(rowID);
-			setVis(false);
+		try {
+			SQLiteDatabase db = BrowseDBHelper.getInstancedDb();
+			String field = fieldForIndex(index);
+			if (!TextUtils.isEmpty(field)) {
+				ContentValues values = new ContentValues();
+				values.put(field, value);
+				db.update("tasks", values, "id=?", new String[]{"" + rowID});
+				a.updateTaskList();
+				//a.updateViewForRow(rowID);
+				setVis(false);
+			}
+		} catch (SQLiteFullException e) {
+			a.showT("磁盘已满！");
 		}
 	}
 	
@@ -242,8 +237,7 @@ public class BrowseFieldHandler implements View.OnClickListener, View.OnLongClic
 			case R.id.browser_widget5: {
 				Intent intent = new Intent(a, QRGenerator.class).putExtra(Intent.EXTRA_TEXT, value);
 				a.startActivity(intent);
-				a.mWakeLocked = true;
-				a.mWakeLock.acquire();
+				a.acquireWakeLock();
 			} break;
 			case R.id.browser_widget4:{
 				commitField(value);

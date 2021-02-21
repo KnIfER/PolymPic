@@ -152,7 +152,7 @@ public class QbSdk {
    }
 
    @SuppressLint({"NewApi"})
-   private static boolean a(Context var0, boolean var1) {
+   private static boolean init(Context var0, boolean var1) {
       TbsLog.initIfNeed(var0);
       if (!sIsVersionPrinted) {
          TbsLog.i("QbSdk", "svn revision: jnizz; SDK_VERSION_CODE: 43967; SDK_VERSION_NAME: 4.3.0.67");
@@ -258,7 +258,7 @@ public class QbSdk {
 
                      TbsLog.i("QbSdk", "QbSdk init optDirExtension #1 is " + var9);
                      TbsLog.i("QbSdk", "new DexLoader #1 dexFile is " + var8.getAbsolutePath());
-                     X5CoreEngine.getInstance().b(var0);
+                     X5CoreEngine.getInstance().tryTbsCoreLoadFileLock(var0);
                      TbsCheckUtils.a(var0);
                      DexLoader var5 = new DexLoader(var8.getParent(), var0, new String[]{var8.getAbsolutePath()}, var9, getSettings());
                      q = var5.loadClass("com.tencent.tbs.sdk.extension.TbsSDKExtension");
@@ -362,7 +362,7 @@ public class QbSdk {
          }
 
          String var3 = var1.getAbsolutePath();
-         X5CoreEngine.getInstance().b(var0);
+         X5CoreEngine.getInstance().tryTbsCoreLoadFileLock(var0);
          TbsCheckUtils.a(var0);
          DexLoader var4 = new DexLoader(var2.getParent(), var0, new String[]{var2.getAbsolutePath()}, var3, getSettings());
          q = var4.loadClass("com.tencent.tbs.sdk.extension.TbsSDKExtension");
@@ -372,9 +372,10 @@ public class QbSdk {
 
    public static boolean canLoadX5FirstTimeThirdApp(Context var0) {
       try {
-         if (var0.getApplicationInfo().packageName.contains("com.moji.mjweather") && android.os.Build.VERSION.SDK_INT == 19) {
-            return true;
-         } else {
+//         if (var0.getApplicationInfo().packageName.contains("com.moji.mjweather") && android.os.Build.VERSION.SDK_INT == 19) {
+//            return true;
+//         } else
+		{
             if (q == null) {
                File var1 = TbsInstaller.a().getTbsCoreShareDir(var0);
                if (var1 == null) {
@@ -397,7 +398,7 @@ public class QbSdk {
 
                TbsLog.i("QbSdk", "QbSdk init optDirExtension #2 is " + var3);
                TbsLog.i("QbSdk", "new DexLoader #2 dexFile is " + var2.getAbsolutePath());
-               X5CoreEngine.getInstance().b(var0);
+               X5CoreEngine.getInstance().tryTbsCoreLoadFileLock(var0);
                TbsCheckUtils.a(var0);
                DexLoader var4 = new DexLoader(var2.getParent(), var0, new String[]{var2.getAbsolutePath()}, var3, getSettings());
                q = var4.loadClass("com.tencent.tbs.sdk.extension.TbsSDKExtension");
@@ -412,7 +413,7 @@ public class QbSdk {
                }
             }
 
-            Object var7 = ReflectionUtils.a(r, "canLoadX5CoreForThirdApp", new Class[0]);
+            Object var7 = ReflectionUtils.getDeclaredMethod(r, "canLoadX5CoreForThirdApp", new Class[0]);
             return var7 != null && var7 instanceof Boolean ? (Boolean)var7 : false;
          }
       } catch (Throwable var6) {
@@ -437,7 +438,7 @@ public class QbSdk {
                   return false;
                } else {
                   TbsLog.i("QbSdk", "new DexLoader #3 dexFile is " + var2.getAbsolutePath());
-                  X5CoreEngine.getInstance().b(var0);
+                  X5CoreEngine.getInstance().tryTbsCoreLoadFileLock(var0);
                   TbsCheckUtils.a(var0);
                   DexLoader var3 = new DexLoader(var2.getParent(), var0, new String[]{var2.getAbsolutePath()}, var1.getAbsolutePath(), getSettings());
                   q = var3.loadClass("com.tencent.tbs.sdk.extension.TbsSDKExtension");
@@ -490,7 +491,7 @@ public class QbSdk {
 
                   TbsLog.i("QbSdk", "QbSdk init optDirExtension #3 is " + var6);
                   TbsLog.i("QbSdk", "new DexLoader #4 dexFile is " + var2.getAbsolutePath());
-                  X5CoreEngine.getInstance().b(var0);
+                  X5CoreEngine.getInstance().tryTbsCoreLoadFileLock(var0);
                   TbsCheckUtils.a(var0);
                   DexLoader var4 = new DexLoader(var2.getParent(), var0, new String[]{var2.getAbsolutePath()}, var6, getSettings());
                   q = var4.loadClass("com.tencent.tbs.sdk.extension.TbsSDKExtension");
@@ -585,7 +586,7 @@ public class QbSdk {
    }
 
    public static boolean canLoadX5(Context var0) {
-      return a(var0, false, false);
+      return init(var0, false, false);
    }
 
    public static boolean canOpenWebPlus(Context var0) {
@@ -724,7 +725,7 @@ public class QbSdk {
       return var1 == null ? false : (Boolean)var1;
    }
 
-   static boolean a(Context var0, boolean var1, boolean var2) {
+   static boolean init(Context var0, boolean var1, boolean var2) {
       boolean var3 = false;
       int var4 = TbsPVConfig.getInstance(var0).getDisabledCoreVersion();
       if (var4 != 0 && var4 == TbsInstaller.a().getTbsCoreInstalledVerInNolock(var0)) {
@@ -733,7 +734,7 @@ public class QbSdk {
       } else if (TbsShareManager.isThirdPartyApp(var0) && !TbsShareManager.isShareTbsCoreAvailableInner(var0)) {
          TbsCoreLoadStat.getInstance().a(var0, 302);
          return var3;
-      } else if (!a(var0, var1)) {
+      } else if (!init(var0, var1)) {
          TbsLog.e("QbSdk", "QbSdk.init failure!");
          return var3;
       } else {
@@ -778,15 +779,8 @@ public class QbSdk {
                }
             } else {
                try {
-                  if (android.os.Build.VERSION.SDK_INT >= 12) {
-                     p = var6.getString("tbs_core_version", "0");
-                  } else {
-                     p = var6.getString("tbs_core_version");
-                     if (null == p) {
-                        p = "0";
-                     }
-                  }
-               } catch (Exception var14) {
+				   p = var6.getString("tbs_core_version", "0");
+			   } catch (Exception var14) {
                   p = "0";
                }
 
@@ -833,7 +827,7 @@ public class QbSdk {
             Object var18 = null;
             if (var7 != 0) {
                try {
-                  var18 = ReflectionUtils.a(r, "getErrorCodeForLogReport", new Class[0]);
+                  var18 = ReflectionUtils.getDeclaredMethod(r, "getErrorCodeForLogReport", new Class[0]);
                } catch (Exception var10) {
                   var10.printStackTrace();
                }
@@ -891,7 +885,7 @@ public class QbSdk {
    }
 
    public static boolean canOpenMimeFileType(Context var0, String var1) {
-      return !a(var0, false) ? false : false;
+      return !init(var0, false) ? false : false;
    }
 
    public static void setCurrentID(String var0) {
@@ -1045,15 +1039,11 @@ public class QbSdk {
                   if (var1 != null) {
                      var1.onViewInitFinished(true);
                   }
-
-                  TbsLog.writeLogToDisk();
                   break;
                case 2:
                   if (var1 != null) {
                      var1.onViewInitFinished(false);
                   }
-
-                  TbsLog.writeLogToDisk();
                   break;
                case 3:
                   if (var1 != null) {
@@ -1178,13 +1168,9 @@ public class QbSdk {
       int var13;
       Editor var10000;
       try {
-         if (android.os.Build.VERSION.SDK_INT >= 11) {
-            var4 = var0.getSharedPreferences("tbs_preloadx5_check_cfg_file", 4);
-         } else {
-            var4 = var0.getSharedPreferences("tbs_preloadx5_check_cfg_file", 0);
-         }
-
-         var13 = var4.getInt("tbs_preload_x5_recorder", -1);
+		  var4 = var0.getSharedPreferences("tbs_preloadx5_check_cfg_file", 4);
+	
+		  var13 = var4.getInt("tbs_preload_x5_recorder", -1);
          boolean var12;
          if (var13 >= 0) {
             ++var13;
@@ -1288,10 +1274,10 @@ public class QbSdk {
    }
 
    public static void continueLoadSo(Context var0) {
-      if ("com.tencent.mm".equals(getCurrentProcessName(var0)) && WebView.mWebViewCreated) {
-         ReflectionUtils.a(r, "continueLoadSo", new Class[0]);
+      //if ("com.tencent.mm".equals(getCurrentProcessName(var0)) && WebView.mWebViewCreated)
+      {
+         ReflectionUtils.getDeclaredMethod(r, "continueLoadSo", new Class[0]);
       }
-
    }
 
    public static boolean getJarFilesAndLibraryPath(Context var0) {
@@ -1332,7 +1318,7 @@ public class QbSdk {
       if (r == null) {
          return false;
       } else {
-         Object var0 = ReflectionUtils.a(r, "useSoftWare", new Class[0]);
+         Object var0 = ReflectionUtils.getDeclaredMethod(r, "useSoftWare", new Class[0]);
          if (var0 == null) {
             var0 = ReflectionUtils.invokeInstance(r, "useSoftWare", new Class[]{Integer.TYPE}, MemInfoHelper.getTotalMemory());
          }

@@ -11,7 +11,7 @@ import java.util.List;
 
 public class PreferenceHelper {
    private static PreferenceHelper instance;
-   private static FileLockHelper fileLockHelper;
+   private static FileLockHelper fileLock;
 
    private PreferenceHelper() {
    }
@@ -54,19 +54,18 @@ public class PreferenceHelper {
    }
 
    public void createFileLock(Context var1) {
-      fileLockHelper = FileLockHelper.create(new File(var1.getFilesDir(), "prefs.lock"));
+      fileLock = FileLockHelper.create(new File(var1.getFilesDir(), "prefs.lock"));
    }
 
    public boolean hasFileLock() {
-      return fileLockHelper != null;
+      return fileLock != null;
    }
 
-   public void c() {
-      if (fileLockHelper != null) {
-         fileLockHelper.tryDelete();
-         fileLockHelper = null;
+   public void releaseFileLock() {
+      if (fileLock != null) {
+         fileLock.tryDelete();
+         fileLock = null;
       }
-
    }
 
    public void putArrayList(Context var1, String var2, List<String> var3) {

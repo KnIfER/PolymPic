@@ -14,10 +14,12 @@ import android.app.PendingIntent;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteFullException;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -34,7 +36,6 @@ import android.os.Bundle;
 import android.os.CancellationSignal;
 import android.os.Environment;
 import android.os.Message;
-import android.print.PrintDocumentAdapter;
 import android.provider.DocumentsContract;
 import android.text.Editable;
 import android.text.Spannable;
@@ -70,6 +71,7 @@ import android.webkit.WebView;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -83,6 +85,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.GlobalOptions;
+import androidx.appcompat.widget.DropDownListView;
 import androidx.appcompat.widget.ListPopupWindow;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.content.pm.ShortcutInfoCompat;
@@ -124,6 +127,8 @@ import com.knziha.polymer.browser.webkit.XPlusWebView;
 import com.knziha.polymer.database.LexicalDBHelper;
 import com.knziha.polymer.databinding.ActivityMainBinding;
 import com.knziha.polymer.databinding.DownloadBottomSheetBinding;
+import com.knziha.polymer.databinding.LoginViewBinding;
+import com.knziha.polymer.databinding.SearchEnginesItemBinding;
 import com.knziha.polymer.databinding.SearchHintsItemBinding;
 import com.knziha.polymer.databinding.WebPageItemBinding;
 import com.knziha.polymer.qrcode.QRActivity;
@@ -137,14 +142,17 @@ import com.knziha.polymer.webslideshow.WebPic.WebPic;
 import com.knziha.polymer.webstorage.BrowserDownloads;
 import com.knziha.polymer.webstorage.BrowserHistory;
 import com.knziha.polymer.webstorage.SardineCloud;
+import com.knziha.polymer.webstorage.WebDict;
 import com.knziha.polymer.webstorage.WebStacksSer;
 import com.knziha.polymer.widgets.AppIconsAdapter;
 import com.knziha.polymer.widgets.DescriptiveImageView;
 import com.knziha.polymer.widgets.DialogWithTag;
+import com.knziha.polymer.widgets.EditFieldHandler;
 import com.knziha.polymer.widgets.PopupBackground;
 import com.knziha.polymer.widgets.PrintPdfAgentActivity;
 import com.knziha.polymer.widgets.ScrollViewTransparent;
 import com.knziha.polymer.widgets.SpacesItemDecoration;
+import com.knziha.polymer.widgets.SuperItemListener;
 import com.knziha.polymer.widgets.TwoColumnAdapter;
 import com.knziha.polymer.widgets.Utils;
 import com.knziha.polymer.widgets.WaveView;
@@ -186,6 +194,7 @@ import static com.knziha.polymer.WebCompoundListener.CustomViewHideTime;
 import static com.knziha.polymer.WebCompoundListener.PrintStartTime;
 import static com.knziha.polymer.WebCompoundListener.httpPattern;
 import static com.knziha.polymer.WebCompoundListener.requestPattern;
+import static com.knziha.polymer.browser.webkit.WebViewHelper.getTypedTagInAncestors;
 import static com.knziha.polymer.widgets.Utils.DummyBMRef;
 import static com.knziha.polymer.widgets.Utils.DummyTransX;
 import static com.knziha.polymer.widgets.Utils.RequsetUrlFromCamera;
@@ -234,7 +243,15 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	public WebFrameLayout currentViewImpl;
 	public UniversalWebviewInterface currentWebView;
 	
-	ArrayList<String> WebDicts = new  ArrayList<>(64);
+	
+	ArrayList<WebDict> WebDicts = new  ArrayList<>(64);
+	private WebDict editingSchEngBean;
+	private View currentSchEngItemView;
+	private boolean isSyncSchEngShown;
+	private boolean isSchEngsDirty;
+	private String currentWebDictUrl;
+	private BaseAdapter searchEngineAdapter;
+	
 	private RecyclerView.Adapter/*<ViewDataHolder<WebPageItemBinding>>*/ adaptermy;
 	private RecyclerView.Adapter/*<ViewDataHolder<SearchHintsItemBinding>>*/ adaptermy2;
 	boolean tabsManagerIsDirty;
@@ -381,6 +398,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		CMN.Log("getting mid 0 ...", Thread.currentThread().getId());
 		
 		TestHelper.testAddWebDicts(WebDicts);
+		currentWebDictUrl = WebDicts.get(0).url;
 		
 		Window win = getWindow();
 		//getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN|WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
@@ -611,8 +629,25 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	@Override
 	protected void further_loading(Bundle savedInstanceState) {
 		if(historyCon==null) {
-			historyCon = LexicalDBHelper.connectInstance(this);
+			try {
+				historyCon = LexicalDBHelper.connectInstance(this);
+			} catch (SQLiteFullException e) {
+				if(root.getTag()==null) {
+					if(d==null||d.tag!=(Integer)1) {
+						d = new AlertDialog.Builder(this)
+								.setTitle("启动出错")
+								.setMessage("存储空间已满，无法打开数据库，请清理后重试。")
+								.setPositiveButton("重试", (dialog, which) -> further_loading(savedInstanceState))
+								.setCancelable(false)
+								.create();
+					}
+					d.show();
+				}
+				return;
+			}
+			// todo 在此处新建一个 webview，检查运行时。
 		}
+		d = null;
 		CheckGlideJournal();
 		checkMargin(this);
 		_45_ = (int) mResource.getDimension(R.dimen._45_);
@@ -715,6 +750,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		//tg
 		CMN.Log("device density is ::", GlobalOptions.density);
 		CMN.Log("device version is ::", Utils.version);
+		CMN.Log("device space is ::", new File(getExternalFilesDir(null), "noway").getFreeSpace());
 		
 		if(false)
 		root.postDelayed(() -> {
@@ -767,7 +803,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		//CMN.Log("webview package is ::", AdvancedBrowserWebView.getCurrentWebViewPackage().packageName+":"+AdvancedBrowserWebView.getCurrentWebViewPackage().versionName);
 		
 		//TestHelper.createWVBSC(this, false);
-		TestHelper.createWVBSC(this, true);
+		//TestHelper.createWVBSC(this, true);
 		
 		//TestHelper.createWVBSC(this, true);
 		//AdvancedBrowserWebView.enableSlowWholeDocumentDraw();
@@ -890,7 +926,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		//isUrl=true;
 		if(!isUrl) {
 			historyCon.insertSearchTerm(text);
-			text = WebDicts.get(0).replace("%s", text);
+			text = currentWebDictUrl.replace("%s", text);
 		} else {
 			LinkedList<RgxPlc> queryDNS = mWebListener.DNSIntelligence;
 			if(queryDNS.size()>0) {
@@ -923,7 +959,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		historyCon.queryDomain(layout, url);
 		boolean pcMode = false;
 		//pcMode = url!=null && url.contains("www.baidu");
-		//pcMode = true;
+		pcMode = true;
 		String targetUa;
 		if(pcMode) {
 			targetUa = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36";
@@ -935,7 +971,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		layout.targetUa = targetUa;
 		WebSettings settings = layout.mWebView.getSettings();
 		if(!TextUtils.equals(settings.getUserAgentString(), layout.targetUa)) {
-			CMN.Log("测试 ua 设置处……");
+			CMN.Log("测试 ua 设置处……", targetUa);
 			settings.setUserAgentString(layout.targetUa);
 			return true;
 		}
@@ -2606,7 +2642,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		weblayout.setPadding(0,pt,0,pb);
 	}
 	
-	//click
+	// click
 	@RequiresApi(api = Build.VERSION_CODES.N_MR1)
 	@SuppressLint("NonConstantResourceId") // no no no you don't want that. @Google
 	@Override
@@ -2617,13 +2653,147 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		switch (v.getId()){
 			case R.id.ivBack:{ // 搜索引擎弹窗 //searpop
 				int polypopupW = (int) (_45_*1.5);
-				int searchEnginePopupW = (int) (etSearch.getWidth()*0.85);
-				searchEnginePopupW = Math.min(searchEnginePopupW, (int)Math.max(realWidth, 550*GlobalOptions.density));
+				int searchEnginePopupW = (int) (etSearch.getWidth()*0.90);
+				searchEnginePopupW = Math.min(searchEnginePopupW, (int)Math.max(realWidth, 555*GlobalOptions.density));
 				if(searchEnginePopup==null) {
-					layoutListener = findViewById(R.id.layoutListener);
+					layoutListener = UIData.layoutListener;
 					searchEnginePopup = new ListPopupWindow(BrowserActivity.this);
-					searchEnginePopup.setAdapter(new ArrayAdapter<>(BrowserActivity.this,
-							R.layout.abc_list_menu_item_layout, R.id.title, WebDicts));
+					SuperItemListener schEngItemLis = new SuperItemListener() {
+						boolean isLongClicked;
+						boolean longClick;
+						@Override
+						public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+							onClick(view);
+						}
+						
+						@Override
+						public boolean onLongClick(View v) {
+							isLongClicked=true;
+							longClick=true;
+							onClick(v);
+							return longClick;
+						}
+						
+						@Override
+						public void onClick(View v) {
+							SearchEnginesItemBinding itemData = (SearchEnginesItemBinding) getTypedTagInAncestors(v, 3, SearchEnginesItemBinding.class);
+							if(itemData!=null) {
+								int position = (int) itemData.title.getTag();
+								int id = v.getId();
+								switch (id) {
+									case R.id.search_engines: {
+										currentWebDictUrl = ((WebDict) itemData.businessCard.getTag()).url;
+										searchEnginePopup.dismiss();
+										searchEngineAdapter.notifyDataSetChanged();
+									} break;
+									case R.id.up:
+									case R.id.down: {
+										boolean up=id==R.id.up;
+										if(up?position>0:position<WebDicts.size()-1) {
+											WebDict webDictItem = WebDicts.set(up?position-1:position+1, WebDicts.get(position));
+											WebDicts.set(position, webDictItem);
+											searchEngineAdapter.notifyDataSetChanged();
+										}
+										isSchEngsDirty=true;
+									} break;
+									case R.id.edit:{
+										showEditSchEngDlg((WebDict) itemData.businessCard.getTag());
+									} break;
+									case R.id.delete:{
+										WebDicts.remove(position);
+										searchEngineAdapter.notifyDataSetChanged();
+										isSchEngsDirty=true;
+									} break;
+								}
+							}
+							else {
+								showEditSchEngDlg(null);
+							}
+						}
+					};
+					GestureDetector mDetector = new GestureDetector(BrowserActivity.this
+							, new GestureDetector.SimpleOnGestureListener() {
+						@Override
+						public boolean onFling(MotionEvent e1, MotionEvent e2,
+											   float velocityX, float velocityY) {
+							View ca = currentSchEngItemView;
+							if(ca!=null && Math.abs(velocityX)*1.2f>Math.abs(velocityY)) {
+								Object tag = ca.getTag();
+								if(velocityX!=0) {
+									if(tag instanceof SearchEnginesItemBinding) {
+										SearchEnginesItemBinding itemData = (SearchEnginesItemBinding) tag;
+										WebDict webDictItem = (WebDict) itemData.businessCard.getTag();
+										webDictItem.expandEditView(itemData, schEngItemLis, velocityX<0, true);
+									} else {
+										WebDict.expandSyncView(ca, schEngItemLis, isSyncSchEngShown=velocityX<0, true);
+									}
+									return true;
+								}
+							}
+							return false;
+						}
+					});
+					searchEnginePopup.tag = (View.OnTouchListener) (v13, event) -> {
+						ViewGroup vg = (ViewGroup) v13;
+						if(event.getActionMasked()== MotionEvent.ACTION_DOWN) {
+							float y = event.getY();
+							View ca=null;
+							int i=0,len=vg.getChildCount();
+							for(;i<len;i++) {
+								ca=vg.getChildAt(i);
+								if(ca.getBottom()>y) {
+									break;
+								}
+							}
+							currentSchEngItemView = i<len?ca:null;
+						}
+						return mDetector.onTouchEvent(event);
+					};
+					searchEnginePopup.tag1 = schEngItemLis;
+					searchEnginePopup.setAdapter(searchEngineAdapter = new BaseAdapter() {
+						public int getCount() {
+							return WebDicts.size()+1;
+						}
+						public Object getItem(int position) {
+							return position>=0&&position<WebDicts.size()?WebDicts.get(position):null;
+						}
+						public long getItemId(int position) {
+							return 0;
+						}
+						public int getViewTypeCount() {
+							return 2;
+						}
+						public int getItemViewType(int position) {
+							return position>=0&&position<WebDicts.size()?0:1;
+						}
+						public View getView(int position, View convertView, ViewGroup parent) {
+							if(position>=0&&position<WebDicts.size()) {
+								SearchEnginesItemBinding itemData;
+								if(convertView==null) {
+									itemData = SearchEnginesItemBinding.inflate(getLayoutInflater(), parent, false);
+									convertView = itemData.getRoot();
+									//convertView.setOnClickListener(BrowserActivity.this);
+									convertView.setTag(itemData);
+								} else {
+									itemData = (SearchEnginesItemBinding) convertView.getTag();
+								}
+								WebDict webDictItem = WebDicts.get(position);
+								itemData.businessCard.setTag(webDictItem);
+								itemData.title.setTag(position);
+								String name=webDictItem.name;
+								itemData.title.setText(name==null?"Untitled":name);
+								itemData.tick.setVisibility(TextUtils.equals(currentWebDictUrl, webDictItem.url)?View.VISIBLE:View.GONE);
+								webDictItem.expandEditView(itemData, schEngItemLis, webDictItem.isEditing, false);
+							} else {
+								if(convertView==null) {
+									convertView = getLayoutInflater().inflate(R.layout.search_engines_add, parent, false);
+								}
+								WebDict.expandSyncView(convertView, schEngItemLis, isSyncSchEngShown, false);
+							}
+							return convertView;
+						}
+					});
+					searchEnginePopup.setOnItemClickListener(schEngItemLis);
 					searchEnginePopup.setAnchorView(findViewById(R.id.popline));
 					//searchEnginePopup.setOverlapAnchor(true); //21 禁开
 					searchEnginePopup.setDropDownAlwaysVisible(true);
@@ -2631,9 +2801,13 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 						layoutListener.setVisibility(View.GONE);
 						layoutListener.popup=null;
 						polypopup.dismiss();
+						if(isSchEngsDirty) {
+							// todo save and load search engines
+							isSchEngsDirty = false;
+						}
 					});
-					//searchEnginePopup.mPopup.setEnterTransition(null);
 					
+					//searchEnginePopup.mPopup.setEnterTransition(null);
 					polypopupview = LayoutInflater.from(this).inflate(R.layout.polymer, root, false);
 					polypopupview.setOnClickListener(v1 -> {
 						polysearching=!polysearching;
@@ -2662,6 +2836,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					searchEnginePopup.setWidth(searchEnginePopupW);
 					searchEnginePopup.setHeight(-2);
 					searchEnginePopup.show();
+					((DropDownListView)searchEnginePopup.getListView())
+							.setOnDispatchTouchListener((View.OnTouchListener) searchEnginePopup.tag);
 					//searchEnginePopup.mDropDownList.getLayoutParams().height=-2;
 					//searchEnginePopup.mDropDownList.requestLayout();
 					//((ViewGroup)searchEnginePopup.mDropDownList.getParent()).getLayoutParams().height=-2;
@@ -2670,6 +2846,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					polypopup.showAsDropDown(UIData.ivBack,iconWidth+((etSearch_getWidth+searchEnginePopupW+iconWidth)-(polypopupW))/2, -polypopupW/2);
 				}
 				//searchEnginePopup.show();
+			} break;
+			case R.id.search_engines_add: {
+			
 			} break;
 			case R.id.webtitle: {
 				CharSequence text = etSearch.getText();
@@ -3019,6 +3198,80 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				}
 			} break;
 		}
+	}
+	
+	/** 吾何人哉？幻界之主，九方之神人也 */
+	private void showEditSchEngDlg(WebDict editing) {
+		editingSchEngBean = editing;
+		AlertDialog editSchEngDlg = (AlertDialog) getReferencedObject(WeakReferenceHelper.edit_scheng);
+		if(editSchEngDlg==null) {
+			LoginViewBinding schEngEditView = LoginViewBinding.inflate(getLayoutInflater(), root, false);
+			AlertDialog d = new AlertDialog
+					.Builder(BrowserActivity.this)
+					.setView(schEngEditView.getRoot())
+					.setTitle("添加搜索引擎")
+					.setOnDismissListener(dialog -> {
+						schEngEditView.url.setText(null);
+						schEngEditView.name.setText(null);
+						editingSchEngBean=null;
+					})
+					.setPositiveButton("确认", null)
+					.setNegativeButton("取消", null)
+					.show();
+			d.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener(v -> {
+				String url = Utils.getFieldInView(schEngEditView.url);
+				String name = Utils.getFieldInView(schEngEditView.name);
+				if(url.startsWith("http")) {
+					if(editingSchEngBean==null) {
+						WebDicts.add(new WebDict(url, name));
+					} else {
+						editingSchEngBean.url = url;
+						editingSchEngBean.name = name;
+					}
+					isSchEngsDirty=true;
+					if(searchEngineAdapter!=null) {
+						searchEngineAdapter.notifyDataSetChanged();
+					}
+					d.dismiss();
+				} else {
+					showT("无效的URL地址");
+				}
+			});
+			d.getTitleView().setOnLongClickListener(v -> {
+				for(WebDict webDictItem:WebDicts) {
+					webDictItem.isEditing = false;
+				}
+				if(searchEngineAdapter!=null) {
+					searchEngineAdapter.notifyDataSetChanged();
+				}
+				return true;
+			});
+			View.OnClickListener lis = v14 -> {
+				ViewGroup editView = (ViewGroup) v14.getParent();
+				FrameLayout panelView = (FrameLayout) d.findViewById(R.id.action_bar_root).getParent();
+				EditFieldHandler editFieldHandler = (EditFieldHandler) getReferencedObject(WeakReferenceHelper.edit_field);
+				if(editFieldHandler==null) {
+					putReferencedObject(WeakReferenceHelper.edit_field, editFieldHandler = new EditFieldHandler(BrowserActivity.this, panelView));
+				}
+				d.setCancelable(false);
+				editFieldHandler.showForEditText(panelView
+						, (EditText) editView.getChildAt(0)
+						,d
+						,editView.getTop()+d.findViewById(R.id.topPanel).getHeight()
+						,(int) (8* GlobalOptions.density));
+			};
+			schEngEditView.nameMorpt.setOnClickListener(lis);
+			schEngEditView.urlMorpt.setOnClickListener(lis);
+			d.tag = schEngEditView;
+			putReferencedObject(WeakReferenceHelper.edit_scheng, editSchEngDlg=d);
+		}
+		if(editingSchEngBean!=null) {
+			LoginViewBinding schEngEditView = (LoginViewBinding) editSchEngDlg.tag;
+			schEngEditView.url.setText(editingSchEngBean.url);
+			schEngEditView.name.setText(editingSchEngBean.name);
+		}
+		editSchEngDlg.setTitle(editing==null?"添加搜索引擎":"修改搜索引擎");
+		editSchEngDlg.show();
 	}
 	
 	public void copyText(String text) {
@@ -4244,7 +4497,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 //				layout.removeViewAt(cc);
 //			}
 //		}
-		type=1;
+		//type=1;
 		//Utils.sendog(opt);
 		View theView;
 		if(mWebView==null) {
@@ -4252,7 +4505,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			if(type==1) {
 				try {
 					mWebView = new XPlusWebView(this);
-				} catch (IOException e) {
+				} catch (Exception e) {
+					CMN.Log(e);
 					type=0;
 				}
 			}
@@ -4884,32 +5138,44 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	@Override @SuppressWarnings("ALL")
 	protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
 		CMN.Log("onActivityResult", requestCode, resultCode, data);
-		if(data!=null) {
-			if(RequsetUrlFromCamera==requestCode) {
-				String text = data.getStringExtra(Intent.EXTRA_TEXT);
-				if(text!=null) {
-					webtitle_setVisibility(true);
-					execBrowserGoTo(text);
-				}
-				//etSearch.setText(data.getStringExtra(Intent.EXTRA_TEXT));
+		
+		if(RequsetUrlFromCamera==requestCode) {
+			String text = data==null?null:data.getStringExtra(Intent.EXTRA_TEXT);
+			if(Utils.littleCat) {
+				checkResumeQRText = true;
 			}
-			if(RequsetUrlFromStorage==requestCode) {
-				Uri result = data.getData();
-				if(result!=null) {
-					Uri docUri = DocumentsContract.buildDocumentUriUsingTree(result
-							, DocumentsContract.getTreeDocumentId(result));
-					String realPath = Utils.getFullPathFromTreeUri(this, docUri);
-					if(realPath!=null) {
-						showT(realPath);
-						downloadTargetDir = new File(realPath);
-					}
+			onQRGetText(text);
+			//etSearch.setText(data.getStringExtra(Intent.EXTRA_TEXT));
+		}
+		if(RequsetUrlFromStorage==requestCode) {
+			Uri result = data.getData();
+			if(result!=null) {
+				Uri docUri = DocumentsContract.buildDocumentUriUsingTree(result
+						, DocumentsContract.getTreeDocumentId(result));
+				String realPath = Utils.getFullPathFromTreeUri(this, docUri);
+				if(realPath!=null) {
+					showT(realPath);
+					downloadTargetDir = new File(realPath);
 				}
 			}
 		}
+		
 		if(795==requestCode && resultCode==RESULT_OK && data!=null) { // tutorial showing how to open pdf using the system file picker.
 			startActivity(new Intent(this, PolyShareActivity.class).setData(data.getData()));
 		}
 		super.onActivityResult(requestCode, resultCode, data);
+	}
+	
+	protected void onQRGetText(String text) {
+		if(text!=null) {
+			EditFieldHandler editFieldHandler = (EditFieldHandler) getReferencedObject(WeakReferenceHelper.edit_field);
+			if(editFieldHandler!=null&&editFieldHandler.visible()) {
+				editFieldHandler.setText(text);
+			} else {
+				webtitle_setVisibility(true);
+				execBrowserGoTo(text);
+			}
+		}
 	}
 	
 	@Override

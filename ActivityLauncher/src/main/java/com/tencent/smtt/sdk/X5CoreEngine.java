@@ -112,7 +112,7 @@ class X5CoreEngine {
       } else {
          TbsLog.i("X5CoreEngine", "init  sTbsCoreLoadFileLock is " + X5CoreEngine.e);
          if (X5CoreEngine.e == null) {
-            this.b(var1);
+            this.tryTbsCoreLoadFileLock(var1);
          }
       }
 
@@ -123,12 +123,12 @@ class X5CoreEngine {
       return this.initialized;
    }
 
-   public FileLock b(Context var1) {
+   public FileLock tryTbsCoreLoadFileLock(Context var1) {
       TbsLog.i("X5CoreEngine", "tryTbsCoreLoadFileLock ##");
       if (e != null) {
          return e;
       } else {
-         Class var2 = X5CoreEngine.class;
+         Class x5CoreEngineClass = X5CoreEngine.class;
          synchronized(X5CoreEngine.class) {
             if (e == null) {
                e = FileHelper.getTbsCoreLoadFileLock(var1);

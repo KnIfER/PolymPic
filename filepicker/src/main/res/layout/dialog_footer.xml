@@ -95,7 +95,7 @@
 	            android:background="@drawable/surrtrip1"
                 android:clickable="true"
                 android:padding="8dp"
-                android:src="@drawable/ic_sync_black_24dp"
+                android:src="@drawable/ic_baseline_sync_24"
                 />
 
 				<android.widget.ImageView

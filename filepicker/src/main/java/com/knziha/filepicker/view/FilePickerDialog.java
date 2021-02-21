@@ -526,7 +526,7 @@ public class FilePickerDialog extends AlertDialog implements
                 wiget1.setPadding(0,0,0,0);
                 wiget2.setPadding(0,0,0,0);
                 wiget3.setPadding(padding8,padding8,padding8,padding8);
-                wiget3.setImageResource(R.drawable.ic_sync_black_24dp);
+                wiget3.setImageResource(R.drawable.ic_baseline_sync_24);
                 wiget4.setImageResource(R.drawable.ic_view_comfy_black_24dp);
                 bottombar.setTag(null);
             }

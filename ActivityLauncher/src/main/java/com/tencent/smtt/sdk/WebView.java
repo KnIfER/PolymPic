@@ -3,7 +3,6 @@ package com.tencent.smtt.sdk;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Context;
-import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
@@ -14,7 +13,6 @@ import android.net.http.SslCertificate;
 import android.os.Build.VERSION;
 import android.os.Bundle;
 import android.os.Message;
-import android.print.PrintDocumentAdapter;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
@@ -31,7 +29,6 @@ import com.tencent.smtt.export.external.extension.interfaces.IX5WebSettingsExten
 import com.tencent.smtt.export.external.extension.interfaces.IX5WebViewClientExtension;
 import com.tencent.smtt.export.external.extension.interfaces.IX5WebViewExtension;
 import com.tencent.smtt.export.external.extension.proxy.X5ProxyWebViewClientExtension;
-import com.tencent.smtt.export.external.interfaces.ClientCertRequest;
 import com.tencent.smtt.export.external.interfaces.ConsoleMessage;
 import com.tencent.smtt.export.external.interfaces.GeolocationPermissionsCallback;
 import com.tencent.smtt.export.external.interfaces.HttpAuthHandler;
@@ -40,8 +37,6 @@ import com.tencent.smtt.export.external.interfaces.IX5WebHistoryItem;
 import com.tencent.smtt.export.external.interfaces.IX5WebViewBase;
 import com.tencent.smtt.export.external.interfaces.JsPromptResult;
 import com.tencent.smtt.export.external.interfaces.JsResult;
-import com.tencent.smtt.export.external.interfaces.SslError;
-import com.tencent.smtt.export.external.interfaces.SslErrorHandler;
 import com.tencent.smtt.export.external.interfaces.WebResourceError;
 import com.tencent.smtt.export.external.interfaces.WebResourceRequest;
 import com.tencent.smtt.export.external.interfaces.WebResourceResponse;
@@ -96,17 +91,16 @@ public abstract class WebView extends FrameLayout {
 	private boolean PreferX5;
 	protected IX5WebViewBase X5WebView;
 	private WebSettings webSettings;
-	private Context i;
+	private Context context;
 	private static Context j = null;
 	int a;
 	private boolean k;
 	public WebViewCallbackClient mWebViewCallbackClient;
 	public static boolean mWebViewCreated = false;
-	private static DebugConfigUtil l = null;
 	private static Method m = null;
 	private android.webkit.WebViewClient webViewClient;
 	private android.webkit.WebChromeClient webChromeClient;
-	private static String p = null;
+	private static String packageName = null;
 	private final int q;
 	private final int r;
 	private final int s;
@@ -126,7 +120,7 @@ public abstract class WebView extends FrameLayout {
 		this.b = "WebView";
 		this.PreferX5 = false;
 		this.webSettings = null;
-		this.i = null;
+		this.context = null;
 		this.a = 0;
 		this.k = false;
 		this.webViewClient = null;
@@ -164,7 +158,7 @@ public abstract class WebView extends FrameLayout {
 		this.b = "WebView";
 		this.PreferX5 = false;
 		this.webSettings = null;
-		this.i = null;
+		this.context = null;
 		this.a = 0;
 		this.k = false;
 		this.webViewClient = null;
@@ -177,97 +171,71 @@ public abstract class WebView extends FrameLayout {
 		this.x = null;
 		this.longClickListener = null;
 		mWebViewCreated = true;
-		if (TbsShareManager.isThirdPartyApp(paramContext)) {
-			TbsLog.setWriteLogJIT(true);
-		} else {
-			TbsLog.setWriteLogJIT(false);
-		}
+		
+		//TbsLog.setWriteLogJIT(TbsShareManager.isThirdPartyApp(paramContext));
 		
 		TbsLog.initIfNeed(paramContext);
-		if (paramContext == null) {
-			throw new IllegalArgumentException("Invalid context argument");
-		} else {
-			if (l == null) {
-				l = DebugConfigUtil.getInstance(paramContext);
-			}
 
 //		if (l.forceUseSystemWebview) {
 //		   TbsLog.e("WebView", "sys WebView: debug.conf force syswebview", true);
 //		   QbSdk.forceSysWebViewInner(paramContext, "debug.conf force syswebview!");
 //		}
-			
-			this.c(paramContext);
-			this.i = paramContext;
-			if (paramContext != null) {
-				j = paramContext.getApplicationContext();
-			}
-			
-			//if (this.PreferX5 && !QbSdk.forcedSysByInner) {
-			this.X5WebView = X5CoreEngine.getInstance().wizard(true).createSDKWebview(paramContext);
-			if (this.X5WebView == null || this.X5WebView.getView() == null) {
-				throw new IOException("X5 create error!!!");
-			}
-			
-			TbsLog.i("WebView", "X5 WebView Created Success!!");
-			//((Toastable_Activity)getContext()).showT("X5 WebView Created Success!!");
-			this.X5WebView.getView().setFocusableInTouchMode(true);
-			this.a(var2);
-			this.addView(this.X5WebView.getView(), new LayoutParams(-1, -1));
-			this.X5WebView.setDownloadListener(new DownloadListenerWrap(this, (DownloadListener)null, this.PreferX5));
-			this.X5WebView.getX5WebViewExtension().setWebViewClientExtension(new X5ProxyWebViewClientExtension(X5CoreEngine.getInstance().wizard(true).createDefaultX5WebChromeClientExtension()) {
-				public void invalidate() {
-				}
-				
-				public void onScrollChanged(int var1, int var2, int var3, int var4) {
-					super.onScrollChanged(var1, var2, var3, var4);
-					WebView.this.onScrollChanged(var3, var4, var1, var2);
-				}
-			});
-			//}
-			
-			try {
-				if (VERSION.SDK_INT >= 11) {
-					this.removeJavascriptInterface("searchBoxJavaBridge_");
-					this.removeJavascriptInterface("accessibility");
-					this.removeJavascriptInterface("accessibilityTraversal");
-				}
-			} catch (Throwable var12) {
-				var12.printStackTrace();
-			}
-			
-			if (("com.tencent.mobileqq".equals(this.i.getApplicationInfo().packageName)
-					|| "com.tencent.mm".equals(this.i.getApplicationInfo().packageName))
-					&& SDKEngine.getInstance(true).h() && VERSION.SDK_INT >= 11) {
-				this.setLayerType(LAYER_TYPE_SOFTWARE, (Paint)null);
-			}
-			
-			if (this.X5WebView != null) {
-				TbsLog.writeLogToDisk();
-				if (!TbsShareManager.isThirdPartyApp(paramContext)) {
-					int var6 = TbsDownloadConfig.getInstance(paramContext).mPreferences.getInt("tbs_decouplecoreversion", 0);
-					if (var6 > 0 && var6 != TbsInstaller.a().getTbsCoreVersion_InTbsCoreShareDecoupleConfig(paramContext) && var6 == TbsInstaller.a().getTbsCoreInstalledVerInNolock(paramContext)) {
-						TbsInstaller.a().coreShareCopyToDecouple(paramContext);
-					} else {
-						TbsLog.i("WebView", "webview construction #1 deCoupleCoreVersion is " + var6 + " getTbsCoreShareDecoupleCoreVersion is " + TbsInstaller.a().getTbsCoreVersion_InTbsCoreShareDecoupleConfig(paramContext) + " getTbsCoreInstalledVerInNolock is " + TbsInstaller.a().getTbsCoreInstalledVerInNolock(paramContext));
-					}
-				}
-			}
-			
-			QbSdk.continueLoadSo(paramContext);
+		
+		this.c(paramContext);
+		this.context = paramContext;
+		if (paramContext != null) {
+			j = paramContext.getApplicationContext();
 		}
-	}
-	
-	public PrintDocumentAdapter createPrintDocumentAdapter(String var1) {
+		
+		//if (this.PreferX5 && !QbSdk.forcedSysByInner) {
+		this.X5WebView = X5CoreEngine.getInstance().wizard(true).createSDKWebview(paramContext);
+		if (this.X5WebView == null || this.X5WebView.getView() == null) {
+			throw new IOException("X5 create error!!!");
+		}
+		
+		TbsLog.i("WebView", "X5 WebView Created Success!!");
+		//((Toastable_Activity)getContext()).showT("X5 WebView Created Success!!");
+		this.X5WebView.getView().setFocusableInTouchMode(true);
+		this.a(var2);
+		this.addView(this.X5WebView.getView(), new LayoutParams(-1, -1));
+		this.X5WebView.setDownloadListener(new DownloadListenerWrap(this, null, this.PreferX5));
+		this.X5WebView.getX5WebViewExtension().setWebViewClientExtension(new X5ProxyWebViewClientExtension(X5CoreEngine.getInstance().wizard(true).createDefaultX5WebChromeClientExtension()) {
+			public void invalidate() {
+			}
+			
+			public void onScrollChanged(int var1, int var2, int var3, int var4) {
+				super.onScrollChanged(var1, var2, var3, var4);
+				WebView.this.onScrollChanged(var3, var4, var1, var2);
+			}
+		});
+		//}
+		
 		try {
-			Object ret = this.X5WebView.createPrintDocumentAdapter(var1);
-			if(ret instanceof PrintDocumentAdapter)
-				return (PrintDocumentAdapter) ret;
-			else
-				throw new Exception();
+			this.removeJavascriptInterface("searchBoxJavaBridge_");
+			this.removeJavascriptInterface("accessibility");
+			this.removeJavascriptInterface("accessibilityTraversal");
 		} catch (Throwable e) {
 			CMN.Log(e);
 		}
-		return null;
+		
+		// com.tencent.mobileqq /com.tencent.mm this.setLayerType(LAYER_TYPE_SOFTWARE, null);
+		// CMN.Log("getLayerType::", getLayerType());
+		//X5WebView.getView().setLayerType(LAYER_TYPE_HARDWARE, null);
+		
+//		if (!TbsShareManager.isThirdPartyApp(paramContext)) {
+//			int var6 = TbsDownloadConfig.getInstance(paramContext).mPreferences.getInt("tbs_decouplecoreversion", 0);
+//			if (var6 > 0 && var6 != TbsInstaller.a().getTbsCoreVersion_InTbsCoreShareDecoupleConfig(paramContext) && var6 == TbsInstaller.a().getTbsCoreInstalledVerInNolock(paramContext)) {
+//				TbsInstaller.a().coreShareCopyToDecouple(paramContext);
+//			} else {
+//				TbsLog.i("WebView", "webview construction #1 deCoupleCoreVersion is " + var6 + " getTbsCoreShareDecoupleCoreVersion is " + TbsInstaller.a().getTbsCoreVersion_InTbsCoreShareDecoupleConfig(paramContext) + " getTbsCoreInstalledVerInNolock is " + TbsInstaller.a().getTbsCoreInstalledVerInNolock(paramContext));
+//			}
+//		}
+		
+		//QbSdk.continueLoadSo(paramContext);
+	}
+	
+	public Object initPrintDocumentAdapter(String var1) {
+		return this.X5WebView.createPrintDocumentAdapter(var1);
 	}
 	
 	public int computeHorizontalScrollOffset() {
@@ -314,7 +282,7 @@ public abstract class WebView extends FrameLayout {
 	
 	public int computeHorizontalScrollRange() {
 		try {
-			Object var4 = ReflectionUtils.a((Object)this.X5WebView.getView(), "computeHorizontalScrollRange", new Class[0]);
+			Object var4 = ReflectionUtils.getDeclaredMethod((Object)this.X5WebView.getView(), "computeHorizontalScrollRange", new Class[0]);
 			return (Integer)var4;
 		} catch (Exception var3) {
 			var3.printStackTrace();
@@ -338,7 +306,7 @@ public abstract class WebView extends FrameLayout {
 	
 	public int computeVerticalScrollRange() {
 		try {
-			Object var4 = ReflectionUtils.a((Object)this.X5WebView.getView(), "computeVerticalScrollRange", new Class[0]);
+			Object var4 = ReflectionUtils.getDeclaredMethod((Object)this.X5WebView.getView(), "computeVerticalScrollRange", new Class[0]);
 			return (Integer)var4;
 		} catch (Exception var3) {
 			var3.printStackTrace();
@@ -362,7 +330,7 @@ public abstract class WebView extends FrameLayout {
 	@TargetApi(11)
 	protected void onSizeChanged(int var1, int var2, int var3, int var4) {
 		super.onSizeChanged(var1, var2, var3, var4);
-		if (VERSION.SDK_INT >= 21 && this.b(this.i) && this.isHardwareAccelerated() && var1 > 0 && var2 > 0 && this.getLayerType() != LAYER_TYPE_HARDWARE) {
+		if (VERSION.SDK_INT >= 21 && this.b(this.context) && this.isHardwareAccelerated() && var1 > 0 && var2 > 0 && this.getLayerType() != LAYER_TYPE_HARDWARE) {
 		}
 		
 	}
@@ -443,64 +411,8 @@ public abstract class WebView extends FrameLayout {
 		return this.X5WebView.getHttpAuthUsernamePassword(var1, var2);
 	}
 	
-	public void tbsWebviewDestroy(boolean var1) {
-		String var2;
-		if (!this.k && this.a != 0) {
-			this.k = true;
-			var2 = "";
-			String var3 = "";
-			String var4 = "";
-			if (this.PreferX5) {
-				Bundle var5 = this.X5WebView.getX5WebViewExtension().getSdkQBStatisticsInfo();
-				if (var5 != null) {
-					var2 = var5.getString("guid");
-					var3 = var5.getString("qua2");
-					var4 = var5.getString("lc");
-				}
-			}
-			
-			if ("com.qzone".equals(this.i.getApplicationInfo().packageName)) {
-				int var21 = this.e(this.i);
-				this.a = var21 == -1 ? this.a : var21;
-				this.f(this.i);
-			}
-			
-			boolean var22 = false;
-			
-			try {
-				var22 = this.X5WebView.getX5WebViewExtension().isX5CoreSandboxMode();
-			} catch (Throwable var16) {
-				TbsLog.w("tbsWebviewDestroy", "exception: " + var16);
-			}
-			
-			com.tencent.smtt.sdk.stat.b.a(this.i, var2, var3, var4, this.a, this.PreferX5, this.h(), var22);
-			this.a = 0;
-			this.k = false;
-		}
-		
-		if (var1) {
-			this.X5WebView.destroy();
-		}
-		
-		TbsLog.i("WebView", "X5 GUID = " + QbSdk.b());
-	}
-	
 	public void destroy() {
-		try {
-			if ("com.xunmeng.pinduoduo".equals(this.i.getApplicationInfo().packageName)) {
-				(new Thread("WebviewDestroy") {
-					public void run() {
-						WebView.this.tbsWebviewDestroy(false);
-					}
-				}).start();
-				this.X5WebView.destroy();
-			} else {
-				this.tbsWebviewDestroy(true);
-			}
-		} catch (Throwable var2) {
-			this.tbsWebviewDestroy(true);
-		}
-		
+		this.X5WebView.destroy();
 	}
 	
 	private long h() {
@@ -590,8 +502,8 @@ public abstract class WebView extends FrameLayout {
 	public boolean showDebugView(String url) {
 		if (url.startsWith("https://debugtbs.qq.com")) {
 			this.getView().setVisibility(INVISIBLE);
-			DebugtbsUtil var3 = DebugtbsUtil.getInstance(this.i);
-			var3.showPluginView(url, this, this.i, TbsHandlerThread.getInstance().getLooper());
+			DebugtbsUtil var3 = DebugtbsUtil.getInstance(this.context);
+			var3.showPluginView(url, this, this.context, TbsHandlerThread.getInstance().getLooper());
 			return true;
 		} else if (url.startsWith("https://debugx5.qq.com")) {
 			return false;
@@ -628,22 +540,13 @@ public abstract class WebView extends FrameLayout {
 	}
 	
 	public static void setWebContentsDebuggingEnabled(boolean var0) {
-		X5CoreEngine var1 = X5CoreEngine.getInstance();
-		if (null != var1 && var1.isInCharge()) {
-			var1.getWVWizardBase().webview_setWebContentsDebuggingEnabled(var0);
-		} else if (VERSION.SDK_INT >= 19) {
-			try {
-				Class var2 = Class.forName("android.webkit.WebView");
-				Class[] var3 = new Class[]{Boolean.TYPE};
-				m = var2.getDeclaredMethod("setWebContentsDebuggingEnabled", var3);
-				if (m != null) {
-					m.setAccessible(true);
-					m.invoke((Object)null, var0);
-				}
-			} catch (Exception var4) {
-				TbsLog.e("QbSdk", "Exception:" + var4.getStackTrace());
-				var4.printStackTrace();
+		try {
+			X5CoreEngine var1 = X5CoreEngine.getInstance();
+			if (null != var1 && var1.isInCharge()) {
+				var1.getWVWizardBase().webview_setWebContentsDebuggingEnabled(var0);
 			}
+		} catch (Exception e) {
+			CMN.Log(e);
 		}
 	}
 	
@@ -1073,112 +976,59 @@ public abstract class WebView extends FrameLayout {
 		return this.X5WebView.getView();
 	}
 	
-	protected void a() {
-		if (!this.k && this.a != 0) {
-			this.k = true;
-			String guid = "";
-			String qua2 = "";
-			String lc = "";
-			if (this.PreferX5) {
-				Bundle bundle = this.X5WebView.getX5WebViewExtension().getSdkQBStatisticsInfo();
-				if (bundle != null) {
-					guid = bundle.getString("guid");
-					qua2 = bundle.getString("qua2");
-					lc = bundle.getString("lc");
-				}
-			}
-			
-			if ("com.qzone".equals(this.i.getApplicationInfo().packageName)) {
-				int var7 = this.e(this.i);
-				this.a = var7 == -1 ? this.a : var7;
-				this.f(this.i);
-			}
-			
-			boolean var8 = false;
-			
-			try {
-				var8 = this.X5WebView.getX5WebViewExtension().isX5CoreSandboxMode();
-			} catch (Throwable var6) {
-				TbsLog.w("tbsOnDetachedFromWindow", "exception: " + var6);
-			}
-			
-			com.tencent.smtt.sdk.stat.b.a(this.i, guid, qua2, lc, this.a, this.PreferX5, this.h(), var8);
-			this.a = 0;
-			this.k = false;
-		}
-		super.onDetachedFromWindow();
-	}
-	
 	protected void onDetachedFromWindow() {
 		super.onDetachedFromWindow();
-		try {
-			if ("com.xunmeng.pinduoduo".equals(this.i.getApplicationInfo().packageName)) {
-				(new Thread("onDetachedFromWindow") {
-					public void run() {
-						try {
-							WebView.this.a();
-						} catch (Exception var2) {
-							var2.printStackTrace();
-						}
-						
-					}
-				}).start();
-			} else {
-				this.a();
-			}
-		} catch (Throwable var2) {
-			this.a();
-		}
+		//this.onDetachedFromWindowInner();
 	}
 	
 	protected void onVisibilityChanged(View var1, int var2) {
-		if (this.i == null) {
-			super.onVisibilityChanged(var1, var2);
-		} else {
-			if (p == null) {
-				ApplicationInfo var3 = this.i.getApplicationInfo();
-				p = var3.packageName;
-			}
-			
-			if (p == null || !p.equals("com.tencent.mm") && !p.equals("com.tencent.mobileqq")) {
-				if (var2 != 0 && !this.k && this.a != 0) {
-					this.k = true;
-					String var9 = "";
-					String var4 = "";
-					String var5 = "";
-					if (this.PreferX5) {
-						Bundle var6 = this.X5WebView.getX5WebViewExtension().getSdkQBStatisticsInfo();
-						if (var6 != null) {
-							var9 = var6.getString("guid");
-							var4 = var6.getString("qua2");
-							var5 = var6.getString("lc");
-						}
-					}
-					
-					if ("com.qzone".equals(this.i.getApplicationInfo().packageName)) {
-						int var10 = this.e(this.i);
-						this.a = var10 == -1 ? this.a : var10;
-						this.f(this.i);
-					}
-					
-					boolean var11 = false;
-					
-					try {
-						var11 = this.X5WebView.getX5WebViewExtension().isX5CoreSandboxMode();
-					} catch (Throwable var8) {
-						TbsLog.w("onVisibilityChanged", "exception: " + var8);
-					}
-					
-					com.tencent.smtt.sdk.stat.b.a(this.i, var9, var4, var5, this.a, this.PreferX5, this.h(), var11);
-					this.a = 0;
-					this.k = false;
-				}
-				
-				super.onVisibilityChanged(var1, var2);
-			} else {
-				super.onVisibilityChanged(var1, var2);
-			}
-		}
+		super.onVisibilityChanged(var1, var2);
+//		if (this.context == null) {
+//			super.onVisibilityChanged(var1, var2);
+//		} else {
+//			if (packageName == null) {
+//				packageName = this.context.getApplicationInfo().packageName;
+//			}
+//
+//			if (packageName == null || !packageName.equals("com.tencent.mm") && !packageName.equals("com.tencent.mobileqq")) {
+//				if (var2 != 0 && !this.k && this.a != 0) {
+//					this.k = true;
+//					String var9 = "";
+//					String var4 = "";
+//					String var5 = "";
+//					if (this.PreferX5) {
+//						Bundle var6 = this.X5WebView.getX5WebViewExtension().getSdkQBStatisticsInfo();
+//						if (var6 != null) {
+//							var9 = var6.getString("guid");
+//							var4 = var6.getString("qua2");
+//							var5 = var6.getString("lc");
+//						}
+//					}
+//
+//					if ("com.qzone".equals(this.context.getApplicationInfo().packageName)) {
+//						int var10 = this.e(this.context);
+//						this.a = var10 == -1 ? this.a : var10;
+//						this.f(this.context);
+//					}
+//
+//					boolean var11 = false;
+//
+//					try {
+//						var11 = this.X5WebView.getX5WebViewExtension().isX5CoreSandboxMode();
+//					} catch (Throwable var8) {
+//						TbsLog.w("onVisibilityChanged", "exception: " + var8);
+//					}
+//
+//					HttpUtils.doReport(this.context, var9, var4, var5, this.a, this.PreferX5, this.h(), var11);
+//					this.a = 0;
+//					this.k = false;
+//				}
+//
+//				super.onVisibilityChanged(var1, var2);
+//			} else {
+//				super.onVisibilityChanged(var1, var2);
+//			}
+//		}
 	}
 	
 	public IX5WebViewExtension getX5WebViewExtension() {
@@ -1212,7 +1062,7 @@ public abstract class WebView extends FrameLayout {
 	public void evaluateJavascript(String var1, android.webkit.ValueCallback<String> var2) {
 		try {
 			View var3 = this.X5WebView.getView();
-			Method var4 = ReflectionUtils.a(var3, "evaluateJavascript", String.class, android.webkit.ValueCallback.class);
+			Method var4 = ReflectionUtils.getDeclaredMethod(var3, "evaluateJavascript", String.class, android.webkit.ValueCallback.class);
 			var4.setAccessible(true);
 			var4.invoke(this.X5WebView.getView(), var1, var2);
 		} catch (Exception var7) {
@@ -1506,7 +1356,7 @@ public abstract class WebView extends FrameLayout {
 	}
 	
 	private boolean a(View var1) {
-		if (this.i != null && getTbsCoreVersion(this.i) > 36200) {
+		if (this.context != null && getTbsCoreVersion(this.context) > 36200) {
 			return false;
 		} else {
 			Object var2 = ReflectionUtils.invokeInstance(this.x, "onLongClick", new Class[]{View.class}, var1);
@@ -1518,7 +1368,7 @@ public abstract class WebView extends FrameLayout {
 		View var2 = this.X5WebView.getView();
 		
 		try {
-			Method var3 = ReflectionUtils.a(var2, "addView", View.class);
+			Method var3 = ReflectionUtils.getDeclaredMethod(var2, "addView", View.class);
 			var3.setAccessible(true);
 			var3.invoke(var2, var1);
 		} catch (Throwable var4) {
@@ -1530,7 +1380,7 @@ public abstract class WebView extends FrameLayout {
 		View var2 = this.X5WebView.getView();
 		
 		try {
-			Method var3 = ReflectionUtils.a(var2, "removeView", View.class);
+			Method var3 = ReflectionUtils.getDeclaredMethod(var2, "removeView", View.class);
 			var3.setAccessible(true);
 			var3.invoke(var2, var1);
 		} catch (Throwable var4) {

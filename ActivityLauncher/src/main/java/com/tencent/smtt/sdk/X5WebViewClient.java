@@ -31,7 +31,6 @@ import static com.tencent.smtt.export.external.interfaces.WebResourceResponse.ne
 class X5WebViewClient extends X5ProxyWebViewClient {
 	private android.webkit.WebViewClient webViewClient;
 	private WebView webView;
-	private static String c = null;
 	
 	public X5WebViewClient(IX5WebViewClient var1, WebView var2, android.webkit.WebViewClient var3) {
 		super(var1);
@@ -84,13 +83,6 @@ class X5WebViewClient extends X5ProxyWebViewClient {
 	}
 	
 	public void onPageFinished(IX5WebViewBase var1, int var2, int var3, String var4) {
-		if (c == null) {
-			DebugConfigUtil var5 = DebugConfigUtil.a();
-			if (var5 != null) {
-				var5.setSystemWebviewForceUsedResult(false);
-				c = Boolean.toString(false);
-			}
-		}
 		
 		this.webView.a(var1);
 		++this.webView.a;
@@ -244,20 +236,6 @@ class X5WebViewClient extends X5ProxyWebViewClient {
 		}
 		unlock();
 		return ret;
-	}
-	
-	public void a(String var1) {
-		Intent var2 = new Intent("android.intent.action.DIAL", Uri.parse(var1));
-		var2.addFlags(268435456);
-		
-		try {
-			if (this.webView.getContext() != null) {
-				this.webView.getContext().startActivity(var2);
-			}
-		} catch (Exception var4) {
-			var4.printStackTrace();
-		}
-		
 	}
 	
 	public boolean shouldOverrideUrlLoading(IX5WebViewBase var1, String url) {

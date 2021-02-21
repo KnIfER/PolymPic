@@ -139,12 +139,8 @@ public class TbsExtensionFunctionManager {
 
    public synchronized int getRomCookieDBVersion(Context var1) {
       SharedPreferences var2;
-      if (VERSION.SDK_INT >= 11) {
-         var2 = var1.getSharedPreferences("cookie_compatiable", 4);
-      } else {
-         var2 = var1.getSharedPreferences("cookie_compatiable", 0);
-      }
-
-      return var2 == null ? -1 : var2.getInt("cookie_db_version", -1);
+	   var2 = var1.getSharedPreferences("cookie_compatiable", 4);
+	
+	   return var2 == null ? -1 : var2.getInt("cookie_db_version", -1);
    }
 }

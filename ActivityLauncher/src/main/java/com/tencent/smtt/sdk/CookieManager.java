@@ -113,7 +113,7 @@ public class CookieManager {
             return;
          }
 
-         ReflectionUtils.a((Object)android.webkit.CookieManager.getInstance(), "flush", new Class[0]);
+         ReflectionUtils.getDeclaredMethod((Object)android.webkit.CookieManager.getInstance(), "flush", new Class[0]);
       }
 
    }

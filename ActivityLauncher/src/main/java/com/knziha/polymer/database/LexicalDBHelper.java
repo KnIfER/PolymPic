@@ -5,6 +5,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteFullException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteStatement;
 import android.net.Uri;
@@ -109,6 +110,8 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
     public static final String Date = "date"; //路径
     
     public String pathName;
+    
+   // public final boolean isFake;
 
 	/** 创建历史纪录数据库 */
 	public LexicalDBHelper(Context context) {

@@ -144,7 +144,7 @@ public class DownloadTask implements Runnable{
 		this.shotExt = extObj.getString("shot");
 		this.ua = extObj.getString("ua");
 		this.lives = extObj.has("life")?extObj.getInt("life"):5;
-		this.maxWaitTime = extObj.has("wait")?Math.max(0.03f, Math.min(5, extObj.getFloat("wait"))):1.5f;
+		this.maxWaitTime = extObj.has("wait")?Math.max(0.03f, Math.min(5, extObj.getFloat("wait"))):0.6f;
 	}
 	
 	public void updateTitle(String newTitle) {

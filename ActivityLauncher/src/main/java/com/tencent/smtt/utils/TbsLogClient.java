@@ -68,7 +68,6 @@ public class TbsLogClient {
       } catch (Exception var3) {
          var3.printStackTrace();
       }
-
    }
 
    public void writeLogToDisk() {
@@ -81,14 +80,12 @@ public class TbsLogClient {
       } catch (Exception var2) {
          var2.printStackTrace();
       }
-
    }
 
    public void showLog(String var1) {
       if (this.b != null) {
          this.b.post(new TbsLogClient.a(var1));
       }
-
    }
 
    public void setLogView(TextView var1) {

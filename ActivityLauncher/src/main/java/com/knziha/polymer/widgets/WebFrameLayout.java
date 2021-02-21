@@ -28,6 +28,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.GlobalOptions;
 import androidx.core.view.MotionEventCompat;
+import androidx.core.view.NestedScrollingChild;
 import androidx.core.view.ViewCompat;
 
 import com.google.android.material.appbar.AppBarLayout;
@@ -62,7 +63,7 @@ import static com.knziha.polymer.browser.webkit.WebViewHelper.LookForANobleSteed
 import static com.knziha.polymer.browser.webkit.WebViewHelper.bAdvancedMenu;
 import static com.knziha.polymer.browser.webkit.WebViewHelper.minW;
 
-public class WebFrameLayout extends FrameLayout implements MenuItem.OnMenuItemClickListener{
+public class WebFrameLayout extends FrameLayout implements NestedScrollingChild, MenuItem.OnMenuItemClickListener{
 	/**网页加载完成时清理回退栈 see {@link BrowserActivity#2LuxuriouslyLoadUrl}*/
 	public boolean clearHistroyRequested;
 	/**记录网页开始加载*/
@@ -328,6 +329,7 @@ public class WebFrameLayout extends FrameLayout implements MenuItem.OnMenuItemCl
 		if(isIMScrollSupressed) {
 			return;
 		}
+		NestedScrollingChild scrollingChild = (NestedScrollingChild) scrollingView;
 		MotionEvent trackedEvent = null;
 		if (action == MotionEvent.ACTION_DOWN) {
 			mNestedYOffset = 0;
@@ -345,7 +347,7 @@ public class WebFrameLayout extends FrameLayout implements MenuItem.OnMenuItemCl
 		switch (action) {
 			case MotionEvent.ACTION_DOWN:
 				mLastMotionY = y;
-				scrollingView.startNestedScroll(ViewCompat.SCROLL_AXIS_VERTICAL);
+				scrollingChild.startNestedScroll(ViewCompat.SCROLL_AXIS_VERTICAL);
 				offsetTopAndBottom=0;
 				lastRawY = OrgRawY = event.getRawY();
 				lastRawYTime = limitSpd?event.getEventTime():0;
@@ -375,7 +377,7 @@ public class WebFrameLayout extends FrameLayout implements MenuItem.OnMenuItemCl
 				}
 				int deltaY = mLastMotionY - y;
 				
-				if (scrollingView.dispatchNestedPreScroll(0, deltaY, mScrollConsumed, mScrollOffset)) {
+				if (scrollingChild.dispatchNestedPreScroll(0, deltaY, mScrollConsumed, mScrollOffset)) {
 					deltaY -= mScrollConsumed[1];
 					trackedEvent.offsetLocation(0, mScrollOffset[1]);
 					mNestedYOffset += mScrollOffset[1];
@@ -387,7 +389,7 @@ public class WebFrameLayout extends FrameLayout implements MenuItem.OnMenuItemCl
 				int dyConsumed = newScrollY - oldY;
 				int dyUnconsumed = deltaY - dyConsumed;
 				
-				if (scrollingView.dispatchNestedScroll(0, dyConsumed, 0, dyUnconsumed, mScrollOffset)) {
+				if (scrollingChild.dispatchNestedScroll(0, dyConsumed, 0, dyUnconsumed, mScrollOffset)) {
 					mLastMotionY -= mScrollOffset[1];
 					trackedEvent.offsetLocation(0, mScrollOffset[1]);
 					mNestedYOffset += mScrollOffset[1];
@@ -402,7 +404,7 @@ public class WebFrameLayout extends FrameLayout implements MenuItem.OnMenuItemCl
 			case MotionEvent.ACTION_POINTER_UP:
 			case MotionEvent.ACTION_UP:
 			case MotionEvent.ACTION_CANCEL:
-				scrollingView.stopNestedScroll();
+				scrollingChild.stopNestedScroll();
 				break;
 		}
 		

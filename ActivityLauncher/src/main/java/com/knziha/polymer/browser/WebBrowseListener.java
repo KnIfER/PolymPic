@@ -60,6 +60,7 @@ public class WebBrowseListener extends WebViewClient implements DownloadListener
 		CMN.Log("clearWebview");
 		webview_Player.setTag(null);
 		if(Looper.myLooper()!=Looper.getMainLooper()) {
+			webview_Player.removeCallbacks(clearWebRunnable);
 			webview_Player.post(clearWebRunnable);
 		} else {
 			clearWebRunnable.run();
@@ -89,7 +90,6 @@ public class WebBrowseListener extends WebViewClient implements DownloadListener
 		webviewImpl.setWebChromeClient(this.mWebClient);
 		webviewImpl.setWebViewClient(this);
 		
-		this.webview_Player = webview_Player;
 		webviewImpl.addJavascriptInterface(this, "wvply");
 		
 		final WebSettings settings = webviewImpl.getSettings();

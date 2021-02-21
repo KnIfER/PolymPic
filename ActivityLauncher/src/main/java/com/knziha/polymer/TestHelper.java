@@ -16,6 +16,7 @@ import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.MyReceiver;
 import com.knziha.polymer.database.LexicalDBHelper;
 import com.knziha.polymer.toolkits.Utils.BU;
+import com.knziha.polymer.webstorage.WebDict;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -344,46 +345,12 @@ public class TestHelper {
 		return sb.toString();
 	}
 	
-	public static void testAddWebDicts(ArrayList<String> WebDicts) {
-		WebDicts.add("https://www.baidu.com/s?wd=%s");
-		WebDicts.add("https://www.baidu.com/s?wd=%s");
-		WebDicts.add("https://www.baidu.com/s?wd=%s");
-		WebDicts.add("https://www.baidu.com/s?wd=%s");
-		WebDicts.add("https://www.baidu.com/s?wd=%s");
-		WebDicts.add("https://www.baidu.com/s?wd=%s");
-		WebDicts.add("https://www.baidu.com/s?wd=%s");
-		WebDicts.add("https://www.baidu.com/s?wd=%s");
-		WebDicts.add("https://www.baidu.com/s?wd=%s");
-		WebDicts.add("https://www.baidu.com/s?wd=%s");
-		WebDicts.add("https://www.baidu.com/s?wd=%s");
-		WebDicts.add("https://www.baidu.com/s?wd=%s");
-		WebDicts.add("https://www.baidu.com/s?wd=%s");
-		WebDicts.add("https://www.baidu.com/s?wd=%s");
-		WebDicts.add("https://www.baidu.com/s?wd=%s");
-		WebDicts.add("https://www.baidu.com/s?wd=%s");
-		WebDicts.add("https://www.baidu.com/s?wd=%s");
-		WebDicts.add("https://www.baidu.com/s?wd=%s");
-		WebDicts.add("https://www.baidu.com/s?wd=%s");
-		WebDicts.add("https://www.baidu.com/s?wd=%s");
-		WebDicts.add("https://www.baidu.com/s?wd=%s");
-		WebDicts.add("https://www.baidu.com/s?wd=%s");
-		WebDicts.add("https://www.baidu.com/s?wd=%s");
-		WebDicts.add("https://www.baidu.com/s?wd=%s");
-		WebDicts.add("https://www.baidu.com/s?wd=%s");
-		WebDicts.add("https://www.baidu.com/s?wd=%s");
-		WebDicts.add("https://www.baidu.com/s?wd=%s");
-		WebDicts.add("https://www.baidu.com/s?wd=%s");
-		WebDicts.add("https://www.baidu.com/s?wd=%s");
-		WebDicts.add("https://www.baidu.com/s?wd=%s");
-		WebDicts.add("https://www.baidu.com/s?wd=%s");
-		WebDicts.add("https://www.baidu.com/s?wd=%s");
-		WebDicts.add("https://www.baidu.com/s?wd=%s");
-		WebDicts.add("https://www.baidu.com/s?wd=%s");
-		WebDicts.add("https://www.baidu.com/s?wd=%s");
-		WebDicts.add("https://www.baidu.com/s?wd=%s");
-		WebDicts.add("https://www.baidu.com/s?wd=%s");
-		WebDicts.add("https://www.baidu.com/s?wd=%s");
-		WebDicts.add("https://www.baidu.com/s?wd=%s");
+	public static void testAddWebDicts(ArrayList<WebDict> WebDicts) {
+		WebDicts.add(new WebDict("https://www.baidu.com/s?wd=%s", "百度一下"));
+		WebDicts.add(new WebDict("https://cn.bing.com/search?q=%s", "必应搜索"));
+		//WebDicts.add(new WebDict("https://www.sogou.com/sogou?query=%s&insite=zhihu.com&pid=sogou-wsse-ff111e4a5406ed40", "搜狗 | 知乎搜索"));
+		//WebDicts.add(new WebDict("https://m.sogou.com/web/searchList.jsp?&insite=zhihu.com&pid=sogou-waps-21a38ed2ee0c2c08&keyword=%s", "搜狗 | 知乎搜索"));
+		WebDicts.add(new WebDict("https://m.sogou.com/web/searchList.jsp?&insite=zhihu.com&keyword=%s", "搜狗 | 知乎搜索"));
 	}
 	
 	public static void async(Runnable run){

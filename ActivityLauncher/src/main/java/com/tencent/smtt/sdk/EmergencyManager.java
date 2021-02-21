@@ -60,9 +60,10 @@ public class EmergencyManager {
    public void init(Context context) {
       if (!this.initilized) {
          this.initilized = true;
-         PreferenceHelper var2 = PreferenceHelper.getInstance();
-         if (!var2.hasFileLock()) {
-            var2.createFileLock(context);
+         if(true) return;// hhh
+         PreferenceHelper preferenceHelper = PreferenceHelper.getInstance();
+         if (!preferenceHelper.hasFileLock()) {
+            preferenceHelper.createFileLock(context);
 
             try {
                long var3 = PreferenceHelper.getInstance().getLong(context, "emergence_timestamp");
@@ -79,7 +80,7 @@ public class EmergencyManager {
             } catch (Exception var16) {
                this.dispatchEmergencyCommandsValid(context, g, new ArrayList());
             } finally {
-               PreferenceHelper.getInstance().c();
+               PreferenceHelper.getInstance().releaseFileLock();
             }
          } else {
             this.dispatchEmergencyCommandsValid(context, f, new ArrayList());

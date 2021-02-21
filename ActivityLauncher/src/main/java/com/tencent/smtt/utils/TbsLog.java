@@ -76,7 +76,7 @@ public class TbsLog {
 //      if (c != null && a && var2) {
 //         c.showLog(var0 + ": " + var1);
 //      }
-      if(var2)
+      //if(var2)
 	   CMN.Log("TBS::", var1);
 
    }
@@ -111,7 +111,7 @@ public class TbsLog {
 //      if (c != null && a && var2) {
 //         c.showLog(var0 + ": " + var1);
 //      }
-	if(var2)
+	//if(var2)
 	   CMN.Log("TBS::", var1);
    }
 
@@ -129,7 +129,7 @@ public class TbsLog {
 //         c.showLog(var0 + ": " + var1);
 //      }
 	
-	   if(var2)
+	   //if(var2)
 		   CMN.Log("TBS::", var1);
    }
 
@@ -147,7 +147,7 @@ public class TbsLog {
 //         c.showLog(var0 + ": " + var1);
 //      }
 	
-	   if(var2)
+	  //if(var2)
 		   CMN.Log("TBS::", var1);
    }
 
@@ -176,7 +176,6 @@ public class TbsLog {
       if (c == null) {
          setTbsLogClient(new TbsLogClient(var0));
       }
-
    }
 
    public static synchronized void writeLogToDisk() {
@@ -187,35 +186,37 @@ public class TbsLog {
    }
 
    public static void addLog(int var0, String var1, Object... var2) {
-      synchronized(sTbsLogList) {
-         try {
-            if (sTbsLogList.size() > sLogMaxCount) {
-               int var4 = sTbsLogList.size() - sLogMaxCount;
-
-               while(var4-- > 0 && sTbsLogList.size() > 0) {
-                  sTbsLogList.remove(0);
-               }
-            }
-
-            String var10 = null;
-
-            try {
-               if (var1 != null) {
-                  var10 = String.format(var1, var2);
-               }
-            } catch (Exception var7) {
-            }
-
-            if (var10 == null) {
-               var10 = "";
-            }
-
-            String var5 = String.format("[%d][%d][%c][%d]%s", System.currentTimeMillis(), 1, '0', var0, var10);
-            sTbsLogList.add(var5);
-         } catch (Exception var8) {
-            var8.printStackTrace();
-         }
-
-      }
+   	CMN.Log("addLog", var0, var1);
+   	CMN.Log("addLog", var2);
+//      synchronized(sTbsLogList) {
+//         try {
+//            if (sTbsLogList.size() > sLogMaxCount) {
+//               int var4 = sTbsLogList.size() - sLogMaxCount;
+//
+//               while(var4-- > 0 && sTbsLogList.size() > 0) {
+//                  sTbsLogList.remove(0);
+//               }
+//            }
+//
+//            String var10 = null;
+//
+//            try {
+//               if (var1 != null) {
+//                  var10 = String.format(var1, var2);
+//               }
+//            } catch (Exception var7) {
+//            }
+//
+//            if (var10 == null) {
+//               var10 = "";
+//            }
+//
+//            String var5 = String.format("[%d][%d][%c][%d]%s", System.currentTimeMillis(), 1, '0', var0, var10);
+//            sTbsLogList.add(var5);
+//         } catch (Exception var8) {
+//            var8.printStackTrace();
+//         }
+//
+//      }
    }
 }

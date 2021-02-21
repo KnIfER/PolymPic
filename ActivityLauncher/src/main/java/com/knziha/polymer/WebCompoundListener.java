@@ -303,7 +303,9 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		}
 	}
 	
-	public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+	@Override
+	public void doUpdateVisitedHistory(WebView view, String url, boolean isReload) {
+		//todo
 	}
 	
 	public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {

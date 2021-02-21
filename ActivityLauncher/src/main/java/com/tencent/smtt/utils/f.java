@@ -1,6 +1,5 @@
 package com.tencent.smtt.utils;
 
-import android.os.Build.VERSION;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
@@ -98,13 +97,9 @@ public class f {
       httpURLConnection.setDoInput(true);
       httpURLConnection.setUseCaches(false);
       httpURLConnection.setConnectTimeout(20000);
-      if (VERSION.SDK_INT > 13) {
-         httpURLConnection.setRequestProperty("Connection", "close");
-      } else {
-         httpURLConnection.setRequestProperty("http.keepAlive", "false");
-      }
-
-      Iterator iterator = var1.entrySet().iterator();
+	   httpURLConnection.setRequestProperty("Connection", "close");
+	
+	   Iterator iterator = var1.entrySet().iterator();
 
       while(iterator.hasNext()) {
          Entry entry = (Entry)iterator.next();

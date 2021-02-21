@@ -2,6 +2,7 @@ package com.knziha.polymer.browser.webkit;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.ActionMode;
 import android.view.MotionEvent;
@@ -24,17 +25,16 @@ import static com.knziha.polymer.browser.webkit.WebViewHelper.bAdvancedMenu;
 
 public class WebViewImplExt extends WebView implements UniversalWebviewInterface {
 	public BrowserActivity.TabHolder holder;
-	public BrowserActivity activity;
 	public WebFrameLayout layout;
 	
 	public WebViewImplExt(@NonNull Context context) {
 		super(context);
-		this.activity =(BrowserActivity) context;
 	}
 	
 	@Override
 	public void setLayoutParent(WebFrameLayout layout, boolean addView) {
 		this.layout = layout;
+		layout.setImplementation(this);
 		this.holder = layout.holder;
 		if(addView) {
 			layout.addView(this);
@@ -149,14 +149,14 @@ public class WebViewImplExt extends WebView implements UniversalWebviewInterface
 	@SuppressLint("ClickableViewAccessibility")
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
-		layout.handleSimpleNestedScrolling(layout, this, event);
+		layout.handleSimpleNestedScrolling(layout, layout, event);
 		return super.onTouchEvent(event);
 	}
 	
 	@Override
 	public boolean postDelayed(Runnable action, long delayMillis) {
 		CMN.Log("postDelayed", action, delayMillis);
-		if(!layout.isWebHold&&action.getClass().getName().contains("FloatingActionMode")) {
+		if(layout!=null&&!layout.isWebHold&&action.getClass().getName().contains("FloatingActionMode")) {
 			CMN.Log("contextMenu_boost");
 //			action.run();
 //			return true;
@@ -169,5 +169,13 @@ public class WebViewImplExt extends WebView implements UniversalWebviewInterface
 		super.destroy();
 		setWebChromeClient(null);
 		setWebViewClient(null);
+	}
+	
+	public Object initPrintDocumentAdapter(String var1) {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+			return super.createPrintDocumentAdapter(var1);
+		} else {
+			return null;
+		}
 	}
 }

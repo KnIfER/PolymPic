@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout>
+	<FrameLayout
+		xmlns:android="http://schemas.android.com/apk/res/android"
+		xmlns:tools="http://schemas.android.com/tools"
+		android:id="@+id/search_engines"
+		android:layout_width="match_parent"
+		android:layout_height="45dp"
+		>
+		<LinearLayout
+			android:id="@+id/business_card"
+			android:layout_width="match_parent"
+			android:layout_height="match_parent"
+			android:orientation="horizontal"
+			>
+			<ImageView
+				android:layout_width="30dp"
+				android:layout_height="match_parent"
+				/>
+			<TextView
+				android:id="@+id/title"
+				android:layout_width="0dp"
+				android:layout_height="match_parent"
+				android:layout_weight="1"
+				android:layout_alignParentTop="true"
+				android:layout_alignParentLeft="true"
+				android:textAppearance="?attr/textAppearanceListItemSmall"
+				android:singleLine="true"
+				android:duplicateParentState="true"
+				android:ellipsize="end"
+				android:fadingEdge="horizontal"
+				tools:text="Baidu"
+				android:gravity="center|left"
+				/>
+			<ImageView
+				android:id="@+id/tick"
+				android:layout_width="35dp"
+				android:layout_height="match_parent"
+				android:src="@drawable/ic_yes"
+				android:layout_marginRight="3dp"
+				/>
+		</LinearLayout>
+
+		<ViewStub
+			android:id="@+id/more_options"
+			android:layout_width="match_parent"
+			android:layout_height="match_parent"
+			android:layout="@layout/search_engines_swipe"
+			/>
+	</FrameLayout>
+</layout>

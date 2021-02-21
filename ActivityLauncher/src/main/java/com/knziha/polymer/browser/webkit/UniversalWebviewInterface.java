@@ -31,13 +31,13 @@ public interface UniversalWebviewInterface {
 		return dummyWV;
 	}
 	
-	public void loadUrl(String url);
+	void loadUrl(String url);
 	
-	public void clearHistory();
+	void clearHistory();
 	
-	public void clearView();
+	void clearView();
 	
-	public void stopLoading();
+	void stopLoading();
 	
 	void setWebChromeClient(WebChromeClient mWebClient);
 	
@@ -103,7 +103,7 @@ public interface UniversalWebviewInterface {
 	
 	Map<String, String> getLastRequestHeaders();
 	
-	PrintDocumentAdapter createPrintDocumentAdapter(String name);
+	Object initPrintDocumentAdapter(String name);
 	
 	//Object getTag();
 }

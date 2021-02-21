@@ -62,6 +62,7 @@ import com.google.zxing.common.GlobalHistogramBinarizer;
 import com.google.zxing.common.HybridBinarizer;
 import com.knziha.polymer.BrowserActivity.StandardConfigDialogBase;
 import com.knziha.polymer.R;
+import com.knziha.polymer.Toastable_Activity;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.OptionProcessor;
 import com.knziha.polymer.Utils.Options;
@@ -126,7 +127,6 @@ public /*final*/ class QRActivity extends Activity implements View.OnClickListen
 	private TextView toast_tv;
 	private View toast_tv_p;
 	
-	public static String StaticTextExtra;
 	@Override
 	public void onConfigurationChanged(@NonNull Configuration newConfig) {
 		super.onConfigurationChanged(newConfig);
@@ -643,7 +643,11 @@ public /*final*/ class QRActivity extends Activity implements View.OnClickListen
 		super.onDestroy();
 		if(surfaceView!=null) {
 			handler.stop();
-			cameraManager.release();
+			try {
+				cameraManager.release();
+			} catch (Exception e) {
+				CMN.Log(e);
+			}
 		}
 	}
 	
@@ -653,7 +657,7 @@ public /*final*/ class QRActivity extends Activity implements View.OnClickListen
 		intent.putExtra(Intent.EXTRA_TEXT, text);
 		//CMN.Log("sendText", CMN.id(text), text);
 		if(Utils.littleCat) {
-			StaticTextExtra = text;
+			Toastable_Activity.StaticTextExtra = text;
 		}
 		setResult(RESULT_OK, intent);
 		if(opt.getOneShotAndReturn()) {

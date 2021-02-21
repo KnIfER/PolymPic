@@ -49,16 +49,14 @@ class SDKEngine {
       TbsInstaller.a().installTbsCoreIfNeeded(context, a == 1);
       TbsInstaller.a().k(context);
       TbsShareManager.forceToLoadX5ForThirdApp(context, true);
-      boolean var4 = QbSdk.a(context, var2, isPreIniting);
-      boolean var5 = VERSION.SDK_INT >= 7;
-      boolean var6 = var4 && var5;
-      if (var6) {
+      boolean isTbsCoreLegal = QbSdk.init(context, var2, isPreIniting);
+      if (isTbsCoreLegal) {
          long var7 = System.currentTimeMillis();
-         var6 = TbsInstaller.a().isTBSCoreLegal(context, d());
-         TbsLog.i("SDKEngine", "isTbsCoreLegal: " + var6 + "; cost: " + (System.currentTimeMillis() - var7));
+         isTbsCoreLegal = TbsInstaller.a().isTBSCoreLegal(context, d());
+         TbsLog.i("SDKEngine", "isTbsCoreLegal: " + isTbsCoreLegal + "; cost: " + (System.currentTimeMillis() - var7));
       }
 
-      if (var6) {
+      if (isTbsCoreLegal) {
          if (this.initilized) {
             return;
          }
@@ -136,7 +134,7 @@ class SDKEngine {
             QbSdk.forceSysWebViewInner(context, "SDKEngine::useSystemWebView by exception: " + var12);
          }
       } else {
-         String var14 = "can_load_x5=" + var4 + "; is_compatible=" + var5;
+         String var14 = "can_load_x5=" + isTbsCoreLegal;
          TbsLog.e("SDKEngine", "SDKEngine.init canLoadTbs=false; failure: " + var14);
          if (!QbSdk.forcedSysByInner || !this.initilized) {
             this.initilized = false;

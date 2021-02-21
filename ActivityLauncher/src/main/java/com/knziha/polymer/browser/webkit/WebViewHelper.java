@@ -188,6 +188,21 @@ public class WebViewHelper {
 	}
 	
 	
+	public static Object getTypedTagInAncestors(View v, int depth, Class type) {
+		int cc=0;
+		if(type.isInstance(v.getTag())) {
+			return v.getTag();
+		}
+		while(v.getParent() instanceof View&&cc<depth) {
+			v = (View) v.getParent();
+			if(type.isInstance(v.getTag())) {
+				return v.getTag();
+			}
+			cc++;
+		}
+		return null;
+	}
+	
 	/* 📕📕📕 微空间内爆术 📕📕📕 */
 	public static View LookForANobleSteedCorrespondingWithDrawnClasses(View donkeySteed, int dynamicFrom, Class<?>...classes) {
 		if(classes[0].isInstance(donkeySteed)) {

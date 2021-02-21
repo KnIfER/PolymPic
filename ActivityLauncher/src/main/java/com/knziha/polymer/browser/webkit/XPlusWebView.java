@@ -19,6 +19,7 @@ import com.tencent.smtt.export.external.extension.proxy.ProxyWebViewClientExtens
 import com.tencent.smtt.export.external.interfaces.ISelectionInterface;
 import com.tencent.smtt.export.external.interfaces.IX5WebViewBase;
 import com.tencent.smtt.export.external.interfaces.WebResourceRequest;
+import com.tencent.smtt.sdk.QbSdk;
 import com.tencent.smtt.sdk.WebView;
 
 import java.io.IOException;
@@ -31,8 +32,8 @@ public class XPlusWebView extends WebView implements UniversalWebviewInterface {
 	ActionMode actionMode;
 	View actionView;
 	
-	public XPlusWebView(Context var1) throws IOException {
-		super(var1);
+	public XPlusWebView(Context context) throws IOException {
+		super(wrapInitCtx(context));
 		
 		IX5WebViewExtension x5WebViewExtension = getX5WebViewExtension();
 		if (x5WebViewExtension != null) {
@@ -45,6 +46,11 @@ public class XPlusWebView extends WebView implements UniversalWebviewInterface {
 			layout.handleSimpleNestedScrolling(layout, layout, event);
 			return false;
 		});
+	}
+	
+	private static Context wrapInitCtx(Context context) {
+		QbSdk.initX5Environment(context.getApplicationContext(),  null);
+		return context;
 	}
 	
 	private class WebViewExtension extends ProxyWebViewClientExtension {
@@ -210,6 +216,7 @@ public class XPlusWebView extends WebView implements UniversalWebviewInterface {
 	@Override
 	public void setLayoutParent(WebFrameLayout layout, boolean addView) {
 		this.layout = layout;
+		layout.setImplementation(this);
 		if(addView) {
 			layout.addView(this);
 		}
@@ -231,6 +238,11 @@ public class XPlusWebView extends WebView implements UniversalWebviewInterface {
 		ret.put("Method", wrr.getMethod());
 		ret.put("Url", wrr.getUrl().toString());
 		return ret;
+	}
+	
+	@Override
+	public Object initPrintDocumentAdapter(String name) {
+		return X5WebView.createPrintDocumentAdapter(name);
 	}
 	
 	RecyclerView.OnScrollChangedListener mOnScrollChangeListener;

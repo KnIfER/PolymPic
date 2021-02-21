@@ -216,7 +216,7 @@ public class Options implements WebOptions, BookOptions {
 	
 	@Multiline(flagPos=17, shift=1, debug=0) public boolean getUseStdViewAnimator(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
 	
-	@Multiline(flagPos=18, shift=0, debug=0) public boolean getUpdateUALowEnd(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=18, shift=0, debug=1) public boolean getUpdateUALowEnd(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=18, shift=0) public void setUpdateUALowEnd(boolean val){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
 	
 	@Multiline(flagPos=19, debug=0) public boolean getAlwaysShowWebCoverDuringTransition(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }

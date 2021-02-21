@@ -1060,6 +1060,7 @@ public class TbsShareManager {
 			if (mAvailableCoreVersion == 0) {
 				findCoreForThirdPartyApp(var0);
 			}
+			CMN.Log("WTF::mAvailableCoreVersion", mAvailableCoreVersion);
 			
 			if (mAvailableCoreVersion == 0) {
 				TbsLog.addLog(994, (String)null);
@@ -1072,7 +1073,7 @@ public class TbsShareManager {
 				} else if (mAvailableCoreVersion != 0 && TbsInstaller.a().getTbsCoreVersionIdDir(c) == mAvailableCoreVersion) {
 					return true;
 				}
-				
+				CMN.Log("WTF::111", l(var0));
 				if (l(var0)) {
 					return true;
 				} else {
@@ -1084,8 +1085,8 @@ public class TbsShareManager {
 					return false;
 				}
 			}
-		} catch (Throwable var2) {
-			var2.printStackTrace();
+		} catch (Throwable e) {
+			CMN.Log(e);
 			TbsLog.addLog(992, (String)null);
 			return false;
 		}

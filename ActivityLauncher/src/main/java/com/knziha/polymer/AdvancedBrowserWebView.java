@@ -29,17 +29,15 @@ import com.knziha.polymer.browser.webkit.WebViewImplExt;
 /** Advanced WebView For DuoJuLiuLanQi <br/>
  * 多聚浏览器 <br/>
  * Based On previous work on Plain-Dictionary*/
-public class AdvancedBrowserWebView extends WebViewImplExt implements NestedScrollingChild, UniversalWebviewInterface {
-	
-	private NestedScrollingChildHelper mChildHelper;
-	
+public class AdvancedBrowserWebView extends WebViewImplExt {
 	
 	public AdvancedBrowserWebView(Context context) {
 		super(context);
 		//super(context, null, android.R.attr.webViewStyle);
 		
-		mChildHelper = new NestedScrollingChildHelper(this);
-		setNestedScrollingEnabled(true);
+		//mChildHelper = new NestedScrollingChildHelper(this);
+		//setNestedScrollingEnabled(true);
+		
 		setVerticalScrollBarEnabled(false);
 		setHorizontalScrollBarEnabled(false);
 		

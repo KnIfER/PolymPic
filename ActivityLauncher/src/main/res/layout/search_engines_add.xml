@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+	android:id="@+id/search_engines_add"
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	android:orientation="horizontal"
+	>
+	<ImageView
+		android:layout_width="match_parent"
+		android:layout_height="40dp"
+		android:src="@drawable/ic_baseline_add_24"
+		android:padding="3dp"
+		/>
+	<ViewStub
+		android:id="@+id/more_options"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:layout="@layout/search_engines_sync"
+		/>
+</FrameLayout>

@@ -16,6 +16,8 @@ import com.knziha.polymer.pdviewer.pagecover.PageCoverLoaderFactory;
 import com.knziha.polymer.webslideshow.WebPic.WebPic;
 import com.knziha.polymer.webslideshow.WebPic.WebPicLoaderFactory;
 
+import java.util.ArrayList;
+
 import static com.knziha.polymer.Utils.CMN.dummyWV;
 
 public class AgentApplication extends Application {
@@ -27,6 +29,8 @@ public class AgentApplication extends Application {
 					registry.append(AppIconCover.class, Drawable.class, new AppIconCoverLoaderFactory());
 				};
 	}
+	
+	public static Throwable exception;
 
 	@Override
 	public void onTerminate() {

@@ -627,15 +627,15 @@ public class FileHelper {
 
    public static FileLock getTbsCoreLoadFileLock(Context context) {
       TbsLog.i("FileHelper", "getTbsCoreLoadFileLock #1");
-      boolean var1 = true;
+      boolean tbsCoreLoadRenameFileLockEnabled = true;
 
       try {
-         var1 = TbsDownloadConfig.getInstance().getTbsCoreLoadRenameFileLockEnable();
+		  tbsCoreLoadRenameFileLockEnabled = TbsDownloadConfig.getInstance().getTbsCoreLoadRenameFileLockEnable();
       } catch (Throwable var7) {
       }
 
       FileLock var2;
-      if (!var1) {
+      if (!tbsCoreLoadRenameFileLockEnabled) {
          var2 = null;
          FileOutputStream var8 = getLockFile(context, true, "tbs_rename_lock");
          if (var8 == null) {
