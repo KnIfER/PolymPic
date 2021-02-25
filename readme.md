@@ -1,6 +1,6 @@
 Here presents PolymiumPic, the currently fully opensourced part of PolymPic.   
 
-Just like chrome, it is a fantastic web browser + a PDF viewer.  
+Just like chrome, it will become a fantastic web browser + a PDF viewer.  
 
 ### The Web Browser
 - WIP 75%
