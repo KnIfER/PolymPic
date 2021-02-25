@@ -6,7 +6,7 @@ Just like chrome, it is a fantastic web browser + a PDF viewer.
 - WIP 75%
 - Multi-window interface that supports retoring of browser states ( the page positions and the back/forward stacks ).
 - WIP 55% Annotation functionality. (still testing)
-
+- Optional CrossWalk or TBS-X5 webview implemetation.
 
 
 ### The PDF Viewer
@@ -28,7 +28,8 @@ This is a 'complex' project which consists of multiple gradle sub-modules. You n
 3. https://github.com/KnIfER/AwtRecyclerView
 4. https://github.com/KnIfER/AxtAppCompat
 5. https://github.com/KnIfER/GlideModule
-6. ( Some may be missing. )
+6. https://github.com/KnIfER/XWalkModule
+7. ( Some may be missing. )
 
 
 For some reason I've modified those 3rd party libaries but don't want to include them in my repo.    
@@ -41,7 +42,7 @@ Some other dependencies:
 | Jar File        | Use    |  Included in the repo |
 | --------   | -----:   | :----: |
 | ActivityLauncher\libs\core-3.3.3.jar        | Zxing qrcode      |   Yes    |
-| ActivityLauncher\libs\tbs_sdk_thirdapp.jar        | X5 Webview resource sniffer      |   Yes    |
+| XWalkModule\libs\crosswalk-shared-23.53.589.4.aar        | CrossWalk's R.txt      |   XWalkModule    |
 | multiline\libs\closure-compiler-v20200628.jar        | To compile js scripts      |   No. It's in the archive    |
 
 ### How to invoke PolymPic (the App) and view PDFs at a specific page in your own project:
