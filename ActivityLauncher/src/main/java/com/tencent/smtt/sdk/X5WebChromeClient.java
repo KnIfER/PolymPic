@@ -16,7 +16,8 @@ import com.tencent.smtt.export.external.interfaces.JsResult;
 import com.tencent.smtt.export.external.interfaces.QuotaUpdater;
 import com.tencent.smtt.export.external.proxy.X5ProxyWebChromeClient;
 
-import static com.knziha.polymer.Utils.CMN.dummyWV;
+import static org.xwalk.core.Utils.getLockedView;
+import static org.xwalk.core.Utils.unlock;
 
 class X5WebChromeClient extends X5ProxyWebChromeClient {
 	private WebView webView;
@@ -39,23 +40,10 @@ class X5WebChromeClient extends X5ProxyWebChromeClient {
 		return webChromeClient.getDefaultVideoPoster();
 	}
 	
-	private android.webkit.WebView getLockedView(boolean straightParams) {
-		CMN.lock.lock();
-		dummyWV.setId(straightParams?0:-1);
-		dummyWV.setTag(webView);
-		return dummyWV;
-	}
-	
-	private void unlock() {
-		try {
-			CMN.lock.unlock();
-		} catch (Exception ignored) { }
-	}
-	
 	public void onCloseWindow(IX5WebViewBase var1) {
 		webView.a(var1);
 		try {
-			webChromeClient.onCloseWindow(getLockedView(true));
+			webChromeClient.onCloseWindow(getLockedView(webView, true));
 		} catch (Exception e) {
 			CMN.Log(e);
 		}
@@ -67,7 +55,7 @@ class X5WebChromeClient extends X5ProxyWebChromeClient {
 	
 	public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
 		//CMN.Log("onConsoleMessageA::", consoleMessage.message());
-//		android.webkit.WebView wv = getLockedView();
+//		android.webkit.WebView wv = getLockedView(webView, );
 //		webView.consoleMessage = consoleMessage;
 		boolean ret = webChromeClient.onConsoleMessage(new android.webkit.ConsoleMessage(consoleMessage.message()
 				, consoleMessage.sourceId()
@@ -94,7 +82,7 @@ class X5WebChromeClient extends X5ProxyWebChromeClient {
 		var7.obj = var5;
 		boolean ret = false;
 		try {
-			ret = webChromeClient.onCreateWindow(getLockedView(true), var2, var3, var7);
+			ret = webChromeClient.onCreateWindow(getLockedView(webView, true), var2, var3, var7);
 		} catch (Exception e) {
 			CMN.Log(e);
 		}
@@ -117,7 +105,7 @@ class X5WebChromeClient extends X5ProxyWebChromeClient {
 	
 	public boolean onJsAlert(IX5WebViewBase var1, String var2, String var3, JsResult jsResult) {
 		webView.a(var1);
-		android.webkit.WebView wv = getLockedView(false);
+		android.webkit.WebView wv = getLockedView(webView, false);
 		webView.jsResult = jsResult;
 		boolean ret = false;
 		try {
@@ -131,7 +119,7 @@ class X5WebChromeClient extends X5ProxyWebChromeClient {
 	
 	public boolean onJsConfirm(IX5WebViewBase var1, String var2, String var3, JsResult jsResult) {
 		webView.a(var1);
-		android.webkit.WebView wv = getLockedView(false);
+		android.webkit.WebView wv = getLockedView(webView, false);
 		webView.jsResult = jsResult;
 		
 		boolean ret = false;
@@ -147,7 +135,7 @@ class X5WebChromeClient extends X5ProxyWebChromeClient {
 	public boolean onJsPrompt(IX5WebViewBase var1, String var2, String var3, String var4, JsPromptResult jsPromptResult) {
 		webView.a(var1);
 		
-		android.webkit.WebView wv = getLockedView(false);
+		android.webkit.WebView wv = getLockedView(webView, false);
 		webView.jsPromptResult = jsPromptResult;
 		
 		boolean ret = false;
@@ -162,7 +150,7 @@ class X5WebChromeClient extends X5ProxyWebChromeClient {
 	
 	public boolean onJsBeforeUnload(IX5WebViewBase var1, String var2, String var3, JsResult jsResult) {
 		webView.a(var1);
-		android.webkit.WebView wv = getLockedView(false);
+		android.webkit.WebView wv = getLockedView(webView, false);
 		webView.jsResult = jsResult;
 		
 		boolean ret = false;
@@ -182,7 +170,7 @@ class X5WebChromeClient extends X5ProxyWebChromeClient {
 	public void onProgressChanged(IX5WebViewBase var1, int var2) {
 		webView.a(var1);
 		try {
-			webChromeClient.onProgressChanged(getLockedView(true), var2);
+			webChromeClient.onProgressChanged(getLockedView(webView, true), var2);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -196,7 +184,7 @@ class X5WebChromeClient extends X5ProxyWebChromeClient {
 	public void onReceivedIcon(IX5WebViewBase var1, Bitmap var2) {
 		webView.a(var1);
 		try {
-			webChromeClient.onReceivedIcon(getLockedView(true), var2);
+			webChromeClient.onReceivedIcon(getLockedView(webView, true), var2);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -206,7 +194,7 @@ class X5WebChromeClient extends X5ProxyWebChromeClient {
 	public void onReceivedTouchIconUrl(IX5WebViewBase var1, String var2, boolean var3) {
 		webView.a(var1);
 		try {
-			webChromeClient.onReceivedTouchIconUrl(getLockedView(true), var2, var3);
+			webChromeClient.onReceivedTouchIconUrl(getLockedView(webView, true), var2, var3);
 		} catch (Exception e) {
 			CMN.Log(e);
 		}
@@ -216,7 +204,7 @@ class X5WebChromeClient extends X5ProxyWebChromeClient {
 	public void onReceivedTitle(IX5WebViewBase var1, String var2) {
 		webView.a(var1);
 		try {
-			webChromeClient.onReceivedTitle(getLockedView(true), var2);
+			webChromeClient.onReceivedTitle(getLockedView(webView, true), var2);
 		} catch (Exception e) {
 			CMN.Log(e);
 		}
@@ -226,7 +214,7 @@ class X5WebChromeClient extends X5ProxyWebChromeClient {
 	public void onRequestFocus(IX5WebViewBase var1) {
 		webView.a(var1);
 		try {
-			webChromeClient.onRequestFocus(getLockedView(true));
+			webChromeClient.onRequestFocus(getLockedView(webView, true));
 		} catch (Exception e) {
 			CMN.Log(e);
 		}

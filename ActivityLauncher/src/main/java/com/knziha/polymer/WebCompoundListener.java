@@ -88,6 +88,8 @@ import okhttp3.Response;
 import static com.knziha.polymer.BrowserActivity.TitleSep;
 import static com.knziha.polymer.HttpRequestUtil.DO_NOT_VERIFY;
 import static com.knziha.polymer.Utils.WebOptions.BackendSettings;
+import static org.xwalk.core.Utils.getTag;
+import static org.xwalk.core.Utils.unlock;
 
 /** WebView Compound Listener ：两大网页客户端监听器及Javascript桥，全局一个实例。 */
 public class WebCompoundListener extends WebViewClient implements DownloadListener, OnScrollChangedListener {
@@ -396,7 +398,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		
 		@Override
 		public void onReceivedTitle(WebView view, String title) {
-			UniversalWebviewInterface webviewImpl = (UniversalWebviewInterface) (view instanceof UniversalWebviewInterface?view:view.getTag());
+			UniversalWebviewInterface webviewImpl = (UniversalWebviewInterface) (view instanceof UniversalWebviewInterface?view:getTag());
 			View mWebView = (View) webviewImpl;
 			WebFrameLayout layout = (WebFrameLayout) mWebView.getParent();
 			if(layout==null||layout.implView!=mWebView) {
@@ -422,7 +424,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		@Override
 		public void onProgressChanged(WebView view, int newProgress) {
 			CMN.Log("OPC::", newProgress, Thread.currentThread().getId());
-			UniversalWebviewInterface webviewImpl = (UniversalWebviewInterface) (view instanceof UniversalWebviewInterface?view:view.getTag());
+			UniversalWebviewInterface webviewImpl = (UniversalWebviewInterface) (view instanceof UniversalWebviewInterface?view:getTag());
 			View mWebView = (View) webviewImpl;
 			WebFrameLayout layout = (WebFrameLayout) mWebView.getParent();
 			if(layout==null||layout.implView!=mWebView) {
@@ -478,7 +480,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 			}
 			return;
 		}
-		WebFrameLayout layout = view instanceof AdvancedBrowserWebView?((AdvancedBrowserWebView) view).layout:(WebFrameLayout) ((View)view.getTag()).getParent();
+		WebFrameLayout layout = view instanceof AdvancedBrowserWebView?((AdvancedBrowserWebView) view).layout:(WebFrameLayout) ((View)getTag()).getParent();
 		layout.webScale = newScale;
 	}
 	
@@ -498,8 +500,8 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	
 	@Override
 	public void onPageStarted(WebView view, String url, Bitmap favicon) {
-		CMN.Log("onPageStarted……", url, view.getUrl(), Thread.currentThread().getId());
-		UniversalWebviewInterface webviewImpl = (UniversalWebviewInterface) (view instanceof UniversalWebviewInterface?view:view.getTag());
+		UniversalWebviewInterface webviewImpl = (UniversalWebviewInterface) (view instanceof UniversalWebviewInterface?view:getTag());
+		CMN.Log("onPageStarted……", url, webviewImpl.getUrl(), Thread.currentThread().getId());
 		View mWebView = (View) webviewImpl;
 		WebFrameLayout layout = (WebFrameLayout) mWebView.getParent();
 		if(layout==null||layout.implView!=mWebView) {
@@ -686,7 +688,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	 * 处理历史记录。<br/>
 	 * see {@link WebClient#onProgressChanged}<br/>*/
 	@Override public void onPageFinished(WebView view, String url) {
-		UniversalWebviewInterface webviewImpl = (UniversalWebviewInterface) (view instanceof UniversalWebviewInterface?view:view.getTag());
+		UniversalWebviewInterface webviewImpl = (UniversalWebviewInterface) (view instanceof UniversalWebviewInterface?view:getTag());
 		View mWebView = (View) webviewImpl;
 		WebFrameLayout layout = (WebFrameLayout) mWebView.getParent();
 		if(layout==null||layout.implView!=mWebView) {
@@ -815,11 +817,11 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	{
 		CMN.Log("SOUL::", url, Thread.currentThread().getId());
 		boolean b1 = view instanceof UniversalWebviewInterface;
-		UniversalWebviewInterface webviewImpl = (UniversalWebviewInterface) (b1?view:view.getTag());
+		UniversalWebviewInterface webviewImpl = (UniversalWebviewInterface) (b1?view:getTag());
 		View mWebView = (View) webviewImpl;
 		WebFrameLayout layout = (WebFrameLayout) mWebView.getParent();
 		if(!b1) {
-			CMN.tryUnLock();
+			unlock();
 		}
 		if(layout==null||layout.implView!=mWebView) {
 			return false;
@@ -1069,7 +1071,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	@Override
 	public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
 		boolean b1 = view instanceof UniversalWebviewInterface;
-		UniversalWebviewInterface webviewImpl = (UniversalWebviewInterface) (b1?view:view.getTag());
+		UniversalWebviewInterface webviewImpl = (UniversalWebviewInterface) (b1?view:getTag());
 		View mWebView = (View) webviewImpl;
 		if(!b1) {
 			Map<String, String> headers = webviewImpl.getLastRequestHeaders();
@@ -1337,7 +1339,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	
 	@Override
 	public void onScrollChange(View view, int scrollX, int scrollY, int oldx, int oldy) {
-		UniversalWebviewInterface webviewImpl = (UniversalWebviewInterface) (view instanceof UniversalWebviewInterface?view:view.getTag());
+		UniversalWebviewInterface webviewImpl = (UniversalWebviewInterface) (view instanceof UniversalWebviewInterface?view:getTag());
 		View mWebView = (View) webviewImpl;
 		WebFrameLayout layout = (WebFrameLayout) mWebView.getParent();
 		if(layout==null||layout.implView!=mWebView) {
@@ -1359,6 +1361,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		}
 	}
 	
+	@org.xwalk.core.JavascriptInterface
 	@JavascriptInterface
 	public void SaveAnnots(long tabID, String annots, String texts) {
 		CMN.Log("SaveAnnots", tabID, annots, texts, a.historyCon.isOpen());
@@ -1380,12 +1383,14 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		}
 	}
 	
+	@org.xwalk.core.JavascriptInterface
 	@JavascriptInterface
 	public void log(String msg) {
 		CMN.Log(msg);
 		
 	}
 	
+	@org.xwalk.core.JavascriptInterface
 	@JavascriptInterface
 	public void logm(String[] msg) {
 		CMN.Log("logm", msg.length, msg);
@@ -1393,6 +1398,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		
 	}
 	
+	@org.xwalk.core.JavascriptInterface
 	@JavascriptInterface
 	public void sendup(long id) {
 		WebFrameLayout layout = a.getWebViewFromID(id);

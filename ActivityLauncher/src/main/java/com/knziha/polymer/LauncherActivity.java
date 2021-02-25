@@ -32,8 +32,9 @@ public class LauncherActivity extends Activity {
 				@Override
 				public void onServiceDisconnected(ComponentName name) { }
 			};
-			bindService(intent, mConnection, BIND_AUTO_CREATE);
+			//bindService(intent, mConnection, BIND_AUTO_CREATE);
 			startService(intent);
+			finish();
 			return;
 		}
 		setContentView(R.layout.service_main);

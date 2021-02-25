@@ -25,7 +25,8 @@ import com.knziha.polymer.browser.webkit.UniversalWebviewInterface;
 
 import org.apache.commons.lang3.StringUtils;
 
-import static com.knziha.polymer.browser.webkit.UniversalWebviewInterface.getLockedView;
+import static org.xwalk.core.Utils.getLockedView;
+import static org.xwalk.core.Utils.getTag;
 
 /** WebView Compound Listener ：两大网页客户端监听器及Javascript桥，全局一个实例。 */
 public class WebBrowseListener extends WebViewClient implements DownloadListener, OnScrollChangedListener {
@@ -49,6 +50,7 @@ public class WebBrowseListener extends WebViewClient implements DownloadListener
 	Runnable clearWebRunnable = new Runnable() {
 		@Override
 		public void run() {
+			CMN.Log("clearing Webview …… ");
 			webviewImpl.clearView();
 			//webview_Player.loadData("http://2123", "text/plain", "utf8");
 			webviewImpl.loadUrl("about:blank");
@@ -119,7 +121,6 @@ public class WebBrowseListener extends WebViewClient implements DownloadListener
 		settings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.SINGLE_COLUMN);
 		//settings.setSupportZoom(support);
 		settings.setAllowUniversalAccessFromFileURLs(true);
-		WebView.setWebContentsDebuggingEnabled(true);
 		webviewImpl.loadUrl("about:blank");
 
 //		settings.setAppCacheMaxSize(Long.MAX_VALUE);
@@ -195,7 +196,7 @@ public class WebBrowseListener extends WebViewClient implements DownloadListener
 		@Override
 		public void onProgressChanged(WebView  view, int newProgress) {
 			//lock.unlock();
-			UniversalWebviewInterface webviewImpl = (UniversalWebviewInterface) (view instanceof UniversalWebviewInterface?view:view.getTag());
+			UniversalWebviewInterface webviewImpl = (UniversalWebviewInterface) (view instanceof UniversalWebviewInterface?view:getTag());
 			View mWebView = (View) webviewImpl;
 			if(webviewImpl.getUrl()==null||webviewImpl.getUrl().startsWith("about:")||!pageStarted) return;
 			CMN.Log("OPC::", newProgress);
@@ -221,7 +222,7 @@ public class WebBrowseListener extends WebViewClient implements DownloadListener
 	
 	@Override
 	public void onLoadResource(WebView view, String url) {
-		UniversalWebviewInterface webviewImpl = (UniversalWebviewInterface) (view instanceof UniversalWebviewInterface?view:view.getTag());
+		UniversalWebviewInterface webviewImpl = (UniversalWebviewInterface) (view instanceof UniversalWebviewInterface?view:getTag());
 		View mWebView = (View) webviewImpl;
 		//CMN.Log("onLoadResource", view, url);
 		DownloadTask task = (DownloadTask) mWebView.getTag();
@@ -241,7 +242,7 @@ public class WebBrowseListener extends WebViewClient implements DownloadListener
 	}
 	
 	@Override public void onPageFinished(WebView  view, String url) {
-		UniversalWebviewInterface webviewImpl = (UniversalWebviewInterface) (view instanceof UniversalWebviewInterface?view:view.getTag());
+		UniversalWebviewInterface webviewImpl = (UniversalWebviewInterface) (view instanceof UniversalWebviewInterface?view:getTag());
 		View mWebView = (View) webviewImpl;
 		String ordinalUrl=webviewImpl.getUrl();
 		if(ordinalUrl!=null) {
@@ -266,8 +267,7 @@ public class WebBrowseListener extends WebViewClient implements DownloadListener
 	Runnable OnPageFinishedNotifier = new Runnable() {
 		@Override
 		public void run() {
-			WebView mWebView = (WebView) (webviewImpl instanceof WebView?webviewImpl:getLockedView(webviewImpl));
-			onPageFinished(mWebView, webviewImpl.getUrl());
+			onPageFinished(getLockedView(webviewImpl, true), webviewImpl.getUrl());
 		}
 	};
 	
@@ -292,11 +292,13 @@ public class WebBrowseListener extends WebViewClient implements DownloadListener
 	public void onScrollChange(View v, int scrollX, int scrollY, int oldx, int oldy) {
 	}
 	
+	@org.xwalk.core.JavascriptInterface
 	@JavascriptInterface
 	public void onUrlExtracted(String url) {
 		onUrlExtracted(url, null);
 	}
 	
+	@org.xwalk.core.JavascriptInterface
 	@JavascriptInterface
 	public void onUrlExtracted(String url, String title) {
 		DownloadTask task = (DownloadTask) webview_Player.getTag();
@@ -304,6 +306,7 @@ public class WebBrowseListener extends WebViewClient implements DownloadListener
 		a.onUrlExtracted(task, url, title);
 	}
 	
+	@org.xwalk.core.JavascriptInterface
 	@JavascriptInterface
 	public void batRenWithPat(String path, String pattern, String replace) {
 		a.batRenWithPat(path, pattern, replace);

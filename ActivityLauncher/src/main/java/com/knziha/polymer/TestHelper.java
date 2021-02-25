@@ -378,25 +378,40 @@ public class TestHelper {
 		}
 	}
 	
-	public static void createWVBSC(BrowserActivity a, boolean X5) {
+	public static void createWVBSC(BrowserActivity a, int type) {
 		if (ShortcutManagerCompat.isRequestPinShortcutSupported(a)) {
-			Intent intent = new Intent(Intent.ACTION_MAIN);
 			String p = "com.knziha.polymer.browser.benchmarks.V8Benchmark";
 			String n = "knziha.V8B";
-			if (X5) {
+			if (type==1) {
 				p += "X5";
 				n += "X5";
+			} else if (type==2) {
+				p += "XW";
+				n += "XW";
 			}
-			intent.setClassName("com.knziha.polymer", p);
-			intent.putExtra("main", true);
-			intent.setData(Uri.fromFile(new File("123345")));
-			ShortcutInfoCompat info = new ShortcutInfoCompat.Builder(a, n)
-					.setIcon(IconCompat.createWithResource(a, R.drawable.star_ic))
-					.setShortLabel(n)
-					.setIntent(intent)
-					.build();
-			PendingIntent shortcutCallbackIntent = PendingIntent.getBroadcast(a, 0, new Intent(a, MyReceiver.class), PendingIntent.FLAG_UPDATE_CURRENT);
-			ShortcutManagerCompat.requestPinShortcut(a, info, shortcutCallbackIntent.getIntentSender());
+			lnkActivity(a, p, n);
+		}
+	}
+	
+	private static void lnkActivity(BrowserActivity a, String p, String n) {
+		Intent intent = new Intent(Intent.ACTION_MAIN);
+		intent.setClassName("com.knziha.polymer", p);
+		intent.putExtra("main", true);
+		intent.setData(Uri.fromFile(new File("123345")));
+		ShortcutInfoCompat info = new ShortcutInfoCompat.Builder(a, n)
+				.setIcon(IconCompat.createWithResource(a, R.drawable.star_ic))
+				.setShortLabel(n)
+				.setIntent(intent)
+				.build();
+		PendingIntent shortcutCallbackIntent = PendingIntent.getBroadcast(a, 0, new Intent(a, MyReceiver.class), PendingIntent.FLAG_UPDATE_CURRENT);
+		ShortcutManagerCompat.requestPinShortcut(a, info, shortcutCallbackIntent.getIntentSender());
+	}
+	
+	public static void createXWalkSC(BrowserActivity a) {
+		if (ShortcutManagerCompat.isRequestPinShortcutSupported(a)) {
+			String p = "com.knziha.polymer.browser.webkit.XWalkMainActivity";
+			String n = "knziha.XWalk";
+			lnkActivity(a, p, n);
 		}
 	}
 }

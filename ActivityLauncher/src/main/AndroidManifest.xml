@@ -119,6 +119,22 @@
 			/>
 		<activity
 			android:name=".browser.benchmarks.V8BenchmarkX5"
+			android:label="X5 - BenchMarks"
+			android:theme="@style/ActivityTheme"
+			android:taskAffinity=""
+			android:configChanges="orientation|keyboardHidden|screenSize|smallestScreenSize|screenLayout|uiMode|locale|layoutDirection"
+			android:exported="true"
+			/>
+		<activity
+			android:name=".browser.benchmarks.V8BenchmarkXW"
+			android:label="Xwalk - BenchMarks"
+			android:theme="@style/ActivityTheme"
+			android:taskAffinity=""
+			android:configChanges="orientation|keyboardHidden|screenSize|smallestScreenSize|screenLayout|uiMode|locale|layoutDirection"
+			android:exported="true"
+			/>
+		<activity
+			android:name=".browser.webkit.XWalkMainActivity"
 			android:label="WebViewBenchMarks"
 			android:theme="@style/ActivityTheme"
 			android:taskAffinity=""

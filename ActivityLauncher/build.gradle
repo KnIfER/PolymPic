@@ -63,6 +63,7 @@ dependencies {
     testImplementation 'junit:junit:4.13'
     //annotationProcessor libs_glide
     api project(':LibPdfium')
+    api project(':XWalkModule')
 
     compileOnly project(':multiline')
     annotationProcessor project(':multiline')

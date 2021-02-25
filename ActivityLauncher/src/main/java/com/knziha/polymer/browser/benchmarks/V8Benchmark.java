@@ -1,6 +1,7 @@
 package com.knziha.polymer.browser.benchmarks;
 
 import android.app.Activity;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
@@ -18,17 +19,30 @@ import com.knziha.polymer.widgets.WebFrameLayout;
 
 public class V8Benchmark extends Activity {
 	UniversalWebviewInterface wv;
+	private WebFrameLayout layout;
+	
 	@Override
 	protected void onCreate(@Nullable Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		WebFrameLayout layout = new WebFrameLayout(this, new BrowserActivity.TabHolder());
+		layout = new WebFrameLayout(this, new BrowserActivity.TabHolder());
 		setContentView(layout);
+		if(!(this instanceof V8BenchmarkXW)) {
+			loadWebView();
+		}
+	}
+	
+	protected void loadWebView() {
 		wv=newImplWebView();
 		wv.setLayoutParent(layout, true);
 		wv.setWebChromeClient(new WebChromeClient(){
-			
+		
 		});
 		wv.setWebViewClient(new WebViewClient(){
+			@Override
+			public void onPageStarted(WebView view, String url, Bitmap favicon) {
+				CMN.Log("onPageStarted", url, view);
+			}
+			
 			@Override
 			public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
 				return false;
@@ -60,7 +74,6 @@ public class V8Benchmark extends Activity {
 		//settings.setLoadWithOverviewMode(true);
 		
 		settings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.SINGLE_COLUMN);
-		WebView.setWebContentsDebuggingEnabled(false);
 		
 		CMN.Log("UA::", settings.getUserAgentString());
 		
@@ -68,6 +81,7 @@ public class V8Benchmark extends Activity {
 	}
 	
 	protected UniversalWebviewInterface newImplWebView() {
+		//WebView.setWebContentsDebuggingEnabled(false);
 		return new WebViewImplExt(this);
 	}
 }

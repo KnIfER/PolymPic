@@ -10,6 +10,7 @@ import android.view.View;
 
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.knziha.polymer.AgentApplication;
 import com.knziha.polymer.R;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.Options;
@@ -24,6 +25,8 @@ import com.tencent.smtt.sdk.WebView;
 
 import java.io.IOException;
 import java.util.Map;
+
+import static org.xwalk.core.Utils.unlock;
 
 // X+
 public class XPlusWebView extends WebView implements UniversalWebviewInterface {
@@ -230,7 +233,7 @@ public class XPlusWebView extends WebView implements UniversalWebviewInterface {
 	@Override
 	public Map<String, String> getLastRequestHeaders() {
 		WebResourceRequest wrr = this.wrr;
-		CMN.tryUnLock();
+		unlock();
 		if(wrr==null) {
 			return null;
 		}

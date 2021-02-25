@@ -58,7 +58,7 @@ public class DirectSingle extends Direct {
 				f.createNewFile();
 				fos = new RandomAccessFile(f, "rw");
 			}
-            while ((read = binaryreader.read(bytes)) > 0) {
+            while (shouldDownload && (read = binaryreader.read(bytes)) > 0) {
                 fos.write(bytes, 0, read);
 
                 info.setCount(info.getCount() + read);

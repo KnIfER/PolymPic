@@ -6,7 +6,9 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Picture;
 import android.graphics.Rect;
+import android.graphics.RectF;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -20,6 +22,7 @@ import android.webkit.ValueCallback;
 import android.webkit.WebBackForwardList;
 import android.webkit.WebHistoryItem;
 import android.webkit.WebSettings;
+import android.webkit.WebView;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
@@ -38,8 +41,10 @@ import com.knziha.polymer.R;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.WebOptions;
 import com.knziha.polymer.WebCompoundListener;
+import com.knziha.polymer.browser.webkit.BitmapWaiter;
 import com.knziha.polymer.browser.webkit.UniversalWebviewInterface;
 import com.knziha.polymer.browser.webkit.WebViewHelper;
+import com.knziha.polymer.browser.webkit.XWalkWebView;
 import com.knziha.polymer.database.LexicalDBHelper;
 import com.knziha.polymer.databinding.ActivityMainBinding;
 import com.knziha.polymer.toolkits.Utils.BU;
@@ -47,6 +52,8 @@ import com.knziha.polymer.toolkits.Utils.ReusableByteOutputStream;
 import com.knziha.polymer.webstorage.WebStacks;
 import com.knziha.polymer.webstorage.WebStacksSer;
 import com.knziha.polymer.webstorage.WebStacksStd;
+
+import org.xwalk.core.XWalkGetBitmapCallback;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
@@ -56,12 +63,12 @@ import java.util.List;
 
 import static com.knziha.polymer.Utils.WebOptions.BackendSettings;
 import static com.knziha.polymer.Utils.WebOptions.StorageSettings;
-import static com.knziha.polymer.browser.webkit.UniversalWebviewInterface.getLockedView;
 import static com.knziha.polymer.widgets.Utils.DummyBMRef;
 import static com.knziha.polymer.widgets.Utils.getWindowManagerViews;
 import static com.knziha.polymer.browser.webkit.WebViewHelper.LookForANobleSteedCorrespondingWithDrawnClasses;
 import static com.knziha.polymer.browser.webkit.WebViewHelper.bAdvancedMenu;
 import static com.knziha.polymer.browser.webkit.WebViewHelper.minW;
+import static org.xwalk.core.Utils.getLockedView;
 
 public class WebFrameLayout extends FrameLayout implements NestedScrollingChild, MenuItem.OnMenuItemClickListener{
 	/**网页加载完成时清理回退栈 see {@link BrowserActivity#2LuxuriouslyLoadUrl}*/
@@ -92,6 +99,7 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 	/** (始终显示底栏，滑动隐藏顶栏之时，) 若用户要求响应式高度变化，则启用此。 */
 	public boolean PadPartPadBar = false;  // 响应式。
 	public boolean recover;
+	public volatile int pendingBitCapRsn=-1;
 	
 	private int mLastMotionY;
 	private final int[] mScrollOffset = new int[2];
@@ -326,7 +334,7 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 				}
 				break;
 		}
-		if(isIMScrollSupressed) {
+		if(isIMScrollSupressed||appBarLayout==null) {
 			return;
 		}
 		NestedScrollingChild scrollingChild = (NestedScrollingChild) scrollingView;
@@ -681,7 +689,21 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 	
 	/** Recapture Thumnails as a bitmap. There's no point in doing this asynchronously.
 	 * 		draw(canvas) will block the UI even when it's called in another thread. */
-	public void recaptureBitmap() {
+	public boolean recaptureBitmap() {
+		if(implView instanceof XWalkWebView) {
+			((XWalkWebView)implView).captureBitmapAsync(new XWalkGetBitmapCallback() {
+				@Override
+				public void onFinishGetBitmap(Bitmap bitmap, int var2) {
+					doCaptureBitmap(bitmap);
+				}
+			});
+			return false;
+		}
+		doCaptureBitmap(null);
+		return true;
+	}
+	
+	private void doCaptureBitmap(Bitmap bitmap) {
 		CMN.Log("recaptureBitmap...", holder.id, holder.version);
 		holder.lastCaptureVer = holder.version;
 		int w = implView.getWidth();
@@ -714,17 +736,25 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 				canvas.setBitmap(bmItem);
 			}
 			canvas.setMatrix(Utils.IDENTITYXIRTAM);
-			canvas.scale(factor, factor);
-			canvas.translate(-implView.getScrollX(), -implView.getScrollY());
 			long st = System.currentTimeMillis();
-			implView.draw(canvas);
+			
+			if(bitmap==null) {
+				canvas.scale(factor, factor);
+				canvas.translate(-implView.getScrollX(), -implView.getScrollY());
+				implView.draw(canvas);
+				bm = new WeakReference<>(bmItem);
+			} else {
+				canvas.drawBitmap(bitmap, null, new RectF(0,0, bmItem.getWidth(), bmItem.getHeight()), null);
+				bm = new WeakReference<>(bmItem);
+				activity.onBitmapCaptured(WebFrameLayout.this, pendingBitCapRsn);
+				pendingBitCapRsn = -1;
+			}
+			
 			CMN.Log("绘制时间：", System.currentTimeMillis()-st);
-			bm = new WeakReference<>(bmItem);
-			CMN.Log("复制时间：", System.currentTimeMillis()-st);
 		}
 	}
 	
-	public Bitmap saveBitmap() {
+	public Bitmap saveBitmap(boolean shouldWait) {
 		Bitmap bmItem = bm.get();
 		if(bmItem==null) {
 			return null;
@@ -733,6 +763,15 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 		ReusableByteOutputStream bos1 = WebViewHelper.bos1;
 		if(bos1==null) {
 			return null;
+		}
+		if(shouldWait) {
+			int slpCnt = 5;
+			while(pendingBitCapRsn>=0&&slpCnt-->0) {
+				try {
+					// CMN.Log("睡眠……"); // 睡你丫的
+					Thread.sleep(50);
+				} catch (InterruptedException ignored) { }
+			}
 		}
 		bos1.reset();
 		bos1.ensureCapacity((int) (bmItem.getAllocationByteCount()*0.5));
@@ -882,7 +921,7 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 	Runnable OnPageFinishedNotifier = new Runnable() {
 		@Override
 		public void run() {
-			listener.onPageFinished(getLockedView(mWebView), mWebView.getUrl());
+			listener.onPageFinished(getLockedView(mWebView, true), mWebView.getUrl());
 		}
 	};
 	

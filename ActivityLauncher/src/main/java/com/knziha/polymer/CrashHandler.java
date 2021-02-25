@@ -28,7 +28,6 @@ import java.util.Locale;
 
 //美滋滋
 public class CrashHandler implements UncaughtExceptionHandler {
-	public static final String TAG = "FatalHandler";
 	/** System default handler */
 	private UncaughtExceptionHandler mDefaultHandler;
 	private static CrashHandler instance;
@@ -97,7 +96,7 @@ public class CrashHandler implements UncaughtExceptionHandler {
 	@Override
 	public void uncaughtException(@NonNull Thread thread, @NonNull Throwable exception) {
 		String message = exception.toString();
-		Log.e("ODPlayer","::fatal exception : "+ message);
+		Log.e("PolymPic","::fatal exception : "+ message);
 //		if(message.contains("disk is full")) {
 //			return;
 //		}
@@ -124,18 +123,17 @@ public class CrashHandler implements UncaughtExceptionHandler {
 			try {
 				File log=new File(log_path);
 				File dir = log.getParentFile();
-				if(dir.getFreeSpace()>1024*1024) {
-					dir.mkdirs();
+				if((dir.isDirectory() || dir.mkdirs()) && dir.getFreeSpace()>1024*1024) {
 					if(log.isDirectory()) log.delete();
 					FileOutputStream fos = new FileOutputStream(log_path);
 					fos.write(info_builder.toString().getBytes()); fos.close();
 					new File(dir, "lock").mkdirs();
 				}
-			} catch (Exception e) {
-				Log.e(TAG, "an error occured while writing file...", e);
-			}
+			} catch (Exception ignored) {  }
 		}
-		CMN.Log("crash catched", GlobalOptions.debug?info_builder.toString():"_"+exception);
+		if(GlobalOptions.debug) {
+			CMN.Log(exception);
+		}
 		postUncaughtException(thread, exception);
 	}
 

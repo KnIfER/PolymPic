@@ -6,7 +6,8 @@ import java.io.File;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class Direct {
-
+	public static boolean shouldDownload=true;
+	
     File target = null;
 
     DownloadInfo info;

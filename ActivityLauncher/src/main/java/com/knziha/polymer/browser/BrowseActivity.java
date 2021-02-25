@@ -38,6 +38,7 @@ import android.widget.GridView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.GlobalOptions;
 import androidx.databinding.DataBindingUtil;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -59,13 +60,17 @@ import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.browser.webkit.UniversalWebviewInterface;
 import com.knziha.polymer.browser.webkit.WebViewImplExt;
 import com.knziha.polymer.browser.webkit.XPlusWebView;
+import com.knziha.polymer.browser.webkit.XWalkWebView;
 import com.knziha.polymer.databinding.BrowseMainBinding;
 import com.knziha.polymer.databinding.TaskItemsBinding;
 import com.knziha.polymer.toolkits.MyX509TrustManager;
+import com.knziha.polymer.wget.Direct;
 import com.knziha.polymer.widgets.DescriptiveImageView;
 import com.knziha.polymer.widgets.Utils;
 import com.knziha.polymer.widgets.WebFrameLayout;
 import com.tencent.smtt.sdk.QbSdk;
+
+import org.xwalk.core.XWalkActivityDelegate;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -109,6 +114,8 @@ public class BrowseActivity extends Toastable_Activity
 	private boolean autoRefreshing;
 	private SharedPreferences preference;
 	
+	private XWalkActivityDelegate mActivityDelegate;
+
 	static {
 		try {
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -159,6 +166,15 @@ public class BrowseActivity extends Toastable_Activity
 		listener = new WebBrowseListener(BrowseActivity.this, webview_Player);
 	}
 	
+	private void initXWalkWebStation() {
+		WebFrameLayout layout = new WebFrameLayout(this, new BrowserActivity.TabHolder());
+		webview_Player = new XWalkWebView(this);
+		layout.appBarLayout = new AppBarLayout(this);
+		webview_Player.setLayoutParent(layout, true);
+		Utils.addViewToParent(layout, UIData.webStation);
+		listener = new WebBrowseListener(this, webview_Player);
+	}
+	
 	private void initStdWebStation() {
 		WebFrameLayout layout = new WebFrameLayout(this, new BrowserActivity.TabHolder());
 		webview_Player = new WebViewImplExt(this);
@@ -203,6 +219,8 @@ public class BrowseActivity extends Toastable_Activity
 	
 	AppHandler appHandler = new AppHandler(this);
 	
+	
+	
 	static class AppHandler extends Handler{
 		final WeakReference<BrowseActivity> aRef;
 		
@@ -221,7 +239,36 @@ public class BrowseActivity extends Toastable_Activity
 				if(a.autoRefreshing) {
 					sendEmptyMessageDelayed(110, 900);
 				}
+			} else if(msg.what==111) {
+				long freeSpc = a.download_path.getFreeSpace();
+				if(freeSpc<1024*1024*2) {
+					Direct.shouldDownload = false;
+					a.finish();
+					System.exit(0);
+				} else {
+					long delay = 1000*60;
+					freeSpc/=1024*1024;
+					if(freeSpc>1024) {
+						delay *= 25;
+					} else if(freeSpc>512) {
+						delay *= 10;
+					} else if(freeSpc>128) {
+						delay *= 5;
+					} else if(freeSpc<=8) {
+						delay /= 2;
+					}
+					sendEmptyMessageDelayed(111, delay);
+				}
 			}
+		}
+	}
+	
+	boolean startedWatchSpace;
+	
+	void startWatchSpace() {
+		if(!startedWatchSpace) {
+			startedWatchSpace=true;
+			appHandler.sendEmptyMessage(111);
 		}
 	}
 	
@@ -236,6 +283,7 @@ public class BrowseActivity extends Toastable_Activity
 		}
 	}
 	
+	int webType=2;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -375,25 +423,50 @@ public class BrowseActivity extends Toastable_Activity
 		} catch (IOException e) {
 			//CMN.Log(e);
 		}
-		boolean x5 = Utils.littleCat;
-		//x5 = true;
-		//CMN.Log("111111");
-		if(x5) {
-			try {
-				initX5WebStation();
-			} catch (IOException e) {
-				x5=false;
-				CMN.Log(e);
-			}
-		}
-		if(!x5){
-			initStdWebStation();
-		}
+		webType=2;
+		initWebStations();
 		CMN.Log("启动...");
 		Utils.setOnClickListenersOneDepth(UIData.toolbarContent, this, 1, null); //switchWidget
 		Window window = getWindow();
 		if(Build.VERSION.SDK_INT>=21) {
 			window.setStatusBarColor(0xff8f8f8f);
+		}
+	}
+	
+	private void initWebStations() {
+		if(webview_Player==null)
+		if(webType==2) {
+			Runnable completeCommand = () -> {
+				try {
+					initXWalkWebStation();
+				} catch (Exception e) {
+					CMN.Log(e);
+					webType=0;
+					initWebStations();
+				}
+			};
+			try {
+				this.mActivityDelegate = new XWalkActivityDelegate(this, completeCommand, completeCommand);
+				this.mActivityDelegate.onResume();
+			} catch (Exception e) {
+				CMN.Log(e);
+				webType=0;
+			}
+		}
+		if(webType==1) {
+			try {
+				initX5WebStation();
+			} catch (IOException e) {
+				webType=0;
+				CMN.Log(e);
+			}
+		}
+		if(webType==0){
+			try {
+				initStdWebStation();
+			} catch (Exception e) {
+				CMN.Log(e);
+			}
 		}
 	}
 	
@@ -1109,6 +1182,9 @@ public class BrowseActivity extends Toastable_Activity
 						task.shotFn = title;
 					}
 					task.download(url);
+					if(download_path.getFreeSpace()<1024*1024*1024) {
+						startWatchSpace();
+					}
 				} else {
 					task.abort();
 					// fail to extract url and start download. schedule nxt.
@@ -1150,6 +1226,7 @@ public class BrowseActivity extends Toastable_Activity
 		return headers;
 	}
 	
+	@org.xwalk.core.JavascriptInterface
 	@JavascriptInterface
 	public String httpGet(String url, String[] headerArr) {
 		//if(true) return "x";

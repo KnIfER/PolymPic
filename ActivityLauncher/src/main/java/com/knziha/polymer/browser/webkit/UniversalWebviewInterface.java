@@ -1,5 +1,6 @@
 package com.knziha.polymer.browser.webkit;
 
+import android.graphics.Picture;
 import android.os.Bundle;
 import android.print.PrintDocumentAdapter;
 import android.view.View;
@@ -19,18 +20,7 @@ import com.knziha.polymer.widgets.WebFrameLayout;
 
 import java.util.Map;
 
-import static com.knziha.polymer.Utils.CMN.dummyWV;
-
 public interface UniversalWebviewInterface {
-	static WebView getLockedView(UniversalWebviewInterface impl) {
-		if(impl instanceof WebView) {
-			return (WebView) impl;
-		}
-		CMN.lock.lock();
-		dummyWV.setTag(impl);
-		return dummyWV;
-	}
-	
 	void loadUrl(String url);
 	
 	void clearHistory();
@@ -104,6 +94,8 @@ public interface UniversalWebviewInterface {
 	Map<String, String> getLastRequestHeaders();
 	
 	Object initPrintDocumentAdapter(String name);
+	
+	Picture capturePicture();
 	
 	//Object getTag();
 }

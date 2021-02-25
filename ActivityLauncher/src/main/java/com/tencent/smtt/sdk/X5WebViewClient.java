@@ -1,8 +1,6 @@
 package com.tencent.smtt.sdk;
 
-import android.content.Intent;
 import android.graphics.Bitmap;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Message;
@@ -22,11 +20,11 @@ import com.tencent.smtt.export.external.interfaces.WebResourceError;
 import com.tencent.smtt.export.external.interfaces.WebResourceRequest;
 import com.tencent.smtt.export.external.interfaces.WebResourceResponse;
 import com.tencent.smtt.export.external.proxy.X5ProxyWebViewClient;
-import com.tencent.smtt.utils.DebugConfigUtil;
 import com.tencent.smtt.utils.TbsLog;
 
-import static com.knziha.polymer.Utils.CMN.dummyWV;
 import static com.tencent.smtt.export.external.interfaces.WebResourceResponse.new_WebResourceResponse;
+import static org.xwalk.core.Utils.getLockedView;
+import static org.xwalk.core.Utils.unlock;
 
 class X5WebViewClient extends X5ProxyWebViewClient {
 	private android.webkit.WebViewClient webViewClient;
@@ -42,30 +40,17 @@ class X5WebViewClient extends X5ProxyWebViewClient {
 	public void doUpdateVisitedHistory(IX5WebViewBase var1, String var2, boolean var3) {
 		this.webView.a(var1);
 		try {
-			this.webViewClient.doUpdateVisitedHistory(getLockedView(false), var2, var3);
+			this.webViewClient.doUpdateVisitedHistory(getLockedView(webView, false), var2, var3);
 		} catch (Exception e) {
 			CMN.Log(e);
 		}
 		unlock();
 	}
 	
-	private android.webkit.WebView getLockedView(boolean straightParams) {
-		CMN.lock.lock();
-		dummyWV.setId(straightParams?0:-1);
-		dummyWV.setTag(webView);
-		return dummyWV;
-	}
-	
-	private void unlock() {
-		try {
-			CMN.lock.unlock();
-		} catch (Exception ignored) { }
-	}
-	
 	public void onFormResubmission(IX5WebViewBase var1, Message var2, Message var3) {
 		this.webView.a(var1);
 		try {
-			this.webViewClient.onFormResubmission(getLockedView(true), var2, var3);
+			this.webViewClient.onFormResubmission(getLockedView(webView, true), var2, var3);
 		} catch (Exception e) {
 			CMN.Log(e);
 		}
@@ -75,7 +60,7 @@ class X5WebViewClient extends X5ProxyWebViewClient {
 	public void onLoadResource(IX5WebViewBase var1, String var2) {
 		this.webView.a(var1);
 		try {
-			this.webViewClient.onLoadResource(getLockedView(true), var2);
+			this.webViewClient.onLoadResource(getLockedView(webView, true), var2);
 		} catch (Exception e) {
 			CMN.Log(e);
 		}
@@ -87,7 +72,7 @@ class X5WebViewClient extends X5ProxyWebViewClient {
 		this.webView.a(var1);
 		++this.webView.a;
 		try {
-			this.webViewClient.onPageFinished(getLockedView(true), var4);
+			this.webViewClient.onPageFinished(getLockedView(webView, true), var4);
 		} catch (Exception e) {
 			CMN.Log(e);
 		}
@@ -126,7 +111,7 @@ class X5WebViewClient extends X5ProxyWebViewClient {
 	public void onPageStarted(IX5WebViewBase var1, int var2, int var3, String var4, Bitmap var5) {
 		this.webView.a(var1);
 		try {
-			this.webViewClient.onPageStarted(getLockedView(true), var4, var5);
+			this.webViewClient.onPageStarted(getLockedView(webView, true), var4, var5);
 		} catch (Exception e) {
 			CMN.Log(e);
 		}
@@ -136,7 +121,7 @@ class X5WebViewClient extends X5ProxyWebViewClient {
 	@RequiresApi(api = Build.VERSION_CODES.M)
 	public void onReceivedError(IX5WebViewBase var1, WebResourceRequest webResourceRequest, WebResourceError webResourceError) {
 		this.webView.a(var1);
-		android.webkit.WebView wv = getLockedView(false);
+		android.webkit.WebView wv = getLockedView(webView, false);
 		this.webView.wrr = webResourceRequest;
 		this.webView.wre = webResourceError;
 		try {
@@ -158,7 +143,7 @@ class X5WebViewClient extends X5ProxyWebViewClient {
 		
 		this.webView.a(var1);
 		try {
-			this.webViewClient.onReceivedError(getLockedView(true), var2, var3, var4);
+			this.webViewClient.onReceivedError(getLockedView(webView, true), var2, var3, var4);
 		} catch (Exception e) {
 			CMN.Log(e);
 		}
@@ -167,7 +152,7 @@ class X5WebViewClient extends X5ProxyWebViewClient {
 	
 	public void onReceivedHttpError(IX5WebViewBase var1, WebResourceRequest webResourceRequest, WebResourceResponse webResourceResponse) {
 		this.webView.a(var1);
-		android.webkit.WebView wv = getLockedView(false);
+		android.webkit.WebView wv = getLockedView(webView, false);
 		this.webView.wrr = webResourceRequest;
 		this.webView.wret = webResourceResponse;
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -197,7 +182,7 @@ class X5WebViewClient extends X5ProxyWebViewClient {
 	
 	public void onReceivedSslError(IX5WebViewBase var1, SslErrorHandler sslErrorHandler, SslError sslError) {
 		this.webView.a(var1);
-		android.webkit.WebView wv = getLockedView(true);
+		android.webkit.WebView wv = getLockedView(webView, true);
 		try {
 			this.webViewClient.onReceivedSslError(wv, null, new SslErrorCompat(sslError, sslErrorHandler));
 		} catch (Exception e) {
@@ -209,7 +194,7 @@ class X5WebViewClient extends X5ProxyWebViewClient {
 	public void onScaleChanged(IX5WebViewBase var1, float var2, float var3) {
 		this.webView.a(var1);
 		try {
-			this.webViewClient.onScaleChanged(getLockedView(true), var2, var3);
+			this.webViewClient.onScaleChanged(getLockedView(webView, true), var2, var3);
 		} catch (Exception e) {
 			CMN.Log(e);
 		}
@@ -219,7 +204,7 @@ class X5WebViewClient extends X5ProxyWebViewClient {
 	public void onUnhandledKeyEvent(IX5WebViewBase var1, KeyEvent var2) {
 		this.webView.a(var1);
 		try {
-			this.webViewClient.onUnhandledKeyEvent(getLockedView(true), var2);
+			this.webViewClient.onUnhandledKeyEvent(getLockedView(webView, true), var2);
 		} catch (Exception e) {
 			CMN.Log(e);
 		}
@@ -230,7 +215,7 @@ class X5WebViewClient extends X5ProxyWebViewClient {
 		this.webView.a(var1);
 		boolean ret = false;
 		try {
-			ret = this.webViewClient.shouldOverrideKeyEvent(getLockedView(true), var2);
+			ret = this.webViewClient.shouldOverrideKeyEvent(getLockedView(webView, true), var2);
 		} catch (Exception e) {
 			CMN.Log(e);
 		}
@@ -243,7 +228,7 @@ class X5WebViewClient extends X5ProxyWebViewClient {
 			this.webView.a(var1);
 			boolean ret = false;
 			try {
-				ret = this.webViewClient.shouldOverrideUrlLoading(getLockedView(true), url);
+				ret = this.webViewClient.shouldOverrideUrlLoading(getLockedView(webView, true), url);
 			} catch (Exception e) {
 				CMN.Log(e);
 			}
@@ -257,7 +242,7 @@ class X5WebViewClient extends X5ProxyWebViewClient {
 	public void onTooManyRedirects(IX5WebViewBase var1, Message var2, Message var3) {
 		this.webView.a(var1);
 		try {
-			this.webViewClient.onTooManyRedirects(getLockedView(true), var2, var3);
+			this.webViewClient.onTooManyRedirects(getLockedView(webView, true), var2, var3);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -272,7 +257,7 @@ class X5WebViewClient extends X5ProxyWebViewClient {
 		
 		if (url != null && !this.webView.showDebugView(url)) {
 			this.webView.a(var1);
-			android.webkit.WebView wv = getLockedView(false);
+			android.webkit.WebView wv = getLockedView(webView, false);
 			this.webView.wrr = webResourceRequest;
 			boolean ret = false;
 			try {
@@ -292,7 +277,7 @@ class X5WebViewClient extends X5ProxyWebViewClient {
 		this.webView.wrr = null;
 		WebResourceResponse ret = null;
 		try {
-			ret = new_WebResourceResponse(this.webViewClient.shouldInterceptRequest(getLockedView(true), url));
+			ret = new_WebResourceResponse(this.webViewClient.shouldInterceptRequest(getLockedView(webView, true), url));
 		} catch (Exception e) {
 			CMN.Log(e);
 		}
@@ -302,7 +287,7 @@ class X5WebViewClient extends X5ProxyWebViewClient {
 	
 	public WebResourceResponse shouldInterceptRequest(IX5WebViewBase var1, WebResourceRequest webResourceRequest) {
 		this.webView.a(var1);
-		android.webkit.WebView wv = getLockedView(false);
+		android.webkit.WebView wv = getLockedView(webView, false);
 		this.webView.wrr = webResourceRequest;
 		WebResourceResponse ret = null;
 		try {
@@ -316,7 +301,7 @@ class X5WebViewClient extends X5ProxyWebViewClient {
 	
 	public WebResourceResponse shouldInterceptRequest(IX5WebViewBase var1, WebResourceRequest webResourceRequest, Bundle bundle) {
 		this.webView.a(var1);
-		android.webkit.WebView wv = getLockedView(false);
+		android.webkit.WebView wv = getLockedView(webView, false);
 		this.webView.wrr = webResourceRequest;
 		this.webView.bundle = bundle;
 		WebResourceResponse ret = null;
@@ -332,7 +317,7 @@ class X5WebViewClient extends X5ProxyWebViewClient {
 	public void onReceivedLoginRequest(IX5WebViewBase var1, String var2, String var3, String var4) {
 		this.webView.a(var1);
 		try {
-			this.webViewClient.onReceivedLoginRequest(getLockedView(true), var2, var3, var4);
+			this.webViewClient.onReceivedLoginRequest(getLockedView(webView, true), var2, var3, var4);
 		} catch (Exception e) {
 			CMN.Log(e);
 		}
@@ -366,7 +351,7 @@ class X5WebViewClient extends X5ProxyWebViewClient {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 			//hhh
 			try {
-				this.webViewClient.onPageCommitVisible(getLockedView(true), var2);
+				this.webViewClient.onPageCommitVisible(getLockedView(webView, true), var2);
 			} catch (Exception e) {
 				CMN.Log(e);
 			}

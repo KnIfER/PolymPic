@@ -121,9 +121,11 @@ import com.knziha.polymer.Utils.Options;
 import com.knziha.polymer.Utils.RgxPlc;
 import com.knziha.polymer.Utils.WebOptions;
 import com.knziha.polymer.browser.DownloadHandlerStd;
+import com.knziha.polymer.browser.webkit.BitmapWaiter;
 import com.knziha.polymer.browser.webkit.UniversalWebviewInterface;
 import com.knziha.polymer.browser.WebBrowseListener;
 import com.knziha.polymer.browser.webkit.XPlusWebView;
+import com.knziha.polymer.browser.webkit.XWalkWebView;
 import com.knziha.polymer.database.LexicalDBHelper;
 import com.knziha.polymer.databinding.ActivityMainBinding;
 import com.knziha.polymer.databinding.DownloadBottomSheetBinding;
@@ -163,6 +165,7 @@ import com.tencent.smtt.sdk.QbSdk;
 import org.adrianwalker.multilinestring.Multiline;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
+import org.xwalk.core.XWalkActivityDelegate;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -210,7 +213,7 @@ import static com.knziha.polymer.browser.webkit.WebViewHelper.bAdvancedMenu;
 		,"IntegerDivisionInFloatingPointContext"
 		,"NonConstantResourceId"
 })
-public class BrowserActivity extends Toastable_Activity implements View.OnClickListener, View.OnLongClickListener {
+public class BrowserActivity extends Toastable_Activity implements View.OnClickListener, View.OnLongClickListener, BitmapWaiter {
 	public final static String TitleSep="\n";
 	public final static String FieldSep="|";
 	public final static Pattern IllegalStorageNameFilter=Pattern.compile("[\r\n|]");
@@ -242,6 +245,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	
 	public WebFrameLayout currentViewImpl;
 	public UniversalWebviewInterface currentWebView;
+	
+	private Object mXWalkDelegate;
 	
 	
 	ArrayList<WebDict> WebDicts = new  ArrayList<>(64);
@@ -646,6 +651,22 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				return;
 			}
 			// todo 在此处新建一个 webview，检查运行时。
+			if(webType==2) {
+				if(mXWalkDelegate==null) {
+					Runnable completeCommand = () -> further_loading(savedInstanceState);
+					try {
+						mXWalkDelegate = new XWalkActivityDelegate(this, completeCommand, completeCommand);
+						((XWalkActivityDelegate)mXWalkDelegate).onResume();
+						return;
+					} catch (Exception e) {
+						CMN.Log(e);
+						webType=0;
+					}
+				} else {
+					// todo 在此处新建一个 xwalkwebview，检查运行时。
+					// webType=0;
+				}
+			}
 		}
 		d = null;
 		CheckGlideJournal();
@@ -750,7 +771,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		//tg
 		CMN.Log("device density is ::", GlobalOptions.density);
 		CMN.Log("device version is ::", Utils.version);
-		CMN.Log("device space is ::", new File(getExternalFilesDir(null), "noway").getFreeSpace());
+		//CMN.Log("device space is ::",  getExternalFilesDir(null).getFreeSpace());
 		
 		if(false)
 		root.postDelayed(() -> {
@@ -802,8 +823,11 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		
 		//CMN.Log("webview package is ::", AdvancedBrowserWebView.getCurrentWebViewPackage().packageName+":"+AdvancedBrowserWebView.getCurrentWebViewPackage().versionName);
 		
-		//TestHelper.createWVBSC(this, false);
-		//TestHelper.createWVBSC(this, true);
+		TestHelper.createWVBSC(this, 0);
+		TestHelper.createWVBSC(this, 1);
+		TestHelper.createWVBSC(this, 2);
+		
+		//TestHelper.createXWalkSC(this);
 		
 		//TestHelper.createWVBSC(this, true);
 		//AdvancedBrowserWebView.enableSlowWholeDocumentDraw();
@@ -2107,14 +2131,10 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		TabHolder holder = currentViewImpl.holder;
 		if(reason!=1)
 			if(holder.lastCaptureVer!=holder.version) {
-				currentViewImpl.recaptureBitmap();
-				if(reason!=0) {
-					if(reason!=2)
-						glide.load(new WebPic(holder.id, holder.version, id_table))
-								.priority(Priority.HIGH)
-								.into(reason==3?imageViewCover1:imageViewCover);
-					else
-						currentViewImpl.saveBitmap();
+				if(currentViewImpl.recaptureBitmap()) {
+					onBitmapCaptured(currentViewImpl, reason);
+				} else {
+					currentViewImpl.pendingBitCapRsn = reason;
 				}
 			}
 		if(reason==3||reason==0) {
@@ -2127,6 +2147,19 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				}
 			}
 			//mWebView.saveIfNeeded();
+		}
+	}
+	
+	public void onBitmapCaptured(WebFrameLayout view, int reason) {
+		if(reason!=0) {
+			if(reason!=2) {
+				TabHolder holder = view.holder;
+				glide.load(new WebPic(holder.id, holder.version, id_table))
+						.priority(Priority.HIGH)
+						.into(reason==3?imageViewCover1:imageViewCover);
+			} else {
+				view.saveBitmap(false);
+			}
 		}
 	}
 	
@@ -2503,7 +2536,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					viewImpl.setPadding(0, 0, 0, _45_);
 					viewImpl.setPivotX(0);
 					viewImpl.setPivotY(0);
-					viewImpl.setImplementation(initWebViewImpl(viewImpl, null, 0));
+					viewImpl.setImplementation(initWebViewImpl(viewImpl, null));
 				} else {
 					// ???
 				}
@@ -3031,7 +3064,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 							ly.pauseWeb();
 							String backUrl = ly.PolymerBackList.remove(size - 1);
 							CMN.Log("--backUrl::", backUrl);
-							currentWebView = initWebViewImpl(ly, wv, 0);
+							currentWebView = initWebViewImpl(ly, wv);
 							currentWebView.loadUrl(backUrl);
 							ly.resumeWeb();
 							added=true;
@@ -4483,7 +4516,10 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		return dialog; // returns the universal dialog
 	}
 	
-	private UniversalWebviewInterface initWebViewImpl(WebFrameLayout layout, UniversalWebviewInterface patWeb, int type) {
+	
+	int webType=2;
+	
+	private UniversalWebviewInterface initWebViewImpl(WebFrameLayout layout, UniversalWebviewInterface patWeb) {
 		UniversalWebviewInterface mWebView = null;
 		TabHolder holder = layout.holder;
 //		if(layout==null&&patWeb!=null) {
@@ -4497,20 +4533,26 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 //				layout.removeViewAt(cc);
 //			}
 //		}
-		//type=1;
 		//Utils.sendog(opt);
 		View theView;
 		if(mWebView==null) {
-			WebView.setWebContentsDebuggingEnabled(true);
-			if(type==1) {
+			if(webType==1) {
 				try {
 					mWebView = new XPlusWebView(this);
 				} catch (Exception e) {
 					CMN.Log(e);
-					type=0;
+					webType=0;
+				}
+			} else if(webType==2) {
+				try {
+					mWebView = new XWalkWebView(this);
+				} catch (Exception e) {
+					CMN.Log(e);
+					webType=0;
 				}
 			}
-			if(type==0) {
+			if(webType==0) {
+				WebView.setWebContentsDebuggingEnabled(true);
 				mWebView = new AdvancedBrowserWebView(this);
 			}
 			theView = (View) mWebView;
@@ -4854,6 +4896,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		}
 		
 		class TabIdentifier{
+			@org.xwalk.core.JavascriptInterface
 			@JavascriptInterface
 			public long get() {
 				return id;

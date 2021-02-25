@@ -34,7 +34,7 @@ public class WebPicFetcher implements DataFetcher<Bitmap> {
 		String[] where = new String[]{String.valueOf(tabID_Fetcher)};
 		WebFrameLayout wv = pic.id_table.get(tabID_Fetcher);
 		if(wv!=null) {
-			bm = wv.saveBitmap();
+			bm = wv.saveBitmap(true);
 			if(bm!=null)
 			{
 				pic.version = wv.holder.version;
