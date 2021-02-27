@@ -10,6 +10,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.database.Cursor;
 import android.graphics.Color;
@@ -26,7 +27,11 @@ import android.os.SystemClock;
 import android.text.TextPaint;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
+import android.view.InputQueue;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
+import android.view.SurfaceHolder;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -243,8 +248,7 @@ public class BrowseActivity extends Toastable_Activity
 				long freeSpc = a.download_path.getFreeSpace();
 				if(freeSpc<1024*1024*2) {
 					Direct.shouldDownload = false;
-					a.finish();
-					System.exit(0);
+					CMN.Log("存储耗尽");
 				} else {
 					long delay = 1000*60;
 					freeSpc/=1024*1024;
@@ -423,11 +427,10 @@ public class BrowseActivity extends Toastable_Activity
 		} catch (IOException e) {
 			//CMN.Log(e);
 		}
-		webType=2;
 		initWebStations();
 		CMN.Log("启动...");
 		Utils.setOnClickListenersOneDepth(UIData.toolbarContent, this, 1, null); //switchWidget
-		Window window = getWindow();
+		Window window = super.getWindow();
 		if(Build.VERSION.SDK_INT>=21) {
 			window.setStatusBarColor(0xff8f8f8f);
 		}
@@ -1181,10 +1184,12 @@ public class BrowseActivity extends Toastable_Activity
 					if(title!=null&&task.shotExt !=null) {
 						task.shotFn = title;
 					}
-					task.download(url);
 					if(download_path.getFreeSpace()<1024*1024*1024) {
 						startWatchSpace();
+					} else {
+						Direct.shouldDownload = true;
 					}
+					task.download(url);
 				} else {
 					task.abort();
 					// fail to extract url and start download. schedule nxt.

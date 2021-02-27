@@ -2,41 +2,36 @@ package com.knziha.polymer.browser.webkit;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.graphics.Picture;
-import android.os.Build;
-import android.os.Bundle;
 import android.view.ActionMode;
 import android.view.MotionEvent;
 import android.view.View;
 import android.webkit.DownloadListener;
 import android.webkit.ValueCallback;
-import android.webkit.WebBackForwardList;
 import android.webkit.WebChromeClient;
-import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.knziha.polymer.AgentApplication;
 import com.knziha.polymer.BrowserActivity;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.Options;
 import com.knziha.polymer.widgets.WebFrameLayout;
+import com.tencent.smtt.export.external.interfaces.WebResourceRequest;
 
 import org.xwalk.core.XWalkDownloadListener;
-import org.xwalk.core.XWalkGetBitmapCallback;
 import org.xwalk.core.XWalkHitTestResult;
 import org.xwalk.core.XWalkNavigationHistory;
 import org.xwalk.core.XWalkResourceClient;
 import org.xwalk.core.XWalkUIClient;
 import org.xwalk.core.XWalkView;
+import org.xwalk.core.XWalkWebResourceRequest;
 
 import java.util.Map;
 
 import static com.knziha.polymer.browser.webkit.WebViewHelper.bAdvancedMenu;
+import static org.xwalk.core.Utils.unlock;
 
 public class XWalkWebView extends XWalkView implements UniversalWebviewInterface
 {
@@ -83,7 +78,15 @@ public class XWalkWebView extends XWalkView implements UniversalWebviewInterface
 	
 	@Override
 	public Map<String, String> getLastRequestHeaders() {
-		return null;
+		XWalkWebResourceRequest wrr = this.wrr;
+		unlock();
+		if(wrr==null) {
+			return null;
+		}
+		Map<String, String> ret = wrr.getRequestHeaders();
+		ret.put("Method", wrr.getMethod());
+		ret.put("Url", wrr.getUrl().toString());
+		return ret;
 	}
 	
 	RecyclerView.OnScrollChangedListener mOnScrollChangeListener;
@@ -212,6 +215,19 @@ public class XWalkWebView extends XWalkView implements UniversalWebviewInterface
 		// www
 	}
 	
+	@Override
+	public ActionMode startActionModeForChild(View originalView, ActionMode.Callback callback, int type) {
+		CMN.Log("startActionModeForChild …");
+		//return super.startActionModeForChild(originalView, callback, type);
+		return startActionMode(callback, type);
+	}
+	
+	@Override
+	public ActionMode startActionModeForChild(View originalView, ActionMode.Callback callback) {
+		CMN.Log("startActionModeForChild 1 …");
+		return super.startActionModeForChild(originalView, callback);
+	}
+	
 	@SuppressLint("NewApi")
 	//Viva Marshmallow!
 	@Override
@@ -272,5 +288,10 @@ public class XWalkWebView extends XWalkView implements UniversalWebviewInterface
 	@Override
 	public Picture capturePicture() {
 		return null;
+	}
+	
+	@Override
+	public int getType() {
+		return 2;
 	}
 }

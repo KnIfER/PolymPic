@@ -71,6 +71,7 @@ import android.webkit.WebView;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -106,20 +107,21 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.request.RequestOptions;
 import com.bumptech.glide.request.target.Target;
 import com.google.android.material.appbar.AppBarLayout;
-import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.math.MathUtils;
 import com.knziha.filepicker.model.DialogConfigs;
 import com.knziha.filepicker.model.DialogProperties;
 import com.knziha.filepicker.model.DialogSelectionListener;
-import com.knziha.filepicker.utils.FU;
 import com.knziha.filepicker.view.FilePickerDialog;
 import com.knziha.polymer.Utils.CMN;
+import com.knziha.polymer.Utils.IU;
 import com.knziha.polymer.Utils.MyReceiver;
 import com.knziha.polymer.Utils.OptionProcessor;
 import com.knziha.polymer.Utils.Options;
 import com.knziha.polymer.Utils.RgxPlc;
 import com.knziha.polymer.Utils.WebOptions;
+import com.knziha.polymer.browser.BlockingDlgs;
+import com.knziha.polymer.browser.DownloadUIHandler;
 import com.knziha.polymer.browser.DownloadHandlerStd;
 import com.knziha.polymer.browser.webkit.BitmapWaiter;
 import com.knziha.polymer.browser.webkit.UniversalWebviewInterface;
@@ -128,7 +130,6 @@ import com.knziha.polymer.browser.webkit.XPlusWebView;
 import com.knziha.polymer.browser.webkit.XWalkWebView;
 import com.knziha.polymer.database.LexicalDBHelper;
 import com.knziha.polymer.databinding.ActivityMainBinding;
-import com.knziha.polymer.databinding.DownloadBottomSheetBinding;
 import com.knziha.polymer.databinding.LoginViewBinding;
 import com.knziha.polymer.databinding.SearchEnginesItemBinding;
 import com.knziha.polymer.databinding.SearchHintsItemBinding;
@@ -166,6 +167,7 @@ import org.adrianwalker.multilinestring.Multiline;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.xwalk.core.XWalkActivityDelegate;
+import org.xwalk.core.XWalkUpdater;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -202,7 +204,6 @@ import static com.knziha.polymer.widgets.Utils.DummyBMRef;
 import static com.knziha.polymer.widgets.Utils.DummyTransX;
 import static com.knziha.polymer.widgets.Utils.RequsetUrlFromCamera;
 import static com.knziha.polymer.widgets.Utils.RequsetUrlFromStorage;
-import static com.knziha.polymer.widgets.Utils.getSimplifiedUrl;
 import static com.knziha.polymer.widgets.Utils.getViewItemByPath;
 import static com.knziha.polymer.widgets.Utils.indexOf;
 import static com.knziha.polymer.widgets.Utils.isKeyboardShown;
@@ -243,11 +244,14 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	
 	MyHandler mHandler;
 	
+	private int webType=2;
+	
+	private UniversalWebviewInterface wvPreInitInstance;
+	
 	public WebFrameLayout currentViewImpl;
 	public UniversalWebviewInterface currentWebView;
 	
-	private Object mXWalkDelegate;
-	
+	public Object mXWalkDelegate;
 	
 	ArrayList<WebDict> WebDicts = new  ArrayList<>(64);
 	private WebDict editingSchEngBean;
@@ -314,17 +318,14 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	private Runnable removeIMCoverRunnable = () -> imageViewCover.setVisibility(View.GONE);
 	private boolean tabsDirty;
 	
-	public File downloadTargetDir;
-	
 	public RequestBuilder<Drawable> glide;
 	public String android_ua = "Mozilla/5.0 (Linux; Android " + Build.VERSION.RELEASE + "; " + Build.MODEL + ") AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Mobile Safari/537.36 OPR/58.2.2878.53403";
 	
 	
-	private DownloadHandlerStd downloader;
+	private DownloadUIHandler downloadDlgHandler;
 	
 	private LinearInterpolator linearInterpolator = new LinearInterpolator();
 	private Paint paint = new Paint();
-	private BottomSheetDialog bottomDwnldDlg;
 	private boolean bottombarHidden;
 	private int softMode;
 	private final int softModeHold = WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN | WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN;
@@ -333,7 +334,6 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	private boolean MenuClicked;
 	private SardineCloud syncHandler;
 	private WaveView waveView;
-	
 	
 	@Override
 	public void onConfigurationChanged(@NonNull Configuration newConfig) {
@@ -420,6 +420,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		UIData = DataBindingUtil.setContentView(this, R.layout.activity_main);
 		
 		root=UIData.root;
+		
+		webType = opt.getWebType();
 		
 		//mWebListener = Utils.version>=21?new WebCompatListener(this):new WebCompoundListener(this);
 		mWebListener = new WebCompoundListener(this);
@@ -632,43 +634,27 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	}
 	
 	@Override
-	protected void further_loading(Bundle savedInstanceState) {
+	public void further_loading(Bundle savedInstanceState) {
 		if(historyCon==null) {
+			webType=2;
 			try {
 				historyCon = LexicalDBHelper.connectInstance(this);
 			} catch (SQLiteFullException e) {
-				if(root.getTag()==null) {
-					if(d==null||d.tag!=(Integer)1) {
-						d = new AlertDialog.Builder(this)
-								.setTitle("启动出错")
-								.setMessage("存储空间已满，无法打开数据库，请清理后重试。")
-								.setPositiveButton("重试", (dialog, which) -> further_loading(savedInstanceState))
-								.setCancelable(false)
-								.create();
-					}
-					d.show();
-				}
+				BlockingDlgs.blameNoSpace(this, savedInstanceState);
 				return;
 			}
-			// todo 在此处新建一个 webview，检查运行时。
-			if(webType==2) {
-				if(mXWalkDelegate==null) {
-					Runnable completeCommand = () -> further_loading(savedInstanceState);
-					try {
-						mXWalkDelegate = new XWalkActivityDelegate(this, completeCommand, completeCommand);
-						((XWalkActivityDelegate)mXWalkDelegate).onResume();
-						return;
-					} catch (Exception e) {
-						CMN.Log(e);
-						webType=0;
-					}
-				} else {
-					// todo 在此处新建一个 xwalkwebview，检查运行时。
-					// webType=0;
-				}
+			if(webType==2 && BlockingDlgs.initXWalk(this, savedInstanceState)) {
+				return;
 			}
 		}
-		d = null;
+		try {
+			wvPreInitInstance = initWebViewImpl(null, null, false);
+			//CMN.Log(wvPreInitInstance);
+		} catch (Exception e) {
+			CMN.Log(e);
+			BlockingDlgs.blameNoWebView(this, savedInstanceState);
+			return;
+		}
 		CheckGlideJournal();
 		checkMargin(this);
 		_45_ = (int) mResource.getDimension(R.dimen._45_);
@@ -773,35 +759,6 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		CMN.Log("device version is ::", Utils.version);
 		//CMN.Log("device space is ::",  getExternalFilesDir(null).getFreeSpace());
 		
-		if(false)
-		root.postDelayed(() -> {
-			Bundle save = new Bundle();
-			currentWebView.saveState(save);
-			try {
-				
-				QbSdk.initX5Environment(getApplicationContext(),  null);
-				
-				XPlusWebView wv = new XPlusWebView(this);
-				root.addView(wv);
-				new WebBrowseListener(null, wv);
-				
-				//wv.restoreState(save);
-				wv.loadUrl("https://www.baidu.com");
-				
-			} catch (IOException e) {
-				CMN.Log(e);
-			}
-		}, 2000);
-		
-		try {
-			Class<?> c = Class.forName("android.webkit.WebViewUpdateService");
-			
-			
-			
-		} catch (Exception e) {
-		
-		}
-		
 		
 //		DialogProperties properties = new DialogProperties();
 //		properties.selection_mode = DialogConfigs.SINGLE_MODE;
@@ -823,9 +780,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		
 		//CMN.Log("webview package is ::", AdvancedBrowserWebView.getCurrentWebViewPackage().packageName+":"+AdvancedBrowserWebView.getCurrentWebViewPackage().versionName);
 		
-		TestHelper.createWVBSC(this, 0);
-		TestHelper.createWVBSC(this, 1);
-		TestHelper.createWVBSC(this, 2);
+//		TestHelper.createWVBSC(this, 0);
+//		TestHelper.createWVBSC(this, 1);
+//		TestHelper.createWVBSC(this, 2);
 		
 		//TestHelper.createXWalkSC(this);
 		
@@ -983,7 +940,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		historyCon.queryDomain(layout, url);
 		boolean pcMode = false;
 		//pcMode = url!=null && url.contains("www.baidu");
-		pcMode = true;
+		//pcMode = true;
 		String targetUa;
 		if(pcMode) {
 			targetUa = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36";
@@ -1046,10 +1003,10 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	}
 	
 	public DownloadHandlerStd getDownloader() {
-		if(downloader==null) {
-			downloader = new DownloadHandlerStd(this, historyCon);
+		if(downloadDlgHandler==null) {
+			downloadDlgHandler = new DownloadUIHandler(this, historyCon);
 		}
-		return downloader;
+		return downloadDlgHandler.getDownloader();
 	}
 	
 	public void updateProgressUI() {
@@ -1228,6 +1185,18 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	
 	public WebFrameLayout getWebViewFromID(long tabID) {
 		return id_table.get(tabID);
+	}
+	
+	public int setWebType(int type) {
+		//if(!systemIntialized)
+		{
+			webType=type;
+		}
+		return webType;
+	}
+	
+	public int getWebType() {
+		return webType;
 	}
 	
 	class BrowserSlider implements View.OnTouchListener {
@@ -2536,7 +2505,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					viewImpl.setPadding(0, 0, 0, _45_);
 					viewImpl.setPivotX(0);
 					viewImpl.setPivotY(0);
-					viewImpl.setImplementation(initWebViewImpl(viewImpl, null));
+					viewImpl.setImplementation(initWebViewImpl(viewImpl, null, true));
 				} else {
 					// ???
 				}
@@ -2680,7 +2649,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	@SuppressLint("NonConstantResourceId") // no no no you don't want that. @Google
 	@Override
 	public void onClick(View v) {
-		if(mBrowserSlider.active()) {
+		if(!systemIntialized||mBrowserSlider.active()) {
 			return;
 		}
 		switch (v.getId()){
@@ -3064,7 +3033,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 							ly.pauseWeb();
 							String backUrl = ly.PolymerBackList.remove(size - 1);
 							CMN.Log("--backUrl::", backUrl);
-							currentWebView = initWebViewImpl(ly, wv);
+							currentWebView = initWebViewImpl(ly, wv, true);
 							currentWebView.loadUrl(backUrl);
 							ly.resumeWeb();
 							added=true;
@@ -3357,23 +3326,11 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				switch (v.getId()) {
 					/* 历史 */
 					case R.id.menu_icon3: {
-						int id = WeakReferenceHelper.history_list;
-						BrowserHistory historyList = (BrowserHistory) getReferencedObject(id);
-						if(historyList==null) {
-							CMN.Log("重建历史列表");
-							putReferencedObject(id, historyList = new BrowserHistory());
-						}
-						historyList.show(getSupportFragmentManager(), "history");
+						showHistory();
 					} break;
 					/* 下载 */
 					case R.id.menu_icon4: {
-						int id = WeakReferenceHelper.dwnld_list;
-						BrowserDownloads downloadList = (BrowserDownloads) getReferencedObject(id);
-						if(downloadList==null) {
-							CMN.Log("重建下载列表");
-							putReferencedObject(id, downloadList = new BrowserDownloads());
-						}
-						downloadList.show(getSupportFragmentManager(), "downloads");
+						showDownloads();
 					} break;
 					/* 分享 */
 					case R.id.menu_icon5: {
@@ -4080,171 +4037,34 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		}
 	}
 	
-	public void showDownloadDialog(String url, long contentLength, String mimetype) {
-		if(downloader==null) {
-			downloader = new DownloadHandlerStd(this, historyCon);
+	
+	public void showHistory() {
+		int id = WeakReferenceHelper.history_list;
+		BrowserHistory historyList = (BrowserHistory) getReferencedObject(id);
+		if(historyList==null) {
+			CMN.Log("重建历史列表");
+			putReferencedObject(id, historyList = new BrowserHistory());
 		}
-		//showT(text);
-//		Intent pageView = new Intent(DownloadManager.ACTION_VIEW_DOWNLOADS);
-//		pageView.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-//		startActivity(pageView);
-		int id = WeakReferenceHelper.bottom_download_dialog;
-		BottomSheetDialog bottomPlaylist = (BottomSheetDialog) getReferencedObject(id);
-		if(bottomPlaylist==null) {
-			CMN.Log("重建底部弹出");
-			putReferencedObject(id, bottomPlaylist = new BottomSheetDialog(this));
-			DownloadBottomSheetBinding downloadDlg = DownloadBottomSheetBinding.inflate(LayoutInflater.from(this));
-			BottomSheetDialog final_bottomPlaylist = bottomPlaylist;
-			 View.OnClickListener clicker = v -> {
-				switch (v.getId()) {
-					case R.id.open: { //打开
-						Intent viewer = new Intent(Intent.ACTION_VIEW);
-						Cursor pursor = (Cursor) v.getTag();
-						if(pursor!=null) {
-							long dwnldID = pursor.getLong(1);
-							String path = pursor.getString(0);
-							if(TextUtils.isEmpty(path))
-							{
-								path = downloader.getDownloadPathForDwnldID(dwnldID);
-							}
-							if(!TextUtils.isEmpty(path)) {
-								Uri data = getSimplifiedUrl(this, Uri.parse(path));
-								viewer.setDataAndType(data, downloader.getMimeTypeForDwnldID(dwnldID));
-								viewer.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-								viewer.addCategory(Intent.CATEGORY_DEFAULT);
-								if(data.toString().startsWith("file://")) {
-									Utils.fuckVM();
-								}
-								try {
-									startActivity(viewer);
-								} catch (Exception e) {
-									showT("打开失败");
-									CMN.Log(e);
-								}
-							}
-						}
-					} break;
-					case R.id.abort: {
-						final_bottomPlaylist.dismiss();
-					} break;
-					case R.id.new_folder:{
-						boolean goInternalDirectoryPicker = false;
-						if(!goInternalDirectoryPicker) {
-							try {
-								Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-								i.addCategory(Intent.CATEGORY_DEFAULT);
-								startActivityForResult(Intent.createChooser(i,"Pick Download Path"),
-										RequsetUrlFromStorage);
-							} catch (Exception e) {
-								goInternalDirectoryPicker = true;
-								CMN.Log(e);
-							}
-						}
-						if(goInternalDirectoryPicker) {
-						
-						}
-					} break;
-					case R.id.replace:{
-						Cursor cursor = (Cursor) downloadDlg.open.getTag();
-						if(cursor!=null) {
-							String path = cursor.getString(0);
-							if(path!=null) {
-								FU.delete3(this, FU.getFile(path));
-								CMN.Log("删除1…", path);
-							}
-							long dwnldID = cursor.getLong(1);
-							path = downloader.getDownloadPathForDwnldID(dwnldID);
-							if(path!=null) {
-								Uri data = getSimplifiedUrl(this, Uri.parse(path));
-								path = data.toString();
-								if(path.startsWith("file://")) {
-									CMN.Log("删除2…", path);
-									FU.delete3(this, FU.getFile(path));
-								}
-							}
-						}
-					}
-					case R.id.download:
-						startDownload(true, false);
-						final_bottomPlaylist.dismiss();
-					break;
-				}
-			};
-			setOnClickListenersOneDepth(downloadDlg.dialog, clicker, 999, null);
-			bottomPlaylist.setContentView(downloadDlg.dialog);
-			bottomPlaylist.setOnDismissListener(dialog -> {
-				bottomDwnldDlg = null;
-				Cursor pursor = (Cursor) downloadDlg.open.getTag();
-				if(pursor!=null) {
-					pursor.close();
-				}
-			});
-			bottomPlaylist.tag=downloadDlg;
-			Window win = bottomPlaylist.getWindow();
-			if(win!=null) {
-				win.setDimAmount(0.2f);
-				win.findViewById(R.id.design_bottom_sheet).setBackground(null);
-				View decor = win.getDecorView();
-				decor.addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom)
-						-> v.postDelayed(() -> {
-					int targetTranY = 0;
-					if(Utils.isKeyboardShown(v)) {
-						int resourceId = mResource.getIdentifier("status_bar_height", "dimen", "android");
-						mStatusBarH = mResource.getDimensionPixelSize(resourceId);
-						int max = Utils.rect.height() - downloadDlg.dirPath.getHeight()-mStatusBarH;
-						if(max>0) {
-							targetTranY = Math.min(max, (int) (-50 * GlobalOptions.density));
-						}
-					}
-					((ViewGroup)v).getChildAt(0).setTranslationY(targetTranY);
-					Utils.TrimWindowWidth(win, dm);
-					CMN.Log("addOnLayoutChangeListener", Utils.isKeyboardShown(v), dm.widthPixels);
-				}, 0));
-			}
-			bottomPlaylist.getBehavior().setState(BottomSheetBehavior.STATE_EXPANDED);
-			if(GlobalOptions.isDark) {
-				downloadDlg.dialog.setBackgroundColor(Color.BLACK);
-				downloadDlg.dirPath.setTextColor(Color.WHITE);
-			}
-		}
-		
-//		View v = (View) _bottomPlaylist.getWindow().getDecorView().getTag();
-//		DisplayMetrics dm2 = new DisplayMetrics();
-//		getWindowManager().getDefaultDisplay().getRealMetrics(dm2);
-//		v.getLayoutParams().height = (int) (Math.max(dm2.heightPixels, dm2.widthPixels) * _bottomPlaylist.getBehavior().getHalfExpandedRatio() - getResources().getDimension(R.dimen._45_) * 1.75);
-//		v.requestLayout();
-		Utils.TrimWindowWidth(bottomPlaylist.getWindow(), dm);
-		DownloadBottomSheetBinding downloadDlg = (DownloadBottomSheetBinding) bottomPlaylist.tag;
-		downloadDlg.dirPath.setText(new File(url).getName());
-		downloadDlg.dirPath.setTag(url);
-		Cursor recorded = downloader.queryDownloadUrl(url);
-		int vis = recorded==null?View.GONE:View.VISIBLE;
-		//if(path!=null) CMN.Log("downloadDlg.dirPath ", path.getString(0), path.getLong(1));
-		downloadDlg.replace.setVisibility(vis);
-		downloadDlg.replace.setTag(contentLength);
-		downloadDlg.abort.setTag(mimetype);
-		downloadDlg.open.setVisibility(vis);
-		downloadDlg.open.setTag(recorded);
-		downloadDlg.download.setText(mResource.getString(R.string.downloadWithSz, FU.formatSize(contentLength)));
-		bottomPlaylist.show();
-		bottomDwnldDlg = bottomPlaylist;
+		historyList.show(getSupportFragmentManager(), "history");
 	}
 	
-	@SuppressLint("NewApi")
-	private void startDownload(boolean req, boolean blame) {
-		if(bottomDwnldDlg!=null) {
-			historyCon.ensureDwnldTable(null);
-			DownloadBottomSheetBinding downloadDlg = (DownloadBottomSheetBinding) bottomDwnldDlg.tag;
-			String fileName = downloadDlg.dirPath.getText().toString();
-			String mimetype = downloadDlg.abort.getText().toString();
-			long contentLength = (long) downloadDlg.replace.getTag();
-			if(TextUtils.isEmpty(fileName)) {
-				fileName = "unknown.download";
-			}
-			String URL = (String) downloadDlg.dirPath.getTag();
-			downloader.start(this, URL, fileName, downloadTargetDir, contentLength, mimetype, req, blame);
+	public void showDownloads() {
+		int id = WeakReferenceHelper.dwnld_list;
+		BrowserDownloads downloadList = (BrowserDownloads) getReferencedObject(id);
+		if(downloadList==null) {
+			CMN.Log("重建下载列表");
+			putReferencedObject(id, downloadList = new BrowserDownloads());
 		}
+		downloadList.show(getSupportFragmentManager(), "downloads");
 	}
+	
+	public void showDownloadDialog(String url, long contentLength, String mimetype) {
+		if(downloadDlgHandler==null) {
+			downloadDlgHandler = new DownloadUIHandler(this, historyCon);
+		}
+		downloadDlgHandler.showDownloadDialog(url, contentLength, mimetype);
+	}
+	
 	
 	//longclick
 	@Override
@@ -4292,7 +4112,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	
 	/** Luxuriously Load Url：使用新的WebView打开链接，受Via浏览器启发，用于“返回不重载”。<br/>
 	 *  标签页(tab)处于奢侈模式时({@link TabHolder#getLuxury})，使用此法打开链接。WebView总数有限制，且一段时间内不得打开太多。<br/>
-	 *  前进后退时复用或销毁WebView。复用时，需清理网页回退栈。{@link AdvancedBrowserWebView#2clearHistroyRequested}*/
+	 *  前进后退时复用或销毁WebView。复用时，需清理网页回退栈。{@link WebFrameLayout#clearHistroyRequested}*/
 	void LuxuriouslyLoadUrl(AdvancedBrowserWebView mWebView, String url) {
 //		if(!mWebView.hasValidUrl()) {
 //			mWebView.loadUrl(url);
@@ -4516,12 +4336,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		return dialog; // returns the universal dialog
 	}
 	
-	
-	int webType=2;
-	
-	private UniversalWebviewInterface initWebViewImpl(WebFrameLayout layout, UniversalWebviewInterface patWeb) {
+	private UniversalWebviewInterface initWebViewImpl(WebFrameLayout layout, UniversalWebviewInterface patWeb, boolean fallBack) {
 		UniversalWebviewInterface mWebView = null;
-		TabHolder holder = layout.holder;
 //		if(layout==null&&patWeb!=null) {
 //			layout = patWeb.layout;
 //			final int luxLimit = 25;
@@ -4535,20 +4351,26 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 //		}
 		//Utils.sendog(opt);
 		View theView;
+		if(wvPreInitInstance!=null) {
+			if(wvPreInitInstance.getType()==webType) {
+				mWebView = wvPreInitInstance;
+			}
+			wvPreInitInstance = null;
+		}
 		if(mWebView==null) {
 			if(webType==1) {
 				try {
 					mWebView = new XPlusWebView(this);
 				} catch (Exception e) {
 					CMN.Log(e);
-					webType=0;
+					if(fallBack) webType=0;
 				}
 			} else if(webType==2) {
 				try {
 					mWebView = new XWalkWebView(this);
 				} catch (Exception e) {
 					CMN.Log(e);
-					webType=0;
+					if(fallBack) webType=0;
 				}
 			}
 			if(webType==0) {
@@ -4560,6 +4382,12 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		} else {
 			theView = (View) mWebView;
 		}
+		if(layout==null) {
+			return mWebView;
+		}
+		
+		TabHolder holder = layout.holder;
+		
 		//mWebView.clearCache(true);
 		//CMN.Log("new mWebView::ua::", mWebView.getSettings().getUserAgentString());
 		//Utils.sencat(opt, ViewConfigDefault);
@@ -5174,7 +5002,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
 		super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 		if(requestCode==RequsetUrlFromStorage) {
-			startDownload(false, true);
+			downloadDlgHandler.startDownload(false, true);
 		}
 	}
 	
@@ -5198,7 +5026,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				String realPath = Utils.getFullPathFromTreeUri(this, docUri);
 				if(realPath!=null) {
 					showT(realPath);
-					downloadTargetDir = new File(realPath);
+					if(downloadDlgHandler!=null) {
+						downloadDlgHandler.downloadTargetDir = new File(realPath);
+					}
 				}
 			}
 		}
@@ -5290,5 +5120,14 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			return true;
 		}
 		return false;
+	}
+	
+	@Override
+	public void showT(Object text) {
+		if("downloads".equals(text)) {
+			mWebListener.showT("下载完成", "查看", "history");
+		} else {
+			super.showT(text);
+		}
 	}
 }

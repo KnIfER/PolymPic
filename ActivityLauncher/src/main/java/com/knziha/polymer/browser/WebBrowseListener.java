@@ -22,11 +22,14 @@ import androidx.recyclerview.widget.RecyclerView.OnScrollChangedListener;
 
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.browser.webkit.UniversalWebviewInterface;
+import com.knziha.polymer.browser.webkit.XWalkWebView;
 
 import org.apache.commons.lang3.StringUtils;
 
+import static org.xwalk.core.Utils.Log;
 import static org.xwalk.core.Utils.getLockedView;
 import static org.xwalk.core.Utils.getTag;
+import static org.xwalk.core.Utils.unlock;
 
 /** WebView Compound Listener ：两大网页客户端监听器及Javascript桥，全局一个实例。 */
 public class WebBrowseListener extends WebViewClient implements DownloadListener, OnScrollChangedListener {
@@ -121,6 +124,9 @@ public class WebBrowseListener extends WebViewClient implements DownloadListener
 		settings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.SINGLE_COLUMN);
 		//settings.setSupportZoom(support);
 		settings.setAllowUniversalAccessFromFileURLs(true);
+		
+		settings.setUseWideViewPort(true);
+		
 		webviewImpl.loadUrl("about:blank");
 
 //		settings.setAppCacheMaxSize(Long.MAX_VALUE);
@@ -209,6 +215,9 @@ public class WebBrowseListener extends WebViewClient implements DownloadListener
 			if(premature) {
 				lowerBound=Math.min(80, lowerBound);
 			}
+//			if(webviewImpl instanceof XWalkWebView) {
+//				lowerBound=Math.min(65, lowerBound);
+//			}
 			if(newProgress>=lowerBound){
 				CMN.Log("newProgress>=98", newProgress);
 				mWebView.post(OnPageFinishedNotifier);
@@ -267,7 +276,16 @@ public class WebBrowseListener extends WebViewClient implements DownloadListener
 	Runnable OnPageFinishedNotifier = new Runnable() {
 		@Override
 		public void run() {
-			onPageFinished(getLockedView(webviewImpl, true), webviewImpl.getUrl());
+			if(webviewImpl instanceof WebView) {
+				onPageFinished((WebView) webviewImpl, webviewImpl.getUrl());
+			} else {
+				try {
+					onPageFinished(getLockedView(webviewImpl, true), webviewImpl.getUrl());
+				} catch (Exception e) {
+					Log(e);
+				}
+				unlock();
+			}
 		}
 	};
 	

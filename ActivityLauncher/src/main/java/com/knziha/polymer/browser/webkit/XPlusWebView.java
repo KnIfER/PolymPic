@@ -248,6 +248,11 @@ public class XPlusWebView extends WebView implements UniversalWebviewInterface {
 		return X5WebView.createPrintDocumentAdapter(name);
 	}
 	
+	@Override
+	public int getType() {
+		return 1;
+	}
+	
 	RecyclerView.OnScrollChangedListener mOnScrollChangeListener;
 	
 	@Override

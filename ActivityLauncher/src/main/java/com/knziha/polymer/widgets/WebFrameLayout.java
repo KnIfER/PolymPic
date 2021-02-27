@@ -68,10 +68,12 @@ import static com.knziha.polymer.widgets.Utils.getWindowManagerViews;
 import static com.knziha.polymer.browser.webkit.WebViewHelper.LookForANobleSteedCorrespondingWithDrawnClasses;
 import static com.knziha.polymer.browser.webkit.WebViewHelper.bAdvancedMenu;
 import static com.knziha.polymer.browser.webkit.WebViewHelper.minW;
+import static org.xwalk.core.Utils.Log;
 import static org.xwalk.core.Utils.getLockedView;
+import static org.xwalk.core.Utils.unlock;
 
 public class WebFrameLayout extends FrameLayout implements NestedScrollingChild, MenuItem.OnMenuItemClickListener{
-	/**网页加载完成时清理回退栈 see {@link BrowserActivity#2LuxuriouslyLoadUrl}*/
+	/**网页加载完成时清理回退栈 see {@link BrowserActivity#LuxuriouslyLoadUrl}*/
 	public boolean clearHistroyRequested;
 	/**记录网页开始加载*/
 	public boolean PageStarted;
@@ -921,7 +923,16 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 	Runnable OnPageFinishedNotifier = new Runnable() {
 		@Override
 		public void run() {
-			listener.onPageFinished(getLockedView(mWebView, true), mWebView.getUrl());
+			if(mWebView instanceof WebView) {
+				listener.onPageFinished((WebView) mWebView, mWebView.getUrl());
+			} else {
+				try {
+					listener.onPageFinished(getLockedView(mWebView, true), mWebView.getUrl());
+				} catch (Exception e) {
+					Log(e);
+				}
+				unlock();
+			}
 		}
 	};
 	

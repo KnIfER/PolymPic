@@ -16,6 +16,8 @@ import android.view.animation.Animation;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+
 import com.knziha.filepicker.utils.FU;
 import com.knziha.polymer.R;
 import com.knziha.polymer.Toastable_Activity;
@@ -31,9 +33,10 @@ import static android.content.Context.DOWNLOAD_SERVICE;
 import static com.knziha.polymer.widgets.Utils.RequsetUrlFromStorage;
 
 public class DownloadHandlerStd {
+	Toastable_Activity a;
 	final LexicalDBHelper historyCon;
 	private final DownloadManager downloadManager;
-	static DownloadCompleteReceiver dwnldReceiver;
+	DownloadCompleteReceiver dwnldReceiver;
 	
 	static Set<Object> queuedDownloads = Collections.synchronizedSet(new HashSet<>());
 	
@@ -67,15 +70,14 @@ public class DownloadHandlerStd {
 	public DownloadHandlerStd( Toastable_Activity a, LexicalDBHelper historyCon) {
 		this.historyCon = historyCon;
 		downloadManager = (DownloadManager) a.getSystemService(Context.DOWNLOAD_SERVICE);
-		if(dwnldReceiver==null) {
-			dwnldReceiver = new DownloadCompleteReceiver();
-			IntentFilter intentFilter = new IntentFilter();
-			intentFilter.addAction(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
-			a.getApplicationContext().registerReceiver(dwnldReceiver, intentFilter);
-		}
+		dwnldReceiver = new DownloadCompleteReceiver();
+		IntentFilter intentFilter = new IntentFilter();
+		intentFilter.addAction(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
+		a.registerReceiver(dwnldReceiver, intentFilter);
+		this.a = a;
 	}
 	
-	private static class DownloadCompleteReceiver extends BroadcastReceiver {
+	private class DownloadCompleteReceiver extends BroadcastReceiver {
 		public File targetDirPath;
 		private boolean recordRealPathForDwnldWithRow(long dwnldID, long rowId, DownloadManager downloadManager, LexicalDBHelper db) {
 			String realUrl=null;
@@ -110,6 +112,7 @@ public class DownloadHandlerStd {
 						}
 						db.try_close();
 					}
+					a.showT("downloads");
 				}
 			}
 		}
@@ -119,13 +122,15 @@ public class DownloadHandlerStd {
 	public void start(Toastable_Activity a
 			, String url
 			, String fileName
-			, File downloadTargetDir, long contentLength, String mimetype, boolean req, boolean blame) {
+			, @NonNull File downloadTargetDir
+			, long contentLength, String mimetype, boolean req, boolean blame) {
 		DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
-		request.setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI);
+		//request.setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI);
 		request.setDescription(a.mResource.getString(R.string.downloadingWithSz, FU.formatSize(contentLength)));
 		request.setAllowedOverRoaming(false);
 		//downloadTargetDir = new File("/storage/2486-F9E1/Android/data/com.android.providers.downloads");
-		if(downloadTargetDir!=null) {
+		//if(downloadTargetDir!=null)
+		{
 			request.setDestinationUri(Uri.fromFile(new File(downloadTargetDir, fileName)));
 		}
 		dwnldReceiver.targetDirPath = downloadTargetDir;
@@ -148,7 +153,7 @@ public class DownloadHandlerStd {
 			queuedDownloads.add(dwnldID);
 			historyCon.recordDwnldItem(dwnldID, url, fileName, contentLength, mimetype);
 			a.root.postDelayed(new GetDwnldPathRunnable(a, dwnldID), 350);
-			CMN.Log("下载开始...", downloadTargetDir);
+			CMN.Log("下载开始...", downloadTargetDir, dwnldID, fileName);
 			if(!blame) {
 				a.showT("下载中…");
 			}

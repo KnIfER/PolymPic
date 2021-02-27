@@ -97,5 +97,7 @@ public interface UniversalWebviewInterface {
 	
 	Picture capturePicture();
 	
+	int getType();
+	
 	//Object getTag();
 }

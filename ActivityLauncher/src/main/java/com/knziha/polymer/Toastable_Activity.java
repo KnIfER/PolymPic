@@ -112,11 +112,11 @@ public class Toastable_Activity extends AppCompatActivity {
 	}
 	
 	public void acquireWakeLock() {
-		mWakeLocked = true;
 		if(mWakeLock==null) {
 			PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
 			mWakeLock = pm.newWakeLock(PowerManager.FULL_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP | PowerManager.ON_AFTER_RELEASE, "servis:SimpleTimer");
 		}
+		mWakeLocked = true;
 		mWakeLock.acquire();
 	}
 	
@@ -197,11 +197,13 @@ public class Toastable_Activity extends AppCompatActivity {
 	protected void onResume() {
 		try {
 			super.onResume();
-			if(mWakeLocked) {
-				mWakeLocked=false;
-				mWakeLock.release();
-			}
 		} catch (Exception ignored) { /*无敌*/ }
+		if(mWakeLocked) {
+			try {
+				mWakeLock.release();
+				mWakeLocked=false;
+			} catch (Exception ignored) { }
+		}
 		if(checkResumeQRText && StaticTextExtra!=null) {
 			onQRGetText(StaticTextExtra);
 			StaticTextExtra = null;
@@ -585,14 +587,14 @@ public class Toastable_Activity extends AppCompatActivity {
 		}
 	}
 	
-	protected Object getReferencedObject(int id) {
+	public Object getReferencedObject(int id) {
 		if(WeakReferencePool[id] == null) {
 			return null;
 		}
 		return WeakReferencePool[id].get();
 	}
 	
-	protected void putReferencedObject(int id, Object object) {
+	public void putReferencedObject(int id, Object object) {
 		WeakReferencePool[id] = new WeakReference(object);
 	}
 }

@@ -310,6 +310,14 @@ public class Options implements WebOptions, BookOptions {
 		defaultReader.edit().putLong("docId", rowID).apply();
 	}
 	
+	public void putWebType(int type) {
+		defaultReader.edit().putInt("webType", type).apply();
+	}
+	
+	public int getWebType() {
+		return defaultReader.getInt("webType", 0);
+	}
+	
 	@Override
 	public boolean getSingleTapSelWord() {
 		return true;

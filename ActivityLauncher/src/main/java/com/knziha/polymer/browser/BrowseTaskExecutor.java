@@ -57,6 +57,7 @@ public class BrowseTaskExecutor implements Runnable{
 								this.token = token;
 							}
 							boolean interrupted=false;
+							long st=CMN.now();
 							try {
 								CMN.Log("等待2.5min —————— ");
 								// 等待2.5min, 这是 webStation 的占用时限。
@@ -65,7 +66,7 @@ public class BrowseTaskExecutor implements Runnable{
 								// 中断，放弃任务。
 								interrupted = true;
 							}
-							CMN.Log("等待2.5min  ——————  over", interrupted);
+							CMN.Log("等待2.5min  ——————  over", interrupted, CMN.now()-st);
 							if(!interrupted) { //timeout
 								token.set(true);
 								a.notifyTaskStopped(task.id);

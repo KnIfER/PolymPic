@@ -178,4 +178,9 @@ public class WebViewImplExt extends WebView implements UniversalWebviewInterface
 			return null;
 		}
 	}
+	
+	@Override
+	public int getType() {
+		return 0;
+	}
 }
