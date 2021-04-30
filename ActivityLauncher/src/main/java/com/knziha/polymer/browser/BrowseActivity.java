@@ -10,7 +10,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.database.Cursor;
 import android.graphics.Color;
@@ -22,16 +21,11 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
-import android.os.PowerManager;
 import android.os.SystemClock;
 import android.text.TextPaint;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
-import android.view.InputQueue;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
-import android.view.SurfaceHolder;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -43,7 +37,6 @@ import android.widget.GridView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.GlobalOptions;
 import androidx.databinding.DataBindingUtil;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -1098,13 +1091,7 @@ public class BrowseActivity extends Toastable_Activity
 				CMN.Log("接收到任务：", task, CMN.id(this), schedule);
 				queueTaskForDB(task, schedule);
 			}
-			try {
-				acquireWakeLock();
-				mWakeLock.release();
-				mWakeLocked = false;
-			} catch (Exception e) {
-				CMN.Log(e);
-			}
+			wakeUp();
 		}
 	}
 	

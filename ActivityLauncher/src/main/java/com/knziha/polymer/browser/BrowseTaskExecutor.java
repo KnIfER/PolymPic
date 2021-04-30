@@ -6,8 +6,6 @@ import android.os.Build;
 import com.knziha.polymer.Utils.CMN;
 
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Queue;
@@ -69,6 +67,7 @@ public class BrowseTaskExecutor implements Runnable{
 							CMN.Log("等待2.5min  ——————  over", interrupted, CMN.now()-st);
 							if(!interrupted) { //timeout
 								token.set(true);
+								a.taskMap.remove(task.id);
 								a.notifyTaskStopped(task.id);
 								if(taskQueue.size()==0) {
 									a.clearWebview();
@@ -100,7 +99,8 @@ public class BrowseTaskExecutor implements Runnable{
 					}
 				}
 				boolean normalExit = abort.getAndSet(finished=true);
-				if(normalExit) {
+				//if(normalExit)
+				{
 					a.clearWebview();
 				}
 				// 退出线程。

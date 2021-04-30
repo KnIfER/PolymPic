@@ -27,7 +27,13 @@ public class AgentApplication extends Application {
 	}
 	
 	public static Throwable exception;
-
+	
+	@Override
+	protected void attachBaseContext(Context base) {
+		super.attachBaseContext(base);
+		me.weishu.reflection.Reflection.unseal(base);
+	}
+	
 	@Override
 	public void onTerminate() {
 		super.onTerminate();

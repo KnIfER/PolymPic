@@ -23,6 +23,7 @@ import com.tencent.smtt.export.external.interfaces.WebResourceRequest;
 import org.xwalk.core.XWalkDownloadListener;
 import org.xwalk.core.XWalkHitTestResult;
 import org.xwalk.core.XWalkNavigationHistory;
+import org.xwalk.core.XWalkPreferences;
 import org.xwalk.core.XWalkResourceClient;
 import org.xwalk.core.XWalkUIClient;
 import org.xwalk.core.XWalkView;
@@ -40,6 +41,10 @@ public class XWalkWebView extends XWalkView implements UniversalWebviewInterface
 	
 	XWalkResourceClient xWalkResourceClient;
 	XWalkUIClient xWalkUIClient;
+	
+	static {
+		XWalkPreferences.setValue(XWalkPreferences.ANIMATABLE_XWALK_VIEW, true);
+	}
 	
 	public XWalkWebView(@NonNull Context context) {
 		super(context);
