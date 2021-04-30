@@ -14,7 +14,8 @@ public class WeakReferenceHelper {
 	public final static int sync_interface = 7;
 	public final static int edit_field = 8;
 	public final static int edit_scheng = 9;
-	public final static int poolSize = 10;
+	public final static int search_history_options = 10;
+	public final static int poolSize = 11;
 	public final static String[] topDomainNames = new String[]{
 		"aaa",
 		"aarp",

@@ -139,6 +139,8 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 	int nav_stacks_idx;
 	/** Use to mark that the back/forward is changed. */
 	public boolean nav_stacks_dirty;
+	public boolean new_page_loaded;
+	public String searchTerm;
 	
 	public ArrayList<String> PolymerBackList = new ArrayList<>();
 	
@@ -220,6 +222,7 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 	
 	/** Reset the flag. */
 	public void setNavStacksDirty() {
+		new_page_loaded = true;
 		nav_stacks_dirty = true;
 		if(nav_stacks!=null) {
 			nav_stacks = null;

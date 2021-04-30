@@ -1,22 +1,29 @@
 package com.knziha.polymer;
 
+import android.app.Activity;
 import android.app.PendingIntent;
+import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.IBinder;
+import android.os.Vibrator;
 
+import androidx.appcompat.app.GlobalOptions;
 import androidx.core.content.pm.ShortcutInfoCompat;
 import androidx.core.content.pm.ShortcutManagerCompat;
 import androidx.core.graphics.drawable.IconCompat;
 
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.MyReceiver;
+import com.knziha.polymer.browser.scrcpy.SurfaceControl;
 import com.knziha.polymer.database.LexicalDBHelper;
 import com.knziha.polymer.toolkits.Utils.BU;
 import com.knziha.polymer.webstorage.WebDict;
+import com.knziha.polymer.widgets.Utils;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -29,6 +36,8 @@ import java.util.ArrayList;
 import java.util.Random;
 
 public class TestHelper {
+	public static int debuggingWebType = 0;
+	
 	static void savePngBitmap(Context c, int resId, int w, int h, String path) {
 		Drawable drawable = c.getResources().getDrawable(resId);
 		Bitmap bm = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
@@ -412,6 +421,27 @@ public class TestHelper {
 			String p = "com.knziha.polymer.browser.webkit.XWalkMainActivity";
 			String n = "knziha.XWalk";
 			lnkActivity(a, p, n);
+		}
+	}
+	
+	public static void notifyStart(Activity a) {
+		CMN.Log("device density is ::", GlobalOptions.density);
+		CMN.Log("device version is ::", Utils.version);
+		
+		Vibrator vibrator = (Vibrator) a.getSystemService(Service.VIBRATOR_SERVICE);
+		
+		vibrator.vibrate(200);
+		
+		
+	}
+	
+	public static void turnOffScreen(Activity a) {
+		try {
+			IBinder display = SurfaceControl.getBuiltInDisplay();
+			CMN.Log("display::", display);
+			SurfaceControl.setDisplayPowerMode(display, 0);
+		} catch (Exception e) {
+			CMN.Log(e);
 		}
 	}
 }

@@ -210,6 +210,16 @@ public class Toastable_Activity extends AppCompatActivity {
 		}
 	}
 	
+	protected void wakeUp() {
+		try {
+			acquireWakeLock();
+			mWakeLock.release();
+			mWakeLocked = false;
+		} catch (Exception e) {
+			CMN.Log(e);
+		}
+	}
+	
 	protected void onQRGetText(String text) {
 	
 	}

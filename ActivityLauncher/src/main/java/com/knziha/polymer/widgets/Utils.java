@@ -595,6 +595,10 @@ public class Utils {
 		return false;
 	}
 	
+	public static void postInvalidateLayout(View view) {
+		view.post(view::requestLayout);
+	}
+	
 	static int resourceId=-1;
 	public static int getStatusBarHeight(Resources resources) {
 		if(resourceId==-1)

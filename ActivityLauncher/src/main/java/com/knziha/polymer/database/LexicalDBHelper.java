@@ -152,6 +152,7 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
         db.execSQL(createDomainsTable);
 		
 		// search history.
+		//db.execSQL("drop table if exists keyword_search_terms");
 		final String createSearchTable = "create table if not exists \"keyword_search_terms\" ("+
 				"id INTEGER PRIMARY KEY AUTOINCREMENT," +
 				"term LONGVARCHAR NOT NULL,"+
@@ -319,6 +320,7 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 //			}
 			Cursor emptySearchCursor = database.rawQuery(sql, null ,stopSign);
 			search_empty_updated=false;
+			CMN.Log("query db result::", emptySearchCursor.getCount(), stopSign.isCanceled());
 			return EmptySearchCursor=emptySearchCursor;
 		} else {
 			if(ActiveSearchCursor!=null) {
@@ -483,17 +485,19 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 		search_empty_updated=search_active_updated=true;
 		ContentValues values = new ContentValues();
 		values.put("term", lex);
-		values.put("last_visit_time", System.currentTimeMillis());
+		values.put("last_visit_time", CMN.now());
+		values.put("creation_time", CMN.now());
 		String[] where = new String[]{lex};
-		int count=0;
+		long count=0;
 //		final String sql = "select term from keyword_search_terms where term=?";
 //		Cursor c = database.rawQuery(sql, where);
 //		count = c.getCount();
 //		c.close();
 		database.delete("keyword_search_terms", "term=?", where);
 		if(count==0) {
-			return database.insert("keyword_search_terms", null, values);
+			count = database.insert("keyword_search_terms", null, values);
 		}
+		//CMN.Log("insertSearchTerm::", lex, count);
 		return count;
 	}
 	

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout>
-	<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-		xmlns:tools="http://schemas.android.com/tools"
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:tools="http://schemas.android.com/tools">
+	<LinearLayout
 		android:id="@+id/item"
 		android:layout_width="match_parent"
 		android:layout_height="@dimen/_50_"
@@ -59,10 +59,12 @@
 			android:id="@+id/close"
 			android:layout_width="@dimen/_45_"
 			android:layout_height="match_parent"
-			android:scaleType="center"
 			android:clickable="true"
 			android:focusable="true"
 			android:paddingTop="6dp"
-			android:src="@drawable/abc_ic_commit_search_api_mtrl_alpha" />
+			android:scaleType="center"
+			android:src="@drawable/abc_ic_commit_search_api_mtrl_alpha"
+			android:background="?selectableItemBackground"
+			/>
 	</LinearLayout>
 </layout>

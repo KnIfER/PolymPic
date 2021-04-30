@@ -71,7 +71,6 @@ import android.webkit.WebView;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -114,7 +113,6 @@ import com.knziha.filepicker.model.DialogProperties;
 import com.knziha.filepicker.model.DialogSelectionListener;
 import com.knziha.filepicker.view.FilePickerDialog;
 import com.knziha.polymer.Utils.CMN;
-import com.knziha.polymer.Utils.IU;
 import com.knziha.polymer.Utils.MyReceiver;
 import com.knziha.polymer.Utils.OptionProcessor;
 import com.knziha.polymer.Utils.Options;
@@ -125,7 +123,6 @@ import com.knziha.polymer.browser.DownloadUIHandler;
 import com.knziha.polymer.browser.DownloadHandlerStd;
 import com.knziha.polymer.browser.webkit.BitmapWaiter;
 import com.knziha.polymer.browser.webkit.UniversalWebviewInterface;
-import com.knziha.polymer.browser.WebBrowseListener;
 import com.knziha.polymer.browser.webkit.XPlusWebView;
 import com.knziha.polymer.browser.webkit.XWalkWebView;
 import com.knziha.polymer.database.LexicalDBHelper;
@@ -134,7 +131,9 @@ import com.knziha.polymer.databinding.LoginViewBinding;
 import com.knziha.polymer.databinding.SearchEnginesItemBinding;
 import com.knziha.polymer.databinding.SearchHintsItemBinding;
 import com.knziha.polymer.databinding.WebPageItemBinding;
+import com.knziha.polymer.preferences.SearchHistoryAndInputMethodSettings;
 import com.knziha.polymer.qrcode.QRActivity;
+import com.knziha.polymer.qrcode.QRGenerator;
 import com.knziha.polymer.toolkits.Utils.BU;
 import com.knziha.polymer.toolkits.Utils.ReusableByteOutputStream;
 import com.knziha.polymer.webslideshow.CenterLinearLayoutManager;
@@ -161,18 +160,14 @@ import com.knziha.polymer.widgets.Utils;
 import com.knziha.polymer.widgets.WaveView;
 import com.knziha.polymer.widgets.WebFrameLayout;
 import com.knziha.polymer.browser.webkit.WebViewHelper;
-import com.tencent.smtt.sdk.QbSdk;
 
 import org.adrianwalker.multilinestring.Multiline;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
-import org.xwalk.core.XWalkActivityDelegate;
-import org.xwalk.core.XWalkUpdater;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
@@ -207,6 +202,7 @@ import static com.knziha.polymer.widgets.Utils.RequsetUrlFromStorage;
 import static com.knziha.polymer.widgets.Utils.getViewItemByPath;
 import static com.knziha.polymer.widgets.Utils.indexOf;
 import static com.knziha.polymer.widgets.Utils.isKeyboardShown;
+import static com.knziha.polymer.widgets.Utils.postInvalidateLayout;
 import static com.knziha.polymer.widgets.Utils.setOnClickListenersOneDepth;
 import static com.knziha.polymer.browser.webkit.WebViewHelper.bAdvancedMenu;
 
@@ -334,6 +330,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	private boolean MenuClicked;
 	private SardineCloud syncHandler;
 	private WaveView waveView;
+	private boolean IsShowingSearchHistory;
+	
+	SearchHistoryAndInputMethodSettings settingsPanel;
 	
 	@Override
 	public void onConfigurationChanged(@NonNull Configuration newConfig) {
@@ -636,7 +635,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	@Override
 	public void further_loading(Bundle savedInstanceState) {
 		if(historyCon==null) {
-			webType=2;
+			if(TestHelper.debuggingWebType>=0) {
+				webType=TestHelper.debuggingWebType;
+			}
 			try {
 				historyCon = LexicalDBHelper.connectInstance(this);
 			} catch (SQLiteFullException e) {
@@ -750,16 +751,27 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					updateQRBtn();
 				}
 				if(search_bar_vis()) {
-					pull_hints(false);
+					if (s.length()==0) {
+						if (opt.getShowSearchHintsOnClear()) {
+							UIData.showSearchHistoryDropdown.setVisibility(View.GONE);
+							pull_hints(false);
+						} else {
+							showSearchHistoryDropdown();
+						}
+					} else {
+						pull_hints(false);
+					}
 				}
 			}
 		});
 		//tg
-		CMN.Log("device density is ::", GlobalOptions.density);
-		CMN.Log("device version is ::", Utils.version);
+		TestHelper.notifyStart(this);
+		//wakeUp();
 		//CMN.Log("device space is ::",  getExternalFilesDir(null).getFreeSpace());
 		
 		
+		TestHelper.turnOffScreen(this);
+
 //		DialogProperties properties = new DialogProperties();
 //		properties.selection_mode = DialogConfigs.SINGLE_MODE;
 //		properties.selection_type = DialogConfigs.FILE_SELECT;
@@ -906,9 +918,11 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		}
 		//isUrl=true;
 		if(!isUrl) {
+			currentViewImpl.searchTerm = text;
 			historyCon.insertSearchTerm(text);
 			text = currentWebDictUrl.replace("%s", text);
 		} else {
+			currentViewImpl.searchTerm = null;
 			LinkedList<RgxPlc> queryDNS = mWebListener.DNSIntelligence;
 			if(queryDNS.size()>0) {
 				for(RgxPlc dI:queryDNS) {
@@ -933,6 +947,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		if(opt.getUpdateUALowEnd()) {
 			updateUserAgentString(layout, url);
 		}
+		layout.new_page_loaded = false;
 		layout.loadUrl(url);
 	}
 	
@@ -959,16 +974,39 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		return false;
 	}
 	
+	private Runnable changeNavBottomBarIconsRunnable = () -> {
+			UIData.browserWidget7.setImageResource(R.drawable.chevron_recess_ic_back);
+			UIData.browserWidget8.setImageResource(R.drawable.chevron_forward_settings);
+			UIData.browserWidget9.setImageResource(R.drawable.ic_home_baseline_keyboard_show_24);
+	};
+	
 	private void webtitle_setVisibility(boolean invisible) {
 		int targetVis = invisible ? View.INVISIBLE : View.VISIBLE;
 		//CMN.Log("webtitle_setVisibility", invisible);
 		if(targetVis!=webtitle.getVisibility()) {
+			IsShowingSearchHistory = invisible;
 			if(invisible) {
 				String urlNow=currentWebView.getUrl();
-				if(!StringUtils.equals(urlNow, lastUrlSet)) {
+				boolean keepSchTrm = false;
+				if (currentViewImpl.searchTerm!=null) {
+					if (currentViewImpl.new_page_loaded) {
+						keepSchTrm = currentViewImpl.getTitle().startsWith(currentViewImpl.searchTerm);
+					} else {
+						keepSchTrm = true;
+					}
+					if (keepSchTrm) {
+						if(!etSearch.getText().equals(currentViewImpl.searchTerm))
+							etSearch.setText(currentViewImpl.searchTerm);
+						goToBarcodeScanner = true;
+					}
+				}
+				if(!keepSchTrm && !StringUtils.equals(urlNow, lastUrlSet)) {
 					CMN.Log("设置了 设置了");
 					etSearch.setText(lastUrlSet=currentWebView.getUrl());
 				}
+			}
+			if (settingsPanel!=null) {
+				UIData.browserWidget8.performClick();
 			}
 			webtitle.setVisibility(targetVis);
 			if(getTransitSearchHints()) {
@@ -981,9 +1019,39 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			if(invisible) {
 				keyboard_hidden=false;
 				init_searint_layout();
-				pull_hints(true);
+				if (opt.getShowSearchHints()) {
+					UIData.showSearchHistoryDropdown.setVisibility(View.GONE);
+					pull_hints(true);
+				} else {
+					showSearchHistoryDropdown();
+				}
+				if(opt.getShowImeImm()) {
+					root.postDelayed(changeNavBottomBarIconsRunnable, 350);
+				} else {
+					changeNavBottomBarIconsRunnable.run();
+				}
+			} else {
+				UIData.browserWidget7.setImageResource(R.drawable.chevron_recess);
+				UIData.browserWidget8.setImageResource(R.drawable.chevron_forward);
+				UIData.browserWidget9.setImageResource(R.drawable.ic_home_black_24dp);
 			}
 			shrinkToolbarWidgets(invisible);
+			if (opt.getTransitListBG()) {
+				UIData.showSearchHistoryDropdownBg
+						.animate()
+						.alpha(invisible?1:0)
+						.setDuration(180)
+						//.start()
+				;
+			}
+		}
+	}
+	
+	private void showSearchHistoryDropdown() {
+		UIData.showSearchHistoryDropdown.setVisibility(View.VISIBLE);
+		if (HintConstituents>0) {
+			HintConstituents=0;
+			adaptermy2.notifyDataSetChanged();
 		}
 	}
 	
@@ -1624,6 +1692,10 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	
 	private void search_hints_vis() {
 		UIData.searchHints.setVisibility(View.VISIBLE);
+		if (!opt.getShowIdleSearchHints())
+		{
+			UIData.showSearchHistoryDropdown.setVisibility(View.GONE);
+		}
 	}
 	
 	private boolean search_bar_vis() {
@@ -1643,19 +1715,44 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	private void init_searint_layout() {
 		LinearLayout init_searchbar = UIData.searchbar;
 		if(adaptermy2==null) {
+			View.OnClickListener searchHistoryEventListener = new View.OnClickListener(){
+				@Override
+				public void onClick(View v) {
+					ViewDataHolder viewHolder = (ViewDataHolder) v.getTag();
+					SearchHintsItemBinding vh = (SearchHintsItemBinding) viewHolder.data;
+					//showT(""+viewHolder.getLayoutPosition());
+					String text = (vh.subtitle.getVisibility()==View.VISIBLE
+							?vh.subtitle// 点击历史url
+							:vh.title // 点击搜索词
+							).getText().toString();
+					if(v.getId()==R.id.close) {
+						etSearch.setText(text);
+					} else {
+						execBrowserGoTo(text);
+					}
+				}
+			};
 			adaptermy2 = new RecyclerView.Adapter<ViewDataHolder<SearchHintsItemBinding>>() {
 				public int getItemCount() { return HintConstituents+2; }
 				@NonNull
 				@Override
 				public ViewDataHolder<SearchHintsItemBinding> onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
 					SearchHintsItemBinding vh = SearchHintsItemBinding.inflate(getLayoutInflater(), parent, false);
-					CMN.Log("onCreateViewHolder", viewType, CMN.now());
-					return new ViewDataHolder<>(vh);
+					//CMN.Log("onCreateViewHolder", viewType, CMN.now());
+					ViewDataHolder<SearchHintsItemBinding> ret = new ViewDataHolder<>(vh);
+					vh.item.setOnClickListener(searchHistoryEventListener);
+					vh.close.setOnClickListener(searchHistoryEventListener);
+					vh.close.setTag(ret);
+					return ret;
 				}
 				
 				@Override
 				public void onBindViewHolder(@NonNull ViewDataHolder<SearchHintsItemBinding> viewHolder, int position) {
 					SearchHintsItemBinding vh = viewHolder.data;
+					if(HintConstituents==0) {
+						viewHolder.itemView.setVisibility(View.GONE);
+						return;
+					}
 					viewHolder.itemView.setVisibility(View.VISIBLE);
 					if(false) {
 						vh.subtitle.setVisibility(View.GONE);
@@ -1700,8 +1797,18 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			
 			RecyclerView init_search_hints = UIData.searchHints;
 			init_search_hints.setHasFixedSize(true);
-			
-			LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+			// https://stackoverflow.com/questions/56379574/how-do-i-detect-overscroll-in-android-recyclerview
+			LinearLayoutManager layoutManager = new LinearLayoutManager(this){
+				@Override
+				public int scrollVerticallyBy ( int dx, RecyclerView.Recycler recycler, RecyclerView.State state ) {
+					int scrollRange = super.scrollVerticallyBy(dx, recycler, state);
+					if(!keyboard_hidden && dx!=scrollRange && opt.getHideKeyboardOnScrollSearchHints()) {
+						imm.hideSoftInputFromWindow(etSearch.getWindowToken(), 0);
+						keyboard_hidden=true;
+					}
+					return scrollRange;
+				}
+			};
 			layoutManager.setOrientation(LinearLayoutManager.VERTICAL);
 			layoutManager.setInitialPrefetchItemCount(8);
 			init_search_hints.setLayoutManager(layoutManager);
@@ -1712,11 +1819,20 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			init_search_hints.setNestedScrollingEnabled(false);
 			
 			init_search_hints.setOnScrollChangedListener((v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
-				if(!keyboard_hidden&&init_search_hints.getScrollState()==RecyclerView.SCROLL_STATE_DRAGGING) {
+				if(!keyboard_hidden
+					&& init_search_hints.getScrollState()==RecyclerView.SCROLL_STATE_DRAGGING
+					&& opt.getHideKeyboardOnScrollSearchHints()
+				) {
 					imm.hideSoftInputFromWindow(etSearch.getWindowToken(), 0);
 					keyboard_hidden=true;
 				}
 			});
+			
+			etSearch.setOnClickListener(this);
+			
+			if (opt.getTransitListBG()) {
+				UIData.showSearchHistoryDropdownBg.setAlpha(0);
+			}
 		}
 		HintConstituents = 0;
 		init_searchbar.setTranslationX(0);
@@ -2644,15 +2760,31 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		weblayout.setPadding(0,pt,0,pb);
 	}
 	
+	private void Test_settings() {
+	}
+	
 	// click
 	@RequiresApi(api = Build.VERSION_CODES.N_MR1)
-	@SuppressLint("NonConstantResourceId") // no no no you don't want that. @Google
+	@SuppressLint("NonConstantResourceId") // no no no you don't want that.
 	@Override
 	public void onClick(View v) {
 		if(!systemIntialized||mBrowserSlider.active()) {
 			return;
 		}
-		switch (v.getId()){
+		int vid = v.getId();
+		if (settingsPanel!=null) {
+			if (settingsPanel.isVisible()) { // sanity check
+				settingsPanel.toggle(UIData.webcoord);
+			}
+			settingsPanel=null;
+			if(vid==R.id.browser_widget7
+					|| vid==R.id.browser_widget8
+					//|| v.getParent()!=UIData.toolbarContent
+			) {
+				return;
+			}
+		}
+		switch (vid){
 			case R.id.ivBack:{ // 搜索引擎弹窗 //searpop
 				int polypopupW = (int) (_45_*1.5);
 				int searchEnginePopupW = (int) (etSearch.getWidth()*0.90);
@@ -2859,14 +2991,16 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					etSearch.setText(currentWebView.getUrl());
 				}
 				goToBarcodeScanner=t0||StringUtils.equals(text, currentWebView.getUrl());
-				updateQRBtn();
 				webtitle_setVisibility(true);
+				updateQRBtn();
+				root.removeCallbacks(postSetSoftResizeRunnable);
+				setSoftInputMode(softModeHold);
 				if(opt.getSelectAllOnFocus()||opt.getShowImeImm()) {
-					root.removeCallbacks(postSetSoftResizeRunnable);
-					setSoftInputMode(softModeHold);
 					v.post(() -> { //upEvt
 						etSearch.requestFocus();
-						imm.showSoftInput(etSearch, 0);
+						if(opt.getSelectAllOnFocus()) {
+							imm.showSoftInput(etSearch, 0);
+						}
 					});
 				}
 			} break;
@@ -2955,13 +3089,17 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				top_menu.show();
 				break;
 			case R.id.browser_widget7:
+				if (IsShowingSearchHistory) {
+					UIData.searchHints.performClick();
+					break;
+				}
 				if (!DismissingViewHolder) {
 					Integer arrayId = R.array.sync_tabs;
 					// mResource.getString(R.string.sync_tabs)
 					AlertDialog alert = getOptionListDialog(WeakReferenceHelper.opt_list_main, 0, arrayId, null);
 					if(!arrayId.equals(alert.tag)) {
 						ListView lv = alert.getListView();
-						lv.setOnItemClickListener((parent, view, position, vid) -> {
+						lv.setOnItemClickListener((parent, view, position, vid1) -> {
 							switch (position) {
 								case -1:
 								break;
@@ -3049,6 +3187,27 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				CMN.Log("backed::", wv.getUrl());
 				break;
 			case R.id.browser_widget8:
+				if (IsShowingSearchHistory) {
+					// 显示历史记录的快速设置界面
+					int jd = WeakReferenceHelper.search_history_options;
+					SearchHistoryAndInputMethodSettings shimObj
+							= (SearchHistoryAndInputMethodSettings) getReferencedObject(jd);
+					if (shimObj==null) {
+						shimObj = new SearchHistoryAndInputMethodSettings(
+								this
+								, UIData.webcoord
+								, UIData.bottombar2.getHeight()
+								, opt
+						);
+						putReferencedObject(jd, shimObj);
+					}
+					shimObj.toggle(UIData.webcoord);
+					settingsPanel = shimObj.isVisible()?shimObj:null;
+					if (MainMenuListVis && shimObj.isVisible()) {
+						toggleMenuGrid();
+					}
+					break;
+				}
 				if (!DismissingViewHolder) {
 					
 					break;
@@ -3093,6 +3252,11 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				break;
 			case R.id.browser_widget9:
 				//showT("测试……");
+				if (IsShowingSearchHistory) {
+					etSearch.requestFocus();
+					imm.showSoftInput(etSearch, 0);
+					break;
+				}
 				currentWebView.loadUrl("polyme://nav/index");
 				
 //				currentWebView.evaluateJavascript("window._docAnnots", new ValueCallback<String>() {
@@ -3118,6 +3282,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			case R.id.browser_widget11:
 				MenuClicked=MainMenuListVis;
 				toggleMenuGrid();
+				TestHelper.turnOffScreen(this);
 			break;
 			case R.id.browser_widget10:
 				tmpBmRef = DummyBMRef;
@@ -3143,10 +3308,33 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					toggleTabView(-1, v);
 				}
 			break;
-			case R.id.searchbar:
+			case R.id.etSearch:{
+				if (keyboard_hidden) {
+					keyboard_hidden = false;
+				}
+			} break;
+			case R.id.show_search_history_dropdown_bg:
+			case R.id.search_hints:
 			case R.id.browser_widget1:{
 				etSearch_clearFocus();
 				webtitle_setVisibility(false);
+			} break;
+			case R.id.menu_grid_shadow:{
+				if (MainMenuListVis) {
+					toggleMenuGrid();
+				}
+			} break;
+			case R.id.show_search_history_dropdown:{
+				if (webtitle.getVisibility()!=View.VISIBLE)
+				{
+					pull_hints(true);
+					if (opt.getHideKeyboardOnShowSearchHints()) {
+						if(!keyboard_hidden) {
+							imm.hideSoftInputFromWindow(etSearch.getWindowToken(), 0);
+							keyboard_hidden=true;
+						}
+					}
+				}
 			} break;
 			case R.id.browser_widget2:{
 				if(etSearch.getText().length()==0) {
@@ -3170,9 +3358,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			} break;
 			case R.id.browser_widget4:{
 				etSearch.setText(null);
-				boolean showKeyBoardOnClean=true;
-				if(showKeyBoardOnClean) {
+				if(opt.getShowKeyIMEOnClean()) {
 					imm.showSoftInput(etSearch, 0);
+					keyboard_hidden = false;
 				}
 			} break;
 			case R.id.browser_widget5:{
@@ -3316,6 +3504,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				public void onAnimationEnd(Animator animation) {
 					if(!MainMenuListVis) {
 						menu_grid.setVisibility(View.GONE);
+						if (opt.getTransitListBG()) {
+							UIData.menuGridShadow.setVisibility(View.GONE);
+						}
 					}
 				}
 			};
@@ -3363,17 +3554,24 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					vv.setOnClickListener(menuGridClicker);
 				}
 			}
+			if (opt.getTransitListBG()) {
+				UIData.menuGridShadow.setAlpha(0);
+			}
 		}
 		
 		float alpha = 0;
 		if(MainMenuListVis) { // 隐藏
 			TargetTransY = TargetTransY + legalMenuTransY;
 			MainMenuListVis=false;
+			if (!opt.getTransitListBG()) {
+				UIData.menuGridShadow.setVisibility(View.GONE);
+			}
 		} else { // 显示
 			alpha=1;
 			MainMenuListVis=true;
 			refreshMenuGridSize();
 			menu_grid.setVisibility(View.VISIBLE);
+			UIData.menuGridShadow.setVisibility(View.VISIBLE);
 			//UIData.bottombar.getLayoutParams().height = UIData.mainMenuLst.getHeight()+UIData.bottombar2.getHeight();
 		}
 		menu_grid.focusable=MainMenuListVis;
@@ -3384,8 +3582,16 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				.alpha(alpha)
 				.setDuration(180)
 				//.setInterpolator(linearInterpolator)
-				.setListener(menu_grid_animlis)
+				.setListener(MainMenuListVis?null:menu_grid_animlis)
+				.start()
+		;
+		if (opt.getTransitListBG()) {
+			UIData.menuGridShadow
+				.animate()
+				.alpha(alpha)
+				.setDuration(180)
 				.start();
+		}
 	}
 	
 	private void refreshMenuGridSize() {
@@ -4073,6 +4279,16 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			return false;
 		}
 		switch (v.getId()) {
+			// 扫码
+			case R.id.browser_widget5:{
+				//showT("扫码");
+				if(!goToBarcodeScanner) {
+					return false;
+				}
+				Intent intent = new Intent(this, QRGenerator.class).putExtra(Intent.EXTRA_TEXT, etSearch.getText());
+				startActivity(intent);
+				acquireWakeLock();
+			} break;
 			// 新建标签页
 			case R.id.browser_widget10:{
 				try {
@@ -4332,6 +4548,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				dialog.setTitle(title);
 			}
 			dialog.show();
+			// 有时复用后台调出的对话框导致列表项宽度不对，都变小，layout参数正常，width不匹配，则需要调用此。
+			postInvalidateLayout(lv); // todo 检查必要性。
 		}
 		return dialog; // returns the universal dialog
 	}

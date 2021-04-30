@@ -135,6 +135,14 @@ public class Options implements WebOptions, BookOptions {
 	@Multiline(flagPos=48, shift=1) public boolean getDecodeUPCBar(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=49, shift=1) public boolean getDecodeAZTECBar(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=50, shift=1) public boolean getDecodePDF417Bar(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
+	
+	@Multiline(flagPos=51, shift=1) public boolean getShowSearchHints(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=52, shift=0) public boolean getShowIdleSearchHints(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=53, shift=1) public boolean getShowSearchHintsOnClear(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=54, shift=1) public boolean getTransitListBG(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=55, shift=1) public boolean getHideKeyboardOnShowSearchHints(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=56, shift=1) public boolean getHideKeyboardOnScrollSearchHints(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=57, shift=1) public boolean getShowKeyIMEOnClean(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
 
 
 
@@ -169,7 +177,7 @@ public class Options implements WebOptions, BookOptions {
 	public boolean getUseLruDiskCache() {
 		return (SecondFlag & 0x100) != 0x100;
 	}
-	@Multiline(flagPos=28, shift=1) public static boolean getKeepScreen(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=28, shift=0) public static boolean getKeepScreen(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=28, shift=1) public static boolean getKeepScreen(long SecondFlag){ SecondFlag=SecondFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=28, shift=1) public static boolean setKeepScreen(boolean val){ SecondFlag=SecondFlag; throw new RuntimeException(); }
 	
@@ -280,6 +288,22 @@ public class Options implements WebOptions, BookOptions {
 				return ThirdFlag;
 		}
 		return 0;
+	}
+	
+	public boolean EvalBooleanForFlag(BrowserActivity a, int flagIndex, int flagPos, boolean reverse) {
+		long flag = Flag(a, flagIndex);
+		return reverse ^ (((flag>>flagPos)&0x1)!=0);
+	}
+	
+	public void PutBooleanForFlag(BrowserActivity a, int flagIndex, int flagPos, boolean value, boolean reverse) {
+		long flag = Flag(a, flagIndex);
+		long mask = 1l<<flagPos;
+		if(value ^ reverse) {
+			flag |= mask;
+		} else {
+			flag &= ~mask;
+		}
+		Flag(a, flagIndex, flag);
 	}
 	
 	public void Flag(BrowserActivity a, int flagIndex, long val) {
