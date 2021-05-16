@@ -461,7 +461,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			fadeInContents.addListener(new Animator.AnimatorListener() {
 				@Override public void onAnimationStart(Animator animation) { }
 				@Override public void onAnimationEnd(Animator animation) {
-					//win.setBackgroundDrawable(new ColorDrawable(0));
+					win.setBackgroundDrawable(new ColorDrawable(0));
 				}
 				@Override public void onAnimationCancel(Animator animation) { }
 				@Override public void onAnimationRepeat(Animator animation) { }
@@ -655,6 +655,11 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	
 	@Override
 	public void further_loading(Bundle savedInstanceState) {
+		if(false) {
+			//Utils.removeView(UIData.webcoord);
+			//Utils.removeView(UIData.root);
+			return;
+		}
 		if(historyCon==null) {
 			if(TestHelper.debuggingWebType>=0) {
 				webType=TestHelper.debuggingWebType;
@@ -2362,7 +2367,6 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	private Animator.AnimatorListener animatorLis = new AnimatorListenerAdapter() {
 		@Override
 		public void onAnimationStart(Animator animation) {
-			super.onAnimationStart(animation);
 			if(opt.getHideWebViewWhenShowingWebCoverDuringTransition()) {
 				currentViewImpl.implView.setVisibility(View.INVISIBLE);
 			}
@@ -2651,7 +2655,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				if(holder.type==0) {
 					// type webview
 					viewImpl = new WebFrameLayout(this, holder); //ttt
-					viewImpl.setBackgroundColor(Color.WHITE);
+					//viewImpl.setBackgroundColor(Color.WHITE);
 					viewImpl.setPadding(0, 0, 0, _45_);
 					viewImpl.setPivotX(0);
 					viewImpl.setPivotY(0);
@@ -4752,7 +4756,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		theView.setOverScrollMode(View.OVER_SCROLL_NEVER);
 		mWebView.setDownloadListener(mWebListener);
 		mWebView.setOnScrollChangedListener(mWebListener);
-		theView.setBackgroundColor(Color.TRANSPARENT);
+		theView.setBackgroundColor(Color.WHITE);
 		
 		setUserAgentString(layout, false);
 		

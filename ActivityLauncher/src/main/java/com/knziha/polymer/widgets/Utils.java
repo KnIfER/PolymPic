@@ -574,6 +574,10 @@ public class Utils {
 		}
 	}
 	
+	public static void removeView(View viewToRemove) {
+		removeIfParentBeOrNotBe(viewToRemove, null, false);
+	}
+	
 	public static boolean removeIfParentBeOrNotBe(View view, ViewGroup parent, boolean tobe) {
 		if(view!=null) {
 			ViewParent svp = view.getParent();

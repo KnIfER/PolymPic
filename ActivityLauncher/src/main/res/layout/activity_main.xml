@@ -241,7 +241,7 @@
 				android:layout_gravity="bottom"
 				android:gravity="bottom|center_vertical|fill_horizontal"
 				app:layout_behavior="com.knziha.polymer.widgets.BottomNavigationBehavior"
-				android:elevation="10dp"
+				android:elevation="11dp"
 				>
 				<android.widget.ImageView
 					android:id="@+id/browser_widget7"
