@@ -23,6 +23,7 @@ import android.webkit.WebSettings;
 import androidx.core.view.NestedScrollingChild;
 import androidx.core.view.NestedScrollingChildHelper;
 
+import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.browser.webkit.UniversalWebviewInterface;
 import com.knziha.polymer.browser.webkit.WebViewImplExt;
 
@@ -38,8 +39,8 @@ public class AdvancedBrowserWebView extends WebViewImplExt {
 		//mChildHelper = new NestedScrollingChildHelper(this);
 		//setNestedScrollingEnabled(true);
 		
-		setVerticalScrollBarEnabled(false);
-		setHorizontalScrollBarEnabled(false);
+		//setVerticalScrollBarEnabled(false);
+		//setHorizontalScrollBarEnabled(false);
 		
 		//setScrollBarStyle(View.SCROLLBARS_OUTSIDE_OVERLAY);
 		
@@ -55,13 +56,13 @@ public class AdvancedBrowserWebView extends WebViewImplExt {
 		settings.setDefaultTextEncodingName("UTF-8");
 		
 		settings.setNeedInitialFocus(false);
-		//settings.setDefaultFontSize(40);
-		//settings.setTextZoom(100);
+		settings.setTextZoom(100);
+		//settings.setDefaultFontSize(60);
 		//setInitialScale(25);
 		
-		settings.setJavaScriptEnabled(true);
-		settings.setJavaScriptCanOpenWindowsAutomatically(false);
-		settings.setMediaPlaybackRequiresUserGesture(false);
+		//settings.setJavaScriptEnabled(true);
+		//settings.setJavaScriptCanOpenWindowsAutomatically(false);
+		//settings.setMediaPlaybackRequiresUserGesture(false);
 		
 		settings.setAppCacheEnabled(true);
 		settings.setDatabaseEnabled(true);
@@ -69,8 +70,8 @@ public class AdvancedBrowserWebView extends WebViewImplExt {
 		
 		settings.setAllowFileAccess(true);
 		
-		//settings.setUseWideViewPort(true);//设定支持viewport
-		//settings.setLoadWithOverviewMode(true);
+		settings.setUseWideViewPort(true);//设定支持viewport
+		settings.setLoadWithOverviewMode(true);
 		//settings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.SINGLE_COLUMN);
 		//settings.setSupportZoom(support);
 		

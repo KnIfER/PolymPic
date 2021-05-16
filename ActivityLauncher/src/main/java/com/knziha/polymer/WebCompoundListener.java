@@ -471,6 +471,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	
 	public void  onScaleChanged(WebView view, float oldScale,float newScale)
 	{
+		//CMN.Log("onScaleChanged", oldScale, newScale);
 		if(PrintStartTime>0 && System.currentTimeMillis()- PrintStartTime <5350){
 			if(oldScale!=newScale) {
 				CMN.Log("re_scale...");
@@ -719,7 +720,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 //				mWebView.getSettings().setJavaScriptEnabled(true);
 			
 			//mWebView.postReviveJS(0);
-			layout.reviveJS();
+			//layout.reviveJS();
 			
 			/* 原天道契 */
 			webviewImpl.evaluateJavascript(PRI, null);
@@ -1320,6 +1321,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		boolean scrollforbid;
 		//CMN.Log("onScrollChange", scrollY-oldy);
 		if(layout.forbidScrollWhenSelecting && layout.bIsActionMenuShown && oldy-scrollY>200
+			|| !a.DismissingViewHolder
 			|| CustomViewHideTime>0 && System.currentTimeMillis()-CustomViewHideTime<350){
 			CMN.Log("re_scroll...");
 			webviewImpl.SafeScrollTo(oldx, oldy);

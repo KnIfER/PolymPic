@@ -6,7 +6,6 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Picture;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.os.Build;
@@ -17,6 +16,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.webkit.ValueCallback;
 import android.webkit.WebBackForwardList;
@@ -41,7 +41,6 @@ import com.knziha.polymer.R;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.WebOptions;
 import com.knziha.polymer.WebCompoundListener;
-import com.knziha.polymer.browser.webkit.BitmapWaiter;
 import com.knziha.polymer.browser.webkit.UniversalWebviewInterface;
 import com.knziha.polymer.browser.webkit.WebViewHelper;
 import com.knziha.polymer.browser.webkit.XWalkWebView;
@@ -84,6 +83,9 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 	/**网页规则，即插件。*/
 	public List<WebCompoundListener.SiteRule> rules = Collections.synchronizedList(new ArrayList<>());
 	public List<Object> prunes = Collections.synchronizedList(new ArrayList<>());
+	
+	private final ViewConfiguration viewConfig;
+	private int scaledTouchSlop;
 	
 	public boolean forbidScrollWhenSelecting;
 	public boolean forbidLoading;
@@ -161,6 +163,8 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 	
 	private boolean bIsActionMenuShownNew;
 	public boolean bIsActionMenuShown;
+	private long lastDownTm;
+	private boolean lastDwnStill;
 	
 	public WebFrameLayout(@NonNull Context context, BrowserActivity.TabHolder holder) {
 		super(context);
@@ -171,6 +175,8 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 			activity = (BrowserActivity) context;
 		}
 		
+		viewConfig = ViewConfiguration.get(context);
+		scaledTouchSlop = viewConfig.getScaledTouchSlop();
 		webScale=getResources().getDisplayMetrics().density;
 	}
 	
@@ -305,14 +311,25 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 		lastX = event.getX();
 		boolean dealWithCM = webviewcallback!=null && bIsActionMenuShown;
 		switch (action) {
-			case MotionEvent.ACTION_DOWN:
+			case MotionEvent.ACTION_DOWN:{
 				isIMScrollSupressed=false;
 				isWebHold=true;
+				long tm = event.getDownTime();
+				//CMN.Log("Juli", orgX-lastX, orgY-lastY, orgX, lastX, orgY, lastY, viewConfig.getScaledTouchSlop());
+				//CMN.Log("scaledTouchSlop", Juli(orgX-lastX, orgY-lastY), scaledTouchSlop, tm-lastDownTm);
+				if(lastDwnStill && tm-lastDownTm<ViewConfiguration.getDoubleTapTimeout() && Juli(orgX-lastX, orgY-lastY)<250*250) {
+					isIMScrollSupressed=true;
+				}
+				lastDwnStill = true;
 				orgY = lastY;
 				orgX = lastX;
 				incrementVerIfAtNormalPage();
-				break;
+				lastDownTm = tm;
+			} break;
 			case MotionEvent.ACTION_MOVE:
+				if(lastDwnStill && (Math.abs(lastY - orgY) > scaledTouchSlop|| Math.abs(lastX - orgX) > scaledTouchSlop)) {
+					lastDwnStill = false;
+				}
 				if (dealWithCM && bIsActionMenuShownNew && (Math.abs(lastY - orgY) > GlobalOptions.density * 5 || Math.abs(lastX - orgX) > GlobalOptions.density * 5)) {
 					bIsActionMenuShownNew = false;
 					for (ViewGroup vI : webviewcallback.popupDecorVies) {
@@ -428,6 +445,10 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 //			event.offsetLocation(0, -layoutTop);
 		
 		//event.recycle();
+	}
+	
+	private float Juli(float v, float v1) {
+		return v*v+v1*v1;
 	}
 	
 	
@@ -787,6 +808,7 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 		ContentValues values = new ContentValues();
 		values.put("title", holder.title);
 		values.put("url", holder.url);
+		values.put("f1", holder.flag);
 		values.put("thumbnail", data);
 		LexicalDBHelper.getInstancedDb().update("webtabs", values, "id=?", new String[]{String.valueOf(tabID_Fetcher)});
 		CMN.Log(tabID_Fetcher, "入表时间：", System.currentTimeMillis()-st, data.length, (int) (bmItem.getAllocationByteCount()*0.50), bos1.data().length);

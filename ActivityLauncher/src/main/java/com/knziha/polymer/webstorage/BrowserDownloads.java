@@ -6,12 +6,14 @@ import android.database.Cursor;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.text.TextUtils;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.GlobalOptions;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.knziha.polymer.BrowserActivity;
@@ -28,6 +30,7 @@ public class BrowserDownloads extends BrowserHistory implements View.OnClickList
 	public void onCreate(@Nullable Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		baseIconIndicatorRes = R.drawable.ic_file_download_black_24dp;
+		showTime=false;
 	}
 	
 	HashSet<ViewHolder> runningTasks = new HashSet<>();
@@ -75,6 +78,8 @@ public class BrowserDownloads extends BrowserHistory implements View.OnClickList
 		if(holder.tag==null) {
 			holder.tag = new DownloadHandlerStd.DownloadItemView(holder.itemData.icon, holder.itemData.subtitle1);
 		}
+		holder.itemData.title.setEllipsize(TextUtils.TruncateAt.MIDDLE);
+		holder.itemData.title.setTextSize(15f);
 		DownloadHandlerStd.DownloadItemView dwnldView = (DownloadHandlerStd.DownloadItemView) holder.tag;
 		dwnldView.tid = cursor.getLong(4);
 		dwnldView.downloadProgressIndicator.setText(""+dwnldView.tid);

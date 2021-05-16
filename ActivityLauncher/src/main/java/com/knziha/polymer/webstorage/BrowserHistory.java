@@ -37,9 +37,11 @@ public class BrowserHistory extends DialogFragment implements View.OnClickListen
 	RecyclerView.Adapter<ViewHolder> adapter;
 	Date date = new Date();
 	Date date1 = new Date();
-	static final SimpleDateFormat dateFormatter = new SimpleDateFormat("MM/dd HH:mm");
+	//static final SimpleDateFormat dateFormatter = new SimpleDateFormat("MM/dd HH:mm");
+	static final SimpleDateFormat dateFormatter = new SimpleDateFormat("MM/dd");
 	static final SimpleDateFormat dateFormatter1 = new SimpleDateFormat("MM/dd");
 	int baseIconIndicatorRes = R.drawable.ic_baseline_history_gray;
+	boolean showTime=false;
 	
 	protected class AppDataTimeRenownedBaseAdapter extends RecyclerView.Adapter<ViewHolder> {
 		final LayoutInflater inflater;
@@ -48,8 +50,7 @@ public class BrowserHistory extends DialogFragment implements View.OnClickListen
 		}
 		@NonNull @Override
 		public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-			ViewHolder vh = new ViewHolder(HistoryItemBinding.inflate(inflater, parent, false));
-			return vh;
+			return new ViewHolder(HistoryItemBinding.inflate(inflater, parent, false));
 		}
 		
 		@Override
@@ -72,8 +73,12 @@ public class BrowserHistory extends DialogFragment implements View.OnClickListen
 			viewData.subtitle.setText(url);
 			viewData.title.setText(title);
 			viewData.title.setMaxLines(Utils.httpIndex(title)>0?1:10);
+			viewData.title.setSingleLine();
+			viewData.title.setTextSize(15f);
 			date.setTime(time);
-			viewData.time.setText(dateFormatter.format(date));
+			if (showTime) {
+				viewData.time.setText(dateFormatter.format(date));
+			}
 			
 			BrowserHistory.this.onBindViewHolder(holder, cursor, position);
 			

@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -30,7 +31,7 @@ import com.shockwave.pdfium.treeview.TreeViewNode;
 import java.util.Collections;
 import java.util.List;
 
-public class TestButtonActivity extends Toastable_Activity implements View.OnClickListener {
+public class TestButtonActivity1 extends Toastable_Activity implements View.OnClickListener {
 	AlertDialog alert;
 	
 	@Override
@@ -41,7 +42,7 @@ public class TestButtonActivity extends Toastable_Activity implements View.OnCli
 		
 		root = findViewById(R.id.root);
 		
-		alert = new androidx.appcompat.app.AlertDialog.Builder(this)
+		alert = new AlertDialog.Builder(this)
 				.setSingleChoiceLayout(R.layout.singlechoice_plain)
 				.setSingleChoiceItems(R.array.config_links, 0, null)
 				.setTitle("HAPPY").create();
@@ -84,7 +85,6 @@ public class TestButtonActivity extends Toastable_Activity implements View.OnCli
 		public static class ViewHolder extends RecyclerView.ViewHolder {
 			public final ImageView ivArrow;
 			public final TextView tvName;
-			
 			public final TextView tvPage;
 			
 			public ViewHolder(View rootView) {
@@ -96,7 +96,7 @@ public class TestButtonActivity extends Toastable_Activity implements View.OnCli
 			}
 		}
 	}
-	public static class TVEntry implements TreeViewAdapter.LayoutItemType {
+	class TVEntry implements TreeViewAdapter.LayoutItemType {
 		public int page;
 		public String entryName;
 		public TVEntry(String entryName, int page) {
@@ -117,7 +117,7 @@ public class TestButtonActivity extends Toastable_Activity implements View.OnCli
 					'}';
 		}
 	}
-	public static class TVNode extends TreeViewNode<TVEntry> {
+	public class TVNode extends TreeViewNode<TVEntry> {
 		public TVNode(@NonNull TVEntry content) {
 			super(content);
 		}
@@ -140,9 +140,12 @@ public class TestButtonActivity extends Toastable_Activity implements View.OnCli
 	}
 	
 
-	static class TreeViewTouchHelper extends ItemTouchHelper.Callback {
+	/**
+	 * Created by Administrator on 2016/4/12.
+	 */
+	static class MyItemTouchCallback extends ItemTouchHelper.Callback {
 		private ItemTouchAdapter itemTouchAdapter;
-		public TreeViewTouchHelper(ItemTouchAdapter itemTouchAdapter){
+		public MyItemTouchCallback(ItemTouchAdapter itemTouchAdapter){
 			this.itemTouchAdapter = itemTouchAdapter;
 		}
 		@Override
@@ -214,7 +217,7 @@ public class TestButtonActivity extends Toastable_Activity implements View.OnCli
 		private Drawable background = null;
 		private int bkcolor = -1;
 		private OnDragListener onDragListener;
-		public TreeViewTouchHelper setOnDragListener(OnDragListener onDragListener) {
+		public MyItemTouchCallback setOnDragListener(OnDragListener onDragListener) {
 			this.onDragListener = onDragListener;
 			return this;
 		}
@@ -222,7 +225,7 @@ public class TestButtonActivity extends Toastable_Activity implements View.OnCli
 			void onFinishDrag();
 		}
 		public interface ItemTouchAdapter {
-			void onMove(int fromPosition,int toPosition);
+			void onMove(int fromPosition, int toPosition);
 			void onSwiped(int position);
 		}
 	}
@@ -231,9 +234,58 @@ public class TestButtonActivity extends Toastable_Activity implements View.OnCli
 	private void testTreeView() {
 		Utils.removeIfParentBeOrNotBe(findViewById(R.id.button), null, false);
 		List<TVBinder> TreeViewBIInst = Collections.singletonList(new TVBinder());
-
-		final TreeViewAdapter adapter = new TreeViewAdapter(null, TreeViewBIInst);
+		
+		TVNode tvRoot = new TVNode(new TVEntry("root", 0));
+		int cc=0;
+		for (int i = 0; i < 10; i++) {
+			tvRoot.add("Node#"+i, i);
+			cc++;
+		}
+		//for (int i = 0; i < 10; i++) {
+		//	((TVNode)tvRoot.getChildList().get(2)).add("Sub Node#"+i, i);
+		//	cc++;
+		//}
+		
 		Context context = this;
+		
+		int finalCc = cc;
+		final RecyclerView.Adapter<TVBinder.ViewHolder> adapter
+		//= new TreeViewAdapter<TVBinder.ViewHolder>(TreeViewBIInst)
+				= new RecyclerView.Adapter<TVBinder.ViewHolder>()
+		{
+			@Override
+			public void onAttachedToRecyclerView(@NonNull RecyclerView recyclerView) {
+				super.onAttachedToRecyclerView(recyclerView);
+				//refresh(tvRoot.getChildList(), finalCc);
+			}
+			
+			@Override
+			public int getItemViewType(int position) {
+				return R.layout.bookmark_item;
+			}
+
+			@Override
+			public long getItemId(int position) {
+				return System.identityHashCode(tvRoot.getChildList().get(position));
+			}
+			
+			@NonNull
+			@Override
+			public TVBinder.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+				return new TVBinder.ViewHolder(getLayoutInflater().inflate(R.layout.bookmark_item, parent, false));
+			}
+
+			@Override
+			public void onBindViewHolder(@NonNull TVBinder.ViewHolder holder, int position) {
+				//super.onBindViewHolder(holder, position);
+			}
+
+			@Override
+			public int getItemCount() {
+				return tvRoot.getChildList().size();
+			}
+		};
+		
 		RecyclerView recyclerView = new RecyclerView(context);
 		recyclerView.setId(R.id.rv);
 		recyclerView.setLayoutManager(new LinearLayoutManager(context));
@@ -269,45 +321,10 @@ public class TestButtonActivity extends Toastable_Activity implements View.OnCli
 			}
 		});
 		
-		adapter.setOnTreeNodeListener(new TreeViewAdapter.OnTreeNodeListener() {
-			@Override
-			public boolean onClick(TreeViewNode node, RecyclerView.ViewHolder holder) {
-				if (!node.isLeaf()) {
-					onToggle(!node.isExpand(), holder);
-				} else {
-					Object content = node.getContent();
-					if(content instanceof BookMarkEntry) {
-						//onJumpToBookMark((BookMarkEntry)content);
-					}
-				}
-				//CMN.Log("onToggle", bmRv.isLayoutSuppressed(), CMN.id(node.getContent()), CMN.id(bmRv), CMN.id(bmRv.getAdapter()), node.getContent());
-				
-				return false;
-			}
-			
-			@Override
-			public void onToggle(boolean isExpand, RecyclerView.ViewHolder holder) {
-				if(holder instanceof TVBinder.ViewHolder) {
-					TVBinder.ViewHolder viewholder = (TVBinder.ViewHolder) holder;
-					viewholder.ivArrow.animate().rotation(isExpand ? 90 : 0).start();
-				}
-			}
-		});
 		adapter.setHasStableIds(true);
 		recyclerView.setAdapter(adapter);
-		TVNode tvRoot = new TVNode(new TVEntry("root", 0));
-		int cc=0;
-		for (int i = 0; i < 10; i++) {
-			tvRoot.add("Node#"+i, i);
-			cc++;
-		}
-		//for (int i = 0; i < 10; i++) {
-		//	((TVNode)tvRoot.getChildList().get(2)).add("Sub Node#"+i, i);
-		//	cc++;
-		//}
-		adapter.refresh(tvRoot.getChildList(), cc);
 		
-		TreeViewTouchHelper.ItemTouchAdapter itemTouchAdapter = new TreeViewTouchHelper.ItemTouchAdapter() {
+		MyItemTouchCallback.ItemTouchAdapter itemTouchAdapter = new MyItemTouchCallback.ItemTouchAdapter() {
 			@Override
 			public void onMove(int fromPosition, int toPosition) {
 				if (fromPosition==tvRoot.getChildList().size()-1 || toPosition==tvRoot.getChildList().size()-1){
@@ -333,7 +350,7 @@ public class TestButtonActivity extends Toastable_Activity implements View.OnCli
 		};
 		
 		final ItemTouchHelper itemTouchHelper
-				= new ItemTouchHelper(new TreeViewTouchHelper(itemTouchAdapter));
+				= new ItemTouchHelper(new MyItemTouchCallback(itemTouchAdapter));
 		itemTouchHelper.attachToRecyclerView(recyclerView);
 		
 		

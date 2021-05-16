@@ -10,16 +10,17 @@ import java.util.List;
  */
 
 @SuppressWarnings({"rawtypes"})
-public class TreeViewNode<T extends TreeViewAdapter.LayoutItemType> implements Cloneable {
-    private T content;
-    private TreeViewNode parent;
-    private List<TreeViewNode> childList;
-    private boolean isExpand;
+public class TreeViewNode<T> implements Cloneable {
+	protected T content;
+    protected TreeViewNode parent;
+    protected List<TreeViewNode> childList;
+    protected boolean isExpand;
+	public boolean schIsExpanded;
     //private boolean isLocked;
     //the tree height
-    private int height = UNDEFINE;
-
-    private static final int UNDEFINE = -1;
+	protected int height = UNDEFINE;
+	
+	protected static final int UNDEFINE = -1;
 
     public TreeViewNode(@NonNull T content) {
         this.content = content;
@@ -29,7 +30,8 @@ public class TreeViewNode<T extends TreeViewAdapter.LayoutItemType> implements C
     public int getHeight() {
         if (isRoot())
             height = 0;
-        else if (height == UNDEFINE)
+        //else if (height == UNDEFINE)
+		else if(parent!=null)
             height = parent.getHeight() + 1;
         return height;
     }
@@ -137,5 +139,21 @@ public class TreeViewNode<T extends TreeViewAdapter.LayoutItemType> implements C
 	
 	public void setExpanded(boolean val) {
 		isExpand = val;
+	}
+	
+	public boolean isExpand(boolean schView) {
+    	return schView?schIsExpanded:isExpand;
+	}
+	
+	public void toggle(boolean schView) {
+    	if (schView) {
+			schIsExpanded = !schIsExpanded;
+		} else {
+			isExpand = !isExpand;
+		}
+	}
+	
+	public int getChildCount() {
+		return childList.size();
 	}
 }

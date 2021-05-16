@@ -38,7 +38,7 @@ public class SearchHistoryAndInputMethodSettings extends AnimatorListenerAdapter
 	}};
 	final static Object[][] UITags = new Object[][]{
 			// 	 , getShowImeImm , getSelectAllOnFocus, getShowKeyIMEOnClean
-			{null, makeInt(1, 24, false), makeInt(1, 23, true), makeInt(1, 57, true)}
+			{null, makeInt(1, 24, true), makeInt(1, 23, true), makeInt(1, 57, true)}
 			,{null
 			, makeInt(1, 51, true) // getShowSearchHints
 			, makeInt(1, 53, true) // getShowSearchHintsOnClear
@@ -77,7 +77,6 @@ public class SearchHistoryAndInputMethodSettings extends AnimatorListenerAdapter
 		
 		LinearLayout lv = new LinearLayout(context);
 		lv.setOrientation(LinearLayout.VERTICAL);
-		lv.setBackgroundColor(0xefffffff);
 		float density = GlobalOptions.density;
 		lv.setPadding((int) (10*density), 0, (int) (10*density), 0);
 		ArrayList<View> views;
@@ -106,14 +105,16 @@ public class SearchHistoryAndInputMethodSettings extends AnimatorListenerAdapter
 				lv.addView(button, lp);
 			}
 		}
-		TextView v = new TextView(context);
-		lv.addView(v);
-		v.getLayoutParams().width = -1;
-		v.getLayoutParams().height = (int) (2.2* bottomPaddding);
+		//View v = new View(context);
+		//lv.addView(v);
+		//v.getLayoutParams().width = -1;
+		//v.getLayoutParams().height = (int) (bottomPaddding);
 		
 		ScrollView sv = new ScrollView(context);
 		sv.addView(lv, lp);
 		sv.setOverScrollMode(View.OVER_SCROLL_ALWAYS);
+		
+		sv.setBackgroundColor(0xefffffff);
 		
 		settingsLayout = sv;
 		settingsLayout.setAlpha(0);
@@ -166,13 +167,13 @@ public class SearchHistoryAndInputMethodSettings extends AnimatorListenerAdapter
 	public void onClick(View v) {
 		if (v instanceof RadioSwitchButton) {
 			RadioSwitchButton button = (RadioSwitchButton)v;
-			((Toastable_Activity)v.getContext()).showT("v::"+button.isChecked());
+			//((Toastable_Activity)v.getContext()).showT("v::"+button.isChecked());
 			
 			int storageInt = IU.parsint(v.getTag(), 0);
 			if(storageInt!=0) {
 				setBooleanInFlag(storageInt, button.isChecked());
 				
-				//((Toastable_Activity)settingsLayout.getContext()).showT(
+				//((Toastable_Activity)v.getContext()).showT(
 				//		"v::"+button.isChecked()+"::"+getBooleanInFlag(storageInt)+opt.getHideKeyboardOnScrollSearchHints());
 				
 			}

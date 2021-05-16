@@ -75,8 +75,12 @@ public class AppIconsAdapter extends RecyclerView.Adapter<AppIconsAdapter.ViewHo
 			Intent shareIntent = new Intent(appBean.intent);
 			shareIntent.setComponent(new ComponentName(appBean.pkgName, appBean.appLauncherClassName));
 			shareIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-			a.startActivity(shareIntent);
-			shareDialog.dismiss();
+			try {
+				a.startActivity(shareIntent);
+				shareDialog.dismiss();
+			} catch (Exception e) {
+				a.showT(e);
+			}
 		};
         bottomSheet = View.inflate(a, R.layout.share_bottom_dialog, null);
         indicator = bottomSheet.findViewById(R.id.indicator);
@@ -136,13 +140,15 @@ public class AppIconsAdapter extends RecyclerView.Adapter<AppIconsAdapter.ViewHo
 	private void ResolveResolvedQuery(Intent intent) {
 		List<ResolveInfo> resolved = pm.queryIntentActivities(intent, PackageManager.MATCH_ALL);
 		for (ResolveInfo RinfoI : resolved) {
-			AppInfoBean appBean = new AppInfoBean();
-			appBean.intent = intent;
-			appBean.data = RinfoI;
-			appBean.pm = pm;
-			appBean.pkgName = RinfoI.activityInfo.packageName;
-			appBean.appLauncherClassName = RinfoI.activityInfo.name;
-			list.add(appBean);
+			if (RinfoI.activityInfo.exported) {
+				AppInfoBean appBean = new AppInfoBean();
+				appBean.intent = intent;
+				appBean.data = RinfoI;
+				appBean.pm = pm;
+				appBean.pkgName = RinfoI.activityInfo.packageName;
+				appBean.appLauncherClassName = RinfoI.activityInfo.name;
+				list.add(appBean);
+			}
 		}
 	}
 	

@@ -150,6 +150,7 @@ import com.knziha.polymer.widgets.AppIconsAdapter;
 import com.knziha.polymer.widgets.DescriptiveImageView;
 import com.knziha.polymer.widgets.DialogWithTag;
 import com.knziha.polymer.widgets.EditFieldHandler;
+import com.knziha.polymer.widgets.NavigationHomeAdapter;
 import com.knziha.polymer.widgets.PopupBackground;
 import com.knziha.polymer.widgets.PrintPdfAgentActivity;
 import com.knziha.polymer.widgets.ScrollViewTransparent;
@@ -235,6 +236,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	private int padWidth;
 	private int itemPad;
 	private int _45_;
+	
+	boolean faguo=false;
 	
 	FileOutputStream url_file_recorder;
 	
@@ -331,8 +334,11 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	private SardineCloud syncHandler;
 	private WaveView waveView;
 	private boolean IsShowingSearchHistory;
+	private boolean IsReqCheckingNxtResume;
+	
 	
 	SearchHistoryAndInputMethodSettings settingsPanel;
+	private NavigationHomeAdapter navAdapter;
 	
 	@Override
 	public void onConfigurationChanged(@NonNull Configuration newConfig) {
@@ -385,12 +391,19 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			super.onBackPressed();
 			return;
 		}
-		if(checkWebSelection()) {
-		
-		} else if(searchEnginePopup!=null && searchEnginePopup.isShowing()) {
+		if(searchEnginePopup!=null && searchEnginePopup.isShowing()) {
 			searchEnginePopup.dismiss();
-		}  else if(mWebListener.dismissAppToast()) {
-		
+		} else if(settingsPanel!=null) {
+			UIData.browserWidget8.performClick();
+		} else if(MainMenuListVis) {
+			toggleMenuGrid(true);
+		}  else if(webtitle.getVisibility()!=View.VISIBLE) {
+			webtitle_setVisibility(false);
+			etSearch_clearFocus();
+		} else if(checkWebSelection()) {
+			// intentionally empty.
+		} else if(mWebListener.dismissAppToast()) {
+			// intentionally empty.
 		} else {
 			super.onBackPressed();
 		}
@@ -630,6 +643,14 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		super.onResume();
 		//PrintStartTime=0;
 		focused=true;
+		if (IsReqCheckingNxtResume) {
+			checkResume();
+		}
+	}
+	
+	private void checkResume() {
+		modThreeBtnForMenuGrid();
+		IsReqCheckingNxtResume = false;
 	}
 	
 	@Override
@@ -753,13 +774,15 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				if(search_bar_vis()) {
 					if (s.length()==0) {
 						if (opt.getShowSearchHintsOnClear()) {
-							UIData.showSearchHistoryDropdown.setVisibility(View.GONE);
-							pull_hints(false);
+							if (UIData.searchHints.getVisibility()==View.GONE) {
+								UIData.showSearchHistoryDropdown.setVisibility(View.GONE);
+								pull_hints(0);
+							}
 						} else {
 							showSearchHistoryDropdown();
 						}
 					} else {
-						pull_hints(false);
+						pull_hints(0);
 					}
 				}
 			}
@@ -769,6 +792,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		//wakeUp();
 		//CMN.Log("device space is ::",  getExternalFilesDir(null).getFreeSpace());
 		
+		//showDownloads();
 		
 		TestHelper.turnOffScreen(this);
 
@@ -863,7 +887,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		}
 	}
 	
-	private void execBrowserGoTo(String text) {
+	public void execBrowserGoTo(String text) {
 		if(text==null) {
 			text = etSearch.getText().toString();
 		}
@@ -985,9 +1009,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		//CMN.Log("webtitle_setVisibility", invisible);
 		if(targetVis!=webtitle.getVisibility()) {
 			IsShowingSearchHistory = invisible;
+			boolean keepSchTrm = false;
 			if(invisible) {
 				String urlNow=currentWebView.getUrl();
-				boolean keepSchTrm = false;
 				if (currentViewImpl.searchTerm!=null) {
 					if (currentViewImpl.new_page_loaded) {
 						keepSchTrm = currentViewImpl.getTitle().startsWith(currentViewImpl.searchTerm);
@@ -1003,6 +1027,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				if(!keepSchTrm && !StringUtils.equals(urlNow, lastUrlSet)) {
 					CMN.Log("设置了 设置了");
 					etSearch.setText(lastUrlSet=currentWebView.getUrl());
+				} else if(!keepSchTrm) {
+					Editable oldText = etSearch.getText();
+					keepSchTrm = !TextUtils.equals(oldText, urlNow) && (oldText.length()<4||!TextUtils.regionMatches(oldText, 0, "http", 0, 4));
 				}
 			}
 			if (settingsPanel!=null) {
@@ -1021,7 +1048,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				init_searint_layout();
 				if (opt.getShowSearchHints()) {
 					UIData.showSearchHistoryDropdown.setVisibility(View.GONE);
-					pull_hints(true);
+					pull_hints(keepSchTrm?2:1);
 				} else {
 					showSearchHistoryDropdown();
 				}
@@ -1572,7 +1599,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		}
 	}
 	
-	private void pull_hints(boolean show_terms_only) {
+	/**  0=show combined 1=show sch history 2=search current term. */
+	private void pull_hints(int show_terms_only) {
 		UIData.searchHints.scrollToPosition(0);
 		if(pull_hints_runnable!=null) {
 			pull_hints_runnable.interrupt();
@@ -1582,11 +1610,12 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	}
 	
 	class PullHintsRunnable implements Runnable {
-		private final boolean show_terms_only;
+		/** 0=show combined 1=show sch history 2=search current */
+		private final int show_terms_only;
 		CancellationSignal stopSign = new CancellationSignal();
 		Thread t = new Thread(this);
-		
-		public PullHintsRunnable(boolean show_terms_only) {
+		private String text;
+		public PullHintsRunnable(int show_terms_only) {
 			this.show_terms_only = show_terms_only;
 		}
 		
@@ -1595,13 +1624,14 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			stopSign.cancel();
 		}
 		public void start() {
+			text = show_terms_only==1?null:etSearch.getText().toString();
+			
 			t.start();
 		}
 		@AnyThread
 		@Override
 		public void run() {
 			CMN.Log("pull_hints", HintConstituents);
-			String text = show_terms_only?null:etSearch.getText().toString();
 			try {
 				Thread.sleep(100);
 			} catch (InterruptedException e) {
@@ -1645,10 +1675,10 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			ActiveUrlCursor=newUrlCursor;
 			ActiveSearchCursor=newSearchCursor;
 			historyCon.updateLastSearchTerm(text);
-			if(show_terms_only&&New_HintConstituents>=3) {
-				root.post(hintsPulledRunnable);
-			} else {
+			if(show_terms_only==0||New_HintConstituents<3) {
 				root.post(hintsUpdatedRunnable);
+			}  else {
+				root.post(hintsPulledRunnable);
 			}
 		}
 	};
@@ -1671,6 +1701,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			} else {
 				search_hints_vis();
 			}
+			//((LinearLayoutManager)UIData.searchHints.getLayoutManager()).scrollToPositionWithOffset(2,0);
+			
 		}
 	};
 	
@@ -1685,6 +1717,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			if(adaptermy2!=null) {
 				adaptermy2.notifyDataSetChanged();
 			}
+			//UIData.searchHints.getLayoutManager().scrollToPosition(2);
+			//((LinearLayoutManager)UIData.searchHints.getLayoutManager()).scrollToPositionWithOffset(2,-10);
 			search_hints_vis();
 			historyCon.closeCursors();
 		}
@@ -2784,6 +2818,17 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				return;
 			}
 		}
+		if (MainMenuListVis) {
+			//CMN.Log(v);
+			if(vid!=R.id.browser_widget11&&vid!=R.id.browser_widget9) {
+				toggleMenuGrid(true);
+			}
+			if(vid==R.id.browser_widget7
+					|| vid==R.id.browser_widget8
+			) {
+				return;
+			}
+		}
 		switch (vid){
 			case R.id.ivBack:{ // 搜索引擎弹窗 //searpop
 				int polypopupW = (int) (_45_*1.5);
@@ -2998,7 +3043,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				if(opt.getSelectAllOnFocus()||opt.getShowImeImm()) {
 					v.post(() -> { //upEvt
 						etSearch.requestFocus();
-						if(opt.getSelectAllOnFocus()) {
+						if(opt.getShowImeImm()) {
 							imm.showSoftInput(etSearch, 0);
 						}
 					});
@@ -3007,6 +3052,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			case R.id.ivRefresh:
 				WebFrameLayout layout = currentViewImpl;
 				UniversalWebviewInterface mWebView = currentWebView;
+				mWebView.getSettings().setJavaScriptEnabled(false);
 				if(UIData.progressbar.getVisibility()==View.VISIBLE) {
 					UIData.progressbar.setVisibility(View.GONE);
 					supressingProgressListener = true;
@@ -3204,7 +3250,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					shimObj.toggle(UIData.webcoord);
 					settingsPanel = shimObj.isVisible()?shimObj:null;
 					if (MainMenuListVis && shimObj.isVisible()) {
-						toggleMenuGrid();
+						toggleMenuGrid(true);
 					}
 					break;
 				}
@@ -3252,12 +3298,26 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				break;
 			case R.id.browser_widget9:
 				//showT("测试……");
+				if (MainMenuListVis) {
+					//v.getBackground().jumpToCurrentState();
+					moveTaskToBack(false);
+					toggleMenuGrid(false);
+					//IsReqCheckingNxtResume = true;
+					//v.postDelayed(() -> toggleMenuGrid(false), 250);
+					v.postDelayed(() -> modThreeBtnForMenuGrid(), 250);
+					break;
+				}
 				if (IsShowingSearchHistory) {
 					etSearch.requestFocus();
 					imm.showSoftInput(etSearch, 0);
 					break;
 				}
-				currentWebView.loadUrl("polyme://nav/index");
+				//currentWebView.loadUrl("polyme://nav/index");
+				
+				if (navAdapter==null) {
+					navAdapter = new NavigationHomeAdapter(this, UIData.bottombar2.getHeight());
+				}
+				navAdapter.toggle(UIData.webcoord);
 				
 //				currentWebView.evaluateJavascript("window._docAnnots", new ValueCallback<String>() {
 //					@Override
@@ -3281,10 +3341,13 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			break;
 			case R.id.browser_widget11:
 				MenuClicked=MainMenuListVis;
-				toggleMenuGrid();
+				toggleMenuGrid(true);
 				TestHelper.turnOffScreen(this);
 			break;
 			case R.id.browser_widget10:
+				if (MainMenuListVis) {
+					toggleMenuGrid(true);
+				}
 				tmpBmRef = DummyBMRef;
 				onLeaveCurrentTab(DismissingViewHolder ?0:1);
 				boolean post = false;
@@ -3316,18 +3379,17 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			case R.id.show_search_history_dropdown_bg:
 			case R.id.search_hints:
 			case R.id.browser_widget1:{
-				etSearch_clearFocus();
-				webtitle_setVisibility(false);
+				onBackPressed();
 			} break;
 			case R.id.menu_grid_shadow:{
 				if (MainMenuListVis) {
-					toggleMenuGrid();
+					toggleMenuGrid(true);
 				}
 			} break;
 			case R.id.show_search_history_dropdown:{
 				if (webtitle.getVisibility()!=View.VISIBLE)
 				{
-					pull_hints(true);
+					pull_hints(1);
 					if (opt.getHideKeyboardOnShowSearchHints()) {
 						if(!keyboard_hidden) {
 							imm.hideSoftInputFromWindow(etSearch.getWindowToken(), 0);
@@ -3493,12 +3555,18 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		root.postDelayed(postRectifyWebTitleRunnable, 500);
 	}
 	
-	private void toggleMenuGrid() {
+	private void toggleMenuGrid(boolean animate) {
+		if(!DismissingViewHolder) {
+			toggleTabView(-1, UIData.browserWidget10);
+		}
+		faguo = true;
 		int TargetTransY = -UIData.bottombar2.getHeight();
 		int legalMenuTransY = (int) (GlobalOptions.density*55);
 		//appbar.setExpanded(false, true);
 		if(menu_grid==null) {
 			// init_menu_layout
+			// todo avoid
+			UIData.bottombar2.setOnClickListener(new Utils.DummyOnClick());
 			menu_grid_animlis = new AnimatorListenerAdapter() {
 				@Override
 				public void onAnimationEnd(Animator animation) {
@@ -3541,7 +3609,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					} break;
 				}
   				MenuClicked = true;
-				v.postDelayed(this::toggleMenuGrid, 250);
+				v.postDelayed(() -> toggleMenuGrid(true), 250);
 			};
 			menu_grid=(ScrollViewTransparent) UIData.menuGrid.getViewStub().inflate();
 			ViewGroup svp = (ViewGroup) menu_grid.getChildAt(0);
@@ -3566,7 +3634,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			if (!opt.getTransitListBG()) {
 				UIData.menuGridShadow.setVisibility(View.GONE);
 			}
-		} else { // 显示
+		}
+		else { // 显示
 			alpha=1;
 			MainMenuListVis=true;
 			refreshMenuGridSize();
@@ -3576,22 +3645,60 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		}
 		menu_grid.focusable=MainMenuListVis;
 		//UIData.browserWidget11.jumpDrawablesToCurrentState();
-		menu_grid
-				.animate()
-				.translationY(TargetTransY)
-				.alpha(alpha)
-				.setDuration(180)
-				//.setInterpolator(linearInterpolator)
-				.setListener(MainMenuListVis?null:menu_grid_animlis)
-				.start()
-		;
-		if (opt.getTransitListBG()) {
-			UIData.menuGridShadow
-				.animate()
-				.alpha(alpha)
-				.setDuration(180)
-				.start();
+		if (animate) {
+			menu_grid
+					.animate()
+					.translationY(TargetTransY)
+					.alpha(alpha)
+					.setDuration(180)
+					//.setInterpolator(linearInterpolator)
+					.setListener(MainMenuListVis?null:menu_grid_animlis)
+					.start()
+			;
+			if (opt.getTransitListBG()) {
+				UIData.menuGridShadow
+						.animate()
+						.alpha(alpha)
+						.setDuration(180)
+						.start();
+			}
 		}
+		else {
+			menu_grid.setTranslationY(TargetTransY);
+			menu_grid.setAlpha(alpha);
+			if (!MainMenuListVis) {
+				menu_grid_animlis.onAnimationEnd(null);
+			}
+			UIData.menuGridShadow.setVisibility(View.GONE);
+		}
+		if (!animate) {
+			return;
+		}
+		modThreeBtnForMenuGrid();
+	}
+	
+	private void modThreeBtnForMenuGrid() {
+		View[] sameView = new View[]{UIData.browserWidget7, UIData.browserWidget8};
+		for (View vue:sameView) {
+			if (true) {
+				vue.animate().
+						alpha(MainMenuListVis?0:1)
+						.setListener(MainMenuListVis?new AnimatorListenerAdapter() {
+							@Override
+							public void onAnimationEnd(Animator animation) {
+								vue.setVisibility(View.INVISIBLE);
+							}
+						}:null)
+						.setDuration(90);
+				if (!MainMenuListVis) {
+					vue.setVisibility(View.VISIBLE);
+				}
+			} else {
+				vue.setAlpha(1);
+				vue.setVisibility(MainMenuListVis?View.INVISIBLE:View.VISIBLE);
+			}
+		}
+		UIData.browserWidget9.setImageResource(MainMenuListVis?R.drawable.ic_exit_to_app:R.drawable.ic_home_black_24dp);
 	}
 	
 	private void refreshMenuGridSize() {

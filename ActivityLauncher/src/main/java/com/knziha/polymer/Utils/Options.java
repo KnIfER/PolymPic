@@ -106,7 +106,7 @@ public class Options implements WebOptions, BookOptions {
 	@Multiline(flagPos=20) public void setTextPanel(boolean val){ FirstFlag=FirstFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=22, shift=1) public boolean getUseBackKeyClearWebViewFocus(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=23, shift=1) public boolean getSelectAllOnFocus(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
-	@Multiline(flagPos=24, shift=0) public boolean getShowImeImm(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=24, shift=1) public boolean getShowImeImm(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=25) public boolean getTorchLight(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=25) public boolean toggleTorchLight(){ FirstFlag=FirstFlag; throw new IllegalArgumentException(); }
 	@Multiline(flagPos=26, shift=1) public boolean getRemberTorchLight(){ FirstFlag=FirstFlag; throw new RuntimeException(); }

@@ -85,7 +85,7 @@ public class BookMarkFragment extends Fragment {
 					if (!node.isLeaf()) {
 						onToggle(!node.isExpand(), holder);
 					} else {
-						TreeViewAdapter.LayoutItemType content = node.getContent();
+						Object content = node.getContent();
 						if(content instanceof BookMarkEntry) {
 							onJumpToBookMark((BookMarkEntry)content);
 						}
@@ -152,7 +152,7 @@ public class BookMarkFragment extends Fragment {
 			return R.layout.bookmark_item;
 		}
 		
-		public static class ViewHolder extends TreeViewAdapter.TreeViewBinderInterface.ViewHolder {
+		public static class ViewHolder extends RecyclerView.ViewHolder {
 			public final ImageView ivArrow;
 			public final TextView tvName;
 			public final TextView tvPage;

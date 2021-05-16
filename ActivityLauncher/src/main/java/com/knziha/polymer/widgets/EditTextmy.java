@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView.OnScrollChangedListener;
 import static androidx.appcompat.widget.AppCompatEditText.TextFucker;
 
 public class EditTextmy extends EditText {
+	public boolean bNeverBlink = false;
 	public EditTextmy(Context context) {
 		super(context);
 	}
@@ -47,6 +48,14 @@ public class EditTextmy extends EditText {
 //		return super.getLineBounds(line, bounds);
 //	}
 	
+	
+	@Override
+	public boolean postDelayed(Runnable action, long delayMillis) {
+		if (bNeverBlink && action.getClass().getName().contains("Blink")) {
+			return false;
+		}
+		return super.postDelayed(action, delayMillis);
+	}
 	
 	public static TextPaint hackTp;
 	@Override

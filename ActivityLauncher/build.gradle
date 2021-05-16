@@ -97,7 +97,7 @@ dependencies {
 
     api fileTree(dir: 'libs', include: ['*.jar'])
 
-    //api 'com.alibaba:fastjson:1.2.72'
+    api 'com.alibaba:fastjson:1.2.72'
     implementation 'me.weishu:free_reflection:2.2.0'
 
     implementation 'com.squareup.okhttp3:okhttp:3.12.13'
