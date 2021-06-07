@@ -116,6 +116,8 @@
 	</string-array>
 
 	<string-array name="config_links">
+		<item>后台打开</item>
+		<item>新标签页打开</item>
 		<item>复制链接</item>
 		<item>复制文本</item>
 		<item>选择文本</item>

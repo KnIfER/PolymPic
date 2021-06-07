@@ -310,7 +310,7 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 				cursors_to_close.add(EmptySearchCursor);
 				EmptySearchCursor=null;
 			}
-			String sql = "select term from keyword_search_terms";
+			String sql = "select term from keyword_search_terms order by last_visit_time desc"; //
 //			if(limitation!=Integer.MAX_VALUE) {
 //				if(limitation<=0) {
 //					return EmptyCursor;

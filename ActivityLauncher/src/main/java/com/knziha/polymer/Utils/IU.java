@@ -99,6 +99,7 @@ the valueOf method.
         while (i < len) {
             // Accumulating negatively avoids surprises near MAX_VALUE
             digit = Character.digit(s.charAt(i++),10);
+            //CMN.Log(s.charAt(i-1), digit);
             if (digit < 0) {
             	 return val;
             }

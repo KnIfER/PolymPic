@@ -189,7 +189,7 @@ public class AppIconsAdapter extends RecyclerView.Adapter<AppIconsAdapter.ViewHo
 					@Override
 					public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
 						DescriptiveImageView medium_thumbnail = (DescriptiveImageView) ((ImageViewTarget<?>) target).getView();
-						medium_thumbnail.setText(((AppIconCover)model).path.appName);
+						medium_thumbnail.setText(((AppInfoBean)((AppIconCover)model).path).appName);
 						return false;
 					}
 				})

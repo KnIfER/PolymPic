@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Message;
 import android.view.ActionMode;
 import android.view.MotionEvent;
 import android.view.View;
@@ -94,6 +95,10 @@ public class WebViewImplExt extends WebView implements UniversalWebviewInterface
 	
 	public int getContentHeight(){
 		return computeVerticalScrollRange();
+	}
+	
+	public int getContentWidth(){
+		return computeHorizontalScrollRange();
 	}
 	
 	public int getContentOffset(){

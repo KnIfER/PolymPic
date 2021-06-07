@@ -10,7 +10,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.recyclerview.widget.RecyclerView.OnScrollChangedListener;
 
-import static androidx.appcompat.widget.AppCompatEditText.TextFucker;
+import static androidx.appcompat.widget.AppCompatEditText.UrlFucker;
 
 public class EditTextmy extends EditText {
 	public boolean bNeverBlink = false;
@@ -82,8 +82,8 @@ public class EditTextmy extends EditText {
 	public TextClassifier getTextClassifier() {
 		// The null check is necessary because getTextClassifier is called when we are invoking
 		// the super class's constructor.
-		if(true && TextFucker!=null) {
-			return TextFucker;
+		if(true && UrlFucker !=null) {
+			return UrlFucker;
 		}
 		return super.getTextClassifier();
 	}

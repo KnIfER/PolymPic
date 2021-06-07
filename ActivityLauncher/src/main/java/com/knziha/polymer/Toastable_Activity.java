@@ -78,7 +78,8 @@ public class Toastable_Activity extends AppCompatActivity {
 	public int mStatusBarH;
 
 	public long lastClickTime=0;
-
+	public Exception lastError;
+	
 	protected long FFStamp;
 	protected long SFStamp;
 	protected long TFStamp;
@@ -242,6 +243,9 @@ public class Toastable_Activity extends AppCompatActivity {
 							int len = new FileInputStream(log).read(buffer);
 							String message=new String(buffer,0,len);
 							launching[0]=true;
+							if (GlobalOptions.debug) {
+								CMN.Log(message);
+							}
 							Dialog d = new androidx.appcompat.app.AlertDialog.Builder(this)
 									.setMessage(message)
 									.setPositiveButton(android.R.string.yes, (dialog, whichButton) -> {
@@ -249,7 +253,11 @@ public class Toastable_Activity extends AppCompatActivity {
 										dialog.dismiss();
 										checkLaunch(savedInstanceState);
 									})
-									.setTitle("检测到异常捕获。（如发现仍不能启动，可尝试重新初始化）")
+//									.setNegativeButton("打印", (dialog, whichButton) -> {
+//										CMN.Log(message);
+//										((Dialog)dialog).show();
+//									})
+									.setTitle("天哪，崩溃啦……")
 									.setCancelable(false)
 									.show();
 							//.create();

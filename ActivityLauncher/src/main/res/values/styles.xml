@@ -20,8 +20,11 @@
 
 	<style name="DialogAnimation" parent="android:Animation">
 		<item name="android:windowEnterAnimation">@anim/abc_popup_enter</item>
-<!--		<item name="android:windowExitAnimation">@anim/abc_popup_exit</item>-->
 		<item name="android:windowExitAnimation">@anim/animnull</item>
+	</style>
+
+	<style name="DialogAnimation1" parent="DialogAnimation">
+		<item name="android:windowExitAnimation">@anim/abc_popup_exit</item>
 	</style>
 
     <!-- Application theme. -->
@@ -95,9 +98,22 @@
 		<item name="android:background">?attr/listChoiceBackgroundIndicator</item>
 	</style>
 
+	<style name="pop_menu_animation" parent="android:Animation">
+		<item name="android:windowEnterAnimation">@anim/pop_menu_enter</item>
+		<item name="android:windowExitAnimation">@anim/pop_menu_exit</item>
+	</style>
+
 	<style name="MenuTextStyle" parent="MenuTextStyleBase">
 		<item name="android:padding">15dp</item>
 		<item name="android:drawablePadding">25dp</item>
+		<item name="android:gravity">center_vertical</item>
+	</style>
+
+	<style name="MenuTextStyle1" parent="MenuTextStyleBase">
+		<item name="android:paddingTop">   11dp</item>
+		<item name="android:paddingBottom">11dp</item>
+		<item name="android:paddingStart">32.8dp</item>
+		<item name="android:paddingEnd">  32.8dp</item>
 		<item name="android:gravity">center_vertical</item>
 	</style>
 
@@ -236,5 +252,53 @@
 		<item name="android:layout_gravity">end</item>
 		<item name="android:padding">5dp</item>
 		<item name="android:background">?actionBarItemBackground</item>
+	</style>
+
+	<!-- Search Text Style. -->
+	<style name="EditTextStyle" parent="TextAppearance.AppCompat">
+		<item name="colorControlNormal">#565656</item>
+		<item name="colorControlActivated">#000</item>
+		<item name="android:textSize">18sp</item>
+	</style>
+	<style name="SearchTextStyle">
+		<!-- Custom values write to here for SearchEditText. -->
+		<item name="android:focusable">true</item>
+		<item name="android:focusableInTouchMode">true</item>
+		<item name="android:enabled">true</item>
+		<item name="android:hint">Search</item>
+		<item name="android:imeOptions">actionSearch</item>
+		<item name="android:textSize">18sp</item>
+		<item name="android:maxLength">15</item>
+		<item name="android:inputType">textCapSentences</item>
+		<item name="android:textColorHint">#80999999</item>
+		<item name="android:textColor">#000</item>
+	</style>
+
+	<style name="MenuTextCapsule">
+		<item name="android:layout_width">wrap_content</item>
+		<item name="android:layout_height">wrap_content</item>
+		<item name="android:paddingLeft"> 5dp</item>
+		<item name="android:paddingRight">5dp</item>
+		<item name="android:paddingTop">   2dp</item>
+		<item name="android:paddingBottom">2dp</item>
+		<item name="android:textSize">10sp</item>
+		<item name="android:textColor">#F1F1F1</item>
+		<item name="android:background">@drawable/capsule_ripple_layer</item>
+		<item name="android:clickable">true</item>
+		<item name="android:singleLine">true</item>
+		<item name="android:layout_marginStart">10dp</item>
+	</style>
+
+	<style name="RecyclerViewStyle">
+		<item name="android:layout_width">match_parent</item>
+		<item name="android:layout_height">match_parent</item>
+		<item name="android:scrollbarSize">5dp</item>
+		<item name="android:scrollbarThumbVertical">@color/gray</item>
+		<item name="android:scrollbars">vertical</item>
+		<item name="fastScrollEnabled">true</item>
+		<item name="fastScrollHorizontalThumbDrawable">@drawable/thumb_drawable</item>
+		<item name="fastScrollHorizontalTrackDrawable">@drawable/line_drawable</item>
+		<item name="fastScrollVerticalThumbDrawable">@drawable/thumb_drawable</item>
+		<item name="fastScrollVerticalTrackDrawable">@drawable/line_drawable</item>
 	</style>
 </resources>

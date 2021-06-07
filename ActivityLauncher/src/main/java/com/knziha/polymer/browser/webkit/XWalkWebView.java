@@ -3,6 +3,7 @@ package com.knziha.polymer.browser.webkit;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Picture;
+import android.os.Message;
 import android.view.ActionMode;
 import android.view.MotionEvent;
 import android.view.View;
@@ -125,6 +126,10 @@ public class XWalkWebView extends XWalkView implements UniversalWebviewInterface
 	
 	public int getContentHeight(){
 		return computeVerticalScrollRange();
+	}
+	
+	public int getContentWidth(){
+		return computeHorizontalScrollOffset();
 	}
 	
 	public int getContentOffset(){
@@ -293,6 +298,14 @@ public class XWalkWebView extends XWalkView implements UniversalWebviewInterface
 	@Override
 	public Picture capturePicture() {
 		return null;
+	}
+	
+	public void requestFocusNodeHref(Message var1) {
+		// no impl.
+	}
+	
+	public void requestImageRef(Message var1) {
+		// no impl.
 	}
 	
 	@Override

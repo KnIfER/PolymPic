@@ -2,6 +2,7 @@ package com.knziha.polymer.browser.webkit;
 
 import android.graphics.Picture;
 import android.os.Bundle;
+import android.os.Message;
 import android.print.PrintDocumentAdapter;
 import android.view.View;
 import android.webkit.DownloadListener;
@@ -12,6 +13,7 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.knziha.polymer.Utils.CMN;
@@ -97,7 +99,15 @@ public interface UniversalWebviewInterface {
 	
 	Picture capturePicture();
 	
+	void requestFocusNodeHref(@Nullable Message hrefMsg);
+	
+	void requestImageRef(Message var1);
+	
 	int getType();
+	
+	int getContentWidth();
+	
+	int getContentHeight();
 	
 	//Object getTag();
 }

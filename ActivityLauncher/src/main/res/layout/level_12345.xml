@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:layout_width="match_parent"
+	android:layout_height="wrap_content"
+	android:orientation="horizontal"
+	android:gravity="right"
+	android:paddingRight="18dp"
+	android:paddingTop=   "6dp"
+	android:paddingBottom="9dp"
+	tools:ignore="DuplicateIds"
+	>
+	<TextView
+		android:id="@+id/level"
+		android:text="一"
+		style="@style/MenuTextCapsule"
+		/>
+	<TextView
+		android:id="@+id/level"
+		android:text="二"
+		style="@style/MenuTextCapsule"/>
+	<TextView
+		android:id="@+id/level"
+		android:text="三"
+		style="@style/MenuTextCapsule"
+		/>
+
+	<TextView
+		android:id="@+id/level"
+		android:text="四"
+		style="@style/MenuTextCapsule"
+		/>
+
+	<TextView
+		android:id="@+id/level"
+		android:text="五"
+		style="@style/MenuTextCapsule"
+		/>
+
+</LinearLayout>

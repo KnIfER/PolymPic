@@ -332,7 +332,7 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 				}
 				if (dealWithCM && bIsActionMenuShownNew && (Math.abs(lastY - orgY) > GlobalOptions.density * 5 || Math.abs(lastX - orgX) > GlobalOptions.density * 5)) {
 					bIsActionMenuShownNew = false;
-					for (ViewGroup vI : webviewcallback.popupDecorVies) {
+					for (ViewGroup vI : popupDecorVies) {
 						//CMN.Log(vI.getChildAt(0));
 						if (vI.getChildCount() == 1) {
 							vI.setTag(vI.getChildAt(0));
@@ -346,7 +346,7 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 						isWebHold=false;
 				if(dealWithCM) {
 					bIsActionMenuShownNew = bIsActionMenuShown;
-					for (ViewGroup vI : webviewcallback.popupDecorVies) {
+					for (ViewGroup vI : popupDecorVies) {
 						if (vI.getParent() != null) {
 							if (vI.getChildCount() == 0 && vI.getTag() instanceof View) {
 								vI.addView((View) vI.getTag());
@@ -447,10 +447,44 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 		//event.recycle();
 	}
 	
+	public boolean selSuppressed = false;
+	
+	public void suppressSelection(boolean suppress) {
+		if (suppress) {
+			if (hasSelection()) {
+				simulateScrollEffect();
+				selSuppressed = true;
+			}
+		} else if (selSuppressed) {
+			stopScrollEffect();
+			selSuppressed = true;
+		}
+	}
+	
+	/** 模拟触摸，暂时关闭 contextmenu */
+	public void simulateScrollEffect() {
+		final long now = System.currentTimeMillis();
+		final MotionEvent motion = MotionEvent.obtain(now, now, MotionEvent.ACTION_DOWN,
+				0.0f, 0.0f, 0);
+		dispatchTouchEvent(motion);
+		WebCompoundListener.CustomViewHideTime = now;
+		motion.setAction(MotionEvent.ACTION_MOVE);
+		motion.setLocation(100, 0);
+		dispatchTouchEvent(motion);
+		motion.recycle();
+	}
+	
+	/** 恢复 contextmenu */
+	public void stopScrollEffect() {
+		final MotionEvent motion = MotionEvent.obtain(0, 0, MotionEvent.ACTION_UP,
+				0.0f, 0.0f, 0);
+		dispatchTouchEvent(motion);
+		motion.recycle();
+	}
+	
 	private float Juli(float v, float v1) {
 		return v*v+v1*v1;
 	}
-	
 	
 	@Override
 	public void setNestedScrollingEnabled(boolean enabled) {
@@ -865,6 +899,10 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 		activity.showT("已复制");
 	}
 	
+	public boolean hasSelection() {
+		return bIsActionMenuShown || popupDecorVies.size()==2 && popupDecorVies.get(0).getParent()!=null;
+	}
+	
 	public static class DomainInfo {
 		public long rowID;
 		public long f1;
@@ -1072,9 +1110,10 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 		return webviewcallback;
 	}
 	
+	public final ArrayList<ViewGroup> popupDecorVies = new ArrayList<>();
+	
 	@RequiresApi(api = Build.VERSION_CODES.M)
 	public class AdvancedWebViewCallback extends ActionMode.Callback2 {
-		ArrayList<ViewGroup> popupDecorVies = new ArrayList<>();
 		ActionMode.Callback callback;
 		public AdvancedWebViewCallback wrap(ActionMode.Callback callher) {
 			callback=callher;

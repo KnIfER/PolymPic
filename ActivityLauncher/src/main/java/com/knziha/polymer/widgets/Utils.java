@@ -21,6 +21,7 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.res.Resources;
+import android.content.res.TypedArray;
 import android.database.AbstractWindowedCursor;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -29,6 +30,7 @@ import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
@@ -41,6 +43,7 @@ import android.util.DisplayMetrics;
 import android.util.LayoutDirection;
 import android.util.SparseArray;
 import android.util.TypedValue;
+import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.View;
 import android.view.ViewConfiguration;
@@ -48,6 +51,8 @@ import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.view.Window;
 import android.view.WindowManager;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
 import android.widget.EditText;
 import android.widget.TextView;
 
@@ -56,7 +61,6 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.GlobalOptions;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.knziha.polymer.R;
 import com.knziha.polymer.Toastable_Activity;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.Options;
@@ -74,7 +78,6 @@ import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -83,6 +86,7 @@ import static com.knziha.polymer.Utils.IU.parseInt;
 public class Utils {
 	public static final int RequsetUrlFromCamera=1101;
 	public static final int RequsetUrlFromStorage=1102;
+	public static final int RequsetFileFromFilePicker=1103;
 	public final static Matrix IDENTITYXIRTAM = new Matrix();
 	public final static Object DummyTransX = new Object(){
 		public void setTranslationX(float val) { }
@@ -407,6 +411,82 @@ public class Utils {
 		return ((TextView)view.findViewById(id)).getText().toString();
 	}
 	
+	public static View replaceView(View viewToAdd, View viewToRemove) {
+		return replaceView(viewToAdd, viewToRemove, true);
+	}
+	
+	public static View replaceView(View viewToAdd, View viewToRemove, boolean layoutParams) {
+		ViewGroup.LayoutParams lp = viewToRemove.getLayoutParams();
+		ViewGroup vg = (ViewGroup) viewToRemove.getParent();
+		if(vg!=null) {
+			int idx = vg.indexOfChild(viewToRemove);
+			removeView(viewToRemove);
+			removeView(viewToAdd);
+			if (layoutParams) {
+				vg.addView(viewToAdd, idx, lp);
+			} else {
+				vg.addView(viewToAdd, idx);
+			}
+		}
+		return viewToAdd;
+	}
+	
+	public static Drawable getThemeDrawable(Context context, int attrId) {
+		int[] attrs = new int[] { attrId };
+		TypedArray ta = context.obtainStyledAttributes(attrs);
+		Drawable drawableFromTheme = ta.getDrawable(0);
+		ta.recycle();
+		return drawableFromTheme;
+	}
+	
+	public static int getViewIndex(View sv) {
+		ViewGroup svp = (ViewGroup) sv.getParent();
+		if (svp!=null) {
+			return svp.indexOfChild(sv);
+		}
+		return -1;
+	}
+	
+	public static void blinkView(View blinkView, boolean post) {
+		Animation anim = new AlphaAnimation(0.1f, 1.0f);
+		anim.setDuration(50);
+		anim.setStartOffset(20);
+		anim.setRepeatMode(Animation.REVERSE);
+		anim.setRepeatCount(2);
+		if (post) {
+			blinkView.post(() -> blinkView.startAnimation(anim));
+		} else {
+			blinkView.startAnimation(anim);
+		}
+	}
+	
+	public static void preventDefaultTouchEvent(View view, int x, int y) {
+		MotionEvent evt = MotionEvent.obtain(0, 0, MotionEvent.ACTION_CANCEL, x, y, 0);
+		if (view!=null) view.dispatchTouchEvent(evt);
+		evt.recycle();
+	}
+	
+	public static void performClick(View view, float x, float y) {
+		MotionEvent evt = MotionEvent.obtain(0, 0, MotionEvent.ACTION_DOWN, x, y, 0);
+		view.dispatchTouchEvent(evt);
+		evt.setAction(MotionEvent.ACTION_UP);
+		view.dispatchTouchEvent(evt);
+		evt.recycle();
+	}
+	
+	public static RecyclerView.ViewHolder getViewHolderInParents(View v) {
+		ViewParent vp;
+		Object tag;
+		while(v!=null) {
+			if ((tag = v.getTag()) instanceof RecyclerView.ViewHolder) {
+				return (RecyclerView.ViewHolder) tag;
+			}
+			vp = v.getParent();
+			v = vp instanceof View?(View) vp:null;
+		}
+		return null;
+	}
+	
 	public static class DummyOnClick implements View.OnClickListener {
 		@Override
 		public void onClick(View v) {
@@ -514,7 +594,7 @@ public class Utils {
 		return -1;
 	}
 	
-	public static View getViewItemByPath(Object obj, int...path) {
+	public static View getViewItemByPath(View obj, int...path) {
 		int cc=0;
 		while(cc<path.length) {
 			//CMN.Log(cc, obj);
@@ -526,7 +606,7 @@ public class Utils {
 			}
 			cc++;
 		}
-		return Objects.requireNonNull((View)obj);
+		return (View)obj;
 	}
 	
 	
@@ -587,6 +667,23 @@ public class Utils {
 				}
 				return true;
 			}
+		}
+		return false;
+	}
+	
+	public static boolean addViewToParent(View view2Add, ViewGroup parent, int index) {
+		if(removeIfParentBeOrNotBe(view2Add, parent, false)) {
+			int cc=parent.getChildCount();
+			if(index<0) {
+				index = cc+index;
+				if(index<0) {
+					index = 0;
+				}
+			} else if(index>cc) {
+				index = cc;
+			}
+			parent.addView(view2Add, index);
+			return true;
 		}
 		return false;
 	}

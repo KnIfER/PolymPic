@@ -32,7 +32,7 @@ public class EditFieldHandler implements View.OnClickListener, DialogInterface.O
 	private Dialog d;
 	public final Toastable_Activity a;
 	public final ViewGroup mRoot;
-	public final EditText etField;
+	public EditText etField;
 	public final FrameLayout touchBG;
 	
 	private EditText proxyView;
@@ -45,7 +45,7 @@ public class EditFieldHandler implements View.OnClickListener, DialogInterface.O
 	
 	public EditFieldHandler(Toastable_Activity context, ViewGroup root) {
 		this.a = context;
-		mRoot = (ViewGroup) LayoutInflater.from(context).inflate(R.layout.edittext_field_main, root, false);
+		mRoot = (ViewGroup) context.getLayoutInflater().inflate(R.layout.edittext_field_main, root, false);
 		
 		Object[] fetcher = new Object[]{R.id.etField, R.id.browser_widget5};
 		Utils.setOnClickListenersOneDepth(mRoot, this, 3, fetcher);
@@ -53,12 +53,17 @@ public class EditFieldHandler implements View.OnClickListener, DialogInterface.O
 		QRBtn = (TextView) fetcher[1];
 		QRBtn.setOnLongClickListener(this);
 		
-		etField.getBackground().setAlpha(0);
 		touchBG = new FrameLayout(etField.getContext());
 		touchBG.setId(R.id.ivBack);
 		touchBG.setBackgroundColor(0x88333333);
 		touchBG.setOnTouchListener(this);
 		
+		initEditText();
+	}
+	
+	private void initEditText() {
+		etField = (EditText) Utils.replaceView(new EditTextmy(a), etField);
+		etField.getBackground().setAlpha(0);
 		etField.setOnEditorActionListener((v, actionId, event) -> {
 			
 			return false;
@@ -68,20 +73,20 @@ public class EditFieldHandler implements View.OnClickListener, DialogInterface.O
 		etField.addTextChangedListener(new TextWatcherAdapter() {
 			@Override
 			public void afterTextChanged(Editable s) {
-				CMN.Log("afterTextChanged");
+				//CMN.Log("afterTextChanged");
 				setGotoQR(s.length()==0);
 			}
 		});
 	}
 	
 	public void dismiss(boolean setText) {
+		if(proxyView!=null&&(proxySmooth||setText)) {
+			syncText(etField, proxyView);
+		}
 		Utils.removeIfParentBeOrNotBe(mRoot, null, false);
 		Utils.removeIfParentBeOrNotBe(touchBG, null, false);
 		if(d!=null) {
 			d.setCancelable(true);
-		}
-		if(proxyView!=null&&(proxySmooth||setText)) {
-			syncText(etField, proxyView);
 		}
 		d = null;
 		proxyView = null;
@@ -103,10 +108,14 @@ public class EditFieldHandler implements View.OnClickListener, DialogInterface.O
 		int ed = from.getSelectionEnd();
 		to.setText(from.getText());
 		to.requestFocus();
-		to.setSelection(st, ed);
+		try {
+			to.setSelection(st, ed);
+		} catch (Exception ignored) { }
+		//to.post(to::requestFocus);
 	}
 	
 	public void showForEditText(@NonNull ViewGroup root, @NonNull EditText proxyView, Dialog d, int topMargin, int bottomMargin) {
+		initEditText();
 		this.proxyView = proxyView;
 		lastTextBackup = Utils.getTextInView(proxyView);
 		syncText(proxyView, etField);
@@ -170,6 +179,12 @@ public class EditFieldHandler implements View.OnClickListener, DialogInterface.O
 				} else {
 					dismiss(true);
 				}
+			} break;
+			case R.id.browser_widget6:{
+				etField.onTextContextMenuItem(android.R.id.undo);
+			} break;
+			case R.id.browser_widget7:{
+				etField.onTextContextMenuItem(android.R.id.redo);
 			} break;
 		}
 	}

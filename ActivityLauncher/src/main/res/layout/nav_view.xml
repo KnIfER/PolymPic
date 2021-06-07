@@ -1,21 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout
-	xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
 	xmlns:tools="http://schemas.android.com/tools"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
 	android:orientation="vertical"
 	android:layout_width="match_parent"
 	android:layout_height="match_parent"
-	android:elevation="10dp"
-	>
-	<androidx.recyclerview.widget.RecyclerView
+	android:elevation="10dp">
+	<com.knziha.polymer.widgets.DragSelectRecyclerView
 		android:id="@+id/recycler_view"
-		android:layout_width="match_parent"
-		android:layout_height="match_parent"
 		tools:listitem="@layout/bookmark_item"
 		android:layout_marginTop="45dp"
 		android:background="#fff"
+		app:fastScrollEnabled="true"
+		app:fastScrollHorizontalThumbDrawable="@drawable/thumb_drawable"
+		app:fastScrollHorizontalTrackDrawable="@drawable/line_drawable"
+		app:fastScrollVerticalThumbDrawable="@drawable/thumb_drawable"
+		app:fastScrollVerticalTrackDrawable="@drawable/line_drawable"
+		style="@style/RecyclerViewStyle"
 		/>
 	<LinearLayout
+		android:id="@+id/nav_header"
 		android:orientation="horizontal"
 		android:layout_width="match_parent"
 		android:layout_height="45dp"
@@ -54,7 +58,7 @@
 				android:id="@+id/clearText"
 				android:layout_width="26dp"
 				android:layout_height="match_parent"
-				android:src="@drawable/mtrl_ic_cancel"
+				android:src="@drawable/ic_search_abort"
 				android:layout_gravity="center_vertical|end"
 				android:padding="3dp"
 				android:background="?actionBarItemBackground"
@@ -62,7 +66,7 @@
 				/>
 		</LinearLayout>
 		<ImageView
-			android:id="@+id/multiline"
+			android:id="@+id/search"
 			android:layout_width="@dimen/_45_"
 			android:layout_height="match_parent"
 			android:src="@drawable/ic_menu_white_24dp"
@@ -72,7 +76,7 @@
 			android:id="@+id/edit"
 			android:layout_width="@dimen/_45_"
 			android:layout_height="match_parent"
-			android:src="@drawable/ic_edit_white_24dp"
+			android:src="@drawable/ic_baseline_edit_white"
 			android:background="?actionBarItemBackground"
 			android:padding="10dp"/>
 		<ImageView

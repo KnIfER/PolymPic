@@ -11,11 +11,12 @@ import java.util.List;
 
 @SuppressWarnings({"rawtypes"})
 public class TreeViewNode<T> implements Cloneable {
-	protected T content;
+	protected final T content;
     protected TreeViewNode parent;
-    protected List<TreeViewNode> childList;
-    protected boolean isExpand;
-	public boolean schIsExpanded;
+    protected ArrayList<TreeViewNode> childList;
+	protected boolean foldListValid;
+	protected List<TreeViewNode> foldList;
+    protected int isExpand;
     //private boolean isLocked;
     //the tree height
 	protected int height = UNDEFINE;
@@ -44,9 +45,9 @@ public class TreeViewNode<T> implements Cloneable {
         return childList == null || childList.isEmpty();
     }
 
-    public void setContent(T content) {
-        this.content = content;
-    }
+//    public void setContent(T content) {
+//        this.content = content;
+//    }
 
     public T getContent() {
         return content;
@@ -55,6 +56,22 @@ public class TreeViewNode<T> implements Cloneable {
     public List<TreeViewNode> getChildList() {
         return childList;
     }
+	
+	public List<TreeViewNode> getChildList(boolean isFolderView) {
+    	if (isFolderView) {
+    		if (!foldListValid) {
+				foldList.clear();
+				for (int i = 0, len=childList.size(); i < len; i++) {
+					if (!childList.get(i).isLeaf()) {
+						foldList.add(childList.get(i));
+					}
+				}
+				foldListValid = true;
+			}
+			return foldList;
+		}
+    	return childList;
+	}
 
     public void setChildList(List<TreeViewNode> childList) {
         this.childList.clear();
@@ -71,43 +88,78 @@ public class TreeViewNode<T> implements Cloneable {
         return this;
     }
 
-    public void toggle() {
-        isExpand = !isExpand;
+    public void toggle(int channelMask) {
+		boolean val = (isExpand & channelMask)==0;
+		isExpand &= ~channelMask;
+		if (val) {
+			isExpand |= channelMask;
+		}
 	}
 
-    public void collapse() {
-        if (isExpand) {
-            isExpand = false;
-        }
+    public void collapse(int channelMask) {
+		isExpand &= ~channelMask;
     }
 
-    public void collapseAll() {
+    public void collapseAll(int channelMask) {
+		collapse(channelMask);
         if (childList == null || childList.isEmpty()) {
             return;
         }
         for (TreeViewNode child : this.childList) {
-            child.collapseAll();
+            child.collapseAll(channelMask);
         }
     }
 
-    public void expand() {
-        if (!isExpand) {
-            isExpand = true;
+    public void collapseLevel(int channelMask, int level) {
+        if (childList == null) {
+            return;
         }
+		int lv = getHeight();
+		if (lv==level) {
+			collapse(channelMask);
+		}
+		if (lv<level) {
+			for (TreeViewNode child : this.childList) {
+				child.collapseLevel(channelMask, level);
+			}
+		}
     }
 
-    public void expandAll() {
-        expand();
+    public void expand(int channelMask) {
+		isExpand |= channelMask;
+    }
+
+    public void expandAll(int channelMask) {
+        expand(channelMask);
         if (childList == null || childList.isEmpty()) {
             return;
         }
         for (TreeViewNode child : this.childList) {
-            child.expandAll();
+            child.expandAll(channelMask);
         }
     }
-
-    public boolean isExpand() {
-        return isExpand;
+    
+	public void expandLevel(int channelMask, int level) {
+		if (childList == null) {
+			return;
+		}
+		int lv = getHeight();
+		if (lv==level) {
+			expand(channelMask);
+		}
+		if (lv<level) {
+			for (TreeViewNode child : this.childList) {
+				child.expandLevel(channelMask, level);
+			}
+		}
+	}
+	
+	public boolean isExpand() {
+		return isExpand(0x1);
+	}
+	
+    public boolean isExpand(int channelMask) {
+        return (isExpand & channelMask)!=0;
     }
 
     public void setParent(TreeViewNode parent) {
@@ -137,19 +189,10 @@ public class TreeViewNode<T> implements Cloneable {
         return clone;
     }
 	
-	public void setExpanded(boolean val) {
-		isExpand = val;
-	}
-	
-	public boolean isExpand(boolean schView) {
-    	return schView?schIsExpanded:isExpand;
-	}
-	
-	public void toggle(boolean schView) {
-    	if (schView) {
-			schIsExpanded = !schIsExpanded;
-		} else {
-			isExpand = !isExpand;
+	public void setExpanded(int channelMask, boolean val) {
+		isExpand &= ~channelMask;
+		if (val) {
+			isExpand |= channelMask;
 		}
 	}
 	

@@ -318,7 +318,7 @@ public class PDocView extends View {
 	
 	public void navigateTo(PDFPageParms pageParms, boolean invalid) {
 		CMN.Log("navigateTo", pageParms);
-		int pageIdx = Math.max(0, Math.min(pageParms.pageIdx, pdoc._num_entries));
+		int pageIdx = Math.max(0, Math.min(pageParms.pageIdx, pdoc._num_entries-1));
 		PDocument.PDocPage page = pdoc.mPDocPages[pageIdx];
 		float newScale = pageParms.scale;
 		if(newScale>0) {

@@ -2,13 +2,23 @@ package com.knziha.polymer.webslideshow;
 
 import android.view.View;
 
+import androidx.databinding.ViewDataBinding;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.knziha.polymer.Utils.CMN;
 
 public class ViewUtils {
-
+	public static class ViewDataHolder<T extends ViewDataBinding> extends RecyclerView.ViewHolder{
+		public T data;
+		public int position;
+		public ViewDataHolder(T data){
+			super(data.getRoot());
+			itemView.setTag(this);
+			this.data = data;
+		}
+	}
+	
     /**
      * Get center child in X Axes
      */
@@ -55,11 +65,57 @@ public class ViewUtils {
         return null;
     }
     
+    public static int getCenterXChild_Idx(RecyclerViewPager recyclerView) {
+        int childCount = recyclerView.getChildCount();
+		int middleX = recyclerView.getWidth() / 2;
+		View child;
+		int pad = recyclerView.itemPad/2;
+		for (int i = 0; i < childCount; i++) {
+			child = recyclerView.getChildAt(i);
+			if (child.getRight()+pad>middleX) {
+				return i;
+			}
+		}
+        return -1;
+    }
+    
     public static int getCenterXChildPositionV1(RecyclerViewPager recyclerView) {
         View childView = getCenterXChildV1(recyclerView);
         if (childView!=null) {
-			return recyclerView.getChildAdapterPosition(childView);
+			int ret = recyclerView.getChildAdapterPosition(childView);
+			CMN.Log("getCenterXChildPositionV1 ::", childView.getTag());
+			ret = ((RecyclerView.ViewHolder)childView.getTag()).getBindPosition();
+			//if (ret!=-1)
+			{
+				return ret;
+			}
         }
+        return ((LinearLayoutManager)recyclerView.getLayoutManager()).findFirstVisibleItemPosition();
+    }
+    
+    public static int getCenterXChildPositionV2(RecyclerViewPager recyclerView) {
+		int childCount = recyclerView.getChildCount();
+		int middleX = recyclerView.getWidth() / 2;
+		View child;
+		int pad = recyclerView.itemPad/2;
+		int refIdx=-1, refPos=-1;
+		int target=-1;
+		for (int i = 0; i < childCount; i++) {
+			child = recyclerView.getChildAt(i);
+			if (target==-1 && child.getRight()+pad>middleX) {
+				target = i;
+			}
+			if (refPos==-1) {
+				//refPos = recyclerView.getChildAdapterPosition(child);
+				refPos = ((RecyclerView.ViewHolder)child.getTag()).getLayoutPosition();
+				refIdx = i;
+			}
+			if (target>=0 && refPos>=0) {
+				//CMN.Log("找到了！！！", target, refIdx);
+				return refPos+(target-refIdx);
+			}
+		}
+		//CMN.Log("没找到！！！");
         return ((LinearLayoutManager)recyclerView.getLayoutManager()).findFirstVisibleItemPosition();
     }
 

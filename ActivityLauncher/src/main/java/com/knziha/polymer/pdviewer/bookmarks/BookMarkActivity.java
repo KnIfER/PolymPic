@@ -6,7 +6,6 @@ import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -110,7 +109,7 @@ public class BookMarkActivity extends AppCompatActivity {
 			}
 		});
 		
-		adapter.setOnTreeNodeListener(new TreeViewAdapter.OnTreeNodeListener() {
+		adapter.setTreeNodeListener(new TreeViewAdapter.OnTreeNodeListener() {
 			@Override
 			public boolean onClick(TreeViewNode node, RecyclerView.ViewHolder holder) {
 				if (!node.isLeaf()) {

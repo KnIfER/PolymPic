@@ -8,9 +8,9 @@ import java.security.MessageDigest;
 import java.util.Objects;
 
 public class AppIconCoverSignature implements Key {
-	public final AppInfoBean path;
+	public final AppLoadableBean path;
 
-	public AppIconCoverSignature(AppInfoBean path) {
+	public AppIconCoverSignature(AppLoadableBean path) {
 		this.path = path;
 	}
 

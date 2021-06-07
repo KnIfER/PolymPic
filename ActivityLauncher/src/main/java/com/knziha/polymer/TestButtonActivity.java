@@ -8,10 +8,15 @@ import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.view.GestureDetector;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.BaseAdapter;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
+import android.widget.ListView;
+import android.widget.PopupWindow;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -22,7 +27,10 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.knziha.polymer.Utils.CMN;
+import com.knziha.polymer.widgets.PopupMenuHelper;
 import com.knziha.polymer.widgets.Utils;
+import com.knziha.polymer.widgets.iammert.MultiSearchView;
 import com.shockwave.pdfium.bookmarks.BookMarkEntry;
 import com.shockwave.pdfium.treeview.TreeViewAdapter;
 import com.shockwave.pdfium.treeview.TreeViewNode;
@@ -57,7 +65,109 @@ public class TestButtonActivity extends Toastable_Activity implements View.OnCli
 			}
 		});
 		
-		testTreeView();
+		//testTreeView();
+		
+		MultiSearchView multiSearch = findViewById(R.id.multiSearch);
+		
+		CMN.Log(multiSearch);
+		
+		testPopupView();
+	}
+//////////////////////
+	private PopupWindow mPopupWindow;
+	private ListView mListView;
+	
+	private void showPopupWindow(View anchorView) {
+		int[] texts = new int[] {
+				 R.string.duoxuanmoshi
+				,R.string.houtaidakai
+				,R.string.xinbiaoqianyedaikai
+				,R.string.sheweimorenye
+				,R.string.fuzhilianjie
+				,R.layout.menu_edit_and_delete
+				,R.string.share
+		};
+		PopupMenuHelper.PopupMenuListener listener = (popupMenuHelper, v, isLongClick) -> {
+			boolean ret=true;
+			boolean dismiss = !isLongClick;
+			switch (v.getId()) {
+				case R.string.duoxuanmoshi:
+					showT("进入多选模式啦");
+				break;
+			}
+			if (dismiss) {
+				popupMenuHelper.postDismiss(80);
+			}
+			return ret;
+		};
+		new PopupMenuHelper(this, texts, listener).show(anchorView, x, y);
+	}
+	
+	private void testPopupView() {
+		mListView = findViewById(R.id.listview);
+		mListView.setAdapter(new CustomAdapter());
+		mListView.setVisibility(View.VISIBLE);
+	}
+	
+	class CustomAdapter extends BaseAdapter {
+		@Override
+		public int getCount() {
+			return 20;
+		}
+		
+		@Override
+		public Object getItem(int position) {
+			return null;
+		}
+		
+		@Override
+		public long getItemId(int position) {
+			return 0;
+		}
+		
+		@Override
+		public View getView(int position, View convertView, ViewGroup parent) {
+			final ViewHolder viewHolder;
+			final View finalConvertView;
+			if (convertView == null) {
+				convertView = LayoutInflater.from(getBaseContext()).inflate(R.layout.bookmark_item, null);
+				viewHolder = new ViewHolder();
+				convertView.setTag(viewHolder);
+			} else {
+				viewHolder = (ViewHolder) convertView.getTag();
+			}
+			finalConvertView = convertView;
+			convertView.setOnLongClickListener(new View.OnLongClickListener() {
+				@Override
+				public boolean onLongClick(View v) {
+					showPopupWindow(finalConvertView);
+					return false;
+				}
+			});
+			convertView.setOnTouchListener(new View.OnTouchListener() {
+				@Override
+				public boolean onTouch(View v, MotionEvent event) {
+					x = (int) event.getRawX();
+					y = (int) event.getRawY();
+					return false;
+				}
+			});
+			convertView.setOnClickListener(new View.OnClickListener() {
+				@Override
+				public void onClick(View v) {
+					//点击事件
+				}
+			});
+			return convertView;
+		}
+	}
+	
+	int x;
+	int y;
+	
+	class ViewHolder {
+		View moreRoot;
+		View moreImgv;
 	}
 //////////////////////
 	static class TVBinder extends TreeViewAdapter.TreeViewBinderInterface<TVBinder.ViewHolder> {
@@ -269,7 +379,7 @@ public class TestButtonActivity extends Toastable_Activity implements View.OnCli
 			}
 		});
 		
-		adapter.setOnTreeNodeListener(new TreeViewAdapter.OnTreeNodeListener() {
+		adapter.setTreeNodeListener(new TreeViewAdapter.OnTreeNodeListener() {
 			@Override
 			public boolean onClick(TreeViewNode node, RecyclerView.ViewHolder holder) {
 				if (!node.isLeaf()) {

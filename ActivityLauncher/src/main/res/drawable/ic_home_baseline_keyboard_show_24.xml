@@ -9,7 +9,7 @@
 <!--		android:fillColor="#fff"-->
 <!--		android:pathData="M10.8,16.8v-3.6h2.4v3.6h3v-4.8h1.8L12,6.6 6,12h1.8v4.8z"/>-->
 
-	<path android:fillColor="@android:color/white" android:pathData="
+	<path android:fillColor="#fff" android:pathData="
 
 M12,5.4l2.64,2.64L9.36,8.04l2.64,-2.64z
 

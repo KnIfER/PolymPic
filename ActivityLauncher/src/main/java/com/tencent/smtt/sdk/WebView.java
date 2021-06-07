@@ -697,7 +697,6 @@ public abstract class WebView extends FrameLayout {
 	
 	public void pauseTimers() {
 		this.X5WebView.pauseTimers();
-		
 	}
 	
 	public void resumeTimers() {

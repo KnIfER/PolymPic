@@ -37,4 +37,6 @@
 	<dimen name="_90_">90dp</dimen>
 	<dimen name="_20_">20dp</dimen>
 
+	<dimen name="msv_size_remove_icon">18dp</dimen>
+	<dimen name="padding_16dp">16dp</dimen>
 </resources>

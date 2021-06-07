@@ -231,7 +231,7 @@ public class DownloadUIHandler {
 			downloader.historyCon.ensureDwnldTable(null);
 			DownloadBottomSheetBinding downloadDlg = (DownloadBottomSheetBinding) bottomDwnldDlg.tag;
 			String fileName = downloadDlg.dirPath.getText().toString();
-			String mimetype = downloadDlg.abort.getText().toString();
+			String mimetype = String.valueOf(downloadDlg.abort.getTag());
 			long contentLength = (long) downloadDlg.replace.getTag();
 			if(TextUtils.isEmpty(fileName)) {
 				fileName = "unknown.download";

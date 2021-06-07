@@ -1,50 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layout>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView
+	xmlns:android="http://schemas.android.com/apk/res/android"
 	xmlns:tools="http://schemas.android.com/tools"
-	android:orientation="vertical"
 	android:layout_width="match_parent"
 	android:layout_height="wrap_content">
-	<RelativeLayout
+	<LinearLayout
+		android:orientation="vertical"
 		android:layout_width="match_parent"
-		android:layout_height="wrap_content"
-		>
-		<EditText
-			android:id="@+id/url"
-			android:hint="输入地址..."
-			style="@style/login_edit_fields"
-			tools:text="https://www.baidu.com/s?wd=%s"
-			/>
-		<ImageView
-			android:id="@+id/url_morpt"
-			android:src="@drawable/ic_menu_black_24dp"
-			style="@style/login_edit_morpt"
-			android:layout_alignTop="@+id/url"
-			android:layout_alignBottom="@+id/url"
-			android:layout_alignEnd="@+id/url"
-			/>
-	</RelativeLayout>
+		android:layout_height="wrap_content">
+		<RelativeLayout
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			>
+			<com.knziha.polymer.widgets.EditTextmy
+				android:id="@+id/url"
+				android:hint="输入地址..."
+				style="@style/login_edit_fields"
+				tools:text="https://www.baidu.com/s?wd=%s"
+				/>
+			<ImageView
+				android:id="@+id/url_morpt"
+				android:src="@drawable/ic_menu_black_24dp"
+				style="@style/login_edit_morpt"
+				android:layout_alignTop="@+id/url"
+				android:layout_alignBottom="@+id/url"
+				android:layout_alignEnd="@+id/url"
+				/>
+		</RelativeLayout>
 
 
-	<RelativeLayout
-		android:layout_width="match_parent"
-		android:layout_height="45dp"
-		>
-		<EditText
-			android:id="@+id/name"
-			android:hint="输入名称..."
-			style="@style/login_edit_fields"
-			tools:text="https://www.baidu.com/s?wd=%s"
-			/>
-		<ImageView
-			android:id="@+id/name_morpt"
-			android:src="@drawable/ic_menu_black_24dp"
-			style="@style/login_edit_morpt"
-			android:layout_alignTop="@+id/name"
-			android:layout_alignBottom="@+id/name"
-			android:layout_alignEnd="@+id/name"
-			/>
-	</RelativeLayout>
+		<RelativeLayout
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			>
+			<com.knziha.polymer.widgets.EditTextmy
+				android:id="@+id/name"
+				android:hint="输入名称..."
+				style="@style/login_edit_fields"
+				tools:text="https://www.baidu.com/s?wd=%s"
+				/>
+			<ImageView
+				android:id="@+id/name_morpt"
+				android:src="@drawable/ic_menu_black_24dp"
+				style="@style/login_edit_morpt"
+				android:layout_alignTop="@+id/name"
+				android:layout_alignBottom="@+id/name"
+				android:layout_alignEnd="@+id/name"
+				/>
+		</RelativeLayout>
 
-</LinearLayout>
+	</LinearLayout>
+</ScrollView>
 </layout>

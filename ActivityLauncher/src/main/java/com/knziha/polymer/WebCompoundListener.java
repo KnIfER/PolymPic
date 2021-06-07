@@ -1,16 +1,19 @@
 package com.knziha.polymer;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
 import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.net.Uri;
 import android.net.http.HttpResponseCache;
 import android.net.http.SslError;
 import android.os.Build;
+import android.os.Handler;
 import android.os.Message;
 import android.text.TextUtils;
 import android.util.Log;
@@ -31,9 +34,9 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.GlobalOptions;
 import androidx.recyclerview.widget.RecyclerView.OnScrollChangedListener;
 
+import com.knziha.filepicker.utils.ExtensionHelper;
 import com.knziha.polymer.Utils.AutoCloseNetStream;
 import com.knziha.polymer.Utils.BufferedReader;
 import com.knziha.polymer.Utils.CMN;
@@ -46,6 +49,7 @@ import com.knziha.polymer.toolkits.MyX509TrustManager;
 import com.knziha.polymer.toolkits.Utils.BU;
 import com.knziha.polymer.toolkits.Utils.ReusableByteOutputStream;
 import com.knziha.polymer.widgets.AppToastManager;
+import com.knziha.polymer.widgets.DialogVanishing;
 import com.knziha.polymer.widgets.Utils;
 import com.knziha.polymer.widgets.WebFrameLayout;
 
@@ -97,6 +101,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	public static boolean layoutScrollDisabled;
 	public boolean bShowCustomView;
 	public static long CustomViewHideTime;
+	public WebChromeClient.CustomViewCallback mCustomViewCallback;
 	public static long PrintStartTime;
 	public boolean upsended;
 	private int mOldOri;
@@ -104,6 +109,8 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	BrowserActivity a;
 	
 	Object k3client;
+	public static int _req_fvw;
+	public static int _req_fvh;
 	
 	static class SubStringKey {
 		final int st;
@@ -177,6 +184,8 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		long id;
 		String quantifier;
 		String JS = null;
+		Pattern gstHandler = null;
+		String gstHandlerJS = null;
 		int EnRipenPercent = -1;
 		Object[] pruneRules;
 		boolean forbidScrollWhenSelecting;
@@ -269,6 +278,29 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 			SiteConfigsByPattern.add(new Pair<>(p, rule));
 		}
 		
+		// tieba
+		{
+			Pattern p = Pattern.compile("^https?://tieba.baidu.com/");
+			SiteRule rule = new SiteRule();
+			rule.JS = "window.setTimeoutPlus = window.setTimeout;window.setTimeout = function(e,t){var es = e+\"\";console.log(\"es=\"+es);if(es.indexOf(\"tb-modal-open\")>0||es.indexOf(\"href=i\")>0||es.indexOf(\"clearTimeout(z)\")>0) {return 0;} else {return window.setTimeoutPlus(e,t);}}\n";
+			rule.gstHandler = Pattern.compile("^com\\.baidu\\.tieba");
+			rule.gstHandlerJS = "var getUrlParameter = function (url, name) { \n" +
+					"var reg = new RegExp(\"(^|&)\" + name + \"=([^&]*)(&|$)\"); \n" +
+					"return unescape(url.match(reg)[2]);\n" +
+					"}; \n" +
+					"var tid = getUrlParameter(\"%url\", \"tid\");\n" +
+					"var ret=1;\n" +
+					"if(tid) {\n" +
+					"var nu = \"https://tieba.baidu.com/p/\"+tid;\n" +
+					"if(!window.location.href.startsWith(nu)) {\n" +
+					"window.location.href=nu;\n" +
+					"ret=0;\n" +
+					"}\n" +
+					"}";
+			
+			SiteConfigsByPattern.add(new Pair<>(p, rule));
+		}
+		
 		parseJinKe();
 		//jinkeSheaths.put(SubStringKey.fast_hostKey("en.wiktionary.org"), "91.198.174.192");
 	}
@@ -327,13 +359,13 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	}
 	
 	@SuppressLint("SourceLockedOrientationActivity")
-	public void fixVideoFullScreen() {
+	public void fixVideoFullScreen(boolean landscape) {
 		if(bShowCustomView){
 			mOldOri = a.mConfiguration.orientation;
 			//int mode = opt.getFullScreenLandscapeMode();
 			boolean bSwitch = true;
 			if(bSwitch)
-				a.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+				a.setRequestedOrientation(landscape?ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE:ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
 			bShowCustomView =false;
 		}
 	}
@@ -342,7 +374,6 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	public class WebClient extends WebChromeClient {
 		private File filepickernow;
 		Dialog d; View cv;
-		
 		@Override
 		public boolean onCreateWindow(WebView view, boolean isDialog, boolean isUserGesture, Message resultMsg) {
 			CMN.Log("onCreateWindow", isDialog);
@@ -351,19 +382,28 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		
 		@Override
 		public void onShowCustomView(View view, CustomViewCallback callback) {
-			//CMN.Log("onShowCustomView", mdict._req_fvw, mdict._req_fvh);
+			//CMN.Log("onShowCustomView", _req_fvw, _req_fvh);
 			bShowCustomView = true;
-			if(true)fixVideoFullScreen();
-			if(d ==null){
-				d = new Dialog(a);
+			a.root.removeCallbacks(dismissRunnable);
+			//if(true)fixVideoFullScreen(true);
+			
+			if(d==null){
+				d = new DialogVanishing(a);
 				d.setCancelable(false);
 				d.setCanceledOnTouchOutside(false);
+				d.show();
 			}
 			
+			Window window = d.getWindow();
+			
+			hideCustomView();
+			mCustomViewCallback = callback;
 			d.show();
 			
-			Window window = d.getWindow();
-			window.setDimAmount(1);
+			View vToAnimate = window.getDecorView();
+			vToAnimate.setAlpha(0);
+			
+			window.setDimAmount(0);
 			WindowManager.LayoutParams layoutParams = window.getAttributes();
 			layoutParams.width = WindowManager.LayoutParams.MATCH_PARENT;
 			layoutParams.height = WindowManager.LayoutParams.MATCH_PARENT;
@@ -373,26 +413,41 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 			
 			window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 			
-			window.getDecorView().setBackground(null);
+			//window.getDecorView().setBackground(null);
+			window.getDecorView().setBackgroundColor(Color.TRANSPARENT);
 			window.getDecorView().setPadding(0,0,0,0);
-			
-			if(view!=null) d.setContentView(cv=view);
+			d.setContentView(cv=view);
+			vToAnimate.animate()
+					//.setDuration(1000)
+					.alpha(1);
 		}
+		
+		Runnable dismissRunnable = () -> {
+			d.dismiss();
+			if(cv!=null){
+				Utils.removeIfParentBeOrNotBe(cv, null, false);
+				cv=null;
+			}
+		};
 		
 		@Override
 		public void onHideCustomView() {
+			//CMN.Log("onHideCustomView");
 			bShowCustomView = false;
 			//if (mOldOri==Configuration.ORIENTATION_PORTRAIT&&mConfiguration.orientation==Configuration.ORIENTATION_LANDSCAPE) {
 			a.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 			//}
-			if(d !=null){
-				d.hide();
-			}
-			if(cv!=null && cv.getParent()!=null){
-				((ViewGroup)cv.getParent()).removeView(cv);
-				cv=null;
-			}
+			a.root.removeCallbacks(dismissRunnable);
+			a.root.postDelayed(dismissRunnable, 120);
 			CustomViewHideTime = System.currentTimeMillis();
+			hideCustomView();
+		}
+		
+		private void hideCustomView() {
+			if (mCustomViewCallback!=null) {
+				mCustomViewCallback.onCustomViewHidden();
+				mCustomViewCallback = null;
+			}
 		}
 		
 		@Override
@@ -418,11 +473,54 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 			}
 		}
 		
+		@Override
+		public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
+			//CMN.Log("onShowFileChooser", fileChooserParams.getAcceptTypes());
+			if (a.filePathCallback==null) {
+				Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+				intent.addCategory(Intent.CATEGORY_OPENABLE);
+				String types = null;
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+					String[] accepts = fileChooserParams.getAcceptTypes();
+					if (accepts != null && accepts.length > 0) {
+						types = "";
+						String type;
+						for (int i = 0; i < accepts.length; i++) {
+							type =  ExtensionHelper.InferMimeTypeForName(accepts[i]);
+							if (type!=null) {
+								types += type;
+								if (true) break;
+								if (i<accepts.length-1) {
+									types += ";";
+								}
+							}
+						}
+						
+					}
+					CMN.Log("types::", types, accepts);
+				}
+				if (TextUtils.isEmpty(types)) {
+					types = "*/*";
+				}
+				intent.setType(types);
+				a.filePathCallback = filePathCallback;
+				try {
+					a.startActivityForResult(Intent.createChooser(intent, "File Chooser"), Utils.RequsetFileFromFilePicker);
+				} catch (Exception e) {
+					a.filePathCallback = null;
+					CMN.Log(e);
+					return false;
+				}
+			}
+			return true;
+		}
+		
+		
 		/** 进度变化的回调接口。 进度大于98时强行通知加载完成。<br/>
 		 * see {@link WebCompoundListener#onPageFinished}*/
 		@Override
 		public void onProgressChanged(WebView view, int newProgress) {
-			CMN.Log("OPC::", newProgress, Thread.currentThread().getId());
+			//CMN.Log("OPC::", newProgress, Thread.currentThread().getId());
 			UniversalWebviewInterface webviewImpl = (UniversalWebviewInterface) (view instanceof UniversalWebviewInterface?view:getTag());
 			View mWebView = (View) webviewImpl;
 			WebFrameLayout layout = (WebFrameLayout) mWebView.getParent();
@@ -670,6 +768,29 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 			};
 	 		w._docAnnots="";
 	 		w._docAnnott="";
+			function wrappedFscrFunc(e) {
+	 			if(document.fullscreen)
+	 			{
+					var vw=0,vh=0;
+					var se = e.srcElement;
+					var vi = se.tagName==="VIDEO"?se:(se.getElementsByTagName("VIDEO")[0]);
+					if(vi) {
+						vw = vi.videoWidth;
+						vh = vi.videoHeight;
+					}
+					if(vw==0) {
+						vw = se.clientWidth;
+						vh = se.clientHeight;
+					}
+					//console.log('fatal fullscreen!!!',vw,vh);
+					polyme.onRequestFView(vw, vh);
+					return false;
+	 			}
+			}
+	 		//console.log('fatal fullscreen???');
+			w.addEventListener('fullscreenchange', wrappedFscrFunc);
+			w.addEventListener('webkitfullscreenchange', wrappedFscrFunc);
+			w.addEventListener('mozfullscreenchange', wrappedFscrFunc);
 		}
 	 	polyme.logm('1','2','3');
 	 */
@@ -832,15 +953,19 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		if(!url.regionMatches(false, 0, "http", 0, 4)
 				&&!url.regionMatches(false, 0, "https", 0, 5)) {
 			//if(a.webtitle.getVisibility()== View.VISIBLE) a.etSearch.setText(url);
-			if(true) {
-				int idx = url.indexOf(":");
-				String appScheme = url;
-				if(idx>0) {
-					appScheme = Utils.getSubStrWord(appScheme, 0, idx);
+			for (int i = 0, len=layout.rules.size(); i < len; i++) {
+				SiteRule rl = layout.rules.get(i);
+				if(rl.gstHandler!=null && rl.gstHandler.matcher(url).find()) {
+					webviewImpl.evaluateJavascript(rl.gstHandlerJS.replace("%url", url), value -> {
+						if (!"0".equals(value)) {
+							relayAppShceme(url);
+						}
+					});
+					return true;
 				}
-				
-				showT(appScheme+" 请求打开外部APP", "继续", url);
-				
+			}
+			if(true) {
+				relayAppShceme(url);
 			}
 			return true;
 		}
@@ -863,6 +988,15 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		//view.loadUrl(url);
 		layout.setNavStacksDirty();
 		return false;
+	}
+	
+	private void relayAppShceme(String url) {
+		int idx = url.indexOf(":");
+		String appScheme = url;
+		if(idx>0) {
+			appScheme = Utils.getSubStrWord(appScheme, 0, idx);
+		}
+		showT(appScheme+" 请求打开外部APP", "继续", url);
 	}
 	
 	public void showT(String message, String yesText, String url) {
@@ -1321,12 +1455,21 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		boolean scrollforbid;
 		//CMN.Log("onScrollChange", scrollY-oldy);
 		if(layout.forbidScrollWhenSelecting && layout.bIsActionMenuShown && oldy-scrollY>200
-			|| !a.DismissingViewHolder
+			|| a.tabViewAdapter.isVisible()
 			|| CustomViewHideTime>0 && System.currentTimeMillis()-CustomViewHideTime<350){
 			CMN.Log("re_scroll...");
 			webviewImpl.SafeScrollTo(oldx, oldy);
 			return;
 		}
+	}
+	
+	@org.xwalk.core.JavascriptInterface
+	@JavascriptInterface
+	public void onRequestFView(int w, int h) {
+		CMN.Log("onRequestFView", w, h);
+		_req_fvw=w;
+		_req_fvh=h;
+		fixVideoFullScreen(w>h);
 	}
 	
 	@org.xwalk.core.JavascriptInterface

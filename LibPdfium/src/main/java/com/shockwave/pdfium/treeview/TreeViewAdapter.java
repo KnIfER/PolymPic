@@ -1,8 +1,6 @@
 package com.shockwave.pdfium.treeview;
 
 import android.os.Bundle;
-import android.text.TextUtils;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -26,18 +24,25 @@ public class TreeViewAdapter<VH extends RecyclerView.ViewHolder> extends Recycle
     private final List<? extends TreeViewBinderInterface> viewBinders;
     protected final ArrayList<TreeViewNode> displayNodes = new ArrayList<>();
 	protected int padding = 30;
-    private OnTreeNodeListener onTreeNodeListener;
+    protected OnTreeNodeListener onTreeNodeListener;
     private boolean toCollapseChild;
-	private int lastSelectionOffset;
-	private long lastSelectionId;
-	private int lastSelectionPos;
+    
+	protected int lastSelectionOffset;
+	protected long lastSelectionId;
+	protected int lastSelectionPos;
+	protected boolean findSelection;
 	
-	boolean findSelection;
 	protected Object currentFilter;
 	protected int currentSchFlg;
 	
 	protected TreeViewNode rootNode;
 	protected TreeViewNode footNode;
+	
+	protected boolean isFolderView = false;
+	
+	protected int currentExpChannel=0x1;
+	protected int normalExpChannel=0x1;
+	protected int schViewExpChannel=0x1;
 	
 	public TreeViewAdapter(List<? extends TreeViewBinderInterface> viewBinders) {
         this(null, viewBinders);
@@ -47,45 +52,74 @@ public class TreeViewAdapter<VH extends RecyclerView.ViewHolder> extends Recycle
 		findDisplayNodes(nodes);
         this.viewBinders = viewBinders;
     }
-	
+    
 	protected int addChildNodesFiltered(TreeViewNode pNode, int startIndex, int schFlag) {
 		if(currentFilter==null) {
 			return addChildNodes(pNode, startIndex);
 		}
 		int addChildCount = 0;
-		List<TreeViewNode> nodes = pNode.getChildList();
+		List<TreeViewNode> nodes = pNode.getChildList(isFolderView);
 		boolean schView=(schFlag&0x2)!=0;
 		boolean shldAdd=(schFlag&0x1)!=0;
+		int schViewExp = schView?schViewExpChannel:normalExpChannel;
 		TreeViewNode node;
 		for (int i = 0,len=nodes.size(); i < len; i++) {
 			node = nodes.get(i);
 			boolean added=filterNode(node);
+			boolean expanded = node.isExpand(schViewExp);
 			int currentIdx = startIndex+addChildCount++;
 			if(shldAdd) {
 				displayNodes.add(currentIdx, node);
 			}
 			int flagNxt=schFlag;
-			if (!node.isExpand(schView)) {
+			if (shldAdd && !expanded) {
 				flagNxt &= ~0x1;
 			}
-			int childAdd=addChildNodesFiltered(node, currentIdx, flagNxt);
-			if(childAdd>0) {
-				addChildCount += childAdd;
-			} else if(!added && shldAdd) {
+			int childAdd=addChildNodesFiltered(node, currentIdx+1, flagNxt);
+			if(childAdd>0)
+			{
+				if (shldAdd && expanded)
+				{
+					addChildCount += childAdd;
+				}
+			} else if (!added) {
 				addChildCount--;
-				displayNodes.remove(currentIdx);
+				if(shldAdd) {
+					displayNodes.remove(currentIdx);
+				}
 			}
 		}
-		
-		if (!pNode.isExpand(schView))
-			pNode.toggle(schView);
 		return addChildCount;
+	}
+	
+	public interface TreeTraveller<T extends TreeViewNode> {
+		boolean onNodeReached(T node);
+		boolean ended();
+	}
+	
+	public <T extends TreeViewNode> void TraverseChildTree(T pNode, TreeTraveller<T> treeTraveller) {
+		List<T> nodes = pNode.getChildList(isFolderView);
+		T node;
+		for (int i = 0,len=nodes.size(); i < len; i++) {
+			node = nodes.get(i);
+			boolean removed = treeTraveller.onNodeReached(node);
+			if (treeTraveller.ended()) {
+				return;
+			}
+			if (removed) {
+				--len;
+				--i;
+			} else if (!node.isLeaf()) {
+				TraverseChildTree(node, treeTraveller);
+			}
+		}
 	}
 	
 	protected boolean filterDisplayNodes(List<TreeViewNode> nodes, int schFlag) {
 		boolean ret=false;
 		boolean schView=(schFlag&0x2)!=0;
 		boolean shldAdd=(schFlag&0x1)!=0;
+		int schViewExp = schView?schViewExpChannel:normalExpChannel;
 		int currentIdx, flagNxt;
 		TreeViewNode node;
 		if(nodes!=null) { //sanity check
@@ -98,8 +132,9 @@ public class TreeViewAdapter<VH extends RecyclerView.ViewHolder> extends Recycle
 				}
 				flagNxt=schFlag;
 				if(schView) {
-					node.schIsExpanded=true;
-				} else if (!node.isExpand()) {
+					//todo add bit
+					node.expand(schViewExp);
+				} else if (!node.isExpand(schViewExp)) {
 					flagNxt &= ~0x1;
 				}
 				if (filterDisplayNodes(node.getChildList(), flagNxt) || added) {
@@ -116,16 +151,23 @@ public class TreeViewAdapter<VH extends RecyclerView.ViewHolder> extends Recycle
 		return false;
 	}
 	
+	public void filterTreeView() {
+		filterTreeView(currentFilter, currentSchFlg);
+	}
+	
 	public void filterTreeView(Object pattern, int schFlag) {
 		if (rootNode!=null) {
 			currentSchFlg = schFlag;
 			displayNodes.clear();
 			if (pattern!=null) {
 				currentFilter = pattern;
-				filterDisplayNodes(rootNode.getChildList(), schFlag|0x1);
+				filterDisplayNodes(rootNode.getChildList(isFolderView), schFlag|0x1);
 			} else {
 				currentFilter = null;
-				findDisplayNodes(rootNode.getChildList());
+				findDisplayNodes(rootNode.getChildList(isFolderView));
+			}
+			if (footNode!=null) {
+				displayNodes.add(footNode);
 			}
 			notifyDataSetChanged();
 		}
@@ -140,9 +182,13 @@ public class TreeViewAdapter<VH extends RecyclerView.ViewHolder> extends Recycle
     	if(nodes!=null) { //sanity check
 			for (int i = 0,len=nodes.size(); i < len; i++) {
 				TreeViewNode node = nodes.get(i);
+				if (findSelection && lastSelectionId == System.identityHashCode(node.getContent())) {
+					lastSelectionPos = displayNodes.size();
+					findSelection = false;
+				}
 				displayNodes.add(node);
-				if (node.isExpand())
-					findDisplayNodes(node.getChildList());
+				if (node.isExpand(currentExpChannel))
+					findDisplayNodes(node.getChildList(isFolderView));
 			}
 		}
     }
@@ -151,14 +197,14 @@ public class TreeViewAdapter<VH extends RecyclerView.ViewHolder> extends Recycle
     	if(nodes!=null) { //sanity check
 			for (int i = 0,len=nodes.size(); i < len; i++) {
 				TreeViewNode node = nodes.get(i);
-				node.setExpanded(val);
+				node.setExpanded(currentExpChannel, val);
 				if (findSelection && lastSelectionId == System.identityHashCode(node.getContent())) {
 					lastSelectionPos = displayNodes.size();
 					findSelection = false;
 				}
 				displayNodes.add(node);
 				if (val)
-					findSetDisplayNodes(node.getChildList(), val);
+					findSetDisplayNodes(node.getChildList(isFolderView), val);
 			}
 		}
     }
@@ -217,43 +263,72 @@ public class TreeViewAdapter<VH extends RecyclerView.ViewHolder> extends Recycle
     }
 
     private int addChildNodes(TreeViewNode pNode, int startIndex) {
-        List<TreeViewNode> childList = pNode.getChildList();
+        List<TreeViewNode> childList = pNode.getChildList(isFolderView);
         int addChildCount = 0;
         for (TreeViewNode treeViewNode : childList) {
             displayNodes.add(startIndex + addChildCount++, treeViewNode);
-            if (treeViewNode.isExpand()) {
+            if (treeViewNode.isExpand(currentExpChannel)) {
                 addChildCount += addChildNodes(treeViewNode, startIndex + addChildCount);
             }
         }
-        if (!pNode.isExpand())
-            pNode.toggle();
+        if (!pNode.isExpand(currentExpChannel))
+            pNode.toggle(currentExpChannel);
         return addChildCount;
     }
 
-    private int removeChildNodes(TreeViewNode pNode) {
-        return removeChildNodes(pNode, true);
-    }
-
     //todo check
-    private int removeChildNodes(TreeViewNode pNode, boolean shouldToggle) {
+    private int removeChildNodes(TreeViewNode pNode) {
         if (pNode.isLeaf())
             return 0;
         List<TreeViewNode> childList = pNode.getChildList();
         int removeChildCount = childList.size();
         displayNodes.removeAll(childList);
         for (TreeViewNode child : childList) {
-            if (child.isExpand()) {
+            if (child.isExpand(currentExpChannel)) {
                 if (toCollapseChild)
-                    child.toggle();
-                removeChildCount += removeChildNodes(child, false);
+                    child.toggle(currentExpChannel);
+                removeChildCount += removeChildNodes(child);
             }
         }
-        if (shouldToggle)
-            pNode.toggle();
         return removeChildCount;
     }
-
-    @Override
+    
+    
+	
+	private int removeChildNodes_fast(TreeViewNode pNode) {
+    	return removeChildNodes_fast(displayNodes.indexOf(pNode));
+	}
+	
+    private int removeChildNodes_fast(int position) {
+    	int ret=0;
+    	if (position>=0 && position<displayNodes.size()) {
+			TreeViewNode pNode = displayNodes.get(position);
+			pNode.collapse(currentExpChannel);
+			for (int i = position+1, len=displayNodes.size(); i < len; i++) {
+				TreeViewNode node = displayNodes.get(i);
+				if(isChildOf(node, pNode)) {
+					displayNodes.remove(i);
+					--len;
+					--i;
+					++ret;
+				} else {
+					break;
+				}
+			}
+		}
+        return ret;
+    }
+	
+	private boolean isChildOf(TreeViewNode node, TreeViewNode pNode) {
+		while((node=node.getParent())!=null) {
+			if (node==pNode) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	@Override
     public int getItemCount() {
         return displayNodes == null ? 0 : displayNodes.size();
     }
@@ -266,7 +341,7 @@ public class TreeViewAdapter<VH extends RecyclerView.ViewHolder> extends Recycle
         this.toCollapseChild = toCollapseChild;
     }
 
-    public void setOnTreeNodeListener(OnTreeNodeListener onTreeNodeListener) {
+    public void setTreeNodeListener(OnTreeNodeListener onTreeNodeListener) {
         this.onTreeNodeListener = onTreeNodeListener;
     }
 	
@@ -280,11 +355,12 @@ public class TreeViewAdapter<VH extends RecyclerView.ViewHolder> extends Recycle
 			return;
 		}
 		int positionStart = holder.getLayoutPosition() + 1;
-		if (!nodeI.isExpand()) {
+		nodeI.toggle(currentExpChannel);
+		if (nodeI.isExpand(currentExpChannel)) {
 			notifyItemRangeInserted(positionStart
 					, addChildNodesFiltered(nodeI, positionStart, 0x1));
 		} else {
-			notifyItemRangeRemoved(positionStart, removeChildNodes(nodeI, true));
+			notifyItemRangeRemoved(positionStart, removeChildNodes(nodeI));
 		}
 	}
 	
@@ -305,26 +381,26 @@ public class TreeViewAdapter<VH extends RecyclerView.ViewHolder> extends Recycle
     public void refresh(List<TreeViewNode> treeViewNodes, int cap) {
         displayNodes.clear();
 		displayNodes.ensureCapacity(cap);
-        findDisplayNodes(treeViewNodes);
-		if (footNode!=null) {
-			displayNodes.add(footNode);
-		}
+        filterTreeView();
         notifyDataSetChanged();
     }
     
     public void refresh(RecyclerView view, List<TreeViewNode> treeViewNodes, int cap, boolean val) {
-		LinearLayoutManager llm = (LinearLayoutManager) view.getLayoutManager();
-		lastSelectionId = getItemId(llm.findFirstVisibleItemPosition());
-		View ca = view.getChildAt(0);
-		if(ca!=null) {
-			lastSelectionOffset = ca.getTop();
+		LinearLayoutManager llm = null;
+    	if (view!=null) {
+			llm = (LinearLayoutManager) view.getLayoutManager();
+			lastSelectionId = getItemId(llm.findFirstVisibleItemPosition());
+			View ca = view.getChildAt(0);
+			if(ca!=null) {
+				lastSelectionOffset = ca.getTop();
+			}
 		}
 		findSelection = true;
 		displayNodes.clear();
 		displayNodes.ensureCapacity(cap);
         findSetDisplayNodes(treeViewNodes, val);
         notifyDataSetChanged();
-        if(!findSelection) {
+        if(llm!=null && !findSelection) {
 			llm.scrollToPositionWithOffset(lastSelectionPos, lastSelectionOffset);
 		}
     }
@@ -368,8 +444,8 @@ public class TreeViewAdapter<VH extends RecyclerView.ViewHolder> extends Recycle
 
     private Object getChangePayload(TreeViewNode oldNode, TreeViewNode newNode) {
         Bundle diffBundle = new Bundle();
-        if (newNode.isExpand() != oldNode.isExpand()) {
-            diffBundle.putBoolean(KEY_IS_EXPAND, newNode.isExpand());
+        if (newNode.isExpand(currentExpChannel) != oldNode.isExpand(currentExpChannel)) {
+            diffBundle.putBoolean(KEY_IS_EXPAND, newNode.isExpand(currentExpChannel));
         }
         if (diffBundle.size() == 0)
             return null;
@@ -379,7 +455,7 @@ public class TreeViewAdapter<VH extends RecyclerView.ViewHolder> extends Recycle
     // For DiffUtil, if they are the same items, whether the contents has bean changed.
     private boolean areContentsTheSame(TreeViewNode oldNode, TreeViewNode newNode) {
         return oldNode.getContent() != null && oldNode.getContent().equals(newNode.getContent())
-                && oldNode.isExpand() == newNode.isExpand();
+                && oldNode.isExpand(currentExpChannel) == newNode.isExpand(currentExpChannel);
     }
 
     // judge if the same item for DiffUtil
@@ -401,8 +477,10 @@ public class TreeViewAdapter<VH extends RecyclerView.ViewHolder> extends Recycle
         }
         //Close all root nodes.
         for (TreeViewNode root : roots) {
-            if (root.isExpand())
-                removeChildNodes(root);
+            if (root.isExpand(currentExpChannel)) {
+				root.collapse(currentExpChannel); removeChildNodes(root);
+			}
+        
         }
         notifyDiff(temp);
     }
@@ -421,9 +499,19 @@ public class TreeViewAdapter<VH extends RecyclerView.ViewHolder> extends Recycle
     }
 
     public void collapseNode(TreeViewNode pNode) {
-        List<TreeViewNode> temp = backupDisplayNodes();
-        removeChildNodes(pNode);
-        notifyDiff(temp);
+//        List<TreeViewNode> temp = backupDisplayNodes();
+//		pNode.collapse(currentExpChannel); removeChildNodes(pNode);
+//        notifyDiff(temp);
+    }
+    
+    public void collapseNode(int position) {
+//        List<TreeViewNode> temp = backupDisplayNodes();
+//		pNode.collapse(currentExpChannel); removeChildNodes(pNode);
+//        notifyDiff(temp);
+		int removed = removeChildNodes_fast(position);
+		if (removed>0) {
+			notifyItemRangeRemoved(position+1, removed);
+		}
     }
 
     public void collapseBrotherNode(TreeViewNode pNode) {
@@ -436,8 +524,9 @@ public class TreeViewAdapter<VH extends RecyclerView.ViewHolder> extends Recycle
             }
             //Close all root nodes.
             for (TreeViewNode root : roots) {
-                if (root.isExpand() && !root.equals(pNode))
-                    removeChildNodes(root);
+                if (root.isExpand(currentExpChannel) && !root.equals(pNode)) {
+					root.collapse(currentExpChannel); removeChildNodes(root);
+				}
             }
         } else {
             TreeViewNode parent = pNode.getParent();
@@ -445,9 +534,9 @@ public class TreeViewAdapter<VH extends RecyclerView.ViewHolder> extends Recycle
                 return;
             List<TreeViewNode> childList = parent.getChildList();
             for (TreeViewNode node : childList) {
-                if (node.equals(pNode) || !node.isExpand())
+                if (node.equals(pNode) || !node.isExpand(currentExpChannel))
                     continue;
-                removeChildNodes(node);
+				node.collapse(currentExpChannel);  removeChildNodes(node);
             }
         }
         notifyDiff(temp);

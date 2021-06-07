@@ -41,13 +41,13 @@
 			<com.knziha.polymer.widgets.DescriptiveImageView
 				android:id="@+id/menu_icon3"
 				style="@style/MenuIconIVStyle"
-				android:text="历史记录"
+				android:text="@string/fragment_history"
 				android:src="@drawable/ic_baseline_history2_24"
 				/>
 			<com.knziha.polymer.widgets.DescriptiveImageView
 				android:id="@+id/menu_icon4"
 				style="@style/MenuIconIVStyle"
-				android:text="下载"
+				android:text="@string/downloads"
 				android:src="@drawable/ic_file_download_white_24dp"
 				/>
 			<com.knziha.polymer.widgets.DescriptiveImageView

@@ -7,7 +7,7 @@ import android.graphics.drawable.Drawable;
 
 import java.util.Objects;
 
-public class AppInfoBean {
+public class AppInfoBean implements AppLoadableBean {
 	public Intent intent;
 	public ResolveInfo data;
 	public PackageManager pm;

@@ -27,7 +27,7 @@ public class Options implements WebOptions, BookOptions {
 	public final SharedPreferences defaultReader;
 	public DisplayMetrics dm;
 	public static boolean isLarge;
-	private static long FirstFlag;
+	public static long FirstFlag;
 	public static String locale;
 	public Configuration mConfiguration;
 
@@ -70,7 +70,7 @@ public class Options implements WebOptions, BookOptions {
 			editor = defaultReader.edit();
 			CommitOrApplyOrNothing=1;
 		}
-		editor.putLong("MFF", FirstFlag).putLong("MSF", SecondFlag);//.putLong("MTF", ThirdFlag);
+		editor.putLong("MFF", FirstFlag).putLong("MSF", SecondFlag).putLong("MTF", ThirdFlag);
 		if(CommitOrApplyOrNothing==1) editor.apply();
 		else if(CommitOrApplyOrNothing==2) editor.commit();
 		//CMN.Log("apply changes");
@@ -144,6 +144,7 @@ public class Options implements WebOptions, BookOptions {
 	@Multiline(flagPos=56, shift=1) public boolean getHideKeyboardOnScrollSearchHints(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=57, shift=1) public boolean getShowKeyIMEOnClean(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
 
+	// 58 59
 
 
 	/////////////////////End First Flag////////////////////////////////////
@@ -235,6 +236,10 @@ public class Options implements WebOptions, BookOptions {
 	@Multiline(flagPos=23, debug=0) public boolean checkTabsOnPause(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=24) public boolean saveTabsOnPause(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
 	
+	// 25 getNavHomeShowMultiline
+	// 26 getShowDragHandle
+	// 27 getNavHomeSelMode
+	// 28 getEditMode
 	
 	/////////////////////End Third Flag////////////////////////////////////
 	/////////////////////Start Fourth Flag////////////////////////////////////

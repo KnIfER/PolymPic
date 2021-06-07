@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+	android:id="@string/bianji"
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="match_parent"
+	android:layout_height="wrap_content"
+	android:clickable="true">
+	<TextView
+		style="@style/MenuTextStyle1"
+		android:text="@string/bianji" />
+
+	<ImageView
+		android:id="@+id/delete"
+		android:layout_width="40dp"
+		android:layout_height="@dimen/_35_"
+		android:layout_gravity="end|center_vertical"
+		android:layout_marginEnd="5dp"
+		android:background="?actionBarItemBackground"
+		android:clickable="true"
+		android:focusable="true"
+		android:paddingStart="8dp"
+		android:paddingTop="5dp"
+		android:paddingEnd="8dp"
+		android:paddingBottom="5dp"
+		android:src="@drawable/sync_tabs_close" />
+
+	<ImageView
+		android:id="@+id/new_node"
+		android:layout_width="40dp"
+		android:layout_height="@dimen/_35_"
+		android:layout_gravity="end|center_vertical"
+		android:layout_marginEnd="40dp"
+		android:background="?actionBarItemBackground"
+		android:clickable="true"
+		android:focusable="true"
+		android:paddingStart="8dp"
+		android:paddingTop="5dp"
+		android:paddingEnd="8dp"
+		android:paddingBottom="5dp"
+		android:src="@drawable/sync_tabs_add"
+		android:tint="#FFA858"
+		/>
+</FrameLayout>

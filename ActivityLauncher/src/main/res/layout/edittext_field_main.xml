@@ -30,6 +30,20 @@
 			style="@style/SearchbarMenuTextStyle_dlg"
 			/>
 		<TextView
+			android:id="@+id/browser_widget6"
+			android:text="撤销"
+			android:drawableLeft="@drawable/ic_baseline_undo_24"
+			style="@style/SearchbarMenuTextStyle_dlg"
+			android:visibility="gone"
+			/>
+		<TextView
+			android:id="@+id/browser_widget7"
+			android:text="重做"
+			android:drawableLeft="@drawable/ic_baseline_redo_24"
+			style="@style/SearchbarMenuTextStyle_dlg"
+			android:visibility="gone"
+			/>
+		<TextView
 			android:id="@+id/browser_widget2"
 			android:text="复制"
 			android:drawableLeft="@drawable/ic_baseline_copy_24"

@@ -219,6 +219,7 @@
 				app:layout_behavior="@string/appbar_scrolling_view_behavior"
 				android:background="#3E8F8F8F"
 				android:visibility="gone"
+				android:elevation="3dp"
 				android:onClick="onClick"
 				/>
 			<ViewStub
@@ -229,6 +230,15 @@
 				android:layout_gravity="bottom|end"
 				android:elevation="3dp"
 				tools:layout_width="250dp"
+				/>
+
+			<View
+				android:id="@+id/progressbar"
+				android:layout_width="match_parent"
+				android:layout_height="3dp"
+				android:background="@drawable/progressbar"
+				app:layout_behavior="@string/appbar_scrolling_view_behavior"
+				android:elevation="10dp"
 				/>
 
 			<com.knziha.polymer.widgets.LineaSlidog
@@ -257,7 +267,7 @@
 					android:layout_weight="1"
 					android:background="@drawable/surrtrip1"
 					android:src="@drawable/chevron_forward" />
-				<android.widget.ImageView
+				<com.knziha.polymer.webslideshow.ImageViewTarget
 					android:id="@+id/browser_widget9"
 					android:layout_width="0dp"
 					android:layout_height="match_parent"
@@ -279,15 +289,6 @@
 					android:background="@drawable/surrtrip1"
 					android:src="@drawable/ic_menu_24dp" />
 			</com.knziha.polymer.widgets.LineaSlidog>
-
-			<View
-				android:id="@+id/progressbar"
-				android:layout_width="match_parent"
-				android:layout_height="3dp"
-				android:background="@drawable/progressbar"
-				app:layout_behavior="@string/appbar_scrolling_view_behavior"
-				android:elevation="10dp"
-				/>
 		</androidx.coordinatorlayout.widget.CoordinatorLayout>
 
 

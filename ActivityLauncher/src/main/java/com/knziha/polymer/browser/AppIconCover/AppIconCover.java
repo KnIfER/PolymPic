@@ -1,11 +1,14 @@
 package com.knziha.polymer.browser.AppIconCover;
 
+import android.graphics.drawable.Drawable;
+
+import java.io.IOException;
 import java.util.Objects;
 
 public class AppIconCover {
-	public final AppInfoBean path;
+	public final AppLoadableBean path;
 	
-	public AppIconCover(AppInfoBean path) {
+	public AppIconCover(AppLoadableBean path) {
 		this.path = path;
 	}
 	
@@ -22,5 +25,9 @@ public class AppIconCover {
 	@Override
 	public int hashCode() {
 		return Objects.hash(path);
+	}
+	
+	public Drawable load() throws IOException {
+		return path.load();
 	}
 }

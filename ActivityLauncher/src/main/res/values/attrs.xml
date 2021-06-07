@@ -147,4 +147,8 @@
 		<attr name="shapePadding" />
 		<attr name="textSizeRatio" />
 	</declare-styleable>
+
+	<declare-styleable name="MultiSearchView">
+		<attr name="searchTextStyle" format="reference"/>
+	</declare-styleable>
 </resources>

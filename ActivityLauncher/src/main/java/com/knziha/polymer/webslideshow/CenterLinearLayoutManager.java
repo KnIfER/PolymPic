@@ -29,6 +29,7 @@ public class CenterLinearLayoutManager extends LinearLayoutManager {
 		smoothScroller.bFromIdle = ((RecyclerViewPager)recyclerView).bFromIdle;
         smoothScroller.setTargetPosition(position);
         startSmoothScroll(smoothScroller);
+        if (position!=-1)
 		targetPos = position;
     }
 

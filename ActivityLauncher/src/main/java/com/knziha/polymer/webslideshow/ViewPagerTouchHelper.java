@@ -22,12 +22,12 @@ public class ViewPagerTouchHelper<T extends RecyclerView.ViewHolder> extends Ite
     
     @Override
     public boolean isLongPressDragEnabled() {
-        return super.isLongPressDragEnabled();
+        return true;
     }
     
     @Override
     public boolean isItemViewSwipeEnabled() {
-        return super.isItemViewSwipeEnabled();
+        return true;
     }
 	
 	@Override
@@ -48,6 +48,8 @@ public class ViewPagerTouchHelper<T extends RecyclerView.ViewHolder> extends Ite
 			viewHolder.itemView.setAlpha(alpha);
 			viewHolder.itemView.setTranslationY(dY);
 		} else {
+			//viewHolder.itemView.setAlpha(1);
+			//viewHolder.itemView.setTranslationY(0);
 			super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive);
 		}
 	}

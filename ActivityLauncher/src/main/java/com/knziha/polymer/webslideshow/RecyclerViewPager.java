@@ -169,11 +169,21 @@ public class RecyclerViewPager extends RecyclerView {
 	protected void adjustPositionX(int velocityX) {
 		int childCount = getChildCount();
 		if (childCount > 0) {
+			int targetPosition;
 			int curPosition = ViewUtils.getCenterXChildPositionV1(this);
-			int childWidth = getWidth() - getPaddingLeft() - getPaddingRight();
-			childWidth = mItemWidth;
-			int flingCount = (int) (velocityX * mFlingFactor / childWidth);
-			int targetPosition = curPosition + flingCount;
+			if (curPosition==-1) return;
+			if (curPosition==-1) {
+				curPosition = ((CenterLinearLayoutManager)getLayoutManager()).targetPos;
+			}
+			if (curPosition==-1)  {
+				//curPosition =
+				targetPosition = ((CenterLinearLayoutManager)getLayoutManager()).targetPos;
+			} else {
+				int childWidth = getWidth() - getPaddingLeft() - getPaddingRight();
+				childWidth = mItemWidth;
+				int flingCount = (int) (velocityX * mFlingFactor / childWidth);
+				targetPosition = curPosition + flingCount;
+			}
 			targetPosition = Math.max(targetPosition, 0);
 			targetPosition = Math.min(targetPosition, getAdapter().getItemCount() - 1);
 			if (targetPosition == curPosition) {
@@ -191,7 +201,7 @@ public class RecyclerViewPager extends RecyclerView {
 				Log.d("@", "adjustPositionX:" + targetPosition);
 			}
 			
-			CMN.Log("SCROLL_ADJ :: ", ((LinearLayoutManager)getLayoutManager()).findFirstVisibleItemPosition(),targetPosition);
+			CMN.Log("SCROLL_ADJ :: ", ((LinearLayoutManager)getLayoutManager()).findFirstVisibleItemPosition(),targetPosition," from :: "+curPosition);
 			
 			smoothScrollToPosition(safeTargetPosition(targetPosition, getAdapter().getItemCount()));
 		}

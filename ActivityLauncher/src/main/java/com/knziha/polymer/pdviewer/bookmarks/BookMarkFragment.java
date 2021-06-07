@@ -79,7 +79,7 @@ public class BookMarkFragment extends Fragment {
 				}
 			});
 			
-			adapter.setOnTreeNodeListener(new TreeViewAdapter.OnTreeNodeListener() {
+			adapter.setTreeNodeListener(new TreeViewAdapter.OnTreeNodeListener() {
 				@Override
 				public boolean onClick(TreeViewNode node, RecyclerView.ViewHolder holder) {
 					if (!node.isLeaf()) {

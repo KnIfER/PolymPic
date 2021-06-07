@@ -26,6 +26,7 @@ import com.knziha.polymer.databinding.DocPageItemBinding;
 import com.knziha.polymer.webslideshow.RecyclerViewPager;
 import com.knziha.polymer.webslideshow.RecyclerViewPagerAdapter;
 import com.knziha.polymer.webslideshow.RecyclerViewPagerSubsetProvider;
+import com.knziha.polymer.webslideshow.ViewUtils;
 import com.knziha.polymer.widgets.Utils;
 import com.shockwave.pdfium.SearchRecord;
 
@@ -34,7 +35,7 @@ import java.util.ArrayList;
 
 /** This class is used for displaying small thumbnails of all pages or
  * 		only matching pages ( provided via {@link RecyclerViewPagerAdapter#resultsProvider} ) in a search action.  */
-public class PDocPageViewAdapter extends RecyclerViewPagerAdapter<BrowserActivity.ViewDataHolder<DocPageItemBinding>> implements View.OnTouchListener, RecyclerViewPager.OnPageChangedListener {
+public class PDocPageViewAdapter extends RecyclerViewPagerAdapter<ViewUtils.ViewDataHolder<DocPageItemBinding>> implements View.OnTouchListener, RecyclerViewPager.OnPageChangedListener {
 	/** Spec Activity. */
 	private final PDocViewerActivity a;
 	/** The Parent View Group. */
@@ -86,7 +87,7 @@ public class PDocPageViewAdapter extends RecyclerViewPagerAdapter<BrowserActivit
 				if(ca==null) {
 					continue;
 				}
-				DocPageItemBinding vh = ((BrowserActivity.ViewDataHolder<DocPageItemBinding>) ca.getTag()).data;
+				DocPageItemBinding vh = ((ViewUtils.ViewDataHolder<DocPageItemBinding>) ca.getTag()).data;
 				resideThumbnailToAdapterView(vh, resultsProvider==null?position:resultsProvider.getActualPageAtPosition(position));
 			}
 		}
@@ -154,7 +155,7 @@ public class PDocPageViewAdapter extends RecyclerViewPagerAdapter<BrowserActivit
 				d.show();
 			}
 		} else {
-			BrowserActivity.ViewDataHolder<?> vh = (BrowserActivity.ViewDataHolder<?>) v.getTag();
+			ViewUtils.ViewDataHolder<?> vh = (ViewUtils.ViewDataHolder<?>) v.getTag();
 			int position = vh.position;
 			if(targetIsPage(position)) {
 				tapping = true;
@@ -196,8 +197,8 @@ public class PDocPageViewAdapter extends RecyclerViewPagerAdapter<BrowserActivit
 	
 	@NonNull
 	@Override
-	public BrowserActivity.ViewDataHolder<DocPageItemBinding> onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-		BrowserActivity.ViewDataHolder<DocPageItemBinding> vh = new BrowserActivity.ViewDataHolder<>(DocPageItemBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false));
+	public ViewUtils.ViewDataHolder<DocPageItemBinding> onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+		ViewUtils.ViewDataHolder<DocPageItemBinding> vh = new ViewUtils.ViewDataHolder<>(DocPageItemBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false));
 		vh.itemView.setOnClickListener(this);
 		vh.itemView.setOnTouchListener(this);
 		CMN.Log("onCreateViewHolder");
@@ -205,7 +206,7 @@ public class PDocPageViewAdapter extends RecyclerViewPagerAdapter<BrowserActivit
 	}
 	
 	@Override
-	public void onBindViewHolder(@NonNull BrowserActivity.ViewDataHolder<DocPageItemBinding> viewHolder, int position) {
+	public void onBindViewHolder(@NonNull ViewUtils.ViewDataHolder<DocPageItemBinding> viewHolder, int position) {
 		DocPageItemBinding vh = viewHolder.data;
 		ImageView iv = vh.iv;
 		position-=headViewSize;
@@ -243,7 +244,7 @@ public class PDocPageViewAdapter extends RecyclerViewPagerAdapter<BrowserActivit
 			View ca = mViewPager.getChildAt((resultsProvider==null?position:resultsProvider.getLastQuery()) - pageScoper.scopeStart);
 			if(ca!=null) {
 				Bitmap bm = ((PDocView)obj).getLoRThumbnailForPageAt(position);
-				((BrowserActivity.ViewDataHolder<DocPageItemBinding>)ca.getTag()).data.iv.setImageBitmap(bm);
+				((ViewUtils.ViewDataHolder<DocPageItemBinding>)ca.getTag()).data.iv.setImageBitmap(bm);
 			}
 		}
 	}
@@ -321,7 +322,7 @@ public class PDocPageViewAdapter extends RecyclerViewPagerAdapter<BrowserActivit
 			lastSelTv.setBackgroundResource(0);
 		}
 		if(ca!=null) {
-			lastSelTv = ((BrowserActivity.ViewDataHolder<DocPageItemBinding>)ca.getTag()).data.tv;
+			lastSelTv = ((ViewUtils.ViewDataHolder<DocPageItemBinding>)ca.getTag()).data.tv;
 			lastSelTv.setBackgroundResource(R.drawable.circle);
 		}
 	}

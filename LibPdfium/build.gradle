@@ -43,4 +43,5 @@ dependencies {
 
     //api libs_recycler
     api project(':AwtRecyclerView')
+    implementation project(path: ':filepicker')
 }

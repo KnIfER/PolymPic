@@ -9,6 +9,8 @@ import com.bumptech.glide.load.DataSource;
 import com.bumptech.glide.load.data.DataFetcher;
 import com.knziha.polymer.Utils.CMN;
 
+import java.io.IOException;
+
 public class AppIconCoverFetcher implements DataFetcher<Drawable> {
 	private final AppIconCover model;
 	
@@ -23,11 +25,21 @@ public class AppIconCoverFetcher implements DataFetcher<Drawable> {
 	@Override
 	public void loadData(@NonNull Priority priority, @NonNull DataCallback<? super Drawable> callback) {
 		CMN.Log("IconCoverFetcher loadData");
-		Drawable dw = model.path.load();
+		Drawable dw = null;
+		Exception exception = null;
+		try {
+			dw = model.load();
+		} catch (IOException e) {
+			exception = e;
+			CMN.Log(e);
+		}
 		if(dw!=null) {
 			callback.onDataReady(dw);
 		} else {
-			callback.onLoadFailed(new Exception("load Icon cover fail"));
+			if (exception==null) {
+				exception = new Exception("load Icon cover fail");
+			}
+			callback.onLoadFailed(exception);
 		}
 	}
 

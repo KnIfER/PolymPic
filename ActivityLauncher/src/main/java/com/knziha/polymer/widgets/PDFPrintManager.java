@@ -6,39 +6,70 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.print.PdfPrint;
 import android.print.PrintAttributes;
 import android.print.PrintDocumentAdapter;
 import android.print.PrintManager;
-import android.webkit.WebView;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 
 import com.knziha.polymer.BrowserActivity;
+import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.browser.webkit.UniversalWebviewInterface;
+import com.tencent.smtt.sdk.WebView;
 
+import java.io.File;
 import java.util.List;
 
-public class PrintPdfAgentActivity extends Activity {
+public class PDFPrintManager extends Activity {
 	public static UniversalWebviewInterface webview;
 	private boolean startLis;
 	
-	public static void printPDF(Activity context, UniversalWebviewInterface currentWebView) {
-		if(context instanceof PrintPdfAgentActivity) {
-			String name = currentWebView.getTitle()+".pdf";
+	public static void printPDF(Activity context, UniversalWebviewInterface currentWebView, boolean bSkipUI) {
+		String name = currentWebView.getTitle()+".pdf";
+		if(context instanceof PDFPrintManager) {
 			PrintManager printManager = (PrintManager) context.getSystemService(Context.PRINT_SERVICE);
 			printManager.print("Print", (PrintDocumentAdapter) currentWebView.initPrintDocumentAdapter(name)
-					, new PrintAttributes.Builder().setColorMode(PrintAttributes.COLOR_MODE_COLOR).build());
+					, new PrintAttributes.Builder()
+							//.setColorMode(PrintAttributes.COLOR_MODE_COLOR)
+							//.setResolution(new PrintAttributes.Resolution("pdf", "pdf", 600, 600))
+							.build());
 		} else {
+			if(bSkipUI || context==null) {
+				try {
+					PrintAttributes.Builder attributes = new PrintAttributes.Builder()
+							.setMediaSize(PrintAttributes.MediaSize.NA_LEGAL)
+							.setResolution(new PrintAttributes.Resolution("pdf", "pdf", 600, 600))
+							.setMinMargins(PrintAttributes.Margins.NO_MARGINS);
+					if (context==null) {
+						attributes.setMediaSize(new PrintAttributes.MediaSize("xyz", "xyz"
+								, currentWebView.getContentWidth()
+								, currentWebView.getContentHeight()
+						));
+					}
+					File path = Environment.getExternalStoragePublicDirectory("/pdf_output");
+					
+					new PdfPrint(attributes.build()).print(
+							(PrintDocumentAdapter) currentWebView.initPrintDocumentAdapter(name),
+							path,
+							"output_$date.pdf"
+					);
+				} catch (Exception e) {
+					CMN.Log(e);
+				}
+				return;
+			}
 			webview = currentWebView;
-			context.startActivity(new Intent(context, PrintPdfAgentActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+			context.startActivity(new Intent(context, PDFPrintManager.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
 		}
 	}
 	
 	@Override
 	protected void onCreate(@Nullable Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		printPDF(this, webview);
+		printPDF(this, webview, false);
 		webview=null;
 	}
 	

@@ -1,6 +1,7 @@
 package com.knziha.polymer.webstorage;
 
 import android.annotation.SuppressLint;
+import android.app.Dialog;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
@@ -20,10 +21,13 @@ import androidx.fragment.app.DialogFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.knziha.polymer.BrowserActivity;
 import com.knziha.polymer.R;
+import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.database.LexicalDBHelper;
 import com.knziha.polymer.databinding.HistoryBinding;
 import com.knziha.polymer.databinding.HistoryItemBinding;
+import com.knziha.polymer.widgets.PopupMenuHelper;
 import com.knziha.polymer.widgets.Utils;
 
 import java.text.SimpleDateFormat;
@@ -31,7 +35,10 @@ import java.util.Date;
 
 import static com.knziha.polymer.widgets.Utils.EmptyCursor;
 
-public class BrowserHistory extends DialogFragment implements View.OnClickListener {
+public class BrowserHistory extends DialogFragment implements View.OnClickListener
+		, View.OnLongClickListener, PopupMenuHelper.PopupMenuListener {
+	private Dialog mDlg;
+	int tag = R.string.fragment_history;
 	HistoryBinding UIData;
 	Cursor cursor = EmptyCursor;
 	RecyclerView.Adapter<ViewHolder> adapter;
@@ -42,6 +49,93 @@ public class BrowserHistory extends DialogFragment implements View.OnClickListen
 	static final SimpleDateFormat dateFormatter1 = new SimpleDateFormat("MM/dd");
 	int baseIconIndicatorRes = R.drawable.ic_baseline_history_gray;
 	boolean showTime=false;
+	protected ViewHolder longClickView;
+	private boolean animExtSet;
+	
+	@Override
+	public boolean onLongClick(View view) {
+		ViewHolder viewHolder = (ViewHolder) view.getTag();
+//		if (recyclerView instanceof DragSelectRecyclerView) {
+//			//selMode = true;
+//			if(getSelMode() && recyclerView.mLastTouchX>view.getWidth()/3) {
+//				((DragSelectRecyclerView)recyclerView).setDragSelectActive(true, viewHolder.getLayoutPosition());
+//				//view.jumpDrawablesToCurrentState();
+//				if (viewHolder.selected) {
+//					Drawable bg = viewHolder.itemView.getBackground();
+//					viewHolder.itemView.setBackground(null);
+//					viewHolder.itemView.setBackground(bg);
+//				}
+//				return true;
+//			}
+//		}
+		longClickView = viewHolder;
+		BrowserActivity a = (BrowserActivity) getActivity();
+		if (a!=null) {
+			PopupMenuHelper popupMenu = a.getPopupMenu();
+			if (popupMenu.tag!=tag) {
+				final int[] texts = getLongClickMenuList();
+				popupMenu.initLayout(texts, this);
+				popupMenu.tag=tag;
+			}
+			int[] vLocationOnScreen = new int[2];
+			UIData.historyRv.getLocationOnScreen(vLocationOnScreen);
+			popupMenu.show(UIData.getRoot(), UIData.historyRv.mLastTouchX+vLocationOnScreen[0], UIData.historyRv.mLastTouchY+vLocationOnScreen[1]);
+			Utils.preventDefaultTouchEvent(UIData.getRoot(), -100, -100);
+		}
+		return true;
+	}
+	
+	protected int[] getLongClickMenuList() {
+		return new int[] {
+			R.string.houtaidakai
+			,R.string.xinbiaoqianyedaikai
+			,R.string.tianjiadoahang
+			,R.string.fuzhilianjie
+			,R.string.fuzhiwenben
+			,R.string.delete
+			,R.string.share
+		};
+	}
+	
+	@Override
+	public boolean onMenuItemClick(PopupMenuHelper popupMenuHelper, View v, boolean isLongClick) {
+		boolean ret=true;
+		boolean dismiss = !isLongClick;
+		View blinkView = null;
+		BrowserActivity a = (BrowserActivity) getActivity();
+		ViewHolder viewHolder = longClickView;
+		if (a!=null) {
+			switch (v.getId()) {
+				case R.string.houtaidakai:{
+					a.newTab(viewHolder.url, true, true, -1);
+				} break;
+				case R.string.xinbiaoqianyedaikai: {
+					a.newTab(viewHolder.url, false, true, -1);
+					dismiss();
+				} break;
+				case R.string.tianjiadoahang:{
+					a.getNavAdapter().InsertNavNode(viewHolder.url, viewHolder.title);
+				} break;
+				case R.string.fuzhilianjie:{
+					a.TextToClipboard(viewHolder.url, 0);
+				} break;
+				case R.string.fuzhiwenben:{
+					a.TextToClipboard(viewHolder.title, 1);
+				} break;
+				case R.string.delete:{
+				} break;
+				case R.string.share:{
+					a.shareUrlOrText(viewHolder.url, null);
+				} break;
+			}
+		}
+		if (blinkView!=null) {
+			Utils.blinkView(blinkView, false);
+		} else if (dismiss) {
+			popupMenuHelper.postDismiss(80);
+		}
+		return ret;
+	}
 	
 	protected class AppDataTimeRenownedBaseAdapter extends RecyclerView.Adapter<ViewHolder> {
 		final LayoutInflater inflater;
@@ -50,7 +144,10 @@ public class BrowserHistory extends DialogFragment implements View.OnClickListen
 		}
 		@NonNull @Override
 		public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-			return new ViewHolder(HistoryItemBinding.inflate(inflater, parent, false));
+			ViewHolder ret = new ViewHolder(HistoryItemBinding.inflate(inflater, parent, false));
+			ret.itemView.setOnLongClickListener(BrowserHistory.this);
+			ret.itemView.setOnClickListener(BrowserHistory.this);
+			return ret;
 		}
 		
 		@Override
@@ -133,9 +230,10 @@ public class BrowserHistory extends DialogFragment implements View.OnClickListen
 		} else {
 			Utils.removeIfParentBeOrNotBe(UIData.history, null, false);
 		}
-		if(true) {
+		if(cursor==EmptyCursor) {
 			pullData();
 		}
+		if (animExtSet) setWindowAnimationStyle(0);
 		return UIData.history;
 	}
 	
@@ -147,7 +245,7 @@ public class BrowserHistory extends DialogFragment implements View.OnClickListen
 		cursor = LexicalDBHelper.getInstancedDb().rawQuery("select id,url,title,last_visit_time from urls order by last_visit_time DESC", null);
 		adapter.notifyDataSetChanged();
 	}
-	
+
 	@SuppressLint("NonConstantResourceId")
 	@Override
 	public void onClick(View v) {
@@ -155,7 +253,28 @@ public class BrowserHistory extends DialogFragment implements View.OnClickListen
 			case R.id.home:
 				dismiss();
 			break;
+			case R.id.root: {
+				BrowserActivity a = (BrowserActivity) getActivity();
+				if (a!=null) {
+					ViewHolder viewHolder = (ViewHolder) v.getTag();
+					a.execBrowserGoTo(viewHolder.url);
+				}
+				postDismiss(v);
+			} break;
 		}
+	}
+	
+	public void postDismiss(View v) {
+		setWindowAnimationStyle(R.style.DialogAnimation1);
+		v.postDelayed(this::dismiss, 120);
+	}
+	
+	private void setWindowAnimationStyle(int animationStyle) {
+		try {
+			// why application resource works here?
+			getDialog().getWindow().setWindowAnimations(animationStyle);
+			animExtSet = animationStyle!=0;
+		} catch (Exception ignored) { }
 	}
 	
 	static class ViewHolder extends RecyclerView.ViewHolder {
@@ -202,6 +321,16 @@ public class BrowserHistory extends DialogFragment implements View.OnClickListen
 				}
 			}
 		}
+	}
+	
+	@NonNull
+	@Override
+	public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
+		CMN.Log("onCreateDialog");
+		if (mDlg==null) {
+			return mDlg=super.onCreateDialog(savedInstanceState);
+		}
+		return mDlg;
 	}
 	
 	@Override
