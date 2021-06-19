@@ -11,6 +11,7 @@ import android.graphics.RectF;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Pair;
 import android.view.ActionMode;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -28,6 +29,7 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.GlobalOptions;
 import androidx.core.view.MotionEventCompat;
@@ -39,7 +41,7 @@ import com.knziha.polymer.AdvancedBrowserWebView;
 import com.knziha.polymer.BrowserActivity;
 import com.knziha.polymer.R;
 import com.knziha.polymer.Utils.CMN;
-import com.knziha.polymer.Utils.WebOptions;
+import com.knziha.polymer.Utils.Options;
 import com.knziha.polymer.WebCompoundListener;
 import com.knziha.polymer.browser.webkit.UniversalWebviewInterface;
 import com.knziha.polymer.browser.webkit.WebViewHelper;
@@ -48,6 +50,9 @@ import com.knziha.polymer.database.LexicalDBHelper;
 import com.knziha.polymer.databinding.ActivityMainBinding;
 import com.knziha.polymer.toolkits.Utils.BU;
 import com.knziha.polymer.toolkits.Utils.ReusableByteOutputStream;
+import com.knziha.polymer.webstorage.DomainInfo;
+import com.knziha.polymer.webstorage.SubStringKey;
+import com.knziha.polymer.webstorage.WebOptions;
 import com.knziha.polymer.webstorage.WebStacks;
 import com.knziha.polymer.webstorage.WebStacksSer;
 import com.knziha.polymer.webstorage.WebStacksStd;
@@ -57,16 +62,18 @@ import org.xwalk.core.XWalkGetBitmapCallback;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Pattern;
 
-import static com.knziha.polymer.Utils.WebOptions.BackendSettings;
-import static com.knziha.polymer.Utils.WebOptions.StorageSettings;
-import static com.knziha.polymer.widgets.Utils.DummyBMRef;
-import static com.knziha.polymer.widgets.Utils.getWindowManagerViews;
 import static com.knziha.polymer.browser.webkit.WebViewHelper.LookForANobleSteedCorrespondingWithDrawnClasses;
 import static com.knziha.polymer.browser.webkit.WebViewHelper.bAdvancedMenu;
 import static com.knziha.polymer.browser.webkit.WebViewHelper.minW;
+import static com.knziha.polymer.webstorage.WebOptions.BackendSettings;
+import static com.knziha.polymer.webstorage.WebOptions.StorageSettings;
+import static com.knziha.polymer.widgets.Utils.DummyBMRef;
+import static com.knziha.polymer.widgets.Utils.getWindowManagerViews;
 import static org.xwalk.core.Utils.Log;
 import static org.xwalk.core.Utils.getLockedView;
 import static org.xwalk.core.Utils.unlock;
@@ -83,10 +90,15 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 	/**网页规则，即插件。*/
 	public List<WebCompoundListener.SiteRule> rules = Collections.synchronizedList(new ArrayList<>());
 	public List<Object> prunes = Collections.synchronizedList(new ArrayList<>());
+	public boolean hasPrune;
+	public List<Pair<Pattern, Pair<String, String>>> modifiers;
 	
 	private final ViewConfiguration viewConfig;
+	public boolean frcWrp;
+	public boolean allowAppScheme = true;
 	private int scaledTouchSlop;
 	
+	public boolean hideForTabView;
 	public boolean forbidScrollWhenSelecting;
 	public boolean forbidLoading;
 	public boolean isloading=false;
@@ -127,8 +139,12 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 	
 	public boolean isIMScrollSupressed;
 	
-	public Cursor domainInfoCursor;
+	public boolean handleLongPress;
+	public boolean handlingLongPress;
+	private OnLongClickListener longClickListener;
+	
 	public DomainInfo domainInfo;
+	public SubStringKey domain;
 	
 	public boolean stackloaded;
 	public static final WebStacks webStacksWriterStd = new WebStacksStd();
@@ -294,6 +310,23 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 		return super.dispatchTouchEvent(event);
 	}
 	
+	Runnable mLongPressed = new Runnable() {
+		public void run() {
+			CMN.Log("mLongPressed!!!");
+			if (isWebHold) {
+				longClickListener.onLongClick((View) mWebView);
+			}
+		}
+	};
+	
+	@Override
+	public void setOnLongClickListener(@Nullable OnLongClickListener listener) {
+		longClickListener = listener;
+		boolean val = listener!=null;
+		setLongClickable(val);
+		handleLongPress = val;
+	}
+	
 	//@SuppressLint("NewApi")
 	public void handleSimpleNestedScrolling(View nestedParent, View scrollingView, MotionEvent event) {
 		//		int layoutTop = nestedParent.getTop();
@@ -312,6 +345,10 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 		boolean dealWithCM = webviewcallback!=null && bIsActionMenuShown;
 		switch (action) {
 			case MotionEvent.ACTION_DOWN:{
+				if (handleLongPress) {
+					postDelayed(mLongPressed, 500);
+					handlingLongPress = true;
+				}
 				isIMScrollSupressed=false;
 				isWebHold=true;
 				long tm = event.getDownTime();
@@ -330,6 +367,10 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 				if(lastDwnStill && (Math.abs(lastY - orgY) > scaledTouchSlop|| Math.abs(lastX - orgX) > scaledTouchSlop)) {
 					lastDwnStill = false;
 				}
+				if(handlingLongPress && (Math.abs(lastY - orgY) > scaledTouchSlop|| Math.abs(lastX - orgX) > scaledTouchSlop)) {
+					//removeCallbacks(mLongPressed);
+					handlingLongPress = false;
+				}
 				if (dealWithCM && bIsActionMenuShownNew && (Math.abs(lastY - orgY) > GlobalOptions.density * 5 || Math.abs(lastX - orgX) > GlobalOptions.density * 5)) {
 					bIsActionMenuShownNew = false;
 					for (ViewGroup vI : popupDecorVies) {
@@ -342,8 +383,12 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 				}
 				break;
 			case MotionEvent.ACTION_UP:
+				if (handleLongPress) {
+					removeCallbacks(mLongPressed);
+					handlingLongPress = false;
+				}
 				isIMScrollSupressed=
-						isWebHold=false;
+				isWebHold=false;
 				if(dealWithCM) {
 					bIsActionMenuShownNew = bIsActionMenuShown;
 					for (ViewGroup vI : popupDecorVies) {
@@ -535,39 +580,45 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 	///////// AdvancedNestScrollWebView END /////////
 	public void setStorageSettings() {
 		WebSettings settings = mWebView.getSettings();
-		WebOptions delegate=getDelegate(StorageSettings);
-		boolean enabled=delegate.getForbidLocalStorage();
-		settings.setDomStorageEnabled(enabled?!delegate.getForbidDom():true);
-		settings.setAppCacheEnabled(enabled?!delegate.getForbidDatabase():true);
-		settings.setDatabaseEnabled(enabled?!delegate.getForbidDatabase():true);
-		settings.setDomStorageEnabled(true);
-		settings.setAppCacheEnabled(true);
-		settings.setDatabaseEnabled(true);
+		Long flag=getDelegateFlag(BackendSettings);
+		if (WebOptions.getForbidLocalStorage(flag)) {
+			settings.setDomStorageEnabled(!WebOptions.getForbidDom(flag));
+			settings.setAppCacheEnabled(!WebOptions.getForbidDatabase(flag));
+			settings.setDatabaseEnabled(!WebOptions.getForbidDatabase(flag));
+		} else {
+			settings.setDomStorageEnabled(true);
+			settings.setAppCacheEnabled(true);
+			settings.setDatabaseEnabled(true);
+		}
 	}
 	
 	public void setBackEndSettings() {
 		WebSettings settings = mWebView.getSettings();
-		WebOptions delegate=getDelegate(BackendSettings);
-		settings.setBlockNetworkImage(delegate.getForbitNetworkImage());
-		settings.setJavaScriptEnabled(delegate.getEnableJavaScript());
-		settings.setUserAgentString(delegate.getPCMode()
+		Long flag=getDelegateFlag(BackendSettings);
+		settings.setBlockNetworkImage(WebOptions.getForbitNetworkImage(flag));
+		settings.setJavaScriptEnabled(WebOptions.getEnableJavaScript(flag));
+		settings.setUserAgentString(WebOptions.getPCMode(flag)
 				?"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36"
 				:null);
-		CMN.Log("设置了设置了", delegate.getEnableJavaScript());
+		CMN.Log("设置了设置了", WebOptions.getEnableJavaScript(flag));
 	}
 	
-	public WebOptions getDelegate(int section) {
+	public Long getDelegateFlag(int section) {
 		switch(section) {
 			case StorageSettings:
+				if(domainInfo!=null && domainInfo.getApplyOverride_group_storage())
+					return domainInfo.f1;
 				if(holder.getApplyOverride_group_storage())
-					break;
+					return holder.flag;
+			break;
 			case BackendSettings:
+				if(domainInfo!=null && domainInfo.getApplyOverride_group_client())
+					return domainInfo.f1;
 				if(holder.getApplyOverride_group_client())
-					break;
-			default:
-				return activity.opt;
+					return holder.flag;
+			break;
 		}
-		return holder;
+		return Options.ThirdFlag;
 	}
 	
 	/** @param hideBarType 滑动隐藏底栏  滑动隐藏顶栏 0
@@ -683,6 +734,9 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 	
 	/** 持久化保存网页前进/回退栈 */
 	public void saveIfNeeded() { //WEBVIEW_CHROMIUM_STATE
+		if (domainInfo!=null) {
+			domainInfo.checkDirty();
+		}
 		if(holder.version>1 && holder.lastSaveVer<holder.version && stackloaded) {
 			holder.lastSaveVer = holder.version;
 			Bundle bundle = new Bundle();
@@ -796,7 +850,7 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 				canvas.setBitmap(bmItem);
 			}
 			canvas.setMatrix(Utils.IDENTITYXIRTAM);
-			long st = System.currentTimeMillis();
+			long st = CMN.now();
 			
 			if(bitmap==null) {
 				canvas.scale(factor, factor);
@@ -809,8 +863,8 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 				activity.onBitmapCaptured(WebFrameLayout.this, pendingBitCapRsn);
 				pendingBitCapRsn = -1;
 			}
+			CMN.Log("绘制时间：", CMN.now()-st);
 			
-			CMN.Log("绘制时间：", System.currentTimeMillis()-st);
 		}
 	}
 	
@@ -848,6 +902,16 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 		CMN.Log(tabID_Fetcher, "入表时间：", System.currentTimeMillis()-st, data.length, (int) (bmItem.getAllocationByteCount()*0.50), bos1.data().length);
 		bos1.close();
 		return bmItem;
+	}
+	
+	
+	@Override
+	protected void onDraw(Canvas canvas) {
+		super.onDraw(canvas);
+		if (!hideForTabView) {
+			// WebView has displayed some content and is scrollable.
+			//CMN.Log("onNewPicture!!!  v2 ", CMN.now());
+		}
 	}
 	
 	/** source 1=animation */
@@ -903,30 +967,58 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 		return bIsActionMenuShown || popupDecorVies.size()==2 && popupDecorVies.get(0).getParent()!=null;
 	}
 	
-	public static class DomainInfo {
-		public long rowID;
-		public long f1;
-		public Bitmap thumbnail;
-		DomainInfo(long rowID, long f1) {
-			this.rowID = rowID;
-			this.f1 = f1;
+	public void addModifiers(Pair<Pattern, Pair<String, String>>[] modifiers) {
+		if (modifiers!=null && modifiers.length>0) {
+			if(this.modifiers==null) {
+				this.modifiers = Collections.synchronizedList(new ArrayList<>());
+			}
+			this.modifiers.addAll(Arrays.asList(modifiers));
 		}
 	}
-	public String domain;
 	
-	public void setDomainCursor(String domainUrl, Cursor infoCursor) {
-		if(domainInfoCursor!=null) {
-			domainInfoCursor.close();
+	public boolean getPCMode() {
+		return WebOptions.getPCMode(getDelegateFlag(BackendSettings));
+	}
+	
+	public boolean getNoCookie() {
+		long flag = getDelegateFlag(StorageSettings);
+		return WebOptions.getForbidLocalStorage(flag) && WebOptions.getForbidCookie(flag);
+	}
+	
+	public boolean getForbidLocalStorage() {
+		return WebOptions.getForbidLocalStorage(getDelegateFlag(StorageSettings));
+	}
+	
+	public boolean getPremature() {
+		return WebOptions.getPremature(getDelegateFlag(BackendSettings));
+	}
+	
+	
+	public boolean getApplyTabRegion(int groupID) {
+		switch (groupID) {
+			case StorageSettings: return holder.getApplyOverride_group_storage();
+			case BackendSettings: return holder.getApplyOverride_group_client();
 		}
-		domain = domainUrl;
-		if(infoCursor!=null&&!infoCursor.moveToFirst()) {
-			infoCursor.close();
-			domainInfoCursor = null;
-			return;
+		return false;
+	}
+	
+	public boolean getApplyDomainRegion(int groupID) {
+		if (domainInfo==null) {
+			return false;
 		}
-		if((domainInfoCursor = infoCursor)!=null) {
-			domainInfo = new DomainInfo(infoCursor.getLong(0), infoCursor.getLong(3));
+		switch (groupID) {
+			case StorageSettings: return domainInfo.getApplyOverride_group_storage();
+			case BackendSettings: return domainInfo.getApplyOverride_group_client();
 		}
+		return false;
+	}
+	
+	public void setDomainInfo(SubStringKey domainKey, DomainInfo info) {
+		if (domainInfo!=null) {
+			domainInfo.checkDirty();
+		}
+		domain = domainKey;
+		domainInfo = info;
 	}
 	
 	public long getDomainFlag() {
@@ -937,7 +1029,9 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 	}
 	
 	public void setDomainFlag(long val) {
-		LexicalDBHelper.getInstance().updateDomainFlag(this, val);
+		if (domainInfo!=null) {
+			domainInfo.updateFlag(val);
+		}
 	}
 	
 	public int getThisIdx() {

@@ -22,7 +22,7 @@ import com.knziha.polymer.widgets.XYTouchRecorder;
 import org.adrianwalker.multilinestring.Multiline;
 
 //@SuppressWarnings("ALL")
-public class Options implements WebOptions, BookOptions {
+public class Options implements BookOptions {
 	
 	public final SharedPreferences defaultReader;
 	public DisplayMetrics dm;
@@ -202,21 +202,21 @@ public class Options implements WebOptions, BookOptions {
 		return ThirdFlag;
 	}
 	
-	@Multiline(flagPos=2) public boolean getForbidLocalStorage(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
-	@Multiline(flagPos=2) public boolean toggleForbidLocalStorage(){ ThirdFlag=ThirdFlag; throw new IllegalArgumentException(); }
-	@Multiline(flagPos=3, shift=1) public boolean getForbidCookie(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
-	@Multiline(flagPos=4, shift=1) public boolean getForbidDom(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
-	@Multiline(flagPos=5, shift=1) public boolean getForbidDatabase(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
-	//@Multiline(flagPos=6, shift=1) public boolean getApplyOverride_group_storage(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
-	
-	@Multiline(flagPos=7) public boolean getPCMode(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
-	@Multiline(flagPos=7) public boolean togglePCMode(){ ThirdFlag=ThirdFlag; throw new IllegalArgumentException(); }
-	@Multiline(flagPos=8, shift=1) public boolean getEnableJavaScript(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
-	@Multiline(flagPos=9) public boolean getMuteAlert(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
-	@Multiline(flagPos=10) public boolean getMuteDownload(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
-	//@Multiline(flagPos=11, shift=1) public boolean getApplyOverride_group_client(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
-	@Multiline(flagPos=12) public boolean getForbitNetworkImage(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
-	@Multiline(flagPos=13) public boolean getPremature(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
+//	@Multiline(flagPos=2) public boolean getForbidLocalStorage(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
+//	@Multiline(flagPos=2) public boolean toggleForbidLocalStorage(){ ThirdFlag=ThirdFlag; throw new IllegalArgumentException(); }
+//	@Multiline(flagPos=3, shift=1) public boolean getForbidCookie(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
+//	@Multiline(flagPos=4, shift=1) public boolean getForbidDom(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
+//	@Multiline(flagPos=5, shift=1) public boolean getForbidDatabase(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
+//	//@Multiline(flagPos=6, shift=1) public boolean getApplyOverride_group_storage(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
+//
+//	@Multiline(flagPos=7) public boolean getPCMode(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
+//	@Multiline(flagPos=7) public boolean togglePCMode(){ ThirdFlag=ThirdFlag; throw new IllegalArgumentException(); }
+//	@Multiline(flagPos=8, shift=1) public boolean getEnableJavaScript(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
+//	@Multiline(flagPos=9) public boolean getMuteAlert(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
+//	@Multiline(flagPos=10) public boolean getMuteDownload(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
+//	//@Multiline(flagPos=11, shift=1) public boolean getApplyOverride_group_client(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
+//	@Multiline(flagPos=12) public boolean getForbitNetworkImage(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
+//	@Multiline(flagPos=13) public boolean getPremature(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
 	
 	// 管理标签动画效果
 	@Multiline(flagPos=14, shift=1, debug=1) public boolean getShowWebCoverDuringTransition(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
@@ -225,7 +225,7 @@ public class Options implements WebOptions, BookOptions {
 	
 	@Multiline(flagPos=17, shift=1, debug=0) public boolean getUseStdViewAnimator(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
 	
-	@Multiline(flagPos=18, shift=0, debug=1) public boolean getUpdateUALowEnd(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=18, shift=0) public boolean getUpdateUALowEnd(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=18, shift=0) public void setUpdateUALowEnd(boolean val){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
 	
 	@Multiline(flagPos=19, debug=0) public boolean getAlwaysShowWebCoverDuringTransition(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
@@ -235,6 +235,9 @@ public class Options implements WebOptions, BookOptions {
 	@Multiline(flagPos=22, debug=1) public boolean getDelayRemovingClosedTabs(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=23, debug=0) public boolean checkTabsOnPause(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=24) public boolean saveTabsOnPause(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
+	
+	@Multiline(flagPos=25, shift=1) public boolean getForceTextWrap(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=26) public boolean getForceTextWrapForAllWebs(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
 	
 	// 25 getNavHomeShowMultiline
 	// 26 getShowDragHandle
@@ -279,11 +282,14 @@ public class Options implements WebOptions, BookOptions {
 		tv.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
 	}
 	
+	public final static int WebViewSettingsSource_DOMAIN=-2;
+	public final static int WebViewSettingsSource_TAB=-1;
+	
 	public long Flag(BrowserActivity a, int flagIndex) {
 		switch (flagIndex){
-			case -2:
+			case WebViewSettingsSource_DOMAIN:
 				return a.currentViewImpl.getDomainFlag();
-			case -1:
+			case WebViewSettingsSource_TAB:
 				return a.currentViewImpl.holder.flag;
 			case 1:
 				return FirstFlag;

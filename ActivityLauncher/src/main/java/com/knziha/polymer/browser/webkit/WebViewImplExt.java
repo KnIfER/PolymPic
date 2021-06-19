@@ -2,9 +2,9 @@ package com.knziha.polymer.browser.webkit;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.Canvas;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Message;
 import android.view.ActionMode;
 import android.view.MotionEvent;
 import android.view.View;
@@ -181,6 +181,20 @@ public class WebViewImplExt extends WebView implements UniversalWebviewInterface
 			return super.createPrintDocumentAdapter(var1);
 		} else {
 			return null;
+		}
+	}
+	
+	@Override
+	public void invalidate() {
+		super.invalidate();
+	}
+	
+	@Override
+	protected void onDraw(Canvas canvas) {
+		super.onDraw(canvas);
+		if (!layout.hideForTabView) {
+			// WebView has displayed some content and is scrollable.
+			//CMN.Log("onNewPicture!!!  v2 ", getVisibility()==View.VISIBLE, CMN.now(), getContentHeight(), getHeight());
 		}
 	}
 	

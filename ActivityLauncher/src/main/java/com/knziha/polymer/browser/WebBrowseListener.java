@@ -134,7 +134,7 @@ public class WebBrowseListener extends WebViewClient implements DownloadListener
 //		settings.setDatabasePath(this.getDir("databases", 0).getPath());
 		settings.setGeolocationEnabled(false);
 		// settings.setPageCacheCapacity(IX5WebSettings.DEFAULT_CACHE_CAPACITY);
-		settings.setPluginState(com.tencent.smtt.sdk.WebSettings.PluginState.ON_DEMAND);
+		settings.setPluginState(WebSettings.PluginState.ON_DEMAND);
 		// settings.setRenderPriority(WebSettings.RenderPriority.HIGH);
 		// settings.setPreFectch(true);
 		//CookieSyncManager.createInstance(this);

@@ -9,7 +9,6 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
-import android.os.IBinder;
 import android.os.Vibrator;
 
 import androidx.appcompat.app.GlobalOptions;
@@ -19,7 +18,6 @@ import androidx.core.graphics.drawable.IconCompat;
 
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.MyReceiver;
-import com.knziha.polymer.browser.scrcpy.SurfaceControl;
 import com.knziha.polymer.database.LexicalDBHelper;
 import com.knziha.polymer.toolkits.Utils.BU;
 import com.knziha.polymer.webstorage.WebDict;
@@ -31,12 +29,28 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
+import java.net.InetAddress;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
+
+import javax.net.ssl.HttpsURLConnection;
+
+import okhttp3.Dns;
+import okhttp3.Interceptor;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
+import static com.knziha.polymer.HttpRequestUtil.DO_NOT_VERIFY;
 
 public class TestHelper {
 	public static int debuggingWebType = 0;
+	public static boolean showSearchTabs=true;
 	
 	static void savePngBitmap(Context c, int resId, int w, int h, String path) {
 		Drawable drawable = c.getResources().getDrawable(resId);
@@ -435,13 +449,118 @@ public class TestHelper {
 		
 	}
 	
-	public static void turnOffScreen(Activity a) {
-		try {
-			IBinder display = SurfaceControl.getBuiltInDisplay();
-			CMN.Log("display::", display);
-			SurfaceControl.setDisplayPowerMode(display, 0);
-		} catch (Exception e) {
-			CMN.Log(e);
-		}
+	public static Thread testWebArchive() {
+		return new Thread(() -> {
+			try {
+				String url = "https://207.241.237.3/web/20130801193425cs_/http://www.patent-cn.com/wp-content/plugins/wp-postratings/postratings-css.css?ver=1.50";
+				//url = "https://archive.org/includes/analytics.js";
+				//url = "https://207.241.237.3/web/20130807062134/http://www.patent-cn.com/2012/10/17/73782.shtml";
+				//url = "https://web.archive.org/web/20130807062134/http://www.patent-cn.com/2012/10/17/73782.shtml";
+				String host = "web.archive.org";
+				host = null;
+				int cacheSize = 10 * 1024 * 1024;
+				Interceptor headerInterceptor = new Interceptor() {
+					@Override
+					public Response intercept(Chain chain) throws IOException {
+						Request request = chain.request();
+						Response response = chain.proceed(request);
+						Response response1 = response.newBuilder()
+								.removeHeader("Pragma")
+								.removeHeader("Cache-Control")
+								//cache for 30 days
+								.header("Cache-Control", "max-age=" + 3600 * 24 * 30)
+								.build();
+						return response1;
+					}
+				};
+				OkHttpClient klient = new OkHttpClient.Builder()
+						.connectTimeout(5, TimeUnit.SECONDS)
+//						.addNetworkInterceptor(headerInterceptor)
+//						.cache(new Cache(new File("D:\\tmp\\") , cacheSize))
+						//.readTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+						//.setCache(getCache())
+						//.certificatePinner(getPinnedCerts())
+						//.setSslSocketFactory(getSSL())
+						.hostnameVerifier(DO_NOT_VERIFY)
+						.dns(new Dns() {
+							@Override
+							public List<InetAddress> lookup(String hostname) throws UnknownHostException {
+								CMN.Log("lookup...", hostname, InetAddress.getByName(hostname));
+								//return Collections.singletonList(InetAddress.getByName(hostname));
+								return Collections.singletonList(InetAddress.getByName("207.241.237.3"));
+							}
+						})
+						.build()
+				;
+				Request.Builder k3request = new Request.Builder()
+						.url(url)
+						.header("Accept-Charset", "utf-8")
+						.header("Access-Control-Allow-Origin", "*")
+						.header("Access-Control-Allow-Headers","Origin, X-Requested-With, Content-Type, Accept")
+						;
+//				for(String kI:headers.keySet()) {
+//					k3request.header(kI, headers.get(kI));
+//				}
+				//int maxSale = 60 * 60 * 24 * 28; // tolerate 4-weeks sale
+//					if (!NetworkUtils.isConnected(a))
+//					k3request.removeHeader("Pragma")
+//							.cacheControl(new CacheControl.Builder()
+//									.maxAge(0, TimeUnit.SECONDS)
+//									.maxStale(365,TimeUnit.DAYS).build())
+//							.header("Cache-Control", "public, only-if-cached, max-stale=" + maxStale);
+				if(host!=null) k3request.header("Host", host);
+				k3request.header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.106 Safari/537.36");
+				Response k3response = klient.newCall(k3request.build()).execute();
+				String input = k3response.body().string();
+				CMN.Log(input);
+			} catch (Exception e) {
+//				if (e instanceof SocketException) {
+//				}
+				CMN.Log(e);
+			}
+		});
+	}
+	
+	public static Thread testWebArchive1() {
+		return new Thread(() -> {
+			try {
+				String url = "https://207.241.237.3/web/20130801193425cs_/http://www.patent-cn.com/wp-content/plugins/wp-postratings/postratings-css.css?ver=1.50";
+				HttpURLConnection urlConnection = (HttpURLConnection) new URL(url).openConnection();
+				//urlConnection.setRequestProperty("contentType", headers.get("contentType"));
+				//urlConnection.setRequestProperty("Accept", headers.get("Accept"));
+				String host = "web.archive.org";
+				
+				//host = "207.241.237.3";
+				
+				if(urlConnection instanceof HttpsURLConnection) {
+					((HttpsURLConnection)urlConnection).setHostnameVerifier(DO_NOT_VERIFY);
+				}
+				urlConnection.setRequestProperty("Accept-Charset", "utf-8");
+				urlConnection.setRequestProperty("connection", "Keep-Alive");
+				urlConnection.setRequestMethod("GET");
+				urlConnection.setConnectTimeout(3800);
+				urlConnection.setUseCaches(false);
+				urlConnection.setDefaultUseCaches(false);
+//		for(String kI:headers.keySet()) {
+//			urlConnection.setRequestProperty(kI, headers.get(kI));
+//		}
+				if(host!=null) urlConnection.setRequestProperty("Host", host);
+				urlConnection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.106 Safari/537.36");
+				//int maxSale = 60 * 60 * 24 * 28; // tolerate 4-weeks sale
+				//if(NetworkUtils.isConnected(a))
+				//urlConnection.setRequestProperty("Cache-Control", "max-age=" + maxSale);
+				//else
+				//urlConnection.setRequestProperty("Cache-Control", "public, only-if-cached, max-stale=" + maxSale);
+				
+				//urlConnection.setRequestProperty("User-Agent", a.android_ua);
+				//urlConnection.setRequestProperty("Host", "translate.google.cn");
+				//urlConnection.setRequestProperty("Origin", "https://translate.google.cn");
+				urlConnection.connect();
+				InputStream input = urlConnection.getInputStream();
+				CMN.Log("input.read()", input.read());
+			} catch (Exception e) {
+				CMN.Log(e);
+			}
+		});
 	}
 }

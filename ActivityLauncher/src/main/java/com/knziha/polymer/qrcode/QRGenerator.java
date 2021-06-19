@@ -14,6 +14,7 @@ import com.google.zxing.BarcodeFormat;
 import com.google.zxing.MultiFormatWriter;
 import com.google.zxing.WriterException;
 import com.google.zxing.common.BitMatrix;
+import com.google.zxing.common.StringUtils;
 import com.knziha.polymer.R;
 import com.knziha.polymer.Utils.CMN;
 
@@ -30,9 +31,7 @@ public class QRGenerator extends Activity {
 		root.setOnClickListener(v -> finish());
 		Intent intent = getIntent();
 		String text = intent==null?null:intent.getStringExtra(Intent.EXTRA_TEXT);
-		if(TextUtils.isEmpty(text)) {
-			text = "QRCode";
-		}
+		if(TextUtils.isEmpty(text)) text = "QRCode";
 		try {
 			Bitmap bm = generateQRCode(text);
 			qr_frame.setImageBitmap(bm);

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout>
+	<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		xmlns:app="http://schemas.android.com/apk/res-auto"
+		android:fitsSystemWindows="true"
+		>
+		<View
+			android:id="@+id/dismiss"
+			android:layout_width="match_parent"
+			android:layout_height="match_parent"/>
+
+		<com.knziha.polymer.widgets.eugene.MaterialSearchView
+			android:id="@+id/searchHolder"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:layout_margin="4dp"
+			app:cardElevation="4dp"
+			app:search_hint="搜索标签页…"
+			app:search_menu_position="1"
+			android:clickable="true"
+			/>
+	</FrameLayout>
+</layout>

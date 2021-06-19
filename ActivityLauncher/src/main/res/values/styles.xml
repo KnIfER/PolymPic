@@ -55,6 +55,7 @@
 		<item name="windowNoTitle">true</item>
 		<item name="android:windowBackground">#fff</item>
 		<item name="ic_launch">@mipmap/ic_launcher</item>
+		<item name="menu_pop_drawable">@drawable/frame_pop_menu</item>
 
 <!--		<item name="android:textSelectHandleLeft">@drawable/drawable_handle_selection_l</item>-->
 <!--		<item name="android:textSelectHandleRight">@drawable/drawable_handle_selection_r</item>-->
@@ -213,6 +214,7 @@
 		<item name="android:textColorSecondary">#FFFFFF</item>
 		<item name="android:textColor">#FFFFFF</item>
 		<item name="android:textColorAlertDialogListItem">#FFFFFF</item>
+<!--		<item name="android:windowFullscreen">false</item>-->
 	</style>
 	<!--     parent="ThemeOverlay.AppCompat.Dialog.Alert" -->
 	<style name="DialogStyle4Line" parent="ThemeOverlay.AppCompat.Dialog.Alert">

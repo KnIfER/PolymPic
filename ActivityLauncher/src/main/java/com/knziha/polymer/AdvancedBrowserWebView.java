@@ -57,6 +57,10 @@ public class AdvancedBrowserWebView extends WebViewImplExt {
 		
 		settings.setNeedInitialFocus(false);
 		settings.setTextZoom(100);
+		
+		if (BrowserActivity.default_ua==null) {
+			BrowserActivity.default_ua = settings.getUserAgentString();
+		}
 		//settings.setDefaultFontSize(60);
 		//setInitialScale(25);
 		
@@ -72,6 +76,7 @@ public class AdvancedBrowserWebView extends WebViewImplExt {
 		
 		settings.setUseWideViewPort(true);//设定支持viewport
 		settings.setLoadWithOverviewMode(true);
+		//settings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.TEXT_AUTOSIZING);
 		//settings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.SINGLE_COLUMN);
 		//settings.setSupportZoom(support);
 		

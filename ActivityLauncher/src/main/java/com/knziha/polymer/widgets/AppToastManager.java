@@ -18,7 +18,7 @@ import com.knziha.polymer.BrowserActivity;
 import com.knziha.polymer.R;
 import com.knziha.polymer.Utils.CMN;
 
-public class AppToastManager {
+public class AppToastManager implements Resumable{
 	private final View appToast;
 	private final BrowserActivity a;
 	private String appUrl;
@@ -66,10 +66,22 @@ public class AppToastManager {
 	
 	Runnable animateOutRunnable;
 	
-	public void showT(String message, String yesText, String url, float dimAmount) {
+	@Override
+	public void resume() {
+		//CMN.Log("恢复toast...");
+		showT(msgBtn.getText(), yesBtn.getText(), appUrl, true, -1);
+	}
+	
+	public void showT(CharSequence message, CharSequence yesText, String url, boolean forceShow, float dimAmount) {
+		//CMN.Log("toast...", a.hasWindowFocus());
 		msgBtn.setText(message);
 		yesBtn.setText(yesText);
 		appUrl = url;
+		if(!forceShow && !a.hasWindowFocus()) {
+			a.resumer = this;
+			Utils.removeIfParentBeOrNotBe(appToast, a.root, true);
+			return;
+		}
 		appToast.setVisibility(View.VISIBLE);
 		
 		float targetY = 10 * GlobalOptions.density;
@@ -82,13 +94,11 @@ public class AppToastManager {
 		}
 		a.root.removeCallbacks(animateOutRunnable);
 		
-		if(dimAmount>=0) {
+		if(dimAmount >=0) {
 			if(d ==null){
 				d = new Dialog(a);
 			}
-			
 			d.show();
-			
 			Window window = d.getWindow();
 			window.setDimAmount(dimAmount);
 			WindowManager.LayoutParams layoutParams = window.getAttributes();
@@ -126,7 +136,6 @@ public class AppToastManager {
 		;
 		a.root.postDelayed(animateOutRunnable, 2350+180);
 	}
-	
 	
 	public boolean visible() {
 		return appToast.getVisibility()==View.VISIBLE;

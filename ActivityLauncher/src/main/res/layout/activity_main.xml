@@ -94,7 +94,7 @@
 									android:gravity="center_vertical"
 									android:textSize="18sp"
 									android:text="主页"
-									android:background="#ee8f8f8f"
+									android:background="#8f8f8f"
 									/>
 							</FrameLayout>
 						</FrameLayout>
@@ -102,9 +102,16 @@
 							android:id="@+id/ivRefresh"
 							android:layout_width="@dimen/_45_"
 							android:layout_height="match_parent"
-							android:src="@drawable/ic_refresh_black_24dp"
+							android:src="@drawable/ic_refresh_white_24dp"
 							android:background="?actionBarItemBackground"
 							android:padding="10dp"/>
+						<ImageView
+							android:id="@+id/ivSearchTabs"
+							android:layout_width="@dimen/_45_"
+							android:layout_height="match_parent"
+							android:src="@drawable/ic_viewpager_carousel"
+							android:background="?actionBarItemBackground"
+							android:padding="8.8dp"/>
 						<ImageView
 							android:id="@+id/ivOverflow"
 							android:layout_width="@dimen/_45_"
@@ -117,7 +124,17 @@
 			</com.google.android.material.appbar.AppBarLayout>
 
 
-
+<!--			<com.knziha.polymer.widgets.eugene.MaterialSearchView-->
+<!--				android:id="@+id/searchHolder"-->
+<!--				android:layout_width="match_parent"-->
+<!--				android:layout_height="wrap_content"-->
+<!--				android:layout_margin="4dp"-->
+<!--				android:visibility="invisible"-->
+<!--				tools:visibility="visible"-->
+<!--				app:cardElevation="4dp"-->
+<!--				app:search_hint="Search FatSecret"-->
+<!--				app:search_menu_position="1"-->
+<!--				/>-->
 
 			<LinearLayout
 				android:id="@+id/searchbar"

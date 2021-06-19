@@ -38,6 +38,7 @@ import androidx.appcompat.app.GlobalOptions;
 import com.bumptech.glide.load.engine.cache.DiskCache;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.Options;
+import com.knziha.polymer.widgets.AppToastManager;
 import com.knziha.polymer.widgets.EditTextmy;
 import com.knziha.polymer.widgets.SimpleTextNotifier;
 import com.knziha.polymer.widgets.Utils;
@@ -79,6 +80,8 @@ public class Toastable_Activity extends AppCompatActivity {
 
 	public long lastClickTime=0;
 	public Exception lastError;
+	public AppToastManager resumer;
+	public boolean hasFocus;
 	
 	protected long FFStamp;
 	protected long SFStamp;

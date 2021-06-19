@@ -70,7 +70,7 @@
 				android:id="@+id/ivRefresh"
 				android:layout_width="@dimen/_45_"
 				android:layout_height="match_parent"
-				android:src="@drawable/ic_refresh_black_24dp"
+				android:src="@drawable/ic_refresh_white_24dp"
 				android:background="?actionBarItemBackground"
 				android:padding="10dp"
 				android:visibility="gone"

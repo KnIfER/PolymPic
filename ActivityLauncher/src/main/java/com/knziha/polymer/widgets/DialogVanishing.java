@@ -1,10 +1,10 @@
 package com.knziha.polymer.widgets;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
 import android.app.Dialog;
 import android.content.Context;
 import android.view.KeyEvent;
+import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 
 import androidx.annotation.NonNull;
 
@@ -42,5 +42,13 @@ public class DialogVanishing extends Dialog {
 	public void onBackPressed() {
 		CMN.Log("onBackPressed");
 		super.onBackPressed();
+	}
+
+	void hideKeyboard() {
+		View ht = getCurrentFocus();
+		if(ht!=null) {
+			InputMethodManager imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+			imm.hideSoftInputFromWindow(ht.getWindowToken(),0);
+		}
 	}
 }

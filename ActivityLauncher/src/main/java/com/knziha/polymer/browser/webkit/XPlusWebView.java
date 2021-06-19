@@ -1,6 +1,7 @@
 package com.knziha.polymer.browser.webkit;
 
 import android.content.Context;
+import android.graphics.Picture;
 import android.graphics.Rect;
 import android.os.Build;
 import android.view.ActionMode;
@@ -10,9 +11,7 @@ import android.view.View;
 
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.knziha.polymer.AgentApplication;
 import com.knziha.polymer.R;
-import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.Options;
 import com.knziha.polymer.widgets.WebFrameLayout;
 import com.tencent.smtt.export.external.extension.interfaces.IX5WebViewExtension;
@@ -26,6 +25,7 @@ import com.tencent.smtt.sdk.WebView;
 import java.io.IOException;
 import java.util.Map;
 
+import static org.xwalk.core.Utils.getLockedView;
 import static org.xwalk.core.Utils.unlock;
 
 // X+
@@ -252,7 +252,24 @@ public class XPlusWebView extends WebView implements UniversalWebviewInterface {
 	public int getType() {
 		return 1;
 	}
-	
+
+	@Override
+	public void setPictureListener(android.webkit.WebView.PictureListener pictureListener) {
+		this.X5WebView.setPictureListener(new IX5WebViewBase.PictureListener() {
+			@Override
+			public void onNewPicture(IX5WebViewBase var1, Picture var2, boolean var3) {
+				try {
+					pictureListener.onNewPicture(getLockedView(this, true), var2);
+				} catch (Exception ignored) { }
+				unlock();
+			}
+			@Override
+			public void onNewPictureIfHaveContent(IX5WebViewBase var1, Picture var2) {
+			
+			}
+		});
+	}
+
 	RecyclerView.OnScrollChangedListener mOnScrollChangeListener;
 	
 	@Override

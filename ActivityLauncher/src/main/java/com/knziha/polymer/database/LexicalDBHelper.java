@@ -5,7 +5,6 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteFullException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteStatement;
 import android.net.Uri;
@@ -13,10 +12,11 @@ import android.os.CancellationSignal;
 import android.text.TextUtils;
 import android.util.SparseArray;
 
-import com.knziha.polymer.AdvancedBrowserWebView;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.pdviewer.PDocument;
 import com.knziha.polymer.pdviewer.bookdata.PDocBookInfo;
+import com.knziha.polymer.webstorage.DomainInfo;
+import com.knziha.polymer.webstorage.SubStringKey;
 import com.knziha.polymer.widgets.WebFrameLayout;
 
 import org.apache.commons.lang3.StringUtils;
@@ -24,9 +24,9 @@ import org.apache.commons.lang3.StringUtils;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static com.knziha.polymer.widgets.Utils.EmptyCursor;
 
@@ -302,7 +302,7 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 	}
 	
 	public Cursor querySearchTerms(String url_key, int limitation, CancellationSignal stopSign) {
-		if(StringUtils.isEmpty(url_key)) {
+		if(TextUtils.isEmpty(url_key)) {
 			if(EmptySearchCursor!=null) {
 				if(!search_empty_updated) {
 					return EmptySearchCursor;
@@ -322,7 +322,8 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 			search_empty_updated=false;
 			CMN.Log("query db result::", emptySearchCursor.getCount(), stopSign.isCanceled());
 			return EmptySearchCursor=emptySearchCursor;
-		} else {
+		}
+		else {
 			if(ActiveSearchCursor!=null) {
 				if(url_key.equals(LastSearchTerm)&&!search_active_updated) {
 					return ActiveSearchCursor;
@@ -330,17 +331,24 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 				cursors_to_close.add(ActiveSearchCursor);
 				ActiveSearchCursor=null;
 			}
-			String sql = "select term from keyword_search_terms where term like ? order by last_visit_time desc";
-			MainBuilder.setLength(0);
-			String term = MainBuilder.append(url_key).append("%").toString();
-			if(limitation!=Integer.MAX_VALUE) {
-				if(limitation<=0) {
-					return EmptyCursor;
-				}
+			Cursor activeUrlCursor;
+			if(url_key.startsWith("http") && (url_key.startsWith(":", 4)||url_key.startsWith("s:", 4))) {
+				//CMN.Log("return fast empty search!!!");
+				activeUrlCursor = EmptyCursor;
+			} else {
+				String sql = "select term from keyword_search_terms where term like ? order by last_visit_time desc";
 				MainBuilder.setLength(0);
-				sql = MainBuilder.append(sql).append(" limit ").append(limitation).toString();
+				String term = MainBuilder.append(url_key).append("%").toString();
+				if(limitation!=Integer.MAX_VALUE) {
+					if(limitation<=0) {
+						return EmptyCursor;
+					}
+					MainBuilder.setLength(0);
+					sql = MainBuilder.append(sql).append(" limit ").append(limitation).toString();
+				}
+				activeUrlCursor = database.rawQuery(sql, new String[]{term}, stopSign);
+				CMN.Log("slow search terms table...", activeUrlCursor);
 			}
-			Cursor activeUrlCursor = database.rawQuery(sql, new String[]{term}, stopSign);
 			search_active_updated=false;
 			return ActiveSearchCursor = activeUrlCursor;
 		}
@@ -398,88 +406,66 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 		return count;
 	}
 	
-	Pattern domainPattern = Pattern.compile("://(.+?)/");
+	HashMap<SubStringKey, DomainInfo> domainInfoMap = new HashMap<>();
 	
 	// 搜索引擎列表，导航页，需要域数据库记录的图标。
 	// 常规访问，updateua (loadurl、刷新、onpagestart之时) 需要域数据库记录的配置信息。
 	public void queryDomain(WebFrameLayout layout, String url) {
-		String domain = null;
-		Matcher m = domainPattern.matcher(url);
-		if(m.find()) {
-			domain = m.group();
-		}
-		Cursor infoCursor = layout.domainInfoCursor;
-		if(infoCursor!=null && TextUtils.equals(infoCursor.getString(1), domain)) {
-			return;
-		}
-		infoCursor = null;
-		if(domain!=null) {
-			final String sql = "select * from domains where url = ? ";
-			String[] where = new String[]{domain};
-			infoCursor = database.rawQuery(sql, where);
-			if(!infoCursor.moveToFirst()) {
-				infoCursor.close();
-				infoCursor = null;
-			}
-		}
-		layout.setDomainCursor(domain, infoCursor);
-	}
-	
-	public void updateDomainFlag(WebFrameLayout layout, long val) {
-		String domain = layout.domain;
-		if(domain!=null) {
-			ContentValues values = new ContentValues();
-			values.put("url", domain);
-			values.put("f1", val);
-			WebFrameLayout.DomainInfo domainInfo = layout.domainInfo;
-			if(domainInfo!=null) {
-				long rowID = domainInfo.rowID;
-				database.update("domains", values, "id=?", new String[]{""+rowID});
-				domainInfo.f1 = val;
+		SubStringKey domainKey = SubStringKey.new_hostKey(url);
+		if (!domainKey.equals(layout.domain)) {
+			DomainInfo domainInfo = domainInfoMap.get(domainKey);
+			if (domainInfo!=null) {
+				layout.setDomainInfo(domainInfo.domainKey, domainInfo);
 			} else {
-				long rowID = database.insert("domains", null, values);
-				layout.setDomainCursor(layout.domain
-						, database.rawQuery("select * from domains where id=?", new String[]{""+rowID})
-						);
+				String domain = domainKey.toString();
+				domainKey = SubStringKey.new_hostKey(domain);
+				Cursor infoCursor = database.rawQuery("select * from domains where url = ? ", new String[]{domain});
+				if (infoCursor.moveToFirst()) {
+					domainInfo = new DomainInfo(domainKey, infoCursor.getLong(0), infoCursor.getLong(3));
+				} else {
+					domainInfo = new DomainInfo(domainKey, 0, 0);
+				}
+				infoCursor.close();
+				layout.setDomainInfo(domainKey, domainInfo);
 			}
 		}
 	}
 	
-	// 配置网址设定、插入图标前，需保证有存储目标
-	public void insertUpdateDomain(WebFrameLayout layout, String url, Long val) {
-		Matcher m = domainPattern.matcher(url);
-		String domain = null;
-		Cursor infoCursor = null;
-		if(m.find()) {
-			domain = m.group();
-			final String sql = "select * from domains where url = ? ";
-			String[] where = new String[]{domain};
-			if(TextUtils.equals(layout.domain, domain)) {
-				infoCursor = layout.domainInfoCursor;
-				if(infoCursor!=null && !infoCursor.moveToFirst()) {
-					infoCursor = null;
-				}
-			}
-			if(infoCursor==null) {
-				infoCursor = database.rawQuery(sql, where);
-			}
-			if(!infoCursor.moveToFirst()) {
-				infoCursor.close();
-				ContentValues values = new ContentValues();
-				values.put("url", domain);
-				if(val!=null) {
-					values.put("f1", val);
-				}
-				database.insert("domains", null, values);
-				infoCursor = database.rawQuery(sql, where);
-				if(!infoCursor.moveToFirst()) {
-					infoCursor.close();
-					infoCursor = null;
-				}
-			}
-		}
-		layout.setDomainCursor(domain, infoCursor);
-	}
+//	// 配置网址设定、插入图标前，需保证有存储目标
+//	public void insertUpdateDomain(WebFrameLayout layout, String url, Long val) {
+//		Matcher m = domainPattern.matcher(url);
+//		String domain = null;
+//		Cursor infoCursor = null;
+//		if(m.find()) {
+//			domain = m.group();
+//			final String sql = "select * from domains where url = ? ";
+//			String[] where = new String[]{domain};
+//			if(TextUtils.equals(layout.domain, domain)) {
+//				infoCursor = layout.domainInfoCursor;
+//				if(infoCursor!=null && !infoCursor.moveToFirst()) {
+//					infoCursor = null;
+//				}
+//			}
+//			if(infoCursor==null) {
+//				infoCursor = database.rawQuery(sql, where);
+//			}
+//			if(!infoCursor.moveToFirst()) {
+//				infoCursor.close();
+//				ContentValues values = new ContentValues();
+//				values.put("url", domain);
+//				if(val!=null) {
+//					values.put("f1", val);
+//				}
+//				database.insert("domains", null, values);
+//				infoCursor = database.rawQuery(sql, where);
+//				if(!infoCursor.moveToFirst()) {
+//					infoCursor.close();
+//					infoCursor = null;
+//				}
+//			}
+//		}
+//		layout.setDomainInfo(domain, infoCursor);
+//	}
 	
 	public long insertSearchTerm(String lex) {
 		search_empty_updated=search_active_updated=true;

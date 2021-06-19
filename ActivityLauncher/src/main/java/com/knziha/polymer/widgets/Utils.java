@@ -487,6 +487,19 @@ public class Utils {
 		return null;
 	}
 	
+	public static RecyclerView.ViewHolder getWebFrameInParents(View v) {
+		ViewParent vp;
+		Object tag;
+		while(v!=null) {
+			if ((tag = v.getTag()) instanceof WebFrameLayout) {
+				return (RecyclerView.ViewHolder) tag;
+			}
+			vp = v.getParent();
+			v = vp instanceof View?(View) vp:null;
+		}
+		return null;
+	}
+	
 	public static class DummyOnClick implements View.OnClickListener {
 		@Override
 		public void onClick(View v) {

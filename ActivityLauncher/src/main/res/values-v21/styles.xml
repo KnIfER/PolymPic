@@ -2,4 +2,27 @@
 	<style name="scroll" parent="ActivityTheme">
 		<item name="android:colorEdgeEffect">#00ffffff</item>
 	</style>
+
+	<style name="AppThemeRaw" parent="Theme.AppCompat.Light.NoActionBar">
+		<!-- Customize your theme here. -->
+		<item name="android:configChanges">orientation|keyboardHidden|screenSize|smallestScreenSize|screenLayout|uiMode|locale|layoutDirection</item>
+		<item name="colorAccent">@color/colorAccent</item>
+		<item name="colorPrimary">@color/colorPrimary</item>
+		<item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+		<!--		<item name="colorControlNormal">@android:color/white</item>-->
+		<!--		<item name="colorControlActivated">@android:color/white</item>-->
+		<!--		<item name="colorControlHighlight">@android:color/white</item>-->
+		<!--item name="android:windowBackground">@android:color/transparent</item-->
+		<item name="windowActionBar">false</item>
+		<item name="windowNoTitle">true</item>
+		<item name="android:windowBackground">#fff</item>
+		<item name="ic_launch">@mipmap/ic_launcher</item>
+		<item name="menu_pop_drawable">@drawable/frame_menu</item>
+
+		<!--		<item name="android:textSelectHandleLeft">@drawable/drawable_handle_selection_l</item>-->
+		<!--		<item name="android:textSelectHandleRight">@drawable/drawable_handle_selection_r</item>-->
+		<!--		<item name="android:textSelectHandle">@drawable/drawable_handle_selection_m</item>-->
+
+		<item name="android:textSelectHandleWindowStyle">@style/no_animation_th_window</item>
+	</style>
 </resources>

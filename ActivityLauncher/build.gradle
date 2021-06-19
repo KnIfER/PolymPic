@@ -1,6 +1,11 @@
 apply plugin: 'com.android.application'
 
 android {
+    lintOptions {
+        tasks.lint.enabled = false
+        checkReleaseBuilds false
+        abortOnError false
+    }
     compileSdkVersion ver_compileSdkVersion
 
     defaultConfig {
@@ -16,22 +21,15 @@ android {
 
         //multiDexEnabled true // avoid ?
     }
-
     buildFeatures {
         dataBinding{
             enabled=true
         }
     }
-
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-
-    lintOptions {
-        abortOnError false
-    }
-
     buildTypes {
         release {
             minifyEnabled false
@@ -42,9 +40,6 @@ android {
         }
     }
 
-    lintOptions {
-        abortOnError false
-    }
     packagingOptions {
         exclude 'META-INF/DEPENDENCIES'
         exclude 'META-INF/NOTICE'

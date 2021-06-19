@@ -3,7 +3,6 @@ package com.knziha.polymer;
 import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.database.Cursor;
@@ -13,14 +12,11 @@ import android.net.Uri;
 import android.net.http.HttpResponseCache;
 import android.net.http.SslError;
 import android.os.Build;
-import android.os.Handler;
 import android.os.Message;
 import android.text.TextUtils;
-import android.util.Log;
 import android.util.Pair;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.webkit.DownloadListener;
@@ -29,11 +25,13 @@ import android.webkit.JavascriptInterface;
 import android.webkit.SslErrorHandler;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceError;
+import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
-import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.recyclerview.widget.RecyclerView.OnScrollChangedListener;
 
 import com.knziha.filepicker.utils.ExtensionHelper;
@@ -46,8 +44,7 @@ import com.knziha.polymer.browser.webkit.UniversalWebviewInterface;
 import com.knziha.polymer.browser.webkit.WebResourceResponseCompat;
 import com.knziha.polymer.browser.webkit.WebViewHelper;
 import com.knziha.polymer.toolkits.MyX509TrustManager;
-import com.knziha.polymer.toolkits.Utils.BU;
-import com.knziha.polymer.toolkits.Utils.ReusableByteOutputStream;
+import com.knziha.polymer.webstorage.SubStringKey;
 import com.knziha.polymer.widgets.AppToastManager;
 import com.knziha.polymer.widgets.DialogVanishing;
 import com.knziha.polymer.widgets.Utils;
@@ -58,12 +55,13 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.net.InetAddress;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -71,6 +69,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -80,14 +79,13 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 
 import okhttp3.Cache;
+import okhttp3.Dns;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
-import static com.knziha.polymer.BrowserActivity.TitleSep;
 import static com.knziha.polymer.HttpRequestUtil.DO_NOT_VERIFY;
-import static com.knziha.polymer.Utils.WebOptions.BackendSettings;
 import static org.xwalk.core.Utils.getTag;
 import static org.xwalk.core.Utils.unlock;
 
@@ -111,60 +109,10 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	Object k3client;
 	public static int _req_fvw;
 	public static int _req_fvh;
-	
-	static class SubStringKey {
-		final int st;
-		final int ed;
-		final int hash;
-		final String text;
-		final int len;
-		
-		static SubStringKey fast_hostKey(String text) {
-			return new SubStringKey(text, 0, text.length());
-		}
-		
-		static SubStringKey new_hostKey(String text) {
-			int st=0, ed= text.length();
-			int idx=text.indexOf("://");
-			if(idx>0) {
-				st=idx+3;
-			}
-			idx=text.indexOf("/", st);
-			if(idx>0) {
-				ed=idx;
-			}
-			return new SubStringKey(text, st, ed);
-		}
-		
-		SubStringKey(String text, int st, int ed) {
-			this.st = st;
-			this.ed = ed;
-			this.text = text;
-			this.hash = Utils.hashCode(text, st, ed);
-			this.len = ed-st;
-		}
-		
-		@Override
-		public boolean equals(Object o) {
-			if (!(o instanceof SubStringKey)) return false;
-			SubStringKey that = (SubStringKey) o;
-			return this==that || len==that.len && text.regionMatches(st, that.text, that.st, len);
-		}
-		
-		@Override
-		public int hashCode() {
-			return hash;
-		}
-		
-		@NonNull @Override
-		public String toString() {
-			return text.substring(st, ed);
-		}
-	}
+	protected boolean isLowEnd = true;
 	
 	/** 以荆轲之鞘纳山川之峰脊破阻业之障 */
-	HashMap<SubStringKey, String> jinkeSheaths = new HashMap<>();
-	
+	Map<SubStringKey, String> jinkeSheaths = new ConcurrentHashMap<>();
 	Map<HostKey, ArrayList<SiteRule>> SiteConfigs = Collections.synchronizedMap(new HashMap<>());
 	ArrayList<Pair<Pattern, SiteRule>> SiteConfigsByPattern = new ArrayList<>();
 	
@@ -190,6 +138,8 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		Object[] pruneRules;
 		boolean forbidScrollWhenSelecting;
 		boolean pauseJs;
+		int ts;
+		Pair<Pattern, Pair<String, String>>[] modifiers;
 	}
 	
 	static class HostKey {
@@ -239,6 +189,10 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		}
 	}
 	
+	interface UrlResourceHandler{
+		WebResourceResponse handleUrl(String url);
+	}
+	
 	LinkedList<RgxPlc> DNSIntelligence = new LinkedList<>();
 	
 	public WebCompoundListener(BrowserActivity activity) {
@@ -278,6 +232,14 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 			SiteConfigsByPattern.add(new Pair<>(p, rule));
 		}
 		
+		// kexuemeiguoren
+		{
+			Pattern p = Pattern.compile("^https?://www.scientificamerican.com/");
+			SiteRule rule = new SiteRule();
+			rule.JS = "polyme.craft('style', '#onetrust-banner-sdk{display:none;}')";
+			SiteConfigsByPattern.add(new Pair<>(p, rule));
+		}
+		
 		// tieba
 		{
 			Pattern p = Pattern.compile("^https?://tieba.baidu.com/");
@@ -297,7 +259,86 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 					"ret=0;\n" +
 					"}\n" +
 					"}";
-			
+			SiteConfigsByPattern.add(new Pair<>(p, rule));
+		}
+		
+		// qqxw
+		{
+			Pattern p = Pattern.compile("^https?://xw\\.qq\\.com/");
+			SiteRule rule = new SiteRule();
+			rule.JS = "var getUrlParameter = function (url, name) { \n" +
+					"var reg = new RegExp(\"(^|&)\" + name + \"=([^&]*)(&|$)\"); \n" +
+					"var reg=url.match(reg);\n" +
+					"return unescape(reg?reg[2]:0);\n" +
+					"}; \n" +
+					"window.addEventListener(\"touchstart\", function(e) {\n" +
+					"console.log(e.srcElement, e.path, e);\n" +
+					"for(var i=0,p;p=e.path[i],i<5&&p;i++) {\n" +
+					"var id=p.dataset[\"bossExpo\"];\n" +
+					"if(id) {\n" +
+					"id=getUrlParameter(id, \"articleid\");\n" +
+					"p=p.getElementsByTagName(\"A\")[0];\n" +
+					"if(p.getAttribute(\"href\")===\"\")\n" +
+					"p.href=\"/cmsid/\"+id;\n" +
+					"break;\n" +
+					"}\n" +
+					"}\n" +
+					"})";
+			rule.modifiers = new Pair[]{new Pair<>(Pattern.compile("^https://mat1\\.gtimg\\.com/qqcdn/xw/_next/static/.*?/pages/article/.*?\\.js"), new Pair<>("fe=me[0]", "fe=false"))};
+			SiteConfigsByPattern.add(new Pair<>(p, rule));
+		}
+		
+		// jianshu
+		{
+			Pattern p = Pattern.compile("^https?://www\\.jianshu\\.com/");
+			SiteRule rule = new SiteRule();
+			rule.ts = 118; // 120
+			rule.JS = "polyme.craft('style','.collapse-free-content{height:auto!important} .call-app-btn{visibility:hidden}')";
+			SiteConfigsByPattern.add(new Pair<>(p, rule));
+		}
+		
+		// zhuanlizhijia
+		{
+			Pattern p = Pattern.compile("^https?://web\\.archive\\.org/");
+			SiteRule rule = new SiteRule();
+			rule.ts = 100; // 120
+			rule.pruneRules = new Object[6]; // pIRl
+			rule.pruneRules[0] = new Pair<>(Pattern.compile("^h.*?/http://googleads"), null);
+			rule.pruneRules[1] = new IISTri(29, 593828798, "analytics.js", null);
+			rule.pruneRules[2] = new IISTri(29, 593828798, "donate.php", null);
+			rule.pruneRules[3] = new IISTri(29, 593828798, "fonts", null);
+			rule.pruneRules[4] = new Pair<>(Pattern.compile("^h.*?/http://nsclick\\.baidu\\.com"), null);
+			rule.pruneRules[5] = new Pair<>(Pattern.compile("^h.*?/http://pos\\.baidu\\.com"), null);
+			rule.JS = "polyme.craft('style', '.post p{font-size:28px;line-height:39px;color:#000}')";
+			SiteConfigsByPattern.add(new Pair<>(p, rule));
+		}
+
+		// mluxun
+		{
+			Pattern p = Pattern.compile("^https?://m[a-z]{0,12}\\.zuopinj\\.com");
+			SiteRule rule = new SiteRule();
+			rule.JS = "var cc=0,tm;\n" +
+					"function func(){\n" +
+					"[].forEach.call(document.body.children, function(e) {\n" +
+					"  var h=e.offsetHeight;\n" +
+					"  if(h>100&&h<150)e.style.visibility=\"collapse\";\n" +
+					"});\n" +
+					"cc++;\n" +
+					"if(cc>10) clearInterval(tm);\n" +
+					"}\n" +
+					"tm = setInterval(func, 250);\n" +
+					"polyme.craft(\"style\", \".ad{display:none}\");";
+			//rule.ts = 100; // 120
+			//rule.pruneRules[2] = new Pair<>(Pattern.compile("^h.*?/http://nsclick\\.baidu\\.com"), null);
+			//rule.pruneRules[2] = new Pair<>(Pattern.compile("^h.*?/http://nsclick\\.baidu\\.com"), null);
+			SiteConfigsByPattern.add(new Pair<>(p, rule));
+		}
+		
+		// bilibook
+		{
+			Pattern p = Pattern.compile("^https?://www\\.bilibili\\.com/read");
+			SiteRule rule = new SiteRule();
+			rule.JS = "polyme.craft(\"style\", \".read-article-box{max-height:unset!important}\");";
 			SiteConfigsByPattern.add(new Pair<>(p, rule));
 		}
 		
@@ -341,6 +382,10 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	}
 	
 	public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
+	}
+	
+	@Override
+	public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
 	}
 	
 //	public void onReceivedClientCertRequest(WebView view, ClientCertRequest request) {
@@ -531,7 +576,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 			if(mWebView==a.currentWebView && layout.PageStarted) {
 				a.tabsManagerIsDirty =true;
 				layout.isloading=true;
-				boolean premature=layout.getDelegate(BackendSettings).getPremature();
+				boolean premature=layout.getPremature();
 				int lowerBound = layout.EnRipenPercent;
 				if(lowerBound<=10) {
 					lowerBound=98;
@@ -580,24 +625,27 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		}
 		WebFrameLayout layout = view instanceof AdvancedBrowserWebView?((AdvancedBrowserWebView) view).layout:(WebFrameLayout) ((View)getTag()).getParent();
 		layout.webScale = newScale;
+		if (layout.frcWrp) {
+			layout.mWebView.evaluateJavascript(WrappedOnResize+(layout.getWidth()/newScale)+")", null);
+		}
 	}
 	
-	@Override
-	public void onLoadResource(WebView view, String url) {
-		super.onLoadResource(view, url);
-		//CMN.Log("onLoadResource", url);
-//			if(url.contains(".mp4")){
-//				Message msg = new Message();
-//				msg.what=110;
-//				msg.obj=url;
-//				mHandler.sendMessage(msg);
-//			}
-	}
+//	@Override
+//	public void onLoadResource(WebView view, String url) {
+//		super.onLoadResource(view, url);
+//		//CMN.Log("onLoadResource", url);
+////			if(url.contains(".mp4")){
+////				Message msg = new Message();
+////				msg.what=110;
+////				msg.obj=url;
+////				mHandler.sendMessage(msg);
+////			}
+//	}
 	
 	HostKey startHostMatcher = new HostKey();
 	
 	@Override
-	public void onPageStarted(WebView view, String url, Bitmap favicon) {
+	public void onPageStarted(WebView view, String url, Bitmap favicon) { // OPS
 		UniversalWebviewInterface webviewImpl = (UniversalWebviewInterface) (view instanceof UniversalWebviewInterface?view:getTag());
 		CMN.Log("onPageStarted……", url, webviewImpl.getUrl(), Thread.currentThread().getId());
 		View mWebView = (View) webviewImpl;
@@ -605,7 +653,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		if(layout==null||layout.implView!=mWebView) {
 			return;
 		}
-		if(!a.opt.getUpdateUALowEnd()) {
+		if(!a.opt.getUpdateUALowEnd()) { // 在此处更新UA或导致页面往复重载，慎之
 			if(a.updateUserAgentString(layout, url)) {
 				return;
 			}
@@ -615,7 +663,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		// 底栏不动  滑动隐藏顶栏 1
 		// 底栏不动  顶栏不动 2
 		int hideBarType = 1;
-		boolean PadPartPadBar = false;
+		boolean PadPartPadBar = false; // lalala 就不让你看懂
 		layout.syncBarType(hideBarType, PadPartPadBar, a.UIData);
 		
 		//((ViewGroup.MarginLayoutParams)mWebView.layout.getLayoutParams()).bottomMargin=2*a.UIData.bottombar2.getHeight();
@@ -630,6 +678,8 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		holder.clear();
 		layout.forbidScrollWhenSelecting = false;
 		boolean shutdownJs = false;
+		layout.modifiers = null;
+		int ts = 100;
 		for (Pair<Pattern, SiteRule> siteRulePair:SiteConfigsByPattern) {
 			if(siteRulePair.first.matcher(url).find()) {
 				SiteRule rI = siteRulePair.second;
@@ -637,13 +687,23 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 				if(rI.pruneRules!=null) {
 					prunes.addAll(Arrays.asList(rI.pruneRules));
 				}
+				if (rI.ts>0) {
+					ts = rI.ts;
+				}
 				layout.forbidScrollWhenSelecting |= rI.forbidScrollWhenSelecting;
+				if (rI.modifiers!=null) {
+					layout.addModifiers(rI.modifiers);
+				}
 				shutdownJs |= rI.pauseJs;
 				if(rI.EnRipenPercent>10) {
 					EnRipenPercent=Math.min(EnRipenPercent, rI.EnRipenPercent);
 				}
 			}
 		}
+		layout.hasPrune = prunes.size()>0;
+		//CMN.Log("prunes", layout.hasPrune, prunes, url);
+		webviewImpl.getSettings().setTextZoom(ts);
+		
 		if(shutdownJs) {
 			layout.shutdownJS();
 		}
@@ -668,6 +728,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	
 	
 	/**if (!window.PPTurboKit) {
+			window.polyme = {};
 			var w = window;
 			w.PPTurboKit = 1;
 			w.addEventListener('keydown', function(e) {
@@ -713,28 +774,6 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 			var d = document;
 			var h = d.head;
 			var b = d.body;
-			var items = h.getElementsByTagName('meta');
-			var len = items.length;
-			var tag = 'viewport';
-			var content = 'width=device-width,minimum-scale=1,maximum-scale=5.0,user-scalable=yes';
-			var add = 0;
-	 		if(add)
-			for (var i = 0; i < len; i++) {
-				var iI = items[i];
-				if (iI.name === tag) {
-					if (iI.content.lastIndexOf('no') > 0) {
-						iI.content = content;
-					}
-					add = 0;
-					break;
-				}
-			}
-			if (add) {
-				var item = d.createElement('meta');
-				item.name = tag;
-				item.content = content;
-				h.appendChild(item);
-			}
 			polyme.loadJs=function(url, callback) {
 				var script = d.createElement('script');
 				script.type = "text/javascript";
@@ -750,7 +789,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	 			var ele = d.createElement(tagN);
 				ele.innerHTML=H;
 				_?b:h.appendChild(ele);
-	 			ele
+				return ele;
 			};
 			polyme.highlight=function(keyword) {
 				var b1 = keyword == null;
@@ -773,7 +812,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	 			{
 					var vw=0,vh=0;
 					var se = e.srcElement;
-					var vi = se.tagName==="VIDEO"?se:(se.getElementsByTagName("VIDEO")[0]);
+					var vi = se.tagName==="VIDEO"?se:(se.querySelectorAll("VIDEO")[0]);
 					if(vi) {
 						vw = vi.videoWidth;
 						vh = vi.videoHeight;
@@ -792,10 +831,95 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 			w.addEventListener('webkitfullscreenchange', wrappedFscrFunc);
 			w.addEventListener('mozfullscreenchange', wrappedFscrFunc);
 		}
-	 	polyme.logm('1','2','3');
+	 	polyme.logm('fatal logm test', '1','2','3');
 	 */
 	@Multiline(trim=true, compile=true)
-	public final static String PRI = "Primary Rule Insersion";
+	public final static String PRI = "Primary Rule Insertion";
+	
+	/** var m = document.head.querySelectorAll('meta');
+	 	window.hasVPM = false;
+		for (var i = 0; i < m.length; i++) {
+			var iI = m[i];
+			if (iI.name === 'viewport') {
+				if (iI.content.lastIndexOf('no') > 0) {
+					iI.content = 'width=device-width,minimum-scale=1,maximum-scale=5.0,user-scalable=yes';
+				}
+	 			window.hasVPM = true;
+				break;
+			}
+		}
+	 */
+	@Multiline(trim=true, compile=true)
+	public final static String ForceResizable = "";
+	
+	/** var w = window.hasVPM;
+		if(w===undefined) {
+	 		w = false;
+			var m = document.head.querySelectorAll('meta');
+			for (var i = 0; i < m.length; i++) {
+				var iI = m[i];
+				if (iI.name === 'viewport') {
+					w = true;
+					break;
+				}
+			}
+	 	} else {
+	 	 	w=!w;
+		}
+	 	if(w) {
+			window._frcWrp = polyme.craft('style', '');
+		}
+		window.metas = 0;
+	 	w?1:0
+	 */
+	@Multiline(trim=true, compile=true)
+	public final static String ForceWarpable = "";
+	
+	
+	/** (function(wd){
+			var w=window._frcWrp;
+			if(wd&&w) {
+				wd = (wd-25)+"px";
+				console.log("fatal WrappedOnResize!!! "+wd);
+				function traverseDom(p) {
+					var n = [];
+					n.push(p);
+					var cc = 1;
+					for(var j=0;j<cc;j++) {
+						p = n[j];
+						if(p.tagName!='A' && p.className.indexOf('code')<0) {
+							var m = p.childNodes, ln = m.length, pl = cc, i=0;
+							if(ln>p.childElementCount) {
+								for(;i<ln;i++) {
+									var e = m[i];
+									if(e.nodeType==3) {
+										var t=e.textContent;
+										if (/\S/.test(t) && t.length>8) {
+											cc = pl;
+											p.style.maxWidth = wd;
+											//console.log(p);
+											break;
+										}
+									} else if(e.tagName!=undefined){
+										n.push(e);
+										cc++;
+									}
+								}
+							}
+						}
+					}
+				}
+				[].forEach.call(window.frames, function(e){
+				try{
+				traverseDom(window.frames[0].document.body);
+				} catch(e){}
+				});
+				traverseDom(document.body);
+			}
+	 	})(
+	 */
+	@Multiline(trim=true, compile=true)
+	public final static String WrappedOnResize = "";
 	
 	public static byte[] markjsBytesArr = null;
 	
@@ -845,6 +969,24 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 			
 			/* 原天道契 */
 			webviewImpl.evaluateJavascript(PRI, null);
+			
+			if(true) {
+				webviewImpl.evaluateJavascript(ForceResizable, null);
+			}
+			
+			layout.frcWrp = false;
+			if(a.opt.getForceTextWrap()) {
+				if(a.opt.getForceTextWrapForAllWebs()) {
+					layout.frcWrp = true;
+					SendTextWarp(layout);
+				} else {
+					webviewImpl.evaluateJavascript(ForceWarpable, value -> {
+						if (layout.frcWrp = "1".equals(value)) {
+							SendTextWarp(layout);
+						}
+					});
+				}
+			}
 			
 			if(layout.rules.size()>0) {
 				for (SiteRule rI:layout.rules) {
@@ -912,6 +1054,10 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		}
 	}
 	
+	private void SendTextWarp(WebFrameLayout layout) {
+		layout.mWebView.evaluateJavascript(WrappedOnResize+(layout.getWidth()/layout.webScale)+")", null);
+	}
+	
 	public void ensureMarkJS(Context context) {
 		//WebCompoundListener.markjsBytesArr = new byte[WebCompoundListener.markjsBytesLen];
 		if(markjsBytesArr==null) {
@@ -958,14 +1104,16 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 				if(rl.gstHandler!=null && rl.gstHandler.matcher(url).find()) {
 					webviewImpl.evaluateJavascript(rl.gstHandlerJS.replace("%url", url), value -> {
 						if (!"0".equals(value)) {
-							relayAppShceme(url);
+							relayAppScheme(layout, url);
 						}
 					});
 					return true;
 				}
 			}
 			if(true) {
-				relayAppShceme(url);
+				relayAppScheme(layout, url);
+			} else {
+				return false;
 			}
 			return true;
 		}
@@ -990,43 +1138,131 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		return false;
 	}
 	
-	private void relayAppShceme(String url) {
-		int idx = url.indexOf(":");
-		String appScheme = url;
-		if(idx>0) {
-			appScheme = Utils.getSubStrWord(appScheme, 0, idx);
+	private void relayAppScheme(WebFrameLayout layout, String url) {
+		if (layout!=null && layout.allowAppScheme && layout==a.currentViewImpl && layout.getVisibility()==View.VISIBLE) {
+			int idx = url.indexOf(":");
+			String appScheme = url;
+			if(idx>0) {
+				appScheme = Utils.getSubStrWord(appScheme, 0, idx);
+			}
+			showT(appScheme+" 请求打开外部APP", "继续", url, false);
 		}
-		showT(appScheme+" 请求打开外部APP", "继续", url);
 	}
 	
-	public void showT(String message, String yesText, String url) {
+	public void showT(String message, String yesText, String url, boolean forceShow) {
 		if(appToastMngr==null) {
 			appToastMngr = new AppToastManager(a);
 		}
-		appToastMngr.showT(message, yesText, url, a.hasWindowFocus()?-1:0);
+		appToastMngr.showT(message, yesText, url, forceShow, a.hasWindowFocus()?-1:0);
 	}
 	
-	public WebResourceResponse shouldInterceptRequest(WebView view, String url, String method, Map<String, String> headers) {
+	private OkHttpClient prepareKlient() {
+		if (k3client!=null) return (OkHttpClient) k3client;
+		int cacheSize = 10 * 1024 * 1024;
+		Interceptor headerInterceptor = new Interceptor() {
+			@Override
+			public Response intercept(Chain chain) throws IOException {
+				Request request = chain.request();
+				Response response = chain.proceed(request);
+				Response response1 = response.newBuilder()
+						.removeHeader("Pragma")
+						.removeHeader("Cache-Control")
+						//cache for 30 days
+						.header("Cache-Control", "max-age=" + 3600 * 24 * 30)
+						.build();
+				return response1;
+			}
+		};
+		OkHttpClient klient = new OkHttpClient.Builder()
+				.connectTimeout(5, TimeUnit.SECONDS)
+				.addNetworkInterceptor(headerInterceptor)
+				//.protocols(Collections.singletonList(Protocol.HTTP_1_1))
+				.cache(true ?
+						new Cache(new File(a.getExternalCacheDir(), "k3cache")
+								, cacheSize) : null) // 配置缓存
+				.dns(new Dns() {
+					@Override
+					public List<InetAddress> lookup(String hostname) throws UnknownHostException {
+						String addr = jinkeSheaths.get(SubStringKey.new_hostKey(hostname));
+						CMN.Log("lookup...", hostname, addr, InetAddress.getByName(addr));
+						if (addr != null) {
+							return Collections.singletonList(InetAddress.getByName(addr));
+						}
+						//else return Collections.singletonList(InetAddress.getByName(hostname));
+						return Dns.SYSTEM.lookup(hostname);
+					}
+				})
+				//.readTimeout(5, TimeUnit.SECONDS)
+				//.setCache(getCache())
+				//.certificatePinner(getPinnedCerts())
+				//.setSslSocketFactory(getSSL())
+				.hostnameVerifier(DO_NOT_VERIFY)
+				.build();
+		return klient;
+	}
+	
+	protected WebResourceResponse handlePrunes(WebFrameLayout layout, String url) {
+		for(Object pI:layout.prunes) {
+			if(pI instanceof IISTri) {
+				IISTri tri = (IISTri) pI;
+				int len = url.length();
+				if(len>tri.i1&&url.regionMatches(tri.i1, tri.str1, 0, tri.str1.length())&&Utils.hashCode(url, 0, tri.i1)==tri.i2) {
+					CMN.Log("pIRl", url);
+					if(tri.plc==null) {
+						return emptyResponse;
+					} else {
+						return new WebResourceResponse("text/css","utf8", new ByteArrayInputStream(tri.plc.getBytes()));
+					}
+				}
+			}
+			else if(pI instanceof Pair) {
+				Pair p = (Pair) pI;
+				Pattern P = (Pattern) p.first;
+				if (P.matcher(url).find()) {
+					Object obj = p.second;
+					CMN.Log("pIRl", url, obj);
+					if (obj==null || obj instanceof String) {
+						String text = (String) obj;
+						if(text==null) {
+							return emptyResponse;
+						} else {
+							return new WebResourceResponse("text/css","utf8", new ByteArrayInputStream(text.getBytes()));
+						}
+					} else if (obj instanceof UrlResourceHandler) {
+						UrlResourceHandler text = (UrlResourceHandler) obj;
+						return text.handleUrl(url);
+					}
+				}
+			}
+		}
+		return null;
+	}
+	
+	@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+	public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+		String url = request.getUrl().toString();
 		//CMN.Log("SIR::", url);
 		//CMN.Log("SIR::", headers);
-		String acc = headers.get("Accept");
-		//CMN.Log("SIR::Accept_", acc, acc.equals("*/*"));
-		if(acc==null) {
-			acc = "*/*;";
+		View mWebView = (View) (view instanceof UniversalWebviewInterface?view:getTag());
+		WebFrameLayout layout = (WebFrameLayout) mWebView.getParent();
+		if(layout==null) {
+			return null;
 		}
-		
 		boolean lishanxizhe = false;
 		
-		//acc.equals("*/*");
+		if(layout.hasPrune) {
+			WebResourceResponse ret = handlePrunes(layout, url);
+			if (ret!=null) return ret;
+		}
 		
 		String host = null;
-		
 		if(true) {
 			String addr = jinkeSheaths.get(SubStringKey.new_hostKey(url));
 			if(addr!=null) {
 				try {
 					URL oldUrl = new URL(url);
 					host = oldUrl.getHost();
+					if(false)
 					url = url.replaceFirst(oldUrl.getHost(), addr);
 					CMN.Log("秦王绕柱走", url);
 					lishanxizhe = true;
@@ -1035,392 +1271,147 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 				}
 			}
 		}
-		
-		if(lishanxizhe /*&& !(url.endsWith("google.com/")||url.endsWith("google.cn/"))*/) {//
+		List<Pair> moders = null;
+		if (layout.modifiers!=null) {
+			for (Pair p:layout.modifiers) {
+				if(((Pattern)(p.first)).matcher(url).find()) {
+					if (moders==null) moders = new ArrayList<>();
+					moders.add(p);
+				}
+			}
+		}
+		//CMN.Log("修改了::??", url, moders!=null, layout.modifiers);
+		if(lishanxizhe /*&& !(url.endsWith("google.com/")||url.endsWith("google.cn/"))*/
+				|| moders!=null) {
 			try {
-				headers.put("Access-Control-Allow-Origin", "*");
-				headers.put("Access-Control-Allow-Headers","Origin, X-Requested-With, Content-Type, Accept");
-				InputStream input = null;
-				String MIME = null;
-				CMN.rt("转构开始……");
-				if(false) {
-					OkHttpClient klient = (OkHttpClient) k3client;
-					if(klient==null) {
-						int cacheSize = 10 * 1024 * 1024;
-						Interceptor headerInterceptor = new Interceptor() {
-							@Override
-							public Response intercept(Chain chain) throws IOException {
-								Request request = chain.request();
-								Response response = chain.proceed(request);
-								Response response1 = response.newBuilder()
-										.removeHeader("Pragma")
-										.removeHeader("Cache-Control")
-										//cache for 30 days
-										.header("Cache-Control", "max-age=" + 3600 * 24 * 30)
-										.build();
-								return response1;
-							}
-						};
-						klient = new OkHttpClient.Builder()
-								.connectTimeout(5, TimeUnit.SECONDS)
-								.addNetworkInterceptor(headerInterceptor)
-								.cache(true?
-										new Cache(new File(a.getExternalCacheDir(), "k3cache")
-												, cacheSize) :null ) // 配置缓存
-								//.readTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
-								//.setCache(getCache())
-								//.certificatePinner(getPinnedCerts())
-								//.setSslSocketFactory(getSSL())
-								.hostnameVerifier(DO_NOT_VERIFY)
-								.build()
-						;
-						k3client = klient;
-					}
-					Request.Builder k3request = new Request.Builder()
-							.url(url)
-							.header("Accept-Charset", "utf-8")
-							.header("Access-Control-Allow-Origin", "*")
-							.header("Access-Control-Allow-Headers","Origin, X-Requested-With, Content-Type, Accept")
-							;
-					for(String kI:headers.keySet()) {
-						k3request.header(kI, headers.get(kI));
-					}
-					//int maxSale = 60 * 60 * 24 * 28; // tolerate 4-weeks sale
+				return getClientResponse(url, host, moders, request.getRequestHeaders(), request.getMethod());
+			} catch (IOException e) {
+				CMN.Log(url+"\n", e);
+				//return emptyResponse;
+				//return null;
+			}
+		}
+		//CMN.Log("request.getUrl().getScheme()", request.getUrl().getScheme());
+		if(url.startsWith("https://mark.js")&&markjsBytesArr!=null) {
+			//CMN.Log("加载中", new String(markjsBytesArr, 0, 200));
+			return new WebResourceResponse("text/javascript", "utf8", new ByteArrayInputStream(markjsBytesArr));
+		}
+		return null;
+	}
+	
+	protected WebResourceResponse getClientResponse(String url, String host, List<Pair> moders, Map<String, String> headers, String method) throws IOException {
+		String acc = headers.get("Accept");
+		//CMN.Log("SIR::Accept_", acc, acc.equals("*/*"));
+		if(acc==null) {
+			acc = "*/*;";
+		}
+		headers.put("Access-Control-Allow-Origin", "*");
+		headers.put("Access-Control-Allow-Headers","Origin, X-Requested-With, Content-Type, Accept");
+		InputStream input;
+		String MIME;
+		CMN.rt("转构开始……", url);
+		if(true || moders!=null) {
+			OkHttpClient klient = (OkHttpClient) k3client;
+			if(klient==null) {
+				klient = prepareKlient();
+			}
+			Request.Builder k3request = new Request.Builder()
+					.url(url)
+					.header("Accept-Charset", "utf-8")
+					.header("Access-Control-Allow-Origin", "*")
+					.header("Access-Control-Allow-Headers","Origin, X-Requested-With, Content-Type, Accept")
+					;
+			for(String kI:headers.keySet()) {
+				k3request.header(kI, headers.get(kI));
+			}
+			//int maxSale = 60 * 60 * 24 * 28; // tolerate 4-weeks sale
 //					if (!NetworkUtils.isConnected(a))
 //					k3request.removeHeader("Pragma")
 //							.cacheControl(new CacheControl.Builder()
 //									.maxAge(0, TimeUnit.SECONDS)
 //									.maxStale(365,TimeUnit.DAYS).build())
 //							.header("Cache-Control", "public, only-if-cached, max-stale=" + maxStale);
-					if(host!=null) k3request.header("Host", host);
-					k3request.header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.106 Safari/537.36");
-					Response k3response = klient.newCall(k3request.build()).execute();
-					input = k3response.body().byteStream();
-					MIME = k3response.header("content-type");
+			if(host!=null) k3request.header("Host", host);
+			k3request.header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.106 Safari/537.36");
+			Response k3response = klient.newCall(k3request.build()).execute();
+			MIME = k3response.header("content-type");
+			if (moders!=null) {
+				String raw = k3response.body().string();
+				for (Pair p:moders) {
+					p = (Pair) p.second;
+					raw = raw.replace((String)p.first, (String)p.second);
 				}
-				else {
-					HttpURLConnection urlConnection = (HttpURLConnection) new URL(url).openConnection();
-					//urlConnection.setRequestProperty("contentType", headers.get("contentType"));
-					//urlConnection.setRequestProperty("Accept", headers.get("Accept"));
-					if(false) {
-						File httpCacheDir = new File(a.getExternalCacheDir(), "k1cache");
-						int cacheSize = 10 * 1024 * 1024;
-						try {
-							HttpResponseCache.install(httpCacheDir, cacheSize);
-						} catch (IOException e) {
-							CMN.Log(e);
-						}
-					}
-					
-					if(urlConnection instanceof HttpsURLConnection) {
-						((HttpsURLConnection)urlConnection).setHostnameVerifier(DO_NOT_VERIFY);
-					}
-					urlConnection.setRequestProperty("Accept-Charset", "utf-8");
-					urlConnection.setRequestProperty("connection", "Keep-Alive");
-					urlConnection.setRequestMethod(method);
-					urlConnection.setConnectTimeout(5000);
-					urlConnection.setUseCaches(true);
-					urlConnection.setDefaultUseCaches(true);
-					for(String kI:headers.keySet()) {
-						urlConnection.setRequestProperty(kI, headers.get(kI));
-					}
-					if(host!=null) urlConnection.setRequestProperty("Host", host);
-					urlConnection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.106 Safari/537.36");
-					//int maxSale = 60 * 60 * 24 * 28; // tolerate 4-weeks sale
-					//if(NetworkUtils.isConnected(a))
-					//urlConnection.setRequestProperty("Cache-Control", "max-age=" + maxSale);
-					//else
-					//urlConnection.setRequestProperty("Cache-Control", "public, only-if-cached, max-stale=" + maxSale);
-					
-					//urlConnection.setRequestProperty("User-Agent", a.android_ua);
-					//urlConnection.setRequestProperty("Host", "translate.google.cn");
-					//urlConnection.setRequestProperty("Origin", "https://translate.google.cn");
-					urlConnection.connect();
-					input = urlConnection.getInputStream();
-					input = new AutoCloseNetStream(input, urlConnection);
-					MIME = urlConnection.getHeaderField("content-type");
-				}
-				CMN.pt("转构完毕！！！", input.available(), MIME);
-				if(TextUtils.isEmpty(MIME)) {
-					MIME = acc;
-				}
-				int idx = MIME.indexOf(",");
-				if(idx<0) {
-					idx = MIME.indexOf(";");
-				}
-				if(idx>=0) {
-					MIME = MIME.substring(0, idx);
-				}
-				WebResourceResponse webResourceResponse;
-				if(Utils.bigCake) {
-					webResourceResponse=new WebResourceResponse(MIME, "utf8", input);
-					webResourceResponse.setResponseHeaders(headers);
-				} else {
-					webResourceResponse = new WebResourceResponseCompat(MIME, "utf8", input);
-					((WebResourceResponseCompat)webResourceResponse).setResponseHeaders(headers);
-				}
-				//CMN.Log("百代春秋泽被万世");
-				return webResourceResponse;
-			} catch (IOException e) {
-				CMN.Log(e);
-				//return null;
-			}
-		}
-		return view==null?null:shouldInterceptRequest(view, url);
-	}
-	
-	@Override
-	public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
-		boolean b1 = view instanceof UniversalWebviewInterface;
-		UniversalWebviewInterface webviewImpl = (UniversalWebviewInterface) (b1?view:getTag());
-		View mWebView = (View) webviewImpl;
-		if(!b1) {
-			Map<String, String> headers = webviewImpl.getLastRequestHeaders();
-			if(headers!=null) {
-				url = headers.get("Url");
-				WebResourceResponse ret = shouldInterceptRequest(null, url, headers.get("Method"), headers);
-				if(ret!=null) {
-					return ret;
-				}
-			}
-		}
-		WebFrameLayout layout = (WebFrameLayout) mWebView.getParent();
-		if(layout==null) {
-			return null;
-		}
-		if(url==null) {
-			return null;
-		}
-		//CMN.Log("SIR::", url, url.length(), Thread.currentThread().getId());
-		//CMN.Log(url.startsWith("https://mark.js"), markjsBytesArr!=null);
-		if(layout.prunes.size()>0) {
-			for(Object pI:layout.prunes) {
-				if(pI instanceof IISTri) {
-					IISTri tri = (IISTri) pI;
-					int len = url.length();
-					if(len>=tri.i1&&url.regionMatches(tri.i1-(len=tri.str1.length()), tri.str1, 0, len)&&Utils.hashCode(url, 0, tri.i1)==tri.i2) {
-						CMN.Log("pIRl", url);
-						if(tri.plc==null) {
-							return emptyResponse;
-						} else {
-							return new WebResourceResponse("text/css","utf8", new ByteArrayInputStream(tri.plc.getBytes()));
-						}
-					}
-				}
-			}
-		}
-		if(url.startsWith("polyme://")) {
-			CMN.Log("polyme://", url);
-			try {
-				if(url.contains(".js")) {
-					return new WebResourceResponse("text/javascript","utf8", a.getAssets().open("3"));
-				} else {
-					return new WebResourceResponse("text/html","utf8", a.getAssets().open("2"));
-				}
-			} catch (IOException e) {
-				CMN.Log(e);
-			}
-		}
-		
-		
-		//CMN.Log("request.getUrl().getScheme()", request.getUrl().getScheme());
-		if(url.length()<=20) {
-			if(url.startsWith("https://mark.js")&&markjsBytesArr!=null) {
-				//CMN.Log("加载中", new String(markjsBytesArr, 0, 200));
-				WebResourceResponse ret = new WebResourceResponse("text/javascript", "utf8", new ByteArrayInputStream(markjsBytesArr));
-				return ret;
-			}
-		}
-		
-		if(true) return null;
-		if(false) {
-			if(url.contains("?mid=")){
-//				Map<String, String> keyset = hea;
-//				for (String key:keyset.keySet()) {
-//					CMN.Log("keyset : ", key, " :: ",keyset.get(key));
-//				}
-			
-			}
-			return null;
-		}
-		if(url.contains(".mp4")){
-			if(false){
-//				Map<String, String> keyset = request.getRequestHeaders();
-//				for (String key:keyset.keySet()) {
-//					CMN.Log("keyset : ", key, " :: ",keyset.get(key));
-//				}
-				CMN.Log();
-				try {
-					SSLContext sslcontext = SSLContext.getInstance("TLS");
-					sslcontext.init(null, new TrustManager[]{new MyX509TrustManager()}, new java.security.SecureRandom());
-					HttpsURLConnection.setDefaultSSLSocketFactory(sslcontext.getSocketFactory());
-					boolean succ=false;
-					//url=timePattern.matcher(url).replaceAll("t="+(System.currentTimeMillis()/1000));
-					String fname = requestPattern.matcher(url).replaceAll("");
-					fname = fname.substring(fname.lastIndexOf("/"));
-					File path=new File("/sdcard/Download/", fname);
-					Object obj;
-					CMN.Log("shouldInterceptRequest ", url, "to", fname);
-					WebResourceResponse response = null;
-					if(!path.exists()){
-						Exception e = null;
-						try {
-							Message msg = new Message();
-							msg.what=101;
-							msg.obj="文件正在下载中…";
-							//mHandler.sendMessage(msg);
-							URL requestURL = new URL(url);
-							
-							HttpRequestUtil.HeadRequestResponse headRequestResponse = HttpRequestUtil.performHeadRequest(url);
-							Map<String, List<String>> headerMap = headRequestResponse.getHeaderMap();
-							if (headerMap == null || !headerMap.containsKey("Content-Length") || headerMap.get("Content-Length").size()==0) {
-								//检测失败，未找到Content-Type
-								Log.d("DownloadManager", "fail 未找到Content-Length taskUrl=" + url);
-							}
-							long size = 0;
-							try {
-								size = Long.parseLong(headerMap.get("Content-Length").get(0));
-							}catch (NumberFormatException e1){
-								e1.printStackTrace();
-								Log.d("DownloadManager", "NumberFormatException", e);
-							}
-							
-							url = headRequestResponse.getRealUrl();
-							
-							HttpRequestUtil.save2File(HttpRequestUtil.sendGetRequest(url), path.getAbsolutePath());
-							
-							//if(url_file_recorder==null) url_file_recorder = new FileOutputStream("/sdcard/file-url-list.txt", true);
-							//url_file_recorder.write((mWebView.url+TitleSep+path.getName()).getBytes());
-							//url_file_recorder.flush();
-							response = null;//new WebResourceResponse("*/*","UTF-8",new ByteArrayInputStream(bos.getBytes(), 0, bos.getCount()));
-						} catch (Exception ex) {
-							e=ex;
-							ex.printStackTrace();
-						}
-						if(path.exists())
-							obj="已下载！"+(e==null?"":e.toString());
-						else
-							obj="下载出错"+e;
-					}
-					else{
-						obj="已存在，跳过";
-					}
-					Message msg = new Message();
-					msg.what=101;
-					msg.obj=obj;
-					//todo a.mHandler.sendMessage(msg);
-					if(response!=null)
-						return response;
-				}
-				catch (Exception e) {
-					e.printStackTrace();
-				}
-				return null;
-			}
-			Map<String, String> keyset = null;
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-				//keyset = request.getRequestHeaders();
+				//CMN.Log("修改了::", url);
+				input = new ByteArrayInputStream(raw.getBytes());
 			} else {
-				keyset = new HashMap<>();
-			}
-			for (String key:keyset.keySet()) {
-				CMN.Log("keyset : ", key, " :: ",keyset.get(key));
-			}
-			CMN.Log();
-			try {
-				SSLContext sslcontext = SSLContext.getInstance("TLS");
-				sslcontext.init(null, new TrustManager[]{new MyX509TrustManager()}, new java.security.SecureRandom());
-				HttpsURLConnection.setDefaultSSLSocketFactory(sslcontext.getSocketFactory());
-				boolean succ=false;
-				//url=timePattern.matcher(url).replaceAll("t="+(System.currentTimeMillis()/1000));
-				String fname = requestPattern.matcher(url).replaceAll("");
-				fname = fname.substring(fname.lastIndexOf("/"));
-				File path=new File("/sdcard/Download/", fname);
-				Object obj;
-				CMN.Log("shouldInterceptRequest ", url, "to", fname);
-				WebResourceResponse response = null;
-				if(!path.exists()){
-					Exception e = null;
-					try {
-						Message msg = new Message();
-						msg.what=101;
-						msg.obj="文件正在下载中…";
-						//mHandler.sendMessage(msg);
-						URL requestURL = new URL(url);
-						String val;
-						HttpURLConnection urlConnection = (HttpURLConnection) requestURL.openConnection();
-						val=keyset.get("chrome-proxy");
-						if(val!=null)urlConnection.setRequestProperty("chrome-proxy", val);
-						val=keyset.get("Accept-Encoding");
-						if(val!=null)urlConnection.setRequestProperty("Accept-Encoding", val);
-						val=keyset.get("Range");
-						if(val!=null)urlConnection.setRequestProperty("Range", val);
-						val=keyset.get("Accept");
-						if(val!=null)urlConnection.setRequestProperty("Accept", val);
-						urlConnection.setRequestMethod("GET");
-						if(urlConnection instanceof HttpsURLConnection){
-							HttpsURLConnection urlsConnection = (HttpsURLConnection) urlConnection;
-							urlsConnection.setHostnameVerifier((hostname, session) -> true);
-						}
-						
-						
-						////urlConnection.setSSLSocketFactory(sslcontext.getSocketFactory());
-						//urlConnection.setRequestProperty("Accept-Language", "zh-CN");
-						//urlConnection.setRequestProperty("Referer", url.toString());
-						urlConnection.setConnectTimeout(60000);
-						//urlConnection.setRequestProperty("Charset", "UTF-8");
-						//urlConnection.setRequestProperty("Connection", "Keep-Alive");
-						val=keyset.get("User-Agent");
-						urlConnection.setRequestProperty("User-agent", (val!=null?val:"Mozilla/5.0 (Linux; Android 9; VTR-AL00 Build/HUAWEIVTR-AL00; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/74.0.3729.136 Mobile Safari/537.36")+System.currentTimeMillis());
-						urlConnection.connect();
-						InputStream is = urlConnection.getInputStream();
-						
-						ReusableByteOutputStream bos = new ReusableByteOutputStream();
-						bos.reset();
-						byte[] buffer = new byte[1024*10];
-						int len;
-						try {
-							while ((len = is.read(buffer)) > 0) {
-								bos.write(buffer, 0, len);
-							}
-						} catch (Exception ex) {
-							e=ex;
-							CMN.Log("cccrrr", url);
-						}
-						urlConnection.disconnect();
-						is.close();
-						BU.printFile(bos.getBytes(), 0, bos.size(), path.getAbsolutePath());
-						if(a.url_file_recorder==null) a.url_file_recorder = new FileOutputStream("/sdcard/file-url-list.txt", true);
-						a.url_file_recorder.write((layout.holder.url+TitleSep+path.getName()).getBytes());
-						a.url_file_recorder.flush();
-						response = new WebResourceResponse("*/*","UTF-8",new ByteArrayInputStream(bos.getBytes(), 0, bos.getCount()));
-					} catch (Exception ex) {
-						e=ex;
-						ex.printStackTrace();
-					}
-					if(path.exists())
-						obj="已下载！"+(e==null?"":e.toString());
-					else
-						obj="下载出错"+e;
-				}
-				else{
-					obj="已存在，跳过";
-				}
-				Message msg = new Message();
-				msg.what=101;
-				msg.obj=obj;
-				//todo a.mHandler.sendMessage(msg);
-				if(response!=null)
-					return response;
-			}
-			catch (Exception e) {
-				e.printStackTrace();
+				input = k3response.body().byteStream();
 			}
 		}
-		return null;
+		else {
+			HttpURLConnection urlConnection = (HttpURLConnection) new URL(url).openConnection();
+			//urlConnection.setRequestProperty("contentType", headers.get("contentType"));
+			//urlConnection.setRequestProperty("Accept", headers.get("Accept"));
+			if(false) {
+				File httpCacheDir = new File(a.getExternalCacheDir(), "k1cache");
+				int cacheSize = 10 * 1024 * 1024;
+				try {
+					HttpResponseCache.install(httpCacheDir, cacheSize);
+				} catch (IOException e) {
+					CMN.Log(e);
+				}
+			}
+			
+			if(urlConnection instanceof HttpsURLConnection) {
+				((HttpsURLConnection)urlConnection).setHostnameVerifier(DO_NOT_VERIFY);
+			}
+			urlConnection.setRequestProperty("Accept-Charset", "utf-8");
+			urlConnection.setRequestProperty("connection", "Keep-Alive");
+			urlConnection.setRequestMethod(method);
+			urlConnection.setConnectTimeout(3800);
+			urlConnection.setUseCaches(true);
+			urlConnection.setDefaultUseCaches(true);
+			for(String kI:headers.keySet()) {
+				urlConnection.setRequestProperty(kI, headers.get(kI));
+			}
+			if(host!=null) urlConnection.setRequestProperty("Host", host);
+			urlConnection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.106 Safari/537.36");
+			//int maxSale = 60 * 60 * 24 * 28; // tolerate 4-weeks sale
+			//if(NetworkUtils.isConnected(a))
+			//urlConnection.setRequestProperty("Cache-Control", "max-age=" + maxSale);
+			//else
+			//urlConnection.setRequestProperty("Cache-Control", "public, only-if-cached, max-stale=" + maxSale);
+			
+			//urlConnection.setRequestProperty("User-Agent", a.android_ua);
+			//urlConnection.setRequestProperty("Host", "translate.google.cn");
+			//urlConnection.setRequestProperty("Origin", "https://translate.google.cn");
+			urlConnection.connect();
+			input = urlConnection.getInputStream();
+			input = new AutoCloseNetStream(input, urlConnection);
+			MIME = urlConnection.getHeaderField("content-type");
+		}
+		CMN.pt("转构完毕！！！", input.available(), MIME);
+		if(TextUtils.isEmpty(MIME)) {
+			MIME = acc;
+		}
+		int idx = MIME.indexOf(",");
+		if(idx<0) {
+			idx = MIME.indexOf(";");
+		}
+		if(idx>=0) {
+			MIME = MIME.substring(0, idx);
+		}
+		WebResourceResponse webResourceResponse;
+		if(Utils.bigCake) {
+			webResourceResponse=new WebResourceResponse(MIME, "utf8", input);
+			webResourceResponse.setResponseHeaders(headers);
+		} else {
+			webResourceResponse = new WebResourceResponseCompat(MIME, "utf8", input);
+			((WebResourceResponseCompat)webResourceResponse).setResponseHeaders(headers);
+		}
+		//CMN.Log("百代春秋泽被万世");
+		return webResourceResponse;
 	}
-	
-	
+
 	@Override
 	public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
 		CMN.Log("DOWNLOAD:::", url, contentDisposition, mimetype, contentLength);
@@ -1455,7 +1446,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		boolean scrollforbid;
 		//CMN.Log("onScrollChange", scrollY-oldy);
 		if(layout.forbidScrollWhenSelecting && layout.bIsActionMenuShown && oldy-scrollY>200
-			|| a.tabViewAdapter.isVisible()
+			|| /*a.tabViewAdapter.isVisible()*/ layout.hideForTabView
 			|| CustomViewHideTime>0 && System.currentTimeMillis()-CustomViewHideTime<350){
 			CMN.Log("re_scroll...");
 			webviewImpl.SafeScrollTo(oldx, oldy);
@@ -1463,72 +1454,73 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		}
 	}
 	
-	@org.xwalk.core.JavascriptInterface
-	@JavascriptInterface
-	public void onRequestFView(int w, int h) {
-		CMN.Log("onRequestFView", w, h);
-		_req_fvw=w;
-		_req_fvh=h;
-		fixVideoFullScreen(w>h);
-	}
-	
-	@org.xwalk.core.JavascriptInterface
-	@JavascriptInterface
-	public void SaveAnnots(long tabID, String annots, String texts) {
-		CMN.Log("SaveAnnots", tabID, annots, texts, a.historyCon.isOpen());
-		//if(true) return;
-		WebFrameLayout layout = a.getWebViewFromID(tabID);
-		if(layout!=null && layout.HLED) {
-			layout.HLED=false;
-			//a.root.removeCallbacks()
-			long ret=-1;
-			if(a.historyCon.isOpen()) {
-				CMN.rt("保存中……");
-				try {
-					ret = a.historyCon.insertUpdateNote(layout.holder.url, annots, texts);
-				} catch (Exception e) {
-					CMN.Log(e);
+	final Object bridge = new Object(){
+		@org.xwalk.core.JavascriptInterface
+		@JavascriptInterface
+		public void onRequestFView(int w, int h) {
+			CMN.Log("onRequestFView", w, h);
+			_req_fvw=w;
+			_req_fvh=h;
+			fixVideoFullScreen(w>h);
+		}
+		
+		@org.xwalk.core.JavascriptInterface
+		@JavascriptInterface
+		public void SaveAnnots(long tabID, String annots, String texts) {
+			CMN.Log("SaveAnnots", tabID, annots, texts, a.historyCon.isOpen());
+			//if(true) return;
+			WebFrameLayout layout = a.getWebViewFromID(tabID);
+			if(layout!=null && layout.HLED) {
+				layout.HLED=false;
+				//a.root.removeCallbacks()
+				long ret=-1;
+				if(a.historyCon.isOpen()) {
+					CMN.rt("保存中……");
+					try {
+						ret = a.historyCon.insertUpdateNote(layout.holder.url, annots, texts);
+					} catch (Exception e) {
+						CMN.Log(e);
+					}
+					CMN.pt("保存了……", ret, layout.holder.url);
 				}
-				CMN.pt("保存了……", ret, layout.holder.url);
 			}
 		}
-	}
-	
-	@org.xwalk.core.JavascriptInterface
-	@JavascriptInterface
-	public void log(String msg) {
-		CMN.Log(msg);
 		
-	}
-	
-	@org.xwalk.core.JavascriptInterface
-	@JavascriptInterface
-	public void logm(String[] msg) {
-		CMN.Log("logm", msg.length, msg);
-		CMN.Log("logm--", System.identityHashCode(msg), System.identityHashCode(msg[0]));
-		
-	}
-	
-	@org.xwalk.core.JavascriptInterface
-	@JavascriptInterface
-	public void sendup(long id) {
-		WebFrameLayout layout = a.getWebViewFromID(id);
-		if(layout==a.currentViewImpl) {
-			//if(false)
-			//if(!mWebView.bIsActionMenuShown)
-			upsended = true;
-			View view = layout.implView;
-			view.postDelayed(new Runnable() {
-				@Override
-				public void run() {
-					long time = CMN.now();
-					MotionEvent evt = MotionEvent.obtain(time, time,MotionEvent.ACTION_DOWN, layout.lastX, layout.lastY, 0);
-					view.dispatchTouchEvent(evt);
-					evt.setAction(MotionEvent.ACTION_UP);
-					view.dispatchTouchEvent(evt);
-					evt.recycle();
-				}
-			}, Utils.version>=29?0:150);
+		@org.xwalk.core.JavascriptInterface
+		@JavascriptInterface
+		public void log(String msg) {
+			CMN.Log(msg);
+			
 		}
-	}
+		
+		@org.xwalk.core.JavascriptInterface
+		@JavascriptInterface
+		public void logm(String[] msg) {
+			CMN.Log("logm", msg.length, msg);
+			CMN.Log("logm--", System.identityHashCode(msg), System.identityHashCode(msg[0]));
+		}
+		
+		@org.xwalk.core.JavascriptInterface
+		@JavascriptInterface
+		public void sendup(long id) {
+			WebFrameLayout layout = a.getWebViewFromID(id);
+			if(layout==a.currentViewImpl) {
+				//if(false)
+				//if(!mWebView.bIsActionMenuShown)
+				upsended = true;
+				View view = layout.implView;
+				view.postDelayed(new Runnable() {
+					@Override
+					public void run() {
+						long time = CMN.now();
+						MotionEvent evt = MotionEvent.obtain(time, time,MotionEvent.ACTION_DOWN, layout.lastX, layout.lastY, 0);
+						view.dispatchTouchEvent(evt);
+						evt.setAction(MotionEvent.ACTION_UP);
+						view.dispatchTouchEvent(evt);
+						evt.recycle();
+					}
+				}, Utils.version>=29?0:150);
+			}
+		}
+	};
 }

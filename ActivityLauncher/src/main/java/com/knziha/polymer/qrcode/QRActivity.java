@@ -60,13 +60,13 @@ import com.google.zxing.RGBLuminanceSource;
 import com.google.zxing.Result;
 import com.google.zxing.common.GlobalHistogramBinarizer;
 import com.google.zxing.common.HybridBinarizer;
-import com.knziha.polymer.BrowserActivity.StandardConfigDialogBase;
 import com.knziha.polymer.R;
 import com.knziha.polymer.Toastable_Activity;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.OptionProcessor;
 import com.knziha.polymer.Utils.Options;
 import com.knziha.polymer.databinding.ActivityQrBinding;
+import com.knziha.polymer.webstorage.StandardConfigDialogBase;
 import com.knziha.polymer.widgets.Utils;
 
 import org.apache.commons.lang3.ArrayUtils;

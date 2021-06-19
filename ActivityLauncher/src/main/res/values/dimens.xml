@@ -39,4 +39,9 @@
 
 	<dimen name="msv_size_remove_icon">18dp</dimen>
 	<dimen name="padding_16dp">16dp</dimen>
+
+
+	<dimen name="search_height">48dp</dimen>
+	<dimen name="image_padding">12dp</dimen>
+	<dimen name="search_text_size">18sp</dimen>
 </resources>

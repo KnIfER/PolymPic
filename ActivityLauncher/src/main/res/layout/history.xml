@@ -46,7 +46,7 @@
 				android:id="@+id/refresh"
 				android:layout_width="@dimen/_45_"
 				android:layout_height="match_parent"
-				android:src="@drawable/ic_refresh_black_24dp"
+				android:src="@drawable/ic_refresh_white_24dp"
 				android:background="?actionBarItemBackground"
 				android:padding="6dp"
 				android:layout_marginRight="8dp"

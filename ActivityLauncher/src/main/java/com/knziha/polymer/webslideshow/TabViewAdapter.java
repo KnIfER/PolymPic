@@ -6,16 +6,22 @@ import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.PropertyValuesHolder;
 import android.animation.ValueAnimator;
+import android.app.Dialog;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.util.DisplayMetrics;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewPropertyAnimator;
+import android.view.Window;
+import android.view.WindowManager;
 import android.view.animation.LinearInterpolator;
 import android.widget.ImageView;
 
@@ -27,19 +33,23 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.knziha.polymer.BrowserActivity;
 import com.knziha.polymer.R;
+import com.knziha.polymer.TestHelper;
 import com.knziha.polymer.Toastable_Activity;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.Options;
+import com.knziha.polymer.databinding.SearchViewBinding;
 import com.knziha.polymer.databinding.WebPageItemBinding;
 import com.knziha.polymer.webslideshow.WebPic.WebPic;
 import com.knziha.polymer.widgets.PopupMenuHelper;
 import com.knziha.polymer.widgets.SpacesItemDecoration;
 import com.knziha.polymer.widgets.Utils;
 import com.knziha.polymer.widgets.WebFrameLayout;
+import com.knziha.polymer.widgets.eugene.SearchResultsAdapter;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.Collections;
 
 import static com.knziha.polymer.widgets.Utils.DummyBMRef;
@@ -78,6 +88,9 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 	
 	DisplayMetrics dm;
 	Options opt;
+	private int refPos;
+	//private int lastDragFromPosition;
+	private boolean draggingCurrentTab;
 	
 	public TabViewAdapter(BrowserActivity a) {
 		this.a = a;
@@ -93,9 +106,10 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 		if (targetIsPage(draggingPosSt)) {
 			CMN.Log("—— startDrag ——");
 			draggingView = vh;
-			//lastDragFromPosition = lastDragToPosition = draggingPosSt;
+			draggingCurrentTab = draggingPosSt==a.adapter_idx;
 			//draggingPosStPvNode = draggingPosSt>0? (NavigationNode) displayNodes.get(draggingPosSt-1) :null;
 			//draggingNode = (NavigationNode) displayNodes.get(draggingPosSt);
+			refPos = a.adapter_idx;
 			touchHandler.startDrag(vh);
 			touchHelper.startDrag(vh);
 		}
@@ -340,10 +354,14 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 			int lastDragToPos;
 			@Override
 			public void onMove(int fromPosition, int toPosition) {
+				//CMN.Log("onMove", fromPosition, toPosition);
 				if (fromPosition<0) fromPosition=0;
 				toPosition = Math.max(0, Math.min(a.TabHolders.size()-1, toPosition));
 				lastDragToPos = toPosition;
 				if (fromPosition != toPosition) {
+					if (draggingCurrentTab) {
+						refPos = toPosition;
+					}
 					if (fromPosition < toPosition) {
 						for (int i = fromPosition; i < toPosition; i++) {
 							Collections.swap(a.TabHolders, i, i + 1);
@@ -364,6 +382,7 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 			public void onDragFinished(RecyclerView.ViewHolder viewHolder) {
 				a.tabsDirty = true;
 				//adapter_idx = ;
+				a.fast_recalc_adapter_idx(refPos);
 				int target = ViewUtils.getCenterXChildPositionV2(recyclerViewPager);
 				target = Math.max(1, Math.min(getItemCount()-1, target));
 				recyclerViewPager.smoothScrollToPosition(target);
@@ -420,6 +439,128 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 		}
 	}
 	
+	Dialog d = null;
+	SearchViewBinding searchView;
+	public void showSearchView(boolean showKeyboard) {
+		if(d==null){
+			d = new Dialog(a);
+			d.setCancelable(true);
+			d.setCanceledOnTouchOutside(true);
+			d.show();
+			if (!Utils.bigCake) {
+				Utils.removeView(d.findViewById(android.R.id.title));
+			}
+			searchView = SearchViewBinding.inflate(LayoutInflater.from(a), a.root, false);
+			searchView.searchHolder.d = d;
+			searchView.searchHolder.setSearchAdapter(new SearchResultsAdapter(){
+				@Override
+				public String getText(Object item) {
+					return ((BrowserActivity.TabHolder)item).title;
+				}
+				@Override
+				public boolean onQueryTextSubmit(CharSequence query) {
+					return false;
+				}
+				@Override
+				public boolean onQueryTextChange(CharSequence newText) {
+					String str = newText.toString().toLowerCase();
+					ArrayList<BrowserActivity.TabHolder> results = new ArrayList<>();
+					for (int i = 0, len=a.TabHolders.size(); i < len; i++) {
+						BrowserActivity.TabHolder tab = a.TabHolders.get(i);
+						// todo more performant search
+						if (tab.title!=null && (tab.title.toLowerCase().contains(str) || tab.url.toLowerCase().contains(str))) {
+							results.add(tab);
+						}
+					}
+					searchView.searchHolder.setResults(results);
+					return false;
+				}
+				@Override
+				public void onItemClick(Object obj, boolean locateTo) {
+					BrowserActivity.TabHolder tab = ((BrowserActivity.TabHolder) obj);
+					int newPos = a.TabHolders.indexOf(tab);
+					CMN.Log("onItemClick::", newPos);
+					if (locateTo) {
+					
+					} else {
+						searchView.searchHolder.hide();
+						a.selectTab(newPos);
+					}
+				}
+			});
+		}
+		
+		a.setSoftInputMode(a.softModeHold);
+		
+		Window window = d.getWindow();
+		a.setStatusBarColor(window);
+		d.show();
+		
+		View vToAnimate = window.getDecorView();
+		vToAnimate.setAlpha(0);
+		
+		window.setDimAmount(0);
+		WindowManager.LayoutParams layoutParams = window.getAttributes();
+		layoutParams.width = WindowManager.LayoutParams.MATCH_PARENT;
+		layoutParams.height = WindowManager.LayoutParams.MATCH_PARENT;
+		layoutParams.horizontalMargin = 0;
+		layoutParams.verticalMargin = 0;
+		window.setAttributes(layoutParams);
+		searchView.searchHolder.SearchBarUIData.recycler.addItemDecoration(new RecyclerView.ItemDecoration(){
+			final ColorDrawable mDivider = new ColorDrawable(Color.GRAY);
+			final int mDividerHeight = 3;
+			@Override
+			public void onDrawOver(@NonNull Canvas c, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
+				final int childCount = parent.getChildCount();
+				final int width = parent.getWidth();
+				for (int childViewIndex = 0; childViewIndex < childCount; childViewIndex++) {
+					final ViewGroup view = (ViewGroup) parent.getChildAt(childViewIndex);
+					if (shouldDrawDividerBelow(view, parent)) {
+						int top = (int) view.getY() + view.getHeight();
+						int color =  0xff4F7FDF;//Color.GRAY;
+						mDivider.setColor(color);
+						mDivider.setBounds((int) (GlobalOptions.density*48), top, width, top + mDividerHeight);
+						mDivider.draw(c);
+					}
+				}
+			}
+			@Override
+			public void getItemOffsets(@NonNull Rect outRect, @NonNull View view, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
+				outRect.bottom = shouldDrawDividerBelow(view, parent)?mDividerHeight:0;
+			}
+			private boolean shouldDrawDividerBelow(View view, RecyclerView parent) {
+				return searchView.searchHolder.getDisplayItem(parent.getChildViewHolder(view).getLayoutPosition())==a.currentWebHolder;
+			}
+		});
+		searchView.dismiss.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				searchView.searchHolder.hide();
+			}
+		});
+		//mIconView.setVisibility(View.GONE);
+		//topPanel.setVisibility(View.GONE);
+		//window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+		
+		//a.fix_full_screen();
+		
+		//window.getDecorView().setBackground(null);
+		window.getDecorView().setBackgroundColor(Color.TRANSPARENT);
+		window.getDecorView().setPadding(0,0,0,0);
+		d.setContentView(searchView.getRoot());
+		
+		vToAnimate.animate()
+				//.setDuration(1000)
+				.alpha(1);
+		
+		searchView.getRoot().post(new Runnable() {
+			@Override
+			public void run() {
+				searchView.searchHolder.show(showKeyboard);
+			}
+		});
+	}
+	
 	class ItemInvalidator implements Runnable {
 		final int position;
 		ItemInvalidator(int position) {
@@ -471,6 +612,7 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 	/** 列表化/窗口化标签管理 */
 	public void toggleTabView(int fromClick, View v, int forceAnimation) {
 		CMN.Log("toggleTabView???", a.currentViewImpl==null?"noImpl":"hasImpl", a.adapter_idx, fromClick);
+		boolean b1=isVisible();
 		if(a.currentViewImpl==null) {
 			a.checkCurrentTab(false);
 			notifyDataSetChanged();
@@ -482,6 +624,7 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 		if(DismissingViewHolder) {
 			a.webtitle.setText("标签页管理");
 			a.setSoftInputMode(a.softModeResize);
+			a.currentViewImpl.hideForTabView = true;
 		} else {
 			a.webtitle.setText(a.currentViewImpl.getTitle());
 			if(fromClick==-1) {
@@ -536,6 +679,20 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 		} else {
 			toggleInternalTabView(fromClick);
 		}
+		ImageView ivRefresh = a.UIData.ivRefresh;
+		if(!TestHelper.showSearchTabs) {
+			int pad;
+			if(b1) {
+				ivRefresh.setImageResource(a.currentWebView.getProgress()==100?R.drawable.ic_refresh_white_24dp :R.drawable.ic_close_white_24dp);
+				pad = (int) (GlobalOptions.density*10);
+			} else {
+				ivRefresh.setImageResource(R.drawable.ic_viewpager_carousel);
+				pad = (int) (GlobalOptions.density*8.8);
+			}
+			ivRefresh.setPadding(pad, pad, pad, pad);
+		} else {
+			ivRefresh.setVisibility(b1?View.VISIBLE:View.GONE);
+		}
 	}
 	
 	public void dismiss() {
@@ -577,6 +734,7 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 			a.currentViewImpl.setTranslationX(0);
 			a.currentViewImpl.setTranslationY(0);
 			viewpager_holder.setVisibility(View.GONE); // 放
+			a.currentViewImpl.hideForTabView = false;
 		} else {
 			scrollHereRunnnable.run();
 			viewpager_holder.setVisibility(View.VISIBLE); // 收
@@ -652,6 +810,7 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 			WebFrameLayout layout = a.currentViewImpl; //todo
 			if (layout !=null) {
 				if(DismissingViewHolder) {
+					layout.hideForTabView = false;
 					viewpager_holder.setVisibility(View.GONE);
 					a.UIData.appbar.setAlpha(1);
 					//imageViewCover.setVisibility(View.GONE);
@@ -753,24 +912,22 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 		if(!DismissingViewHolder) {
 			int targetPos = layoutManager.targetPos-1;
 			targetPos = ViewUtils.getCenterXChildPositionV2(recyclerView) - 1;
-			CMN.Log("预放计算::", " target="+targetPos, " from="+fromClick);
+			CMN.Log("预放计算::", " target="+targetPos, " from="+fromClick, "bcc="+(fromClick-targetPos));
 			if(targetPos<0) targetPos=0;
 			int bcc=0;
 			if(bc) {
 				bcc = fromClick-targetPos;
 				targetPos = fromClick;
 			}
-			if(true) {
-				if(bc) {
+			if(bc) {
+				if(v!=null) {
 					int delta = recyclerView.mLastTouchX - a.root.getWidth()/2;
 					//CMN.Log("delta", delta, mItemWidth/2+itemPad*2);
 					int theta = Math.abs(delta)-(mItemWidth/2+itemPad*2);
 					if (theta>0) {
 						ttX += (theta/(mItemWidth+itemPad*2)+1) * (mItemWidth+itemPad*2) * Math.signum(delta);
 					}
-				}
-			} else {
-				if(bc) {
+				} else {
 					ttX += (mItemWidth+2*itemPad)*bcc;
 				}
 			}

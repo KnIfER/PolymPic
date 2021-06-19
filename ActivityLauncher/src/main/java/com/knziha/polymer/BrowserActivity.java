@@ -19,6 +19,7 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteFullException;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
@@ -39,13 +40,11 @@ import android.provider.DocumentsContract;
 import android.text.Editable;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
-import android.text.Spanned;
 import android.text.TextPaint;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.text.method.LinkMovementMethod;
 import android.text.style.ClickableSpan;
-import android.text.style.ForegroundColorSpan;
 import android.text.style.RelativeSizeSpan;
 import android.view.ActionMode;
 import android.view.GestureDetector;
@@ -61,6 +60,7 @@ import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.AnimationUtils;
 import android.view.animation.LayoutAnimationController;
 import android.view.inputmethod.EditorInfo;
+import android.webkit.CookieManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebSettings;
@@ -110,10 +110,9 @@ import com.knziha.filepicker.model.DialogSelectionListener;
 import com.knziha.filepicker.view.FilePickerDialog;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.MyReceiver;
-import com.knziha.polymer.Utils.OptionProcessor;
 import com.knziha.polymer.Utils.Options;
 import com.knziha.polymer.Utils.RgxPlc;
-import com.knziha.polymer.Utils.WebOptions;
+import com.knziha.polymer.webstorage.WebOptions;
 import com.knziha.polymer.browser.BlockingDlgs;
 import com.knziha.polymer.browser.DownloadUIHandler;
 import com.knziha.polymer.browser.DownloadHandlerStd;
@@ -137,6 +136,7 @@ import com.knziha.polymer.webslideshow.WebPic.WebPic;
 import com.knziha.polymer.webstorage.BrowserDownloads;
 import com.knziha.polymer.webstorage.BrowserHistory;
 import com.knziha.polymer.webstorage.SardineCloud;
+import com.knziha.polymer.webstorage.WebViewSettingsDialog;
 import com.knziha.polymer.webstorage.WebDict;
 import com.knziha.polymer.webstorage.WebStacksSer;
 import com.knziha.polymer.widgets.AppIconsAdapter;
@@ -181,8 +181,8 @@ import java.util.regex.Pattern;
 import static androidx.appcompat.app.GlobalOptions.realWidth;
 import static com.knziha.polymer.Utils.Options.getLimitHints;
 import static com.knziha.polymer.Utils.Options.getTransitSearchHints;
-import static com.knziha.polymer.Utils.WebOptions.BackendSettings;
-import static com.knziha.polymer.Utils.WebOptions.StorageSettings;
+import static com.knziha.polymer.webstorage.WebOptions.BackendSettings;
+import static com.knziha.polymer.webstorage.WebOptions.StorageSettings;
 import static com.knziha.polymer.WeakReferenceHelper.topDomainNamesMap;
 import static com.knziha.polymer.WebCompoundListener.CustomViewHideTime;
 import static com.knziha.polymer.WebCompoundListener.PrintStartTime;
@@ -195,7 +195,6 @@ import static com.knziha.polymer.widgets.Utils.RequsetFileFromFilePicker;
 import static com.knziha.polymer.widgets.Utils.RequsetUrlFromCamera;
 import static com.knziha.polymer.widgets.Utils.RequsetUrlFromStorage;
 import static com.knziha.polymer.widgets.Utils.getViewItemByPath;
-import static com.knziha.polymer.widgets.Utils.indexOf;
 import static com.knziha.polymer.widgets.Utils.isKeyboardShown;
 import static com.knziha.polymer.widgets.Utils.postInvalidateLayout;
 import static com.knziha.polymer.widgets.Utils.setOnClickListenersOneDepth;
@@ -303,6 +302,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	public boolean tabsDirty;
 	
 	public RequestBuilder<Drawable> glide;
+	public static String default_ua = null;
 	public String android_ua = "Mozilla/5.0 (Linux; Android " + Build.VERSION.RELEASE + "; " + Build.MODEL + ") AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Mobile Safari/537.36 OPR/58.2.2878.53403";
 	
 	
@@ -311,7 +311,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	private Paint paint = new Paint();
 	private boolean bottombarHidden;
 	private int softMode;
-	private final int softModeHold = WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN | WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN;
+	public final int softModeHold = WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN | WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN;
 	public final int softModeResize = WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN|WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE;
 	private boolean MainMenuListVis;
 	private boolean MenuClicked;
@@ -324,6 +324,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	
 	SearchHistoryAndInputMethodSettings settingsPanel;
 	private NavigationHomeAdapter navAdapter;
+	private boolean bNoCookie;
 	
 	@Override
 	public void onConfigurationChanged(@NonNull Configuration newConfig) {
@@ -364,9 +365,15 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			SFStamp=opt.SecondFlag();
 			TFStamp=opt.ThirdFlag();
 		}
-		WebFrameLayout layout = this.currentViewImpl;
-		if (hasFocus && layout!=null && layout.selSuppressed && layout.hasSelection()) {
-			layout.suppressSelection(true);
+		if (hasFocus) {
+			WebFrameLayout layout = this.currentViewImpl;
+			if (layout.selSuppressed && layout.hasSelection()) {
+				layout.suppressSelection(true);
+			}
+			if(resumer!=null) {
+				resumer.resume();
+				resumer = null;
+			}
 		}
 	}
 	
@@ -422,8 +429,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		
 		webType = opt.getWebType();
 		
-		//mWebListener = Utils.version>=21?new WebCompatListener(this):new WebCompoundListener(this);
-		mWebListener = new WebCompoundListener(this);
+		mWebListener = Utils.version>=21?new WebCompoundListener(this):new WebCompatListener(this);
+		//mWebListener = new WebCompoundListener(this);
 		
 		imageViewCover = new ImageView(this);
 		imageViewCover1 = new ImageView(this);
@@ -484,7 +491,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			@Override public void onAnimationEnd(Animator animation) {
 				progressbar_background.setLevel(0);
 				UIData.progressbar.setVisibility(View.GONE);
-				UIData.ivRefresh.setImageResource(R.drawable.ic_refresh_black_24dp);
+				if (TestHelper.showSearchTabs || !tabViewAdapter.isVisible()) {
+					UIData.ivRefresh.setImageResource(R.drawable.ic_refresh_white_24dp);
+				}
 			}
 			@Override public void onAnimationCancel(Animator animation) {
 				UIData.progressbar.setAlpha(1);
@@ -628,6 +637,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		super.onResume();
 		//PrintStartTime=0;
 		focused=true;
+		CMN.Log("onResume");
 		if (IsReqCheckingNxtResume) {
 			checkResume();
 		}
@@ -649,6 +659,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			if(TestHelper.debuggingWebType>=0) {
 				webType=TestHelper.debuggingWebType;
 			}
+			//setWebType(webType=0);
 			try {
 				historyCon = LexicalDBHelper.connectInstance(this);
 			} catch (SQLiteFullException e) {
@@ -659,7 +670,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				return;
 			}
 		}
-		if(true) { // disableWebViewFastRegionRendereing
+		if(true && Utils.bigCake) { // disableWebViewFastRegionRendereing
 			WebView.enableSlowWholeDocumentDraw();
 		}
 		try {
@@ -769,9 +780,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				if(search_bar_vis()) {
 					if (s.length()==0) {
 						if (opt.getShowSearchHintsOnClear()) {
-							if (UIData.searchHints.getVisibility()==View.GONE) {
+							if(ActiveSearchCursors.size()>=2 && ActiveSearchCursors.get(1)!=EmptyCursor) {
 								UIData.showSearchHistoryDropdown.setVisibility(View.GONE);
-								pull_hints(true);
+								pull_hints(false);
 							}
 						} else {
 							showSearchHistoryDropdown();
@@ -783,13 +794,31 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			}
 		});
 		//tg
+
+		opt.setUpdateUALowEnd(Build.VERSION.SDK_INT<28);
+		//showT("低端设备无法积极地更新UA::"+opt.getUpdateUALowEnd());
+
 		TestHelper.notifyStart(this);
+//		root.postDelayed(new Runnable() {
+//			@Override
+//			public void run() {
+//				UIData.browserWidget10.performClick();
+//				root.postDelayed(new Runnable() {
+//					@Override
+//					public void run() {
+//						//UIData.ivRefresh.performClick();
+//					}
+//				}, 350);
+//			}
+//		}, 350);
+		
 		//wakeUp();
 		//CMN.Log("device space is ::",  getExternalFilesDir(null).getFreeSpace());
 		
 		//showDownloads();
 		
-		TestHelper.turnOffScreen(this);
+		//TestHelper.testWebArchive().start();
+		
 
 //		DialogProperties properties = new DialogProperties();
 //		properties.selection_mode = DialogConfigs.SINGLE_MODE;
@@ -829,18 +858,20 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		//TestHelper.insertMegaUrlDataToHistory(historyCon, 2500);
 		
 		root.getViewTreeObserver().addOnGlobalLayoutListener(() -> {
-			boolean mKeyboardUp = isKeyboardShown(root);
-			View bottombar2 = UIData.bottombar2;
-			if (mKeyboardUp) {
-				//CMN.Log("键盘弹出...");
-				bottombarHidden = true;
-				bottombar2.setVisibility(View.INVISIBLE);
-			} else if(bottombarHidden) {
-				//CMN.Log("键盘收起...");
-				bottombarHidden = false;
-				bottombar2.setVisibility(View.VISIBLE);
+			if(softMode!=softModeHold) {
+				boolean mKeyboardUp = isKeyboardShown(root);
+				View bottombar2 = UIData.bottombar2;
+				if (mKeyboardUp) {
+					//CMN.Log("键盘弹出...");
+					bottombarHidden = true;
+					bottombar2.setVisibility(View.INVISIBLE);
+				} else if(bottombarHidden) {
+					//CMN.Log("键盘收起...");
+					bottombarHidden = false;
+					bottombar2.setVisibility(View.VISIBLE);
+				}
+				decideWebviewPadding(currentViewImpl);
 			}
-			decideWebviewPadding(currentViewImpl);
 		});
 		
 		systemIntialized=true;
@@ -905,7 +936,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 						isUrl=text.regionMatches(true, 0, "file", 0, 4);
 					} else if(schemaIdx==3) {
 						isUrl=text.regionMatches(true, 0, "ftp", 0, 3);
-					}
+					}/* else if(schemaIdx==6) {
+						isUrl=text.regionMatches(true, 0, "polyme", 0, 6);
+					}*/
 				}
 			}
 			if(!isUrl) {
@@ -945,7 +978,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			historyCon.insertSearchTerm(text);
 			text = currentWebDictUrl.replace("%s", text);
 		} else {
-			currentViewImpl.searchTerm = null;
+			//currentViewImpl.searchTerm = null;
 			LinkedList<RgxPlc> queryDNS = mWebListener.DNSIntelligence;
 			if(queryDNS.size()>0) {
 				for(RgxPlc dI:queryDNS) {
@@ -976,7 +1009,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	
 	public boolean updateUserAgentString(WebFrameLayout layout, String url) {
 		historyCon.queryDomain(layout, url);
-		boolean pcMode = false;
+		boolean pcMode = layout.getPCMode();
 		//pcMode = url!=null && url.contains("www.baidu");
 		//pcMode = true;
 		String targetUa;
@@ -985,7 +1018,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		} else {
 			//CMN.Log("android_ua", android_ua);
 			targetUa = android_ua;
-			//targetUa = null;
+			//targetUa = default_ua;
 		}
 		layout.targetUa = targetUa;
 		WebSettings settings = layout.mWebView.getSettings();
@@ -1042,12 +1075,13 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			etSearch.setVisibility(targetVis);
 			UIData.searchbar.setVisibility(targetVis);
 			//todo search history fragment
+			CMN.Log("keepSchTrm="+keepSchTrm, currentViewImpl.getTitle(), currentViewImpl.searchTerm);
 			if(invisible) {
 				keyboard_hidden=false;
 				init_searint_layout();
 				if (opt.getShowSearchHints()) {
 					UIData.showSearchHistoryDropdown.setVisibility(View.GONE);
-					pull_hints(keepSchTrm?2:1);
+					pull_hints(keepSchTrm);
 				} else {
 					showSearchHistoryDropdown();
 				}
@@ -1113,10 +1147,11 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				starting_progressbar.setVisibility(View.VISIBLE);
 				//progressbar_background.setLevel(Math.min(progressbar_background.getLevel(), 2500));
 				progressbar_background.setLevel(layout.mWebView.getProgress()*100);
-				UIData.ivRefresh.setImageResource(R.drawable.ic_close_white_24dp);
 			} else {
 				starting_progressbar.setVisibility(View.GONE);
-				UIData.ivRefresh.setImageResource(R.drawable.ic_refresh_black_24dp);
+			}
+			if (TestHelper.showSearchTabs || !tabViewAdapter.isVisible()) {
+				UIData.ivRefresh.setImageResource(layout.PageStarted?R.drawable.ic_close_white_24dp:R.drawable.ic_refresh_white_24dp);
 			}
 		}
 	}
@@ -1303,6 +1338,24 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			putReferencedObject(WeakReferenceHelper.popup_menu, ret);
 		}
 		return ret;
+	}
+	
+	public void fast_recalc_adapter_idx(int refPos) {
+		TabHolder tab = currentWebHolder;
+		int idx = -1;
+		ArrayList<TabHolder> holders = TabHolders;
+		if (refPos>=0 && refPos< holders.size()) {
+			if (holders.get(refPos)==tab) idx = refPos;
+			else if(refPos>0 && holders.get(refPos-1)==tab) idx = refPos-1;
+			else if(refPos<holders.size()-1 && holders.get(refPos+1)==tab) idx = refPos+1;
+		}
+		if (idx==-1) {
+			//CMN.Log("fast_recalc_adapter_idx::慢查", refPos, adapter_idx);
+			idx = holders.indexOf(tab);
+		} else {
+			//CMN.Log("fast_recalc_adapter_idx::快找", refPos, adapter_idx, idx);
+		}
+		adapter_idx = idx;
 	}
 	
 	public class BrowserSlider implements View.OnTouchListener {
@@ -1615,26 +1668,26 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	}
 	
 	/**  0=show combined 1=show sch history 2=search current term. */
-	private void pull_hints(boolean searchUrlTable) {
+	private void pull_hints(boolean searchTables) {
 		UIData.searchHints.scrollToPosition(0);
 		if(pull_hints_runnable!=null) {
 			pull_hints_runnable.interrupt();
 		}
-		pull_hints_runnable = new PullHintsRunnable(searchUrlTable);
+		pull_hints_runnable = new PullHintsRunnable(searchTables);
 		pull_hints_runnable.start();
 	}
 	
 	class PullHintsRunnable implements Runnable {
 		/** 0=show combined 1=show sch history 2=search current */
-		private final int show_terms_only;
+		private final boolean doSearch;
 		CancellationSignal stopSignal = new CancellationSignal();
 		CancellationSignal searchSignal;
 		Thread t = new Thread(this);
 		Handler handler;
 		private String text;
 		private ArrayList<Cursor> searchCursors=new ArrayList<>();
-		public PullHintsRunnable(int show_terms_only) {
-			this.show_terms_only = show_terms_only;
+		public PullHintsRunnable(boolean doSearch) {
+			this.doSearch = doSearch;
 		}
 		
 		public void interrupt() {
@@ -1642,7 +1695,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			stopSignal.cancel();
 		}
 		public void start() {
-			text = show_terms_only==1?null:etSearch.getText().toString();
+			text = doSearch?etSearch.getText().toString():null;
 			t.start();
 		}
 		@AnyThread
@@ -1670,7 +1723,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			
 			searchCursors.add(null);
 			
-			// 网址历史记录
+			// 网址记录
 			try {
 				CMN.rt();
 				searhCursor = historyCon.queryUrl(text, SearchLimitation, stopSignal);
@@ -1689,10 +1742,10 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			searchCount=0;
 			searhCursor = null;
 			
-			// 搜索历史记录
+			// 搜索记录
 			if(LimitQueryResults) SearchLimitation -= searchCount;
 			try {
-				searhCursor = historyCon.querySearchTerms(text, text==null?128:5, stopSignal);
+				searhCursor = historyCon.querySearchTerms(text, doSearch?5:128, stopSignal);
 				searchCount += searhCursor.getCount();
 			} catch (Exception e) {
 				CMN.Log(e);
@@ -1706,7 +1759,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			
 			ActiveSearchCursors = searchCursors;
 			historyCon.updateLastSearchTerm(text);
-			if(show_terms_only==0||searchCount<3) {
+			if(doSearch||searchCount<3) { //todo 000
 				root.post(hintsUpdatedRunnable);
 			} else {
 				root.post(hintsPulledRunnable);
@@ -1719,7 +1772,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		public void run() {
 			hintsUpdatedRunnable.run();
 			RecyclerView animating_search_hints=UIData.searchHints;
-			if(animating_search_hints.getTag()==null) {
+			//if(animating_search_hints.getTag()==null)
+			{
 				LayoutAnimationController layoutAnimation = AnimationUtils
 						.loadLayoutAnimation(BrowserActivity.this, R.anim.layout_animation_fall_down);
 				animating_search_hints.setLayoutAnimation(layoutAnimation);
@@ -1727,10 +1781,10 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			}
 			animating_search_hints.scheduleLayoutAnimation();
 			if(getTransitSearchHints()&&search_hints_vising&& ActiveSearchCount >=3) {
-				animating_search_hints.postDelayed(BrowserActivity.this::search_hints_vis, 450);
+				animating_search_hints.postDelayed(BrowserActivity.this::ShowUrlKeySearchResults, 450);
 				search_hints_vising=false;
 			} else {
-				search_hints_vis();
+				ShowUrlKeySearchResults();
 			}
 			//((LinearLayoutManager)UIData.searchHints.getLayoutManager()).scrollToPositionWithOffset(2,0);
 			
@@ -1752,12 +1806,12 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			}
 			//UIData.searchHints.getLayoutManager().scrollToPosition(2);
 			//((LinearLayoutManager)UIData.searchHints.getLayoutManager()).scrollToPositionWithOffset(2,-10);
-			search_hints_vis();
+			ShowUrlKeySearchResults();
 			historyCon.closeCursors();
 		}
 	};
 	
-	private void search_hints_vis() {
+	private void ShowUrlKeySearchResults() {
 		UIData.searchHints.setVisibility(View.VISIBLE);
 		if (!opt.getShowIdleSearchHints())
 		{
@@ -1907,10 +1961,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			closedTabs.add(tab);
 			//todo delete stuffs but keep a stack record for re-coverage
 			if (tab!=currentWebHolder) {
-				adapter_idx = TabHolders.indexOf(currentWebHolder); // todo optimise index find
-				CMN.Log("new_Ada="+adapter_idx);
+				fast_recalc_adapter_idx(adapter_idx);
 			} else {
-				adapter_idx = -1;
+				adapter_idx = -1; // todo jump list
 			}
 			//todo add fast un-close button
 			tabViewAdapter.notifyItemRemovedAt(positon, source);
@@ -2137,6 +2190,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		if(pseudoAdd==1 || pseudoAdd==4) {
 			return false;
 		}
+		checkUserDataStrategy();
 		webtitle_setVisibility(false);
 		etSearch_clearFocus();
 		webtitle.setText(holder.title);
@@ -2151,6 +2205,14 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		}
 		UIData.browserWidget10.setText(Integer.toString(i));
 		return add;
+	}
+	
+	public void checkUserDataStrategy() {
+		WebFrameLayout layout = this.currentViewImpl;
+		if(layout !=null && layout.getNoCookie() != bNoCookie) {
+			bNoCookie = layout.getNoCookie();
+			CookieManager.getInstance().setAcceptCookie(!bNoCookie);
+		}
 	}
 	
 	private void etSearch_clearFocus() {
@@ -2468,16 +2530,28 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					});
 				}
 			} break;
+			case R.id.ivSearchTabs: {
+				tabViewAdapter.showSearchView(false);
+			} break;
 			case R.id.ivRefresh:
 				WebFrameLayout layout = currentViewImpl;
 				UniversalWebviewInterface mWebView = currentWebView;
+				if(search_bar_vis()) {
+					webtitle_setVisibility(false);
+					etSearch_clearFocus();
+				}
+				if (!TestHelper.showSearchTabs && tabViewAdapter.isVisible()) {
+					//UIData.searchHolder.showSearch();
+					tabViewAdapter.showSearchView(true);
+					break;
+				}
 				if(UIData.progressbar.getVisibility()==View.VISIBLE) {
 					UIData.progressbar.setVisibility(View.GONE);
 					supressingProgressListener = true;
 					mWebView.stopLoading();
 					progressProceed.cancel();
 					animatorTransient.cancel();
-					UIData.ivRefresh.setImageResource(R.drawable.ic_refresh_black_24dp);
+					UIData.ivRefresh.setImageResource(R.drawable.ic_refresh_white_24dp);
 					root.postDelayed(() -> supressingProgressListener = false, 100);
 				} else {
 					CMN.Log("刷新……");
@@ -2492,6 +2566,11 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				}
 			break;
 			case R.id.ivOverflow:
+				if(search_bar_vis()) {
+					webtitle_setVisibility(false);
+					etSearch_clearFocus();
+					break;
+				}
 				int id = WeakReferenceHelper.top_menu;
 				DialogWithTag top_menu = (DialogWithTag) getReferencedObject(id);
 				if(top_menu==null) {
@@ -2547,6 +2626,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 							if((topMenuRequestedInvalidate&(1<<BackendSettings))!=0) {
 								currentViewImpl.setBackEndSettings();
 							}
+							checkUserDataStrategy();
 						}
 					});
 				}
@@ -2739,7 +2819,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					imm.showSoftInput(etSearch, 0);
 					break;
 				}
-				//currentWebView.loadUrl("polyme://nav/index");
+				//currentWebView.loadUrl("polyme://nav.index");
+				//currentWebView.loadUrl("file:///android_asset/index.html");
 				
 				toggleNavTreeView();
 				
@@ -2766,7 +2847,6 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			case R.id.browser_widget11:
 				MenuClicked=MainMenuListVis;
 				toggleMenuGrid(true);
-				TestHelper.turnOffScreen(this);
 			break;
 			case R.id.browser_widget10:
 				if (MainMenuListVis) {
@@ -3257,8 +3337,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 							dissmiss=false;
 						} else {
 							v.setTag(null);
-							WebOptions delegate = currentViewImpl.getDelegate(StorageSettings);
-							boolean val = delegate.toggleForbidLocalStorage();
+							boolean val = WebOptions.toggleForbidLocalStorage(currentViewImpl.getDelegateFlag(StorageSettings));
 							currentViewImpl.setStorageSettings();
 							showT("已为<标签页>"+(val?"开启":"关闭")+"崭新模式！");
 						}
@@ -3297,8 +3376,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					if(isLongClicked) {
 						show_web_configs(BackendSettings);
 					} else {
-						WebOptions delegate = currentViewImpl.getDelegate(BackendSettings);
-						boolean val = delegate.togglePCMode();
+						boolean val = WebOptions.togglePCMode(currentViewImpl.getDelegateFlag(BackendSettings));
 						setUserAgentString(currentViewImpl, val);
 						currentWebView.reload();
 						decoratePCMode();
@@ -3394,7 +3472,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		
 		public void decoratePCMode() {
 			LayerDrawable ld = (LayerDrawable) pcmodeicontv.getCompoundDrawables()[0];
-			ld.getDrawable(1).setAlpha(currentViewImpl.getDelegate(BackendSettings).getPCMode()?255:0);
+			ld.getDrawable(1).setAlpha(currentViewImpl.getPCMode()?255:0);
 		}
 		
 		@Override
@@ -3403,7 +3481,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		}
 		
 		public void decorateAll() {
-			((TextView)vals[0]).setTextColor(currentViewImpl.getDelegate( StorageSettings).getForbidLocalStorage()?0xff4F7FDF:AppBlack);
+			((TextView)vals[0]).setTextColor(currentViewImpl.getForbidLocalStorage()?0xff4F7FDF:AppBlack);
 			
 			TextView shareIndicator = (TextView)vals[1];
 			boolean shareText=currentViewImpl.implView.hasFocus()&&currentViewImpl.hasSelection();
@@ -3413,364 +3491,15 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		}
 		
 		private void show_web_configs(int groupID) {
-			StandardConfigDialog holder = new StandardConfigDialog();
+			WebViewSettingsDialog holder = new WebViewSettingsDialog(BrowserActivity.this);
 			
-			StandardConfigDialog.buildStandardConfigDialog(BrowserActivity.this, holder, null, R.string.global_vs_tabs);
+			WebViewSettingsDialog.buildStandardConfigDialog(BrowserActivity.this, holder, null, R.string.global_vs_tabs);
 			
-			holder.init_web_configs(currentViewImpl.holder.getApplyRegion(groupID), groupID, 0);
-			
+			holder.init_web_configs(currentViewImpl.getApplyTabRegion(groupID), groupID, currentViewImpl.getApplyDomainRegion(groupID));
+		
 			topMenuRequestedInvalidate=0;
-			
+		
 			holder.dlg.show();
-		}
-	}
-	
-	
-	class StandardConfigDialog extends StandardConfigDialogBase
-			implements OptionProcessor, View.OnClickListener {
-		SpannableStringBuilder str_tab;
-		ForegroundColorSpan YinYangSpan;
-		int realm;
-		int region;
-		int regionBackUp=0;
-		boolean globalOrTabBackUp;
-		boolean globalOrTab;
-		String domainSettings;
-		private String[] groupNym;
-		//private String[] groupPrefix;
-		private String[] groupApply;
-		private boolean bottomTitleSet;
-		
-		public void clear(){
-			str_global.clear();
-			str_tab.clear();
-		}
-		
-		@Override
-		public void processOptionChanged(ClickableSpan clickableSpan, View widget, int processId, int val) {
-			switch (processId) {
-				case 1:
-					topMenuRequestedInvalidate|=1<<StorageSettings;
-				break;
-				case 2:
-					topMenuRequestedInvalidate|=1<<BackendSettings;
-				break;
-				case 666:
-					init_web_configs(globalOrTab, region==-1?regionBackUp:-1, realm);
-				break;
-			}
-		}
-		
-		public void init_web_configs(boolean globalOrTab, int grounpID, int realm) {
-			this.realm=realm;
-			region=grounpID;
-			if(region!=-1) {
-				regionBackUp=region;
-			}
-			if(!bottomTitleSet) {
-				bottomTitle.setVisibility(View.VISIBLE);
-				bottomTitle.setText("网站设定");
-				bottomTitle.setOnClickListener(this);
-				bottomTitleSet = true;
-			}
-			this.globalOrTab=globalOrTab;
-			if(YinYangSpan==null) {
-				str_tab=new SpannableStringBuilder();
-				SpannableStringBuilder str_title = new SpannableStringBuilder(title.getText());
-				title.setText(str_title, TextView.BufferType.SPANNABLE);
-				YinYangSpan=new ForegroundColorSpan(0x8a8f8f8f);
-				title.setOnClickListener(this);
-			}
-			
-			
-			final String[] Coef = mResource.getString(R.string.coef).split("_");
-			SpannableStringBuilder ssb = str_tab;
-			ssb.clear();
-			ClickSpanBuilder builder = new ClickSpanBuilder(BrowserActivity.this, opt, this, tv, ssb, Coef);
-			
-			boolean buildSingle=grounpID!=-1;
-			
-			groupApply = mResource.getStringArray(R.array.GroupApply);
-			
-			int flagIndex=realm==1?-2:globalOrTab?-1:3;
-			
-			int bitMax = 1;
-			int bitMask = 0x1;
-			int bitShift = 0;
-			Spannable text = (Spannable) title.getText();
-			if(realm==1)
-			{
-				bitShift = 1;
-				bitMax = 2;
-				bitMask = 0x3;
-				text.setSpan(YinYangSpan, 0, text.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
-				bottomTitle.setTextColor(0xff000000);
-			} else {
-				int idx = indexOf(text, '/', 0);
-				text.setSpan(YinYangSpan, globalOrTab?0:(idx+1), globalOrTab?idx:text.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
-				bottomTitle.setTextColor(0x8a8f8f8f);
-			}
-			
-			switch (grounpID) {
-				default:
-					//ssb.append("存储组");
-				/* Group#存储 */
-				case 0:
-					if(!buildSingle) webSepGroupApply(builder, ssb, 0, 6, 1);
-					builder.withTitle(mResource.getStringArray(R.array.BenDiCunChu))
-						.init_clickspan_with_bits_at(0,  0, bitMask, 2, bitMax, flagIndex, 1)//总开关
-						.init_clickspan_with_bits_at(1, 1, bitMask, 3, bitMax, flagIndex, 1)//Cookie
-						.init_clickspan_with_bits_at(2, 1, bitMask, 4, bitMax, flagIndex, 1)//DataBase
-						.init_clickspan_with_bits_at(3, 1, bitMask, 5, bitMax, flagIndex, 1);//Dom
-					
-					if(buildSingle) {
-						ssb.append("\r\n");
-						if(globalOrTab) {
-							builder.init_clickspan_with_bits_at(4, 1, bitMask, 6, bitMax, flagIndex, 1);//Apply
-						}
-						break;
-					} else {
-						append_hr(ssb, globalOrTab);
-					}
-				/* Group#客户端 */
-				case 1:
-					if(!buildSingle) webSepGroupApply(builder, ssb, 1, 11, 1);
-					builder.withTitle(mResource.getStringArray(R.array.KeHuDuan))
-						.init_clickspan_with_bits_at(0,  0, bitMask, 7, bitMax, flagIndex, 2)
-						.init_clickspan_with_bits_at(1, 0, bitMask, 12, bitMax, flagIndex, 2)
-						.init_clickspan_with_bits_at(2, 0, bitMask, 9, bitMax, flagIndex, 2)
-						.init_clickspan_with_bits_at(3, 0, bitMask, 10, bitMax, flagIndex, 2)
-						.init_clickspan_with_bits_at(4, 0, bitMask, 13, bitMax, flagIndex, 2)
-						.init_clickspan_with_bits_at(5, 1, bitMask, 8, bitMax, flagIndex, 2)
-					;
-					if(buildSingle) {
-						ssb.append("\r\n");
-						if(globalOrTab) {
-							builder.init_clickspan_with_bits_at(6, 1, bitMask, 11, bitMax, flagIndex, 2);
-						}
-						break;
-					} else {
-						append_hr(ssb, globalOrTab);
-					}
-					
-			}
-			
-			builder.withTitle(groupApply).withCoef(null)
-					.init_clickspan_with_bits_at(buildSingle?1:2, 0, bitMask, 10, bitMax, flagIndex, 666);
-			
-			if(buildSingle) {
-				ssb.delete(ssb.length()-2, ssb.length());
-				
-				if(globalOrTab) {
-					ssb.delete(ssb.length()-2, ssb.length());
-				}
-			}
-			
-			tv.setText(ssb, TextView.BufferType.SPANNABLE);
-		}
-		
-		private void webSepGroupApply(ClickSpanBuilder builder, SpannableStringBuilder ssb, int group, int pos, int shift) {
-			if(groupNym==null) {
-				groupNym = mResource.getStringArray(R.array.GroupName);
-				//groupPrefix = mResource.getStringArray(R.array.GroupPrefix);
-			}
-			if(globalOrTab) {
-				builder.withTitle(groupNym).withBraces(false)/*.withPrefix(groupPrefix[group])*/
-						.init_clickspan_with_bits_at(group, shift, 0x1, pos, 1, -1, 0)
-						.withPrefix(null)
-						.withBraces(true)
-				;
-			} else {
-				ssb/*.append(groupPrefix[group])*/.append(groupNym[group]).append("\r\n").append("\r\n");
-			}
-		}
-		
-		private void append_hr(SpannableStringBuilder ssb, boolean globalOrTab) {
-			//ssb.append(Html.fromHtml("<HR>", Html.FROM_HTML_MODE_COMPACT));
-			ssb.append("\r\n").append("\r\n");
-		}
-		
-		@Override
-		public void onClick(View v) {
-			boolean intoWebSettings = realm==0&&v.getId()==R.id.bottom_title;
-			if(intoWebSettings) {
-				globalOrTabBackUp = globalOrTab;
-				init_web_configs(false, region, 1);
-			} else {
-				if(realm==0) {
-					globalOrTab = !globalOrTab;
-				} else {
-					globalOrTab = globalOrTabBackUp;
-				}
-				init_web_configs(globalOrTab, region, 0);
-				v.getBackground().jumpToCurrentState();
-			}
-//			if(realm==0) {
-//			}
-		}
-	}
-	
-	public static class StandardConfigDialogBase {
-		public AlertDialog dlg;
-		public TextView tv;
-		public TextView title;
-		public TextView bottomTitle;
-		public SpannableStringBuilder str_global=new SpannableStringBuilder();
-		
-		public static class ClickSpanBuilder {
-			BrowserActivity a;
-			OptionProcessor optprs;
-			TextView tv;
-			SpannableStringBuilder text;
-			String[] title;
-			String[] coef;
-			String[] tmpTitle;
-			String[] tmpCoef;
-			boolean tmpIsTitle;
-			String prefix;
-			int coefOff;
-			boolean prenth=true;
-			Options opt;
-			
-			public ClickSpanBuilder(BrowserActivity a1, Options opt1, OptionProcessor optprs1, TextView tv1, SpannableStringBuilder text1, String[] coef1) {
-				a = a1;
-				opt = opt1;
-				optprs = optprs1;
-				tv = tv1;
-				text = text1;
-				coef = coef1;
-			}
-			
-			public ClickSpanBuilder init_clickspan_with_bits_at(int titleOff,
-																int coefShift, long mask,
-																int flagPosition, int flagMax, int flagIndex,
-																int processId) {
-				final String[] title = tmpTitle!=null?tmpTitle:this.title;
-				final String[]  coef = tmpIsTitle?null:tmpCoef!=null?tmpCoef:this.coef;
-				tmpTitle=tmpCoef=null;
-				final boolean prenth = !tmpIsTitle && this.prenth;
-				tmpIsTitle=false;
-				int start = text.length();
-				int now = start+ title[titleOff].length();
-				text.append(prenth?"[":"{ ");
-				if(prefix!=null) {
-					text.append(prefix);
-				}
-				text.append(title[titleOff]);
-				if(coef!=null){
-					text.append(" :");
-					long val = (opt.Flag(a, flagIndex)>>flagPosition)&mask;
-					text.append(coef[coefOff+(int) ((val)+coefShift)%(flagMax+1)]);
-				}
-				text.append(prenth?"]":" }").append("\r\n");
-				text.setSpan(new ClickableSpan() {
-					@Override
-					public void updateDrawState(@NonNull TextPaint paint) {
-						if(prenth) {
-							super.updateDrawState(paint);
-						}
-					}
-					@Override
-					public void onClick(@NonNull View widget) {
-						if(coef==null){
-							if(optprs!=null) {
-								optprs.processOptionChanged(this, widget, processId , -1);
-							}
-							return;
-						}
-						long flag = opt.Flag(a, flagIndex);
-						long val = (flag>>flagPosition)&mask;
-						val=(val+1)%(flagMax+1);
-						flag &= ~(mask << flagPosition);
-						flag |= (val << flagPosition);
-						opt.Flag(a, flagIndex, flag);
-						int fixedRange = indexOf(text, ':', now);
-						text.delete(fixedRange+1, prenth?indexOf(text, ']', fixedRange):(fixedRange+3));
-						val=(val+coefShift)%(flagMax+1);
-						text.insert(fixedRange+1,coef[(int) (coefOff+val)]);
-						tv.setText(text);
-						if(optprs!=null) {
-							optprs.processOptionChanged(this, widget, processId, (int) val);
-						}
-					}},start,text.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-				text.append("\r\n");
-				return this;
-			}
-			
-			public ClickSpanBuilder withTitle(String[] dictOpt1) {
-				title =dictOpt1;
-				return this;
-			}
-			
-			public ClickSpanBuilder withCoef(String[] coef1) {
-				coef=coef1;
-				return this;
-			}
-			
-			public ClickSpanBuilder withPrefix(String prefix1) {
-				prefix=prefix1;
-				return this;
-			}
-			
-			public ClickSpanBuilder withBraces(boolean prenth1) {
-				prenth=prenth1;
-				return this;
-			}
-			
-			public ClickSpanBuilder withTmpTitleAndCoef(String[] title, String[] coef) {
-				if(title!=null) {
-					tmpTitle=title;
-				}
-				if(coef!=null) {
-					tmpCoef = coef;
-				}
-				return this;
-			}
-			
-			public ClickSpanBuilder withTmpIsTitle(boolean title) {
-				tmpIsTitle=title;
-				return this;
-			}
-		}
-		
-		public static void buildStandardConfigDialog(Context context, StandardConfigDialogBase resultHolder, View.OnClickListener onclick, int title_id, Object...title_args) {
-			final View dv = LayoutInflater.from(context).inflate(R.layout.dialog_about,null);
-			final TextView tv = dv.findViewById(R.id.resultN);
-			TextView title = dv.findViewById(R.id.title);
-			Resources mResource = context.getResources();
-			if(title_id!=0) {
-				if(title_args.length>0){
-					title.setText(mResource.getString(title_id, title_args));
-				} else {
-					title.setText(title_id);
-				}
-			}
-			title.setTextSize(GlobalOptions.isLarge?19f:18f);
-			title.setTextColor(AppBlack);
-			//title.getPaint().setFakeBoldText(true);
-			
-			int topad = (int) mResource.getDimension(R.dimen._18_);
-			((ViewGroup)title.getParent()).setPadding(topad*3/5, topad/2, 0, 0);
-			//((ViewGroup)title.getParent()).setClipToPadding(false);
-			//((ViewGroup.MarginLayoutParams)title.getLayoutParams()).setMarginStart(-topad/4);
-			
-			Options.setAsLinkedTextView(tv);
-			
-			final AlertDialog configurableDialog =
-					new AlertDialog.Builder(context,GlobalOptions.isDark?R.style.DialogStyle3Line:R.style.DialogStyle4Line)
-							.setView(dv)
-							.create();
-			configurableDialog.setCanceledOnTouchOutside(true);
-			
-			dv.findViewById(R.id.cancel).setOnClickListener(v -> {
-				if(onclick!=null) onclick.onClick(v);
-				configurableDialog.dismiss();
-			});
-			
-			resultHolder.dlg=configurableDialog;
-			resultHolder.tv=tv;
-			resultHolder.title=title;
-			resultHolder.bottomTitle = dv.findViewById(R.id.bottom_title);
 		}
 	}
 	
@@ -3857,12 +3586,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		switch (v.getId()) {
 			// 扫码
 			case R.id.browser_widget5:{
-				//showT("扫码");
-				if(!goToBarcodeScanner) {
-					return false;
-				}
-				Intent intent = new Intent(this, QRGenerator.class).putExtra(Intent.EXTRA_TEXT, etSearch.getText());
-				startActivity(intent);
+				//if(!goToBarcodeScanner) return false;
+				startActivity(new Intent(this, QRGenerator.class).putExtra(Intent.EXTRA_TEXT, Utils.getTextInView(etSearch)));
 				acquireWakeLock();
 			} break;
 			// 新建标签页
@@ -3873,11 +3598,21 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		return true;
 	}
 	
+	private void ResetIMOffset() {
+		AppBarLayout barappla = (AppBarLayout) UIData.appbar;
+		if(barappla.getTop()<0) {
+			//CMN.Log("重置了");
+			barappla.resetAppBarLayoutOffset();
+			barappla.requestLayout();
+		}
+	}
+	
 	public void newTab(String url, boolean background, boolean show, int newloc) {
 		if (!background) {
 			if (navAdapter!=null && navAdapter.isVisible()) {
 				navAdapter.dismiss(false);
 			}
+			ResetIMOffset();
 		}
 		supressingNxtLux=CMN.now();
 		int newtabloc;
@@ -3921,6 +3656,35 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			target.post(tv1TranslateY::start);
 			
 			CMN.Log("newTab", currentViewImpl);
+		}
+	}
+	
+	public void selectTab(int newtabloc) {
+		if(tabViewAdapter.isVisible()) {
+			//tabViewAdapter.hideTabView();
+			tabViewAdapter.toggleTabView(newtabloc, null, 0);
+		} else {
+			onLeaveCurrentTab(0);
+			boolean b1=newtabloc!=adapter_idx||currentViewImpl==null||currentViewImpl.getParent()==null;
+			boolean added = AttachWebAt(newtabloc, 0);
+			if(b1) {
+				TabHolder tab = TabHolders.get(newtabloc);
+				if(tab.version<=0 || true) {
+					tabViewAdapter.coverupTheTab(currentViewImpl, added);
+					if(currentViewImpl.getBitmap()==null) {
+						glide.load(new WebPic(tab.id, tab.version, id_table))
+								.into(imageViewCover);
+					}
+				}
+			}
+			if (currentViewImpl!=null) {
+				currentViewImpl.hideForTabView = false;
+				currentViewImpl.setTranslationX(0);
+				currentViewImpl.setTranslationY(0);
+			}
+			if(b1) {
+				tabViewAdapter.uncoverTheTab(350); // 225
+			}
 		}
 	}
 	
@@ -4022,8 +3786,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		
 		@Override
 		public boolean onLongClick(View v) {
+			try {
 			//CMN.Log("onLongClick getHitResultObject", v);
-			UniversalWebviewInterface _mWebView = (UniversalWebviewInterface) v;
+			UniversalWebviewInterface _mWebView = v instanceof UniversalWebviewInterface?(UniversalWebviewInterface)v:((WebFrameLayout)v).mWebView;
 			Object result = _mWebView.getHitResultObject();
 			//CMN.Log("getHitResultObject", result);
 			if (null == result) return false;
@@ -4131,6 +3896,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			} else {
 				run();
 			}
+			} catch (Exception e){CMN.Log(e);}
 			return true;
 		}
 		
@@ -4262,7 +4028,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		return dialog; // returns the universal dialog
 	}
 	
-	private UniversalWebviewInterface initWebViewImpl(WebFrameLayout layout, UniversalWebviewInterface patWeb, boolean fallBack) {
+		private UniversalWebviewInterface initWebViewImpl(WebFrameLayout layout, UniversalWebviewInterface patWeb, boolean fallBack) {
 		
 		UniversalWebviewInterface mWebView = null;
 //		if(layout==null&&patWeb!=null) {
@@ -4303,14 +4069,27 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			if(webType==0) {
 				//WebView.setWebContentsDebuggingEnabled(true);
 				mWebView = new AdvancedBrowserWebView(this);
+//				mWebView.setPictureListener(new WebView.PictureListener() {
+//					@Override
+//					public void onNewPicture(WebView webView, @Nullable Picture picture) {
+//						CMN.Log("onNewPicture!!!");
+//					}
+//				});
 			}
 			theView = (View) mWebView;
-			theView.setOnLongClickListener(mHtmlObjectHandler);
+			if(Utils.bigCake) {
+				theView.setOnLongClickListener(mHtmlObjectHandler);
+			}
 		} else {
 			theView = (View) mWebView;
 		}
 		if(layout==null) {
 			return mWebView;
+		}
+
+		if(!Utils.bigCake)
+		{
+			layout.setOnLongClickListener(mHtmlObjectHandler);
 		}
 		
 		TabHolder holder = layout.holder;
@@ -4342,9 +4121,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		layout.setStorageSettings();
 		layout.setBackEndSettings();
 		
-		mWebView.addJavascriptInterface(mWebListener, "polyme");
+		mWebView.addJavascriptInterface(mWebListener.bridge, "polyme");
 		mWebView.addJavascriptInterface(holder.TabID, "chrmtd");
-		
 		
 		layout.setWebViewClient(mWebListener);
 		
@@ -4600,7 +4378,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	}
 	
 	@SuppressWarnings("ALL")
-	public static class TabHolder implements WebOptions {
+	public static class TabHolder {
 		public String url;
 		public String title;
 		public String page_search_term;
@@ -4617,31 +4395,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		public int version;
 		
 		@Multiline(flagPos=0, debug=0) public boolean getLuxury(){ flag=flag; throw new RuntimeException(); }
-		
-		@Multiline(flagPos=2) public boolean getForbidLocalStorage(){ flag=flag; throw new RuntimeException(); }
-		@Multiline(flagPos=2) public boolean toggleForbidLocalStorage(){ flag=flag; throw new IllegalArgumentException(); }
-		@Multiline(flagPos=3, shift=1) public boolean getForbidCookie(){ flag=flag; throw new RuntimeException(); }
-		@Multiline(flagPos=4, shift=1) public boolean getForbidDom(){ flag=flag; throw new RuntimeException(); }
-		@Multiline(flagPos=5, shift=1) public boolean getForbidDatabase(){ flag=flag; throw new RuntimeException(); }
-		@Multiline(flagPos=6, shift=1) public boolean getApplyOverride_group_storage(){ flag=flag; throw new RuntimeException(); }
-		
-		@Multiline(flagPos=7) public boolean getPCMode(){ flag=flag; throw new RuntimeException(); }
-		@Multiline(flagPos=7) public boolean togglePCMode(){ flag=flag; throw new IllegalArgumentException(); }
-		@Multiline(flagPos=8, shift=1) public boolean getEnableJavaScript(){ flag=flag; throw new RuntimeException(); }
-		@Multiline(flagPos=9) public boolean getMuteAlert(){ flag=flag; throw new RuntimeException(); }
-		@Multiline(flagPos=10) public boolean getMuteDownload(){ flag=flag; throw new RuntimeException(); }
-		@Multiline(flagPos=11, shift=1) public boolean getApplyOverride_group_client(){ flag=flag; throw new RuntimeException(); }
-		@Multiline(flagPos=12) public boolean getForbitNetworkImage(){ flag=flag; throw new RuntimeException(); }
-		@Multiline(flagPos=13) public boolean getPremature(){ flag=flag; throw new RuntimeException(); }
-		
-		public boolean getApplyRegion(int groupID) {
-			switch (groupID) {
-				case StorageSettings: return getApplyOverride_group_storage();
-				case BackendSettings: return getApplyOverride_group_client();
-			}
-			return false;
-		}
-		
+		@Multiline(flagPos=6) public boolean getApplyOverride_group_storage(){ flag=flag; throw new RuntimeException(); }
+		@Multiline(flagPos=11) public boolean getApplyOverride_group_client(){ flag=flag; throw new RuntimeException(); }
+
 		public void close() {
 			if (viewImpl != null) {
 				viewImpl.stopLoading();
@@ -5071,7 +4827,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	@Override
 	public void showT(Object text) {
 		if("downloads".equals(text)) {
-			mWebListener.showT("下载完成", "查看", "history");
+			mWebListener.showT("下载完成", "查看", "downloads", true);
 		} else {
 			super.showT(text);
 		}

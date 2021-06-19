@@ -14,7 +14,7 @@
 		android:layout_gravity="right"
 		android:layout_marginTop="12dp"
 		android:layout_marginRight="12dp"
-		android:background="@drawable/frame_menu"
+		android:background="?menu_pop_drawable"
 		android:elevation="12dp"
 		>
 		<LinearLayout

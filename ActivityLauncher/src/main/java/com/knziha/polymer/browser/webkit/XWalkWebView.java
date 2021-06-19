@@ -10,6 +10,7 @@ import android.view.View;
 import android.webkit.DownloadListener;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
+import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 import androidx.annotation.NonNull;
@@ -19,7 +20,6 @@ import com.knziha.polymer.BrowserActivity;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.Options;
 import com.knziha.polymer.widgets.WebFrameLayout;
-import com.tencent.smtt.export.external.interfaces.WebResourceRequest;
 
 import org.xwalk.core.XWalkDownloadListener;
 import org.xwalk.core.XWalkHitTestResult;
@@ -126,6 +126,11 @@ public class XWalkWebView extends XWalkView implements UniversalWebviewInterface
 	
 	public int getContentHeight(){
 		return computeVerticalScrollRange();
+	}
+	
+	@Override
+	public void setPictureListener(WebView.PictureListener pictureListener) {
+		// no impl.
 	}
 	
 	public int getContentWidth(){

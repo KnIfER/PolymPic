@@ -1,6 +1,172 @@
+<!DOCTYPE html>
 <html>
-    <body>
-        <hl ln="0"></hl>
-        <h1 id="polympic">PolymPic</h1>
-    </body>
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"/>
+	<title>PolymPic Browser</title>
+	<meta charset="utf-8"/>
+	<style>
+		.iconp {
+			display: inline-grid; 
+			width: 135px;
+			height: 135px;
+			background-color: #ffffff00; 
+			padding:10px 0 6px 0;
+			overflow:hide;
+			text-align: center;
+		}
+		  
+		img{
+			display: inline;
+			width: 95px;
+			height: 95px;
+			margin-left:0px;
+			border-radius: 12px;
+			background: #ffffffff;
+			box-shadow: 0 8px 16px 0 rgba(0,0,0,0.1), 0 6px 20px 0 rgba(0,0,0,0.09);
+		}
+
+		 
+		span{
+			position:relative; top:2px;
+			display: block;
+			overflow: hidden;
+			white-space: nowrap;
+			text-overflow: ellipsis;
+			font-size:12px;
+			color:#666;
+			font-weight:normal;
+		  
+		}
+		
+
+		.toptop {
+			width: 100%;
+			margin-left:0px;
+			visibility:hidden;
+		}
+		
+		.col {
+			padding-right: 0;
+			padding-bottom: 0px;
+			margin-right: 0px;
+			text-align: left;
+		}
+		
+		body { 
+			font-size:0;
+			background: rgb(244,215,201);  
+			text-align: center;
+		}
+
+
+		div{
+			position:relative;
+			margin:0px;
+			padding:0px;
+		}
+
+		.blue-background-class {
+			visibility:hidden;
+			//background-color: #C8EBFB;
+		}
+
+		.selected {
+			background-color: #c8c7f9;
+			z-index: 1 !important;
+		}
+
+		.highlight {
+			background-color: #B7F8C7;
+		}
+	</style>
+</head>
+<body>
+	<div class="toptop" >
+		<div id="grid" class="row">
+			<div id="gridDemo" class="col">
+				<div class="iconp"><img class='icon'/><span>&nbsp;</span></div>
+				<div class="iconp"><img class='icon'/><span>&nbsp;</span></div>
+				<div class="iconp"><img class='icon'/><span>&nbsp;</span></div>
+				<div class="iconp"><img class='icon'/><span>&nbsp;</span></div>
+				<div class="iconp"><img class='icon'/><span>&nbsp;</span></div>
+				<div class="iconp"><img class='icon'/><span>&nbsp;</span></div>
+				<div class="iconp"><img class='icon'/><span>&nbsp;</span></div>
+				<div class="iconp"><img class='icon'/><span>&nbsp;</span></div>
+				<div class="iconp"><img class='icon'/><span>&nbsp;</span></div>
+				<div class="iconp"><img class='icon'/><span>&nbsp;</span></div>
+				<div class="iconp"><img class='icon'/><span>&nbsp;</span></div>
+				<div class="iconp"><img class='icon'/><span>&nbsp;</span></div>
+				<div class="iconp"><img class='icon'/><span>&nbsp;</span></div>
+				<div class="iconp"><img class='icon'/><span>&nbsp;</span></div>
+				<div class="iconp"><img class='icon'/><span>&nbsp;</span></div>
+				<div class="iconp"><img class='icon'/><span>百度搜索</span></div>
+				<div class="iconp"><img class='icon' src='https://www.github.com/favicon.ico'/><span>百度搜索</span></div>
+				<div class="iconp"><img class='icon' src='https://www.baidu.com/favicon.ico'/><span>百度搜索</span></div>
+			</div>
+		</div>
+
+		 
+
+	<script src="./Sortable.js"></script> 
+	
+	<script>
+		window.addEventListener('mousedown',wrappedOnDownFunc);
+		function wrappedOnDownFunc(e){
+			window.onDownTarget = e.target;
+			//console.log(e.target)
+		}
+	    
+     
+		
+		window.addEventListener('resize',wrappedResizeFunc);
+		function wrappedResizeFunc(e){
+			var devW = document.body.clientWidth;
+			var minW = Math.min(devW, document.body.clientHeight);
+			var itemWidth = Math.floor(minW/5)  + -1;
+			var ss = document.styleSheets[0];
+		    var rules = ss.rules?ss.rules:ss.cssRules
+		    for(var i=0;i<rules.length;i++)
+		    {
+		        if(rules[i].selectorText==".iconp")
+		        {
+		            rules[i].style.width=itemWidth+"px";
+		            rules[i].style.height=(itemWidth+12)+"px";
+		        }
+		        if(rules[i].selectorText=="img")
+		        {
+					var iconWidth = (itemWidth*0.75);
+					var value = iconWidth+"px";
+					var margin = (itemWidth-iconWidth)/2+"px";
+		            rules[i].style.width=value;
+		            rules[i].style.height=value;
+		            rules[i].style.marginLeft=margin;
+		        }
+		        if(rules[i].selectorText==".toptop")
+		        {
+					var value = (itemWidth)*5;
+					var margin = (devW-value)/2;
+					//alert(margin);
+					//alert(margin);
+		            //rules[i].style.width=value+"px";
+		            rules[i].style.marginLeft=margin+"px";
+		            rules[i].style.visibility="visible";
+		        }
+		    }
+		}
+		
+		wrappedResizeFunc();
+		
+		var gridDemo = document.getElementById('gridDemo');
+		//if(0)
+		window.AppGrid = new Sortable(gridDemo, {
+			multiDrag: true,
+			swapThreshold: 0.34,
+			invertSwap: true,
+			selectedClass: 'selected', 
+			animation: 300,
+			ghostClass: 'blue-background-class'
+		});
+	</script>
+</body>
+
 </html>
