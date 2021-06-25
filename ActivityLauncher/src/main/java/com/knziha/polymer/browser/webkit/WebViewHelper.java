@@ -119,7 +119,7 @@ public class WebViewHelper {
 	@Multiline(trim=true)
 	private final static  String DeHighLightIncantation="DEHI";
 	
-	/**function selectTouchtarget(e){
+	/**var w=window;function selectTouchtarget(e){
 		var ret = selectTouchtarget_internal(e);
 		if(ret<=0||e==1) {
 			w._ttlck=!1;

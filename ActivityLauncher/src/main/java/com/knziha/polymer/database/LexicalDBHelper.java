@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.regex.Matcher;
 
 import static com.knziha.polymer.widgets.Utils.EmptyCursor;
 
@@ -404,31 +403,6 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 			database.update("urls", values, "id=?", where);
 		}
 		return count;
-	}
-	
-	HashMap<SubStringKey, DomainInfo> domainInfoMap = new HashMap<>();
-	
-	// 搜索引擎列表，导航页，需要域数据库记录的图标。
-	// 常规访问，updateua (loadurl、刷新、onpagestart之时) 需要域数据库记录的配置信息。
-	public void queryDomain(WebFrameLayout layout, String url) {
-		SubStringKey domainKey = SubStringKey.new_hostKey(url);
-		if (!domainKey.equals(layout.domain)) {
-			DomainInfo domainInfo = domainInfoMap.get(domainKey);
-			if (domainInfo!=null) {
-				layout.setDomainInfo(domainInfo.domainKey, domainInfo);
-			} else {
-				String domain = domainKey.toString();
-				domainKey = SubStringKey.new_hostKey(domain);
-				Cursor infoCursor = database.rawQuery("select * from domains where url = ? ", new String[]{domain});
-				if (infoCursor.moveToFirst()) {
-					domainInfo = new DomainInfo(domainKey, infoCursor.getLong(0), infoCursor.getLong(3));
-				} else {
-					domainInfo = new DomainInfo(domainKey, 0, 0);
-				}
-				infoCursor.close();
-				layout.setDomainInfo(domainKey, domainInfo);
-			}
-		}
 	}
 	
 //	// 配置网址设定、插入图标前，需保证有存储目标

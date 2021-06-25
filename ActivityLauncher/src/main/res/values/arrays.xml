@@ -40,9 +40,9 @@
 
 	<string-array name="BenDiCunChu">
 		<item>崭新模式总开关</item>
-		<item>禁用Cookie</item>
-		<item>禁用数据库</item>
-		<item>禁用Dom存储</item>
+		<item>启用Cookie</item>
+		<item>启用数据库</item>
+		<item>启用Dom存储</item>
 		<item>覆盖全局设置</item>
 	</string-array>
 
@@ -50,10 +50,20 @@
 		<item>PC 模式</item>
 		<item>无图模式</item>
 		<item>拦截弹窗</item>
-		<item>拦截下载</item>
+		<item>拦截跳转</item>
 		<item>提前完成</item>
 		<item>启用JS</item>
 		<item>覆盖全局设置</item>
+	</string-array>
+
+	<string-array name="FangWenQuanXian">
+		<item>允许访问地理位置</item>
+		<item>允许请求本地文件</item>
+	</string-array>
+
+	<string-array name="WenZi">
+		<item>强制允许缩放</item>
+		<item>强制文本换行</item>
 	</string-array>
 
 	<string-array name="GroupName">

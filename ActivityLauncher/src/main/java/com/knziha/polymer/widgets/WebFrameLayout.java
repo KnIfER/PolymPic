@@ -19,6 +19,8 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
+import android.webkit.CookieManager;
+import android.webkit.DownloadListener;
 import android.webkit.ValueCallback;
 import android.webkit.WebBackForwardList;
 import android.webkit.WebHistoryItem;
@@ -64,6 +66,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -78,7 +81,7 @@ import static org.xwalk.core.Utils.Log;
 import static org.xwalk.core.Utils.getLockedView;
 import static org.xwalk.core.Utils.unlock;
 
-public class WebFrameLayout extends FrameLayout implements NestedScrollingChild, MenuItem.OnMenuItemClickListener{
+public class WebFrameLayout extends FrameLayout implements NestedScrollingChild, MenuItem.OnMenuItemClickListener, DownloadListener {
 	/**网页加载完成时清理回退栈 see {@link BrowserActivity#LuxuriouslyLoadUrl}*/
 	public boolean clearHistroyRequested;
 	/**记录网页开始加载*/
@@ -92,6 +95,9 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 	public List<Object> prunes = Collections.synchronizedList(new ArrayList<>());
 	public boolean hasPrune;
 	public List<Pair<Pattern, Pair<String, String>>> modifiers;
+	
+	public static String android_ua = "Mozilla/5.0 (Linux; Android " + Build.VERSION.RELEASE + "; " + Build.MODEL + ") AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Mobile Safari/537.36 OPR/58.2.2878.53403";
+	public static String default_ua = null;
 	
 	private final ViewConfiguration viewConfig;
 	public boolean frcWrp;
@@ -143,8 +149,9 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 	public boolean handlingLongPress;
 	private OnLongClickListener longClickListener;
 	
-	public DomainInfo domainInfo;
-	public SubStringKey domain;
+	@NonNull public DomainInfo domainInfo = DomainInfo.EmptyInfo;
+	@NonNull public SubStringKey domain = SubStringKey.EmptyDomain;
+	public static boolean bUseCookie = true;
 	
 	public boolean stackloaded;
 	public static final WebStacks webStacksWriterStd = new WebStacksStd();
@@ -181,6 +188,8 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 	public boolean bIsActionMenuShown;
 	private long lastDownTm;
 	private boolean lastDwnStill;
+	
+	public static int GlobalSettingsVersion;
 	
 	public WebFrameLayout(@NonNull Context context, BrowserActivity.TabHolder holder) {
 		super(context);
@@ -577,48 +586,96 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 	public boolean dispatchNestedPreFling(float velocityX, float velocityY) {
 		return mChildHelper.dispatchNestedPreFling(velocityX, velocityY);
 	}
+	
+	
+	@Override
+	public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
+		if (!WebOptions.getNoAlerts(getDelegateFlag(BackendSettings, false))) {
+			listener.onDownloadStart(url, userAgent, contentDisposition, mimetype, contentLength);
+		}
+	}
+	
 	///////// AdvancedNestScrollWebView END /////////
+	
+	final static long StorageSettingsMask = (0x1<<4)|(0x1<<5);
+	final static long BackendSettingsMask = (0x1<<12)|(0x1<<8)|(0x1<<7);
+	
+	long SettingsStamp;
+	public int mSettingsVersion;
+	
+	public void checkSettings(boolean forceCheckAll, boolean updateUa) {
+		long flag = getDelegateFlag(StorageSettings, false);
+		if (mSettingsVersion!=GlobalSettingsVersion || forceCheckAll) {
+			if ((SettingsStamp&StorageSettingsMask)!=(flag&StorageSettingsMask)) {
+				setStorageSettings();
+			}
+			if ((SettingsStamp&BackendSettingsMask)!=(getDelegateFlag(BackendSettings, false)&BackendSettingsMask)) {
+				if (updateUa && WebOptions.getPCMode(getDelegateFlag(BackendSettings, false))!=WebOptions.getPCMode(SettingsStamp)) {
+					updateUserAgentString();
+				}
+				setBackEndSettings();
+			}
+			CMN.Log("已应用设置变化……", mSettingsVersion, GlobalSettingsVersion, forceCheckAll, updateUa);
+			mSettingsVersion = GlobalSettingsVersion;
+		}
+		if(WebOptions.getUseCookie(flag) != bUseCookie) { // checkUserDataStrategy
+			CMN.Log("已应用Cookie变化……", WebOptions.getUseCookie(flag), bUseCookie);
+			CookieManager.getInstance().setAcceptCookie(bUseCookie = WebOptions.getUseCookie(flag));
+		}
+	}
+	
 	public void setStorageSettings() {
 		WebSettings settings = mWebView.getSettings();
-		Long flag=getDelegateFlag(BackendSettings);
-		if (WebOptions.getForbidLocalStorage(flag)) {
-			settings.setDomStorageEnabled(!WebOptions.getForbidDom(flag));
-			settings.setAppCacheEnabled(!WebOptions.getForbidDatabase(flag));
-			settings.setDatabaseEnabled(!WebOptions.getForbidDatabase(flag));
-		} else {
-			settings.setDomStorageEnabled(true);
-			settings.setAppCacheEnabled(true);
-			settings.setDatabaseEnabled(true);
-		}
+		long flag=getDelegateFlag(StorageSettings, false)&StorageSettingsMask;
+		settings.setDomStorageEnabled(WebOptions.getUseDomStore(flag));
+		settings.setAppCacheEnabled(WebOptions.getUseDatabase(flag));
+		settings.setDatabaseEnabled(WebOptions.getUseDatabase(flag));
+		SettingsStamp &= ~StorageSettingsMask;
+		SettingsStamp |= flag;
 	}
 	
 	public void setBackEndSettings() {
 		WebSettings settings = mWebView.getSettings();
-		Long flag=getDelegateFlag(BackendSettings);
-		settings.setBlockNetworkImage(WebOptions.getForbitNetworkImage(flag));
+		long flag=getDelegateFlag(BackendSettings, false)&BackendSettingsMask;
+		settings.setBlockNetworkImage(WebOptions.getForbidNetworkImage(flag));
 		settings.setJavaScriptEnabled(WebOptions.getEnableJavaScript(flag));
-		settings.setUserAgentString(WebOptions.getPCMode(flag)
-				?"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36"
-				:null);
-		CMN.Log("设置了设置了", WebOptions.getEnableJavaScript(flag));
+//		settings.setUserAgentString(WebOptions.getPCMode(flag)
+//				?"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36"
+//				:null);
+		CMN.Log("--- 设置了设置了 ---", WebOptions.getEnableJavaScript(flag), WebOptions.getForbidNetworkImage(flag));
+		SettingsStamp &= ~BackendSettingsMask;
+		SettingsStamp |= flag;
 	}
 	
-	public Long getDelegateFlag(int section) {
+	public long getDelegateFlag(int section, boolean bWillChange) {
 		switch(section) {
 			case StorageSettings:
-				if(domainInfo!=null && domainInfo.getApplyOverride_group_storage())
-					return domainInfo.f1;
-				if(holder.getApplyOverride_group_storage())
-					return holder.flag;
+				if(domainInfo.getApplyOverride_group_storage()) return domainInfo.f1;
+				if(holder.getApplyOverride_group_storage()) return holder.flag;
 			break;
 			case BackendSettings:
-				if(domainInfo!=null && domainInfo.getApplyOverride_group_client())
-					return domainInfo.f1;
-				if(holder.getApplyOverride_group_client())
-					return holder.flag;
+				if(domainInfo.getApplyOverride_group_client()) return domainInfo.f1;
+				if(holder.getApplyOverride_group_client()) return holder.flag;
 			break;
 		}
+		if (bWillChange) {
+			GlobalSettingsVersion ++;
+		}
 		return Options.ThirdFlag;
+	}
+	
+	public void setDelegateFlag(int section, long tmpFlag) {
+		switch(section) {
+			case StorageSettings:
+				if(domainInfo.getApplyOverride_group_storage()) domainInfo.f1=tmpFlag;
+				else if(holder.getApplyOverride_group_storage()) holder.flag=tmpFlag;
+				return;
+			case BackendSettings:
+				if(domainInfo.getApplyOverride_group_client()) domainInfo.f1=tmpFlag;
+				else if(holder.getApplyOverride_group_client()) holder.flag=tmpFlag;
+				return;
+		}
+		Options.ThirdFlag = tmpFlag;
 	}
 	
 	/** @param hideBarType 滑动隐藏底栏  滑动隐藏顶栏 0
@@ -665,18 +722,80 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 		bm.clear();
 	}
 	
+	
+	HashMap<SubStringKey, DomainInfo> domainInfoMap = new HashMap<>();
+	
+	// 设置变化、SOUL、刷新、OPS、加载网页。
+	// 搜索引擎列表，导航页，需要域数据库记录的图标。
+	// 常规访问，updateua (loadurl、刷新、onpagestart之时) 需要域数据库记录的配置信息。
+	public void queryDomain(String url, boolean updateUa) {
+		if (!domain.matches(url)) {
+			SubStringKey domainKey = SubStringKey.new_hostKey(url);
+			CMN.Log("queryDomain::", CMN.tid(), domainKey, url);
+			long flag = domainInfo.f1;
+			DomainInfo domainInfo = domainInfoMap.get(domainKey);
+			//if (!domainKey.equals(layout.domain))
+			if (domainInfo!=null) {
+				setDomainInfo(domainInfo.domainKey, domainInfo);
+			} else {
+				String domain = domainKey.toString();
+				domainKey = SubStringKey.new_hostKey(domain);
+				try(Cursor infoCursor = LexicalDBHelper.getInstancedDb()
+						.rawQuery("select * from domains where url = ? ", new String[]{domain})){
+					if (infoCursor.moveToFirst()) {
+						domainInfo = new DomainInfo(domainKey, infoCursor.getLong(0), infoCursor.getLong(3));
+					} else {
+						domainInfo = new DomainInfo(domainKey, 0, 0);
+					}
+					domainInfoMap.put(domainKey, domainInfo);
+					setDomainInfo(domainKey, domainInfo);
+				} catch (Exception e) {
+					CMN.Log(e);
+				}
+			}
+			if (this.domainInfo.f1!=flag) {
+				checkSettings(true, updateUa); // 域名变化
+			}
+		}
+	}
+	
+	public boolean updateUserAgentString() {
+		boolean pcMode = getPCMode();
+		//pcMode = url!=null && url.contains("www.baidu");
+		//pcMode = true;
+		String target_ua;
+		if(pcMode) {
+			target_ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36";
+		} else {
+			//CMN.Log("android_ua", android_ua);
+			target_ua = android_ua;
+			//targetUa = default_ua;
+		}
+		targetUa = target_ua;
+		WebSettings settings = mWebView.getSettings();
+		if(!TextUtils.equals(settings.getUserAgentString(), target_ua)) {
+			CMN.Log("测试 ua 设置处……", CMN.tid(), target_ua);
+			settings.setUserAgentString(target_ua);
+			return true;
+		}
+		return false;
+	}
+	
 	/** 从磁盘加载网页前进/回退栈 */
 	public boolean lazyLoad() {
 		CMN.Log("loadIfNeeded", holder.url);
 		if(!stackloaded) {
+			queryDomain(holder.url, false);
+			updateUserAgentString();
 			stackloaded = true;
-			Cursor stackcursor = LexicalDBHelper.getInstancedDb()
+			try(Cursor stackcursor = LexicalDBHelper.getInstancedDb()
 					.rawQuery("select webstack from webtabs where id=? limit 1"
-							, new String[]{""+holder.id});
-			if(stackcursor.moveToFirst()
-					&&parseBundleFromData(stackcursor.getBlob(0))) {
-				return true;
-			}
+							, new String[]{""+holder.id})) {
+				if(stackcursor.moveToFirst()
+						&&parseBundleFromData(stackcursor.getBlob(0))) {
+					return true;
+				}
+			} catch(Exception e) { CMN.Log(e); }
 			CMN.Log("再生……", holder.url);
 			mWebView.loadUrl(holder.url);
 			return true;
@@ -734,9 +853,7 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 	
 	/** 持久化保存网页前进/回退栈 */
 	public void saveIfNeeded() { //WEBVIEW_CHROMIUM_STATE
-		if (domainInfo!=null) {
-			domainInfo.checkDirty();
-		}
+		domainInfo.checkDirty();
 		if(holder.version>1 && holder.lastSaveVer<holder.version && stackloaded) {
 			holder.lastSaveVer = holder.version;
 			Bundle bundle = new Bundle();
@@ -977,20 +1094,15 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 	}
 	
 	public boolean getPCMode() {
-		return WebOptions.getPCMode(getDelegateFlag(BackendSettings));
+		return WebOptions.getPCMode(getDelegateFlag(BackendSettings, false));
 	}
 	
-	public boolean getNoCookie() {
-		long flag = getDelegateFlag(StorageSettings);
-		return WebOptions.getForbidLocalStorage(flag) && WebOptions.getForbidCookie(flag);
-	}
-	
-	public boolean getForbidLocalStorage() {
-		return WebOptions.getForbidLocalStorage(getDelegateFlag(StorageSettings));
+	public boolean getUseCookie() {
+		return !WebOptions.getUseCookie(getDelegateFlag(StorageSettings, false));
 	}
 	
 	public boolean getPremature() {
-		return WebOptions.getPremature(getDelegateFlag(BackendSettings));
+		return WebOptions.getPremature(getDelegateFlag(BackendSettings, false));
 	}
 	
 	
@@ -1003,9 +1115,6 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 	}
 	
 	public boolean getApplyDomainRegion(int groupID) {
-		if (domainInfo==null) {
-			return false;
-		}
 		switch (groupID) {
 			case StorageSettings: return domainInfo.getApplyOverride_group_storage();
 			case BackendSettings: return domainInfo.getApplyOverride_group_client();
@@ -1014,24 +1123,17 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 	}
 	
 	public void setDomainInfo(SubStringKey domainKey, DomainInfo info) {
-		if (domainInfo!=null) {
-			domainInfo.checkDirty();
-		}
+		domainInfo.checkDirty();
 		domain = domainKey;
 		domainInfo = info;
 	}
 	
 	public long getDomainFlag() {
-		if(domainInfo!=null) {
-			return domainInfo.f1;
-		}
-		return 0;
+		return domainInfo.f1;
 	}
 	
 	public void setDomainFlag(long val) {
-		if (domainInfo!=null) {
-			domainInfo.updateFlag(val);
-		}
+		domainInfo.updateFlag(val);
 	}
 	
 	public int getThisIdx() {
@@ -1055,14 +1157,14 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 	
 	public void pauseWeb() {
 		CMN.Log("pauseWeb");
-		//mWebView.stopLoading();
+		mWebView.stopLoading();
 		//mWebView.pauseTimers();
 		//mWebView.onPause();
 	}
 	
 	public void resumeWeb() {
-		mWebView.resumeTimers();
-		mWebView.onResume();
+		//mWebView.resumeTimers();
+		//mWebView.onResume();
 	}
 	
 	public boolean hasValidUrl(){
@@ -1110,6 +1212,7 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 		this.listener = listener;
 		mWebView.setWebViewClient(listener);
 		mWebView.setWebChromeClient(listener.mWebClient);
+		mWebView.setDownloadListener(this);
 	}
 	
 	Runnable reviveJSRunnable = () -> mWebView.getSettings().setJavaScriptEnabled(true);
@@ -1205,6 +1308,12 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 	}
 	
 	public final ArrayList<ViewGroup> popupDecorVies = new ArrayList<>();
+	
+	public void refresh() {
+		if(mWebView!=null) {
+			mWebView.reload();
+		}
+	}
 	
 	@RequiresApi(api = Build.VERSION_CODES.M)
 	public class AdvancedWebViewCallback extends ActionMode.Callback2 {

@@ -5,20 +5,21 @@
 	xmlns:android="http://schemas.android.com/apk/res/android"
 	xmlns:aapt="http://schemas.android.com/aapt">
 
-	<path  android:fillColor="#C3C8C8C8"
+	<path
 		android:pathData="
 
-M7.02,18.97h9.94L16.97,4.04L7.02,4.04v14.92z
+M5.78,18.97h12.42L18.21,4.04L5.78,4.04v14.92z
 
 ">
 		<aapt:attr name="android:fillColor">
 			<gradient
-				android:startColor="#F5FFFFFF"
-				android:endColor="#66C1BEBE"
+				android:startColor="#FFFFFF"
+				android:endColor="#1463FF"
 				android:startX="12"
 				android:endX="12"
 				android:startY="-1"
 				android:endY="20"
+				android:angle="120"
 				android:type="linear">
 			</gradient>
 		</aapt:attr>
@@ -39,7 +40,7 @@ M17.68,4.64v13.5h6.19L23.87,4.64h-6.19z
 
 M5.79,19.68h12.41L18.2,3.23L5.79,3.23v16.44z
 
-M13.52,13.9l0,-0.43l-0.17,-0.17c-0.58,0.53 -1.42,0.86 -2.29,0.86C9.11,14.18 7.55,12.61 7.55,10.67C7.55,8.68 9.11,7.1 11.1,7.1S14.62,8.68 14.62,10.67c0,0.86 -0.32,1.67 -0.86,2.29l0.17,0.17l0.43,0l2.7,2.7l-0.81,0.81L13.52,13.9z
+M13.71,14.14l0,-0.49l-0.19,-0.19c-0.66,0.6 -1.6,0.97 -2.59,0.97C8.74,14.46 6.98,12.69 6.98,10.5C6.98,8.26 8.74,6.47 10.98,6.47S14.95,8.26 14.95,10.5c0,0.97 -0.36,1.88 -0.97,2.59l0.19,0.19l0.49,0l3.05,3.05l-0.91,0.91L13.71,14.14z
 
 
 

@@ -6,12 +6,14 @@ import android.animation.LayoutTransition;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.text.Editable;
-import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
@@ -21,51 +23,54 @@ import android.view.ViewAnimationUtils;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.GlobalOptions;
 import androidx.cardview.widget.CardView;
 import androidx.databinding.DataBindingUtil;
+import androidx.recyclerview.widget.ItemTouchHelper;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.SimpleItemAnimator;
 
 import com.knziha.polymer.R;
+import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.databinding.SearchViewResultItemBinding;
 import com.knziha.polymer.databinding.ViewSearchBinding;
+import com.knziha.polymer.webslideshow.TouchSortHandler;
 import com.knziha.polymer.webslideshow.ViewUtils;
 import com.knziha.polymer.widgets.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.knziha.polymer.widgets.Utils.dpToPixel;
+
+@SuppressWarnings("rawtypes")
 public class MaterialSearchView extends CardView {
-    static final String LOG_TAG = "MaterialSearchView";
     private static final int ANIMATION_DURATION = 250;
 
     private boolean animateSearchView;
-    private int searchMenuPosition;
-	public String searchHint;
-    private int searchTextColor;
-    private Integer searchIconColor;
-    private CharSequence mUserQuery;
-    private boolean hasAdapter = false;
+    private int searchButtonPosition;
     private boolean visible = false;
-
-    public ViewSearchBinding SearchBarUIData;
+    
+	private	final InputMethodManager imm;
+    public final ViewSearchBinding UISearchBar; // PUBLIC and FINAL , yeah, there's nothing to hide from anyone.
 	private SearchRecyclerAdapter adapter;
-    //private OnVisibilityListener visibilityListener;
-	
+	private Animator animatorShow;
 	public final EditText etSearch;
+	public Dialog d;
+	
     ArrayList<String> searchRecords = new ArrayList<>();
     ArrayList searchResults;
     List displayData;
-	public Dialog d;
-	private LayoutTransition transitionBK;
 	private LayoutTransition transition;
+	private boolean listInitializing;
+	private int selection;
 	
-    public MaterialSearchView(@NonNull Context context) {
+	public MaterialSearchView(@NonNull Context context) {
         this(context, null);
     }
 
@@ -75,81 +80,140 @@ public class MaterialSearchView extends CardView {
 
     public MaterialSearchView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-		TypedArray a = context.getTheme().obtainStyledAttributes(attrs, R.styleable.MaterialSearchView, 0, 0);
-		final LayoutInflater inflater = LayoutInflater.from(context);
-		SearchBarUIData = DataBindingUtil.inflate(inflater, R.layout.view_search, this, true);
-		etSearch = SearchBarUIData.editText;
-		animateSearchView = a.getBoolean(R.styleable.MaterialSearchView_search_animate, true);
-		searchMenuPosition = a.getInteger(R.styleable.MaterialSearchView_search_menu_position, 0);
-		searchHint = a.getString(R.styleable.MaterialSearchView_search_hint);
-		searchTextColor = a.getColor(R.styleable.MaterialSearchView_search_text_color, getResources().getColor(android.R.color.black));
-		searchIconColor = a.getColor(R.styleable.MaterialSearchView_search_icon_color, getResources().getColor(android.R.color.black));
-		SearchBarUIData.imgBack.setOnClickListener(mOnClickListener);
-		SearchBarUIData.imgClear.setOnClickListener(mOnClickListener);
-		SearchBarUIData.editText.addTextChangedListener(mTextWatcher);
-		SearchBarUIData.editText.setOnEditorActionListener(mOnEditorActionListener);
-		final int imeOptions = a.getInt(R.styleable.MaterialSearchView_search_ime_options, -1);
+		TypedArray typedArray = context.getTheme().obtainStyledAttributes(attrs, R.styleable.MaterialSearchView, 0, 0);
+	
+		final LayoutInflater inflater = LayoutInflater.from(getContext());
+		UISearchBar = DataBindingUtil.inflate(inflater, R.layout.view_search, this, true);
+		
+		imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+		etSearch = UISearchBar.etSearch;
+		animateSearchView = true;
+		
+		searchButtonPosition = typedArray.getInteger(R.styleable.MaterialSearchView_search_menu_position, 0);
+		String searchHint = typedArray.getString(R.styleable.MaterialSearchView_search_hint);
+		int searchTextColor = typedArray.getColor(R.styleable.MaterialSearchView_search_text_color, getResources().getColor(android.R.color.black));
+		int searchIconColor = typedArray.getColor(R.styleable.MaterialSearchView_search_icon_color, getResources().getColor(android.R.color.black));
+		UISearchBar.imgBack.setOnClickListener(mOnClickListener);
+		UISearchBar.imgClear.setOnClickListener(mOnClickListener);
+		etSearch.addTextChangedListener(mTextWatcher);
+		etSearch.setOnEditorActionListener(mOnEditorActionListener);
+		final int imeOptions = typedArray.getInt(R.styleable.MaterialSearchView_search_ime_options, -1);
 		if (imeOptions != -1) {
-			setImeOptions(imeOptions);
+			etSearch.setImeOptions(imeOptions);
 		}
-		final int inputType = a.getInt(R.styleable.MaterialSearchView_search_input_type, -1);
+		final int inputType = typedArray.getInt(R.styleable.MaterialSearchView_search_input_type, -1);
 		if (inputType != -1) {
-			setInputType(inputType);
+			etSearch.setInputType(inputType);
 		}
-		boolean focusable;
-		focusable = a.getBoolean(R.styleable.MaterialSearchView_search_focusable, true);
+		final boolean focusable = typedArray.getBoolean(R.styleable.MaterialSearchView_search_focusable, true);
 		etSearch.setFocusable(focusable);
-		a.recycle();
+		typedArray.recycle();
 	
 		etSearch.setHint(searchHint);
 		etSearch.setTextColor(searchTextColor);
-		setDrawableTint(SearchBarUIData.imgBack.getDrawable(), searchIconColor);
-		setDrawableTint(SearchBarUIData.imgClear.getDrawable(), searchIconColor);
+		setDrawableTint(UISearchBar.imgBack.getDrawable(), searchIconColor);
+		setDrawableTint(UISearchBar.imgClear.getDrawable(), searchIconColor);
 	
 		adapter = new SearchRecyclerAdapter();
 		adapter.setHasStableIds(false);
-		RecyclerView recyclerView = SearchBarUIData.recycler;
+		RecyclerView recyclerView = UISearchBar.recycler;
 		recyclerView.setAdapter(adapter);
-		recyclerView.setItemAnimator(null);
 		recyclerView.setRecycledViewPool(Utils.MaxRecyclerPool(35));
 		recyclerView.setHasFixedSize(true);
+	
+//		recyclerView.setItemAnimator(null);
 		RecyclerView.ItemAnimator animator = recyclerView.getItemAnimator();
-		recyclerView.setOnScrollChangedListener((v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
-			hideKeyboard();
-		});
 		if (animator instanceof SimpleItemAnimator) {
 			((SimpleItemAnimator) animator).setSupportsChangeAnimations(false);
 		}
+		
+		recyclerView.setLayoutManager(new LinearLayoutManager(context){
+			@Override
+			public int scrollVerticallyBy ( int dx, RecyclerView.Recycler recycler, RecyclerView.State state ) {
+				int scrollRange = super.scrollVerticallyBy(dx, recycler, state);
+				if(dx!=scrollRange) {
+					hideKeyboard();
+				}
+				return scrollRange;
+			}
+		});
+		recyclerView.setOnScrollChangedListener((v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
+			if(recyclerView.getScrollState()==RecyclerView.SCROLL_STATE_DRAGGING) {
+				hideKeyboard();
+			}
+		});
+		recyclerView.addItemDecoration(new RecyclerView.ItemDecoration(){
+			final ColorDrawable mDivider = new ColorDrawable(Color.GRAY);
+			final int mDividerHeight = 3;
+			@Override
+			public void onDrawOver(@NonNull Canvas c, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
+				final int childCount = parent.getChildCount();
+				final int width = parent.getWidth();
+				for (int childViewIndex = 0; childViewIndex < childCount; childViewIndex++) {
+					final ViewGroup view = (ViewGroup) parent.getChildAt(childViewIndex);
+					if (parent.getChildViewHolder(view).getLayoutPosition()==selection) {
+						int top = (int) view.getY() + view.getHeight();
+						int color =  0xff4F7FDF;//Color.GRAY;
+						mDivider.setColor(color);
+						int pad = (int) (GlobalOptions.density*12);
+						mDivider.setBounds(pad, top, width-pad, top + mDividerHeight);
+						mDivider.draw(c);
+					}
+				}
+			}
+		});
+		TouchSortHandler touchHandler = new TouchSortHandler(new TouchSortHandler.MoveSwapAdapter() {
+			@Override public void onMove(int fromPosition, int toPosition) {}
+			@Override public void onDragFinished(RecyclerView.ViewHolder viewHolder) { }
+			@Override
+			public void onSwiped(int position) {
+				if (position<selection) {
+					selection--;
+				} else if(position==selection) {
+					selection=-1;
+				}
+				displayData.remove(position);
+				adapter.notifyItemRemoved(position);
+			}
+		}, 0, ItemTouchHelper.LEFT|ItemTouchHelper.RIGHT);
+		touchHandler.alterAlpha = false;
+		ItemTouchHelper touchHelper=new ItemTouchHelper(touchHandler);
+		touchHelper.attachToRecyclerView(recyclerView);
 	
 		searchRecords.add("HAHAHA");
 		searchRecords.add("LALALA");
+		for (int i = 0; i < 8; i++) {
+			searchRecords.add("LALALA");
+		}
 		displayData = searchRecords;
-		checkForAdapter();
 	
-		transitionBK = transition = SearchBarUIData.relHolder.getLayoutTransition();
-		SearchBarUIData.relHolder.setLayoutTransition(null);
+		transition = UISearchBar.resultPanel.getLayoutTransition();
+		UISearchBar.resultPanel.setLayoutTransition(null);
 	
+		setResultInvisible();
 		//etSearch.setText("草");
 		etSearch.setText("");
+		listInitializing = true;
     }
 	
 	public void setSearchAdapter(SearchResultsAdapter adapter) {
 		mSearchResultsAdapter = adapter;
 	}
 	
-	public void setResults(ArrayList results) {
-//		SearchBarUIData.relHolder.setLayoutTransition(null);
+	public void setResults(ArrayList results, int selection) {
+		CMN.Log("setResults::", results.size(), selection);
+		this.selection = selection;
 		displayData = searchResults = results;
 		adapter.notifyDataSetChanged();
-//		SearchBarUIData.recycler.post(new Runnable() {
-//			@Override
-//			public void run() {
-//				SearchBarUIData.relHolder.setLayoutTransition(transitionBK);
-//			}
-//		});
 	}
 	
 	SearchResultsAdapter mSearchResultsAdapter;
+	
+	public void refreshSearch() {
+		if (mSearchResultsAdapter!=null) {
+			mSearchResultsAdapter.onQueryTextChange(etSearch.getText());
+		}
+	}
 	
 	class SearchRecyclerAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolder<SearchViewResultItemBinding>> {
 		SearchRecyclerAdapter() {
@@ -169,6 +233,7 @@ public class MaterialSearchView extends CardView {
 			} else {
 				text = mSearchResultsAdapter.getText(itemObj);
 			}
+			holder.data.imgLocate.setVisibility(View.GONE);
 			holder.data.setText(text);
 		}
 		@Override
@@ -191,7 +256,7 @@ public class MaterialSearchView extends CardView {
         public void onClick(View v) {
         	switch (v.getId()) {
 				case R.id.imgClear:
-					setSearchText(null);
+					etSearch.setText(null);
 				break;
 				case R.id.imgBack:
 					hide();
@@ -202,25 +267,19 @@ public class MaterialSearchView extends CardView {
 					int position = viewDataHolder.getLayoutPosition();
 					if (displayData==searchRecords) {
 						etSearch.setText(searchRecords.get(position));
-					} else {
-						mSearchResultsAdapter.onItemClick(searchResults.get(position), v.getId()==R.id.imgLocate);
+					} else if(mSearchResultsAdapter.onItemClick(searchResults.get(position), v.getId()==R.id.imgLocate)){
+						selection = position;
 					}
 				break;
 			}
         }
     };
-    /**
-     * Callback to watch the text field for empty/non-empty
-     */
+
     Runnable searchRunnable = new Runnable() {
 		@Override
 		public void run() {
-			//submitText(s);
-			Editable editable = SearchBarUIData.editText.getText();
-			SearchBarUIData.imgClear.setVisibility(TextUtils.isEmpty(editable) ? GONE : VISIBLE);
-			//mUserQuery = s;
-			//CMN.Log("onTextChanged", CMN.id(s), CMN.id(SearchBarUIData.editText.getText()));
-			mUserQuery = editable;
+			Editable editable = etSearch.getText();
+			//SearchBarUI.imgClear.setVisibility(TextUtils.isEmpty(editable) ? GONE : VISIBLE);
 			mSearchResultsAdapter.onQueryTextChange(editable);
 		}
 	};
@@ -237,60 +296,43 @@ public class MaterialSearchView extends CardView {
     private final TextView.OnEditorActionListener mOnEditorActionListener = new TextView.OnEditorActionListener() {
         @Override
         public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-            onSubmitQuery();
+			mSearchResultsAdapter.onQueryTextSubmit(etSearch.getText().toString());
             return true;
         }
     };
 
-    void onSubmitQuery() {
-		SearchBarUIData.linearItemsHolder.setVisibility(GONE);
-		mSearchResultsAdapter.onQueryTextSubmit(SearchBarUIData.editText.getText().toString());
-    }
-
-    public void setQuery(CharSequence query, boolean submit) {
-        SearchBarUIData.editText.setText(query);
-        if (query != null) {
-            mUserQuery = query;
-        }
-        // If the query is not empty and submit is requested, submit the query
-        if (submit && !TextUtils.isEmpty(query)) {
-            onSubmitQuery();
-        }
-    }
-
-    public void setImeOptions(int imeOptions) {
-        SearchBarUIData.editText.setImeOptions(imeOptions);
-    }
-
-    public void setInputType(int inputType) {
-        SearchBarUIData.editText.setInputType(inputType);
-    }
-
-    public boolean isVisible() {
-        return getVisibility() == VISIBLE;
-    }
-
-    public void setSearchText(String queryText) {
-        SearchBarUIData.editText.setText(queryText);
-    }
-	
-	Animator animatorShow;
-
-    public void show(boolean showKeyboard) {
+    public void show(ViewGroup tmpView, boolean showKeyboard) {
     	if(!visible) {
 			visible = true;
-			if (transition!=null) {
-				SearchBarUIData.linearItemsHolder.setVisibility(View.GONE);
-				SearchBarUIData.relHolder.setLayoutTransition(transition);
-				transition = null;
+			RecyclerView resultList = UISearchBar.recycler;
+			LinearLayoutManager lm = (LinearLayoutManager) resultList.getLayoutManager();
+			int cc = resultList.getChildCount();
+			int scrollOffset = (int)(1*48*GlobalOptions.density);
+			if (d!=null && d.getWindow().getDecorView().getHeight()<scrollOffset) {
+				scrollOffset = 0;
 			}
-			//transition.enableTransitionType(LayoutTransition.APPEARING);
+			if (listInitializing) {
+				if (tmpView!=null) {
+					Utils.addViewToParent(UISearchBar.linearItemsHolder, tmpView);
+					setResultVisible();
+					UISearchBar.linearItemsHolder.setVisibility(View.INVISIBLE);
+				}
+				UISearchBar.resultPanel.setLayoutTransition(transition);
+				//setResultInvisible();
+				listInitializing = false;
+				int finalScrollOffset = scrollOffset;
+				postDelayed(() -> lm.scrollToPositionWithOffset(selection, finalScrollOffset), 120);
+			} else if (selection!=-1) {
+				//int fvp = selection-lm.findFirstCompletelyVisibleItemPosition();
+				//if (fvp<0 || fvp>cc) {
+				//	lm.scrollToPositionWithOffset(selection, scrollOffset);
+				//}
+				lm.scrollToPositionWithOffset(selection, scrollOffset);
+			}
 			if (showKeyboard) {
-				InputMethodManager imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
 				etSearch.requestFocus();
 				imm.showSoftInput(etSearch, 0);
 			}
-			checkForAdapter();
 			setVisibility(View.VISIBLE);
 			if (animateSearchView) {
 				if (Utils.bigCake) {
@@ -298,31 +340,43 @@ public class MaterialSearchView extends CardView {
 						animatorShow = ViewAnimationUtils.createCircularReveal(
 								this, // view
 								getCenterX(), // center x
-								(int) convertDpToPixel(23), // center y
+								dpToPixel(23), // center y
 								0, // start radius
 								(float) Math.hypot(getWidth(), getHeight()) // end radius
 						);
 						animatorShow.addListener(new AnimatorListenerAdapter() {
 							@Override
 							public void onAnimationEnd(Animator animation) {
-								SearchBarUIData.linearItemsHolder.setVisibility(View.VISIBLE);
-								SearchBarUIData.relHolder.setLayoutTransition(null); // 由于列表长度变化时，Transition闪烁问题禁用LayoutTransition。
+								Utils.addViewToParent(UISearchBar.linearItemsHolder, UISearchBar.resultPanel);
+								setResultVisible();
+								UISearchBar.resultPanel.setLayoutTransition(null); // 由于列表长度变化时，Transition闪烁问题禁用LayoutTransition。
+								animation.removeAllListeners();
+								animatorShow = null;
 							}
 						});
 						animatorShow.start();
 					} catch (Exception ignored) { }
 				} else {
-					if (hasAdapter) {
-						SearchBarUIData.linearItemsHolder.setVisibility(View.VISIBLE);
-					}
+					setResultVisible();
 				}
 			}
 		}
     }
-
-    public void hide() {
+	
+	private void setResultVisible() {
+		UISearchBar.linearItemsHolder.setVisibility(View.VISIBLE);
+		//SearchBarUIData.linearItemsHolder.getLayoutParams().height = -2;
+		//SearchBarUIData.linearItemsHolder.requestLayout();
+	}
+	
+	private void setResultInvisible() {
+		UISearchBar.linearItemsHolder.setVisibility(View.GONE);
+		//SearchBarUIData.linearItemsHolder.getLayoutParams().height = 0;
+	}
+	
+	public void hide() {
     	if (visible) {
-			SearchBarUIData.relHolder.setLayoutTransition(transitionBK); // 重新启用LayoutTransition。
+			UISearchBar.resultPanel.setLayoutTransition(transition); // 重新启用LayoutTransition。
 			if(animatorShow!=null) {
 				animatorShow.removeAllListeners();
 				animatorShow.cancel();
@@ -331,17 +385,17 @@ public class MaterialSearchView extends CardView {
 			post(new Runnable() {
 				@Override
 				public void run() {
-					SearchBarUIData.linearItemsHolder.setVisibility(View.GONE);
+					setResultInvisible();
 					if (animateSearchView) {
 						if (Build.VERSION.SDK_INT >= 21) {
 							Animator animatorHide = ViewAnimationUtils.createCircularReveal(
 									MaterialSearchView.this, // View
 									getCenterX(), // center x
-									(int) convertDpToPixel(23), // center y
+									dpToPixel(23), // center y
 									(float) Math.hypot(getWidth(), getHeight()), // start radius
 									0// end radius
 							);
-							animatorHide.setStartDelay(hasAdapter ? ANIMATION_DURATION : 0);
+							animatorHide.setStartDelay(true ? ANIMATION_DURATION : 0);
 							//animatorHide.setStartDelay(1000);
 							animatorHide.addListener(new AnimatorListenerAdapter() {
 								@Override
@@ -350,6 +404,7 @@ public class MaterialSearchView extends CardView {
 									if (d!=null) {
 										d.dismiss();
 									}
+									animation.removeAllListeners();
 									//setVisibility(GONE);
 								}
 							});
@@ -364,81 +419,19 @@ public class MaterialSearchView extends CardView {
 			});
 		}
     }
-	
+    
 	private void hideKeyboard() {
-		InputMethodManager imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
 		imm.hideSoftInputFromWindow(etSearch.getWindowToken(),0);
 	}
-	
-    public void setMenuPosition(int menuPosition) {
-        this.searchMenuPosition = menuPosition;
-        invalidate();
-        requestFocus();
-    }
 
-    public void setSearchHint(String searchHint) {
-        this.searchHint = searchHint;
-        invalidate();
-        requestFocus();
-    }
-
-    // text color
-    public void setTextColor(int textColor) {
-        this.searchTextColor = textColor;
-        invalidate();
-        requestFocus();
-    }
-
-    public void setSearchIconColor(int searchIconColor) {
-        this.searchIconColor = searchIconColor;
-        invalidate();
-        requestFocus();
-    }
-
-    public int getTextColor() {
-        return searchTextColor;
-    }
-
-    public ImageView getImageBack() {
-        return SearchBarUIData.imgBack;
-    }
-
-    public ImageView getImageClear() {
-        return SearchBarUIData.imgClear;
-    }
-
-    public RecyclerView getRecyclerView() {
-        return SearchBarUIData.recycler;
-    }
-
-//    public interface OnVisibilityListener {
-//        boolean onOpen();
-//        boolean onClose();
-//    }
-
-    /**
-     * Helpers
-     */
     public void setDrawableTint(Drawable resDrawable, int resColor) {
         resDrawable.setColorFilter(new PorterDuffColorFilter(resColor, PorterDuff.Mode.SRC_ATOP));
         resDrawable.mutate();
     }
 
-    public float convertDpToPixel(float dp) {
-        return dp * (getContext().getResources().getDisplayMetrics().densityDpi / 160f);
-    }
-
-    private void checkForAdapter() {
-        hasAdapter = true;
-    }
-
-    /*
-    TODO not correct but close
-    Need to do correct measure
-     */
     private int getCenterX() {
-        int icons = (int) (getWidth() - convertDpToPixel(21 * (1 + searchMenuPosition)));
-        int padding = (int) convertDpToPixel(searchMenuPosition * 21);
+        int icons = getWidth() - dpToPixel(21 * (1 + searchButtonPosition));
+        int padding = dpToPixel(searchButtonPosition * 21);
         return icons - padding;
     }
 }

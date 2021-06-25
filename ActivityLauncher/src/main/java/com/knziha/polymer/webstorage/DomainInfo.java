@@ -9,6 +9,7 @@ import com.knziha.polymer.database.LexicalDBHelper;
 import org.adrianwalker.multilinestring.Multiline;
 
 public class DomainInfo {
+	public static final DomainInfo EmptyInfo = new DomainInfo(SubStringKey.EmptyDomain, 0 , 0);
 	public final SubStringKey domainKey;
 	public long domainID;
 	public long f1;

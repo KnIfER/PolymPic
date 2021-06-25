@@ -5,6 +5,7 @@ import androidx.annotation.NonNull;
 import com.knziha.polymer.widgets.Utils;
 
 public class SubStringKey {
+	public final static SubStringKey EmptyDomain = new SubStringKey("",0,0);
 	final int st;
 	final int ed;
 	final int hash;
@@ -26,6 +27,17 @@ public class SubStringKey {
 			ed=idx;
 		}
 		return new SubStringKey(text, st, ed);
+	}
+	
+	public boolean matches(String url) {
+		int idx=url.indexOf("://")+3;
+		if (idx>3) {
+			int dLen = url.length()-(idx+len+1);
+			if (dLen>=0) {
+				return (dLen==0||url.charAt(idx+len)=='/') && url.regionMatches(idx, text, st, len);
+			}
+		}
+		return false;
 	}
 	
 	SubStringKey(String text, int st, int ed) {

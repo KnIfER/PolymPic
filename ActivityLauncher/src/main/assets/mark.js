@@ -1487,10 +1487,6 @@ var Maya;
       value: function RestoreAnnots() {
         console.log('Restoring'+window._docAnnots+'\n'+document.body.getElementsByClassName('PLOD_HL').length);
         var list = window._docAnnots.split('…');
-        for(var i=0;i<items.length;i++){
-          if(items[i].parentNode)
-          items[i].parentNode.removeChild(items[i]);
-        }
         for(var i=0;i<list.length;i++) {
             var dsl = this.deserializeRange(list[i]);
             if(dsl) {

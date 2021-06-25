@@ -14,9 +14,8 @@ import com.knziha.polymer.BrowserActivity;
 import com.knziha.polymer.R;
 import com.knziha.polymer.Utils.OptionProcessor;
 import com.knziha.polymer.Utils.Options;
+import com.knziha.polymer.widgets.WebFrameLayout;
 
-import static com.knziha.polymer.webstorage.WebOptions.BackendSettings;
-import static com.knziha.polymer.webstorage.WebOptions.StorageSettings;
 import static com.knziha.polymer.widgets.Utils.indexOf;
 
 public class WebViewSettingsDialog extends StandardConfigDialogBase
@@ -50,10 +49,13 @@ public class WebViewSettingsDialog extends StandardConfigDialogBase
 	public void processOptionChanged(ClickableSpan clickableSpan, View widget, int processId, int val) {
 		switch (processId) {
 			case 1:
-				a.topMenuRequestedInvalidate|=1<<StorageSettings;
-			break;
 			case 2:
-				a.topMenuRequestedInvalidate|=1<<BackendSettings;
+				//a.topMenuRequestedInvalidate|=1<<StorageSettings;
+				//a.topMenuRequestedInvalidate|=1<<BackendSettings;
+				if (!tab && !domain) {
+					WebFrameLayout.GlobalSettingsVersion ++;
+				}
+				a.topMenuRequestedInvalidate = true;
 			break;
 			case 666:
 				init_web_configs(tab, region==-1?regionBackUp:-1, domain);

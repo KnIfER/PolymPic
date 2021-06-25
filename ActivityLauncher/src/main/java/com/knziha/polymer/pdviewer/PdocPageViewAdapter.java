@@ -18,7 +18,6 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.knziha.filepicker.widget.HorizontalNumberPicker;
-import com.knziha.polymer.BrowserActivity;
 import com.knziha.polymer.PDocViewerActivity;
 import com.knziha.polymer.R;
 import com.knziha.polymer.Utils.CMN;
@@ -156,7 +155,7 @@ public class PDocPageViewAdapter extends RecyclerViewPagerAdapter<ViewUtils.View
 			}
 		} else {
 			ViewUtils.ViewDataHolder<?> vh = (ViewUtils.ViewDataHolder<?>) v.getTag();
-			int position = vh.position;
+			int position = (int) vh.position;
 			if(targetIsPage(position)) {
 				tapping = true;
 				updateIndicatorAndCircle(position);

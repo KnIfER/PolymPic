@@ -12,6 +12,10 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.WebChromeClient;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.BaseAdapter;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
@@ -35,6 +39,7 @@ import com.shockwave.pdfium.bookmarks.BookMarkEntry;
 import com.shockwave.pdfium.treeview.TreeViewAdapter;
 import com.shockwave.pdfium.treeview.TreeViewNode;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -71,8 +76,55 @@ public class TestButtonActivity extends Toastable_Activity implements View.OnCli
 		
 		CMN.Log(multiSearch);
 		
+		
+//		for (int i = 0; i < 20; i++) {
+//			WebView webview = new WebView(this);
+//			root.addView(webview);
+//			webview.loadUrl("https://cn.bing.com/search?q=Test"+i);
+//		}
+		testWebSeq.run();
 		testPopupView();
 	}
+	ArrayList<WebView> wvs = new ArrayList<>();
+	String[] data = new String[]{
+		"https://cn.bing.com/"
+		,"https://qbi.uq.edu.au/brain/brain-anatomy/types-neurons"
+		,"https://qbi.uq.edu.au/brain/brain-anatomy/what-neuron"
+		,"https://cn.bing.com/search?q=glen+etive+highlands+scotland"
+		,"http://mluxun.zuopinj.com/2241/90388.html"
+		,"https://www.nasa.gov/feature/goddard/2020/hubble-finds-tha"
+		,"https://www.luxun.org/post/70.html"
+		,"https://www.xugongping.com/book/4/4250400.html"
+	};
+	WebViewClient mWebViewClient =  new WebViewClient(){
+		@Override
+		public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+			return false;
+		}
+	};
+	WebChromeClient mWebChromeClient =  new WebChromeClient(){
+	
+	};
+	Runnable testWebSeq = new Runnable() {
+		@Override
+		public void run() {
+			WebView webview = new WebView(TestButtonActivity.this);
+			webview.setWebChromeClient(mWebChromeClient);
+			webview.setWebViewClient(mWebViewClient);
+			if(cc>0) {
+				root.removeView(wvs.get(wvs.size()-1));
+			}
+			root.addView(webview);
+			wvs.add(webview);
+			//webview.loadUrl("https://cn.bing.com/search?q=Test"+cc++);
+			webview.loadUrl(data[cc++]);
+			if (cc<data.length) {
+				root.postDelayed(this, 220);
+			}
+			showT(""+cc);
+		}
+	};
+	int cc=0;
 //////////////////////
 	private PopupWindow mPopupWindow;
 	private ListView mListView;

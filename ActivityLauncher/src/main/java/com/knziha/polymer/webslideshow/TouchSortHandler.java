@@ -2,8 +2,6 @@ package com.knziha.polymer.webslideshow;
 
 
 import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
@@ -26,6 +24,7 @@ public class TouchSortHandler extends ItemTouchHelper.Callback {
 	private MoveSwapAdapter moveSwap;
 	private Drawable background = null;
 	private RecyclerView.ViewHolder draggingView = null;
+	public boolean alterAlpha = true;
 	public boolean isDragging=false;
 	public boolean hasDragDecoration=false;
 	public ItemTouchHelper touchHelper;
@@ -74,11 +73,12 @@ public class TouchSortHandler extends ItemTouchHelper.Callback {
 	public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
 		int position = viewHolder.getLayoutPosition();
 		moveSwap.onSwiped(position-mItemPadStart);
+		viewHolder.itemView.setAlpha(1);
 	}
 
 	@Override
 	public void onChildDraw(Canvas c, RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, float dX, float dY, int actionState, boolean isCurrentlyActive) {
-		if (actionState == ItemTouchHelper.ACTION_STATE_SWIPE)
+		if (actionState == ItemTouchHelper.ACTION_STATE_SWIPE && alterAlpha)
 		{
 			//滑动时改变Item的透明度
 			if ((mSwipeFlags&ItemTouchHelper.UP)!=0||(mSwipeFlags&ItemTouchHelper.DOWN)!=0) {

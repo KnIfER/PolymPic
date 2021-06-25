@@ -500,6 +500,10 @@ public class Utils {
 		return null;
 	}
 	
+	public static int dpToPixel(int dp) {
+		return (int) (dp * GlobalOptions.density);
+	}
+	
 	public static class DummyOnClick implements View.OnClickListener {
 		@Override
 		public void onClick(View v) {
@@ -674,9 +678,11 @@ public class Utils {
 	public static boolean removeIfParentBeOrNotBe(View view, ViewGroup parent, boolean tobe) {
 		if(view!=null) {
 			ViewParent svp = view.getParent();
-			if(parent==svp ^ !tobe) {
+			if((parent!=svp) ^ tobe) {
 				if(svp!=null) {
 					((ViewGroup)svp).removeView(view);
+					//CMN.Log("removing from...", svp, view.getParent(), view);
+					return view.getParent()==null;
 				}
 				return true;
 			}

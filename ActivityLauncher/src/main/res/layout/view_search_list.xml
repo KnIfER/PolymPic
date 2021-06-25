@@ -4,7 +4,7 @@
 	xmlns:tools="http://schemas.android.com/tools">
 
     <RelativeLayout
-        android:id="@+id/relHolder"
+        android:id="@+id/result_panel"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:animateLayoutChanges="true"
@@ -24,7 +24,7 @@
             android:src="@drawable/ic_baseline_arrow_back_24" />
 
         <EditText
-            android:id="@+id/editText"
+            android:id="@+id/et_search"
             android:layout_width="match_parent"
             android:layout_height="@dimen/search_height"
             android:layout_marginLeft="16dp"
@@ -60,7 +60,7 @@
             android:id="@+id/linearItemsHolder"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_below="@+id/editText"
+            android:layout_below="@+id/et_search"
             android:orientation="vertical"
             android:visibility="invisible"
 			>

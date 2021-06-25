@@ -1,3 +1,17 @@
+/*  Copyright 2021 The 多聚浏览 Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ **/
 package com.knziha.polymer.webslideshow;
 
 import android.animation.Animator;
@@ -10,7 +24,6 @@ import android.app.Dialog;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
@@ -55,6 +68,7 @@ import java.util.Collections;
 import static com.knziha.polymer.widgets.Utils.DummyBMRef;
 import static com.knziha.polymer.widgets.Utils.DummyTransX;
 
+/** 管理多窗口(多标签页)视图，包括横向卡片式界面、动画、搜索。 | Manages the ViewPager-like multi-tab view based on RecyclerView. */
 public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolder<WebPageItemBinding>>
 		implements View.OnClickListener, View.OnLongClickListener, PopupMenuHelper.PopupMenuListener {
 	public RecyclerViewPager recyclerView;
@@ -63,6 +77,7 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 	private LinearInterpolator linearInterpolator = new LinearInterpolator();
 	
 	ImageView imageViewCover;
+	private long tmpBmRefId;
 	private WeakReference<Bitmap> tmpBmRef = DummyBMRef;
 	private Runnable removeIMCoverRunnable = () -> imageViewCover.setVisibility(View.GONE);
 	
@@ -135,7 +150,6 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 		WebPageItemBinding vh = viewHolder.data;
 		ImageView iv = vh.iv;
 		position-=1;
-		viewHolder.position=position;
 		View itemView = viewHolder.itemView;
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 			itemView.setForeground(null);
@@ -155,7 +169,7 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 			//int version = mWebView==null?0:(int) mWebView.version; //ttt
 			int version = holder.version;
 			//CMN.Log("setImageBitmap__", iv);
-			int finalPosition = position;
+			viewHolder.position=holder.id;
 			a.glide.load(new WebPic(holder.id, version, a.id_table))
 					.into(iv);
 		}
@@ -266,6 +280,7 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 			
 			//CMN.Log("tabView onClick::", target, vh.getLayoutPosition()-1, recyclerViewPager.getChildAdapterPosition(vh.itemView)-1);
 			if(targetIsPage(target)) {
+				// 点击视图
 				//AttachWebAt(target);
 				//currentWebView.setVisibility(View.INVISIBLE);
 				DismissingViewHolder =false;
@@ -277,21 +292,26 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 	
 	private void findBMTmpInViewHolder(ViewUtils.ViewDataHolder<WebPageItemBinding> vh) {
 		//CMN.Log("findBMTmpInViewHolder", vh);
-		tmpBmRef = DummyBMRef;
 		if(vh!=null) {
 			Drawable d = vh.data.iv.getDrawable();
 			if(d instanceof BitmapDrawable) {
+				tmpBmRefId = vh.position;
 				tmpBmRef = new WeakReference<>(((BitmapDrawable)d).getBitmap());
+				return;
 			}
+		}
+		if (tmpBmRefId!=0) {
+			tmpBmRefId = 0;
+			tmpBmRef = DummyBMRef;
 		}
 	}
 	
 	public void toggle(View v) {
-		tmpBmRef = DummyBMRef;
 		a.onLeaveCurrentTab(DismissingViewHolder ?0:1);
 		boolean post = false;
 		long delay=0;
-		if(viewpager_holder==null) {
+		boolean init = viewpager_holder==null;
+		if(init) {
 			init_tabs_layout();
 			post=true;
 			if(opt.getAnimateTabsManager()) {
@@ -304,11 +324,15 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 			calculateItemWidth(false);
 			bNeedReCalculateItemWidth = false;
 		}
-		if(post) {
-			a.root.postDelayed(() -> toggleTabView(-1, v, 0), delay);
-		} else {
-			toggleTabView(-1, v, 0);
+		if(false) {
+			//post = false;
+			if(post) {
+				recyclerView.postDelayed(() -> toggleTabView(-1, v, 0), delay);
+			} else {
+				toggleTabView(-1, v, 0);
+			}
 		}
+		toggleTabView(-1, v, init?0x2:0);
 	}
 	
 	private void init_tabs_layout() {
@@ -339,8 +363,9 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 			layoutManager.targetPos = a.adapter_idx + 1;
 			CMN.Log("scrollHere", ViewUtils.getCenterXChildPositionV2(recyclerViewPager), layoutManager.targetPos);
 		};
-		recyclerViewPager.setFlingFactor(0.175f);
-		recyclerViewPager.setTriggerOffset(0.125f);
+		recyclerViewPager.setFlingFactor(0.175f * 1.0f);
+		recyclerViewPager.setTriggerOffset(0.125f * 105.5f);
+		recyclerViewPager.setTriggerOffset(10060*GlobalOptions.density);
 		
 		setHasStableIds(true);
 		recyclerViewPager.setAdapter(this);
@@ -465,27 +490,34 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 				public boolean onQueryTextChange(CharSequence newText) {
 					String str = newText.toString().toLowerCase();
 					ArrayList<BrowserActivity.TabHolder> results = new ArrayList<>();
+					BrowserActivity.TabHolder curr = a.currentWebHolder;
+					int selection = -1;
 					for (int i = 0, len=a.TabHolders.size(); i < len; i++) {
 						BrowserActivity.TabHolder tab = a.TabHolders.get(i);
 						// todo more performant search
 						if (tab.title!=null && (tab.title.toLowerCase().contains(str) || tab.url.toLowerCase().contains(str))) {
+							if (tab==curr) {
+								selection = results.size();
+							}
 							results.add(tab);
 						}
 					}
-					searchView.searchHolder.setResults(results);
+					searchView.searchHolder.setResults(results, selection);
 					return false;
 				}
 				@Override
-				public void onItemClick(Object obj, boolean locateTo) {
+				public boolean onItemClick(Object obj, boolean locateTo) {
 					BrowserActivity.TabHolder tab = ((BrowserActivity.TabHolder) obj);
 					int newPos = a.TabHolders.indexOf(tab);
 					CMN.Log("onItemClick::", newPos);
 					if (locateTo) {
 					
-					} else {
+					} else if(newPos>=0){
 						searchView.searchHolder.hide();
 						a.selectTab(newPos);
+						return true;
 					}
+					return false;
 				}
 			});
 		}
@@ -506,45 +538,9 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 		layoutParams.horizontalMargin = 0;
 		layoutParams.verticalMargin = 0;
 		window.setAttributes(layoutParams);
-		searchView.searchHolder.SearchBarUIData.recycler.addItemDecoration(new RecyclerView.ItemDecoration(){
-			final ColorDrawable mDivider = new ColorDrawable(Color.GRAY);
-			final int mDividerHeight = 3;
-			@Override
-			public void onDrawOver(@NonNull Canvas c, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
-				final int childCount = parent.getChildCount();
-				final int width = parent.getWidth();
-				for (int childViewIndex = 0; childViewIndex < childCount; childViewIndex++) {
-					final ViewGroup view = (ViewGroup) parent.getChildAt(childViewIndex);
-					if (shouldDrawDividerBelow(view, parent)) {
-						int top = (int) view.getY() + view.getHeight();
-						int color =  0xff4F7FDF;//Color.GRAY;
-						mDivider.setColor(color);
-						mDivider.setBounds((int) (GlobalOptions.density*48), top, width, top + mDividerHeight);
-						mDivider.draw(c);
-					}
-				}
-			}
-			@Override
-			public void getItemOffsets(@NonNull Rect outRect, @NonNull View view, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
-				outRect.bottom = shouldDrawDividerBelow(view, parent)?mDividerHeight:0;
-			}
-			private boolean shouldDrawDividerBelow(View view, RecyclerView parent) {
-				return searchView.searchHolder.getDisplayItem(parent.getChildViewHolder(view).getLayoutPosition())==a.currentWebHolder;
-			}
-		});
-		searchView.dismiss.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				searchView.searchHolder.hide();
-			}
-		});
-		//mIconView.setVisibility(View.GONE);
-		//topPanel.setVisibility(View.GONE);
-		//window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 		
-		//a.fix_full_screen();
+		searchView.dismiss.setOnClickListener(v -> searchView.searchHolder.hide());
 		
-		//window.getDecorView().setBackground(null);
 		window.getDecorView().setBackgroundColor(Color.TRANSPARENT);
 		window.getDecorView().setPadding(0,0,0,0);
 		d.setContentView(searchView.getRoot());
@@ -556,7 +552,8 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 		searchView.getRoot().post(new Runnable() {
 			@Override
 			public void run() {
-				searchView.searchHolder.show(showKeyboard);
+				searchView.searchHolder.refreshSearch();
+				searchView.searchHolder.show(a.root, showKeyboard);
 			}
 		});
 	}
@@ -628,6 +625,7 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 		} else {
 			a.webtitle.setText(a.currentViewImpl.getTitle());
 			if(fromClick==-1) {
+				// todo findViewByPosition
 				int fvp = layoutManager.findFirstVisibleItemPosition();
 				int target = layoutManager.targetPos;
 				if(target<=1) {
@@ -641,7 +639,7 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 			layoutManager.targetPos=a.TabHolders.size();
 		}
 		boolean AnimateTabsManager = opt.getAnimateTabsManager();
-		if (forceAnimation==1) {
+		if ((forceAnimation&0x1)!=0) {
 			AnimateTabsManager = false;
 		}
 		if(AnimateTabsManager)
@@ -675,7 +673,7 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 				tabsAnimator.setDuration(235); // 220
 			}
 		if(AnimateTabsManager) {
-			toggleInternalTabViewAnima(fromClick, v);
+			toggleInternalTabViewAnima(fromClick, v, (forceAnimation&0x2)!=0);
 		} else {
 			toggleInternalTabView(fromClick);
 		}
@@ -706,7 +704,7 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 			int targetPos = layoutManager.targetPos-1;
 			if(targetPos<0) targetPos=0;
 			if(targetPos!=a.adapter_idx) {
-				a.onLeaveCurrentTab(0);
+				a.onLeaveCurrentTab(3);
 				a.adapter_idx = targetPos;
 				a.currentViewImpl = null;
 			}
@@ -826,7 +824,7 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 			//v.setBackgroundResource(R.drawable.surrtrip1);
 		}
 	};
-	private void toggleInternalTabViewAnima(int fromClick, View v) {
+	private void toggleInternalTabViewAnima(int fromClick, View v, boolean bNeedPost) {
 		WebFrameLayout layout = a.currentViewImpl;
 		if(opt.getAnimateImageviewAlone()) {
 			if(a.webFrameLayout==null) {
@@ -856,7 +854,6 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 		}
 		tabsAnimator.pause();
 		a.mBrowserSlider.pause();
-		boolean bNeedPost = false;
 		float ttY=1, ttX=1, targetScale=mItemWidth;
 		boolean bc=fromClick>=0;
 		View appbar=a.UIData.appbar;
@@ -937,7 +934,7 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 				//added = TabHolders.get(targetPos)!=null;
 				added = a.AttachWebAt(targetPos, 0);
 				layout = a.currentViewImpl;
-				layout.setBMRef(tmpBmRef);
+				if(tmpBmRefId==layout.holder.id) layout.setBMRef(tmpBmRef);
 				layout.setScaleX(targetScale);
 				layout.setScaleY(targetScale);
 				layout.setTranslationY(ttY);
@@ -967,7 +964,7 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 				//alpha2.setFloatValues(0, 1);
 			}
 			
-			bNeedPost = coverupTheTab(layout, added||opt.getAlwaysShowWebCoverDuringTransition());
+			bNeedPost |= coverupTheTab(layout, added||opt.getAlwaysShowWebCoverDuringTransition());
 			
 			DismissingViewHolder =true;
 			if(!opt.getAnimateImageviewAlone())
@@ -1093,6 +1090,4 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 		}
 		return false;
 	}
-	
-	
 }

@@ -257,7 +257,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 					PDocBookInfo info = pdoc.bookInfo;
 					historyCon.savePDocInfo(pdoc, info);
 					if(exiting) {
-						opt.putLastOpendPDocID(info.rowID);
+						opt.putLastOpenedPDocID(info.rowID);
 					}
 					info.isDirty = false;
 				}
@@ -517,7 +517,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 					// restore latest doc from the database.
 					if(true) {
 						//showT("restore latest doc");
-						long docID = opt.getLastOpendPDocID();
+						long docID = opt.getLastOpenedPDocID();
 						if(docID!=-1) {
 							uri = historyCon.getDocUrlForID(docID);
 						}

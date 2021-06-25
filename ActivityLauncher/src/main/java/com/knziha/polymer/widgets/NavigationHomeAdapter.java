@@ -661,45 +661,47 @@ public class NavigationHomeAdapter extends TreeViewAdapter<NavigationHomeAdapter
 				navFolderFragment.foldViewAdapter = new NavigationHomeAdapter(this);
 				navFolderRef = new WeakReference<>(navFolderFragment);
 				folderViewDirty = false;
-			}
-			navFolderFragment.foldViewAdapter.setFolderNavListener(node -> {
-				lastSelectionId = CMN.id(node.getContent());
-				boolean allExpanded = true;
-				NavigationNode targetNode = node;
-				while ((node = (NavigationNode) node.getParent())!=null) {
-					if (!node.isExpand(currentExpChannel)) {
-						node.setExpanded(currentExpChannel, true);
-						allExpanded = false;
-					}
-				}
-				boolean expandSel = true;
-				if (allExpanded) {
-					lastSelectionPos = displayNodes.indexOf(targetNode);
-					//a.showT("allExpanded"+lastSelectionPos);
-					if (lastSelectionPos==-1) {
-						allExpanded = false;
-					} else {
-						LinearLayoutManager lmm = ((LinearLayoutManager) recyclerView.getLayoutManager());
-						lmm.scrollToPositionWithOffset(lastSelectionPos, 0);
-						//CMN.Log("soft upd::"+recyclerView.getChildAt(0).getTag());
-						if (expandSel && !targetNode.isExpand(currentExpChannel)) {
-							notifyItemRangeInserted(lastSelectionPos+1
-									, addChildNodesFiltered(targetNode, lastSelectionPos+1, 0x1));
+				navFolderFragment.foldViewAdapter.setFolderNavListener(node -> {
+					lastSelectionId = CMN.id(node.getContent());
+					boolean allExpanded = true;
+					NavigationNode targetNode = node;
+					while ((node = (NavigationNode) node.getParent())!=null) {
+						if (!node.isExpand(currentExpChannel)) {
+							node.setExpanded(currentExpChannel, true);
+							allExpanded = false;
 						}
 					}
-				}
-				if (!allExpanded) {
-					if (expandSel) {
-						targetNode.setExpanded(currentExpChannel, true);
+					boolean expandSel = true;
+					if (allExpanded) {
+						lastSelectionPos = displayNodes.indexOf(targetNode);
+						//a.showT("allExpanded"+lastSelectionPos);
+						if (lastSelectionPos==-1) {
+							allExpanded = false;
+						} else {
+							LinearLayoutManager lmm = ((LinearLayoutManager) recyclerView.getLayoutManager());
+							lmm.scrollToPositionWithOffset(lastSelectionPos, 0);
+							//CMN.Log("soft upd::"+recyclerView.getChildAt(0).getTag());
+							if (expandSel && !targetNode.isExpand(currentExpChannel)) {
+								notifyItemRangeInserted(lastSelectionPos+1
+										, addChildNodesFiltered(targetNode, lastSelectionPos+1, 0x1));
+							}
+						}
 					}
-					refreshList(false);
+					if (!allExpanded) {
+						if (expandSel) {
+							targetNode.setExpanded(currentExpChannel, true);
+						}
+						refreshList(false);
+					}
+					navFolderRef.get().dismiss();
+				});
+			}
+			if (!navFolderFragment.isAdded()) {
+				navFolderFragment.resizeLayout(false);
+				navFolderFragment.show(a.getSupportFragmentManager(), "vfld");
+				if (folderViewDirty) {
+					navFolderFragment.foldViewAdapter.refreshList(false);
 				}
-				navFolderRef.get().dismiss();
-			});
-			navFolderFragment.resizeLayout(false);
-			navFolderFragment.show(a.getSupportFragmentManager(), "vfld");
-			if (folderViewDirty) {
-				navFolderFragment.foldViewAdapter.refreshList(false);
 			}
 		}
 	}

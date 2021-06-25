@@ -51,10 +51,11 @@ public class CenterLinearLayoutManager extends LinearLayoutManager {
         }
 	
 		protected int calculateTimeForDeceleration(int dx) {
-			CMN.Log("calculateTimeForDeceleration", bFromIdle);
-			if(bFromIdle) {
-				return (int) Math.ceil((Math.abs(dx)
-						* (MathUtils.lerp(500f, 85f, dst)) / GlobalOptions.densityDpi)/ .3356);
+			int ret = (int) Math.ceil((Math.abs(dx)
+					* (MathUtils.lerp(500f, 85f, dst)) / GlobalOptions.densityDpi) / .3356);
+			CMN.Log("calculateTimeForDeceleration", bFromIdle, dx, ret);
+			if(bFromIdle || dx<300) {
+				return ret;
 			}
 			return super.calculateTimeForDeceleration(dx);
 		}

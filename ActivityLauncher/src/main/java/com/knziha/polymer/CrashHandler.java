@@ -4,8 +4,6 @@ import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.database.sqlite.SQLiteException;
-import android.database.sqlite.SQLiteFullException;
 import android.os.Build;
 import android.util.Log;
 
@@ -105,6 +103,14 @@ public class CrashHandler implements UncaughtExceptionHandler {
 //			AgentApplication.exception = exception;
 //			return;
 //		}
+
+//		if (exception instanceof IllegalStateException) {
+//			String msg = exception.getMessage();
+//			if (msg!=null && msg.startsWith("Fragment already added: ")) {
+//				return;
+//			}
+//		}
+		
 		Writer writer = new StringWriter();
 		PrintWriter printWriter = new PrintWriter(writer);
 		exception.printStackTrace(printWriter);

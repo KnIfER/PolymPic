@@ -52,12 +52,20 @@ public class Options implements BookOptions {
 		return defaultReader.getInt("hints",16);
 	}
 	
+	public long getLastOpenedTabID() {
+		return defaultReader.getLong("tabId", -1);
+	}
+	
+	public void putLastOpenedTabID(long tabId) {
+		defaultReader.edit().putLong("tabId", tabId).apply();
+	}
+	
 	public String getOpenedTabs() {
 		return defaultReader.getString("tabs", "");
 	}
 	
-	public void putOpenedTabs(String val) {
-		defaultReader.edit().putString("tabs", val).apply();
+	public void putOpenedTabs(String val, long id) {
+		defaultReader.edit().putString("tabs", val).putLong("tabId", id).apply();
 	}
 
 	public String pathToGlide(@NonNull Context context) {
@@ -337,11 +345,11 @@ public class Options implements BookOptions {
 		}
 	}
 	
-	public long getLastOpendPDocID() {
+	public long getLastOpenedPDocID() {
 		return defaultReader.getLong("docId", -1);
 	}
 	
-	public void putLastOpendPDocID(long rowID) {
+	public void putLastOpenedPDocID(long rowID) {
 		defaultReader.edit().putLong("docId", rowID).apply();
 	}
 	

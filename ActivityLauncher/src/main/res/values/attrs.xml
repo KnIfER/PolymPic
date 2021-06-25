@@ -155,7 +155,6 @@
 	</declare-styleable>
 
 	<declare-styleable name="MaterialSearchView">
-		<attr name="search_animate" format="boolean" />
 		<attr name="search_ime_options" format="integer" />
 		<attr name="search_input_type" format="integer" />
 		<attr name="search_focusable" format="boolean" />

@@ -11,7 +11,7 @@ import com.knziha.polymer.Utils.CMN;
 public class ViewUtils {
 	public static class ViewDataHolder<T extends ViewDataBinding> extends RecyclerView.ViewHolder{
 		public T data;
-		public int position;
+		public long position;
 		public ViewDataHolder(T data){
 			super(data.getRoot());
 			itemView.setTag(this);

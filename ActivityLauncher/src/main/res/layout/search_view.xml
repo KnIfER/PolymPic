@@ -21,5 +21,6 @@
 			app:search_menu_position="1"
 			android:clickable="true"
 			/>
+
 	</FrameLayout>
 </layout>

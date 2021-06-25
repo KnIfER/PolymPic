@@ -20,12 +20,8 @@ import android.content.Context;
 import android.os.Build;
 import android.webkit.WebSettings;
 
-import androidx.core.view.NestedScrollingChild;
-import androidx.core.view.NestedScrollingChildHelper;
-
-import com.knziha.polymer.Utils.CMN;
-import com.knziha.polymer.browser.webkit.UniversalWebviewInterface;
 import com.knziha.polymer.browser.webkit.WebViewImplExt;
+import com.knziha.polymer.widgets.WebFrameLayout;
 
 /** Advanced WebView For DuoJuLiuLanQi <br/>
  * 多聚浏览器 <br/>
@@ -56,10 +52,10 @@ public class AdvancedBrowserWebView extends WebViewImplExt {
 		settings.setDefaultTextEncodingName("UTF-8");
 		
 		settings.setNeedInitialFocus(false);
-		settings.setTextZoom(100);
+		//settings.setTextZoom(100);
 		
-		if (BrowserActivity.default_ua==null) {
-			BrowserActivity.default_ua = settings.getUserAgentString();
+		if (WebFrameLayout.default_ua==null) {
+			WebFrameLayout.default_ua = settings.getUserAgentString();
 		}
 		//settings.setDefaultFontSize(60);
 		//setInitialScale(25);
@@ -73,6 +69,8 @@ public class AdvancedBrowserWebView extends WebViewImplExt {
 		settings.setDomStorageEnabled(true);
 		
 		settings.setAllowFileAccess(true);
+		
+		//settings.setOffscreenPreRaster(true);
 		
 		settings.setUseWideViewPort(true);//设定支持viewport
 		settings.setLoadWithOverviewMode(true);

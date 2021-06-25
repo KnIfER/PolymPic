@@ -22,6 +22,8 @@ import android.view.WindowManager;
 import android.webkit.DownloadListener;
 import android.webkit.HttpAuthHandler;
 import android.webkit.JavascriptInterface;
+import android.webkit.JsPromptResult;
+import android.webkit.JsResult;
 import android.webkit.SslErrorHandler;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
@@ -31,6 +33,7 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
+import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.recyclerview.widget.RecyclerView.OnScrollChangedListener;
 
@@ -45,6 +48,7 @@ import com.knziha.polymer.browser.webkit.WebResourceResponseCompat;
 import com.knziha.polymer.browser.webkit.WebViewHelper;
 import com.knziha.polymer.toolkits.MyX509TrustManager;
 import com.knziha.polymer.webstorage.SubStringKey;
+import com.knziha.polymer.webstorage.WebOptions;
 import com.knziha.polymer.widgets.AppToastManager;
 import com.knziha.polymer.widgets.DialogVanishing;
 import com.knziha.polymer.widgets.Utils;
@@ -86,6 +90,7 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 import static com.knziha.polymer.HttpRequestUtil.DO_NOT_VERIFY;
+import static com.knziha.polymer.webstorage.WebOptions.BackendSettings;
 import static org.xwalk.core.Utils.getTag;
 import static org.xwalk.core.Utils.unlock;
 
@@ -217,15 +222,17 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		
 		// zhihu
 		{
-			Pattern p = Pattern.compile("^https?://www.zhihu.com/tardis/sogou/ans");
+			Pattern p = Pattern.compile("^https?://www.zhihu.com/tardis/sogou"); // /ans
 			SiteRule rule = new SiteRule();
 			//rule.EnRipenPercent = 80;
-			rule.JS = "var items=document.getElementsByClassName('sgui-slide-down');if(items.length==1) items[0].click();" +
+			rule.JS = "polyme.craft('style', '.App{height:unset!important;}');var items=document.getElementsByClassName('sgui-slide-down');if(items.length==1) items[0].click();" +
 					"items=document.getElementsByClassName('AuthorInfo AnswerItem-authorInfo AnswerItem-authorInfo--related')[0];if(items)items.onclick=function(){window.location='zhihu://answer/'+/[0-9]+/.exec(window.location.href)[0]}";
 			rule.forbidScrollWhenSelecting = true;
 			//rule.pauseJs = true;
 			DNSIntelligence.add(new RgxPlc(Pattern.compile("^https?://www.zhihu.com/question/.+/answer/([0-9]+).*")
 				,"https://www.zhihu.com/tardis/sogou/ans/$1"));
+			DNSIntelligence.add(new RgxPlc(Pattern.compile("^https?://www.zhihu.com/question/([0-9]+)$")
+				,"https://www.zhihu.com/tardis/sogou/qus/$1"));
 			rule.pruneRules = new Object[2]; // pIRl
 			rule.pruneRules[0] = new IISTri(42, -402077131, "js", null);
 			rule.pruneRules[1] = new IISTri(51, -1941194295, "ut", ".App{height:auto!important}");
@@ -419,6 +426,37 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	public class WebClient extends WebChromeClient {
 		private File filepickernow;
 		Dialog d; View cv;
+		
+		@Override
+		public boolean onJsAlert(WebView view, String url, String message, JsResult result) {
+			View mWebView = (View) (view instanceof UniversalWebviewInterface?view:getTag());
+			WebFrameLayout layout = (WebFrameLayout) mWebView.getParent();
+			if (WebOptions.getNoCORSJump(layout.getDelegateFlag(BackendSettings, false))) {
+				return true;
+			}
+			return false;
+		}
+		
+		@Override
+		public boolean onJsPrompt(WebView view, String url, String message, String defaultValue, JsPromptResult result) {
+			View mWebView = (View) (view instanceof UniversalWebviewInterface?view:getTag());
+			WebFrameLayout layout = (WebFrameLayout) mWebView.getParent();
+			if (WebOptions.getNoCORSJump(layout.getDelegateFlag(BackendSettings, false))) {
+				return true;
+			}
+			return super.onJsPrompt(view, url, message, defaultValue, result);
+		}
+		
+		@Override
+		public boolean onJsConfirm(WebView view, String url, String message, JsResult result) {
+			View mWebView = (View) (view instanceof UniversalWebviewInterface?view:getTag());
+			WebFrameLayout layout = (WebFrameLayout) mWebView.getParent();
+			if (WebOptions.getNoCORSJump(layout.getDelegateFlag(BackendSettings, false))) {
+				return true;
+			}
+			return super.onJsConfirm(view, url, message, result);
+		}
+		
 		@Override
 		public boolean onCreateWindow(WebView view, boolean isDialog, boolean isUserGesture, Message resultMsg) {
 			CMN.Log("onCreateWindow", isDialog);
@@ -566,6 +604,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		@Override
 		public void onProgressChanged(WebView view, int newProgress) {
 			//CMN.Log("OPC::", newProgress, Thread.currentThread().getId());
+			//if(true) return;
 			UniversalWebviewInterface webviewImpl = (UniversalWebviewInterface) (view instanceof UniversalWebviewInterface?view:getTag());
 			View mWebView = (View) webviewImpl;
 			WebFrameLayout layout = (WebFrameLayout) mWebView.getParent();
@@ -646,6 +685,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	
 	@Override
 	public void onPageStarted(WebView view, String url, Bitmap favicon) { // OPS
+		//if(true) return;
 		UniversalWebviewInterface webviewImpl = (UniversalWebviewInterface) (view instanceof UniversalWebviewInterface?view:getTag());
 		CMN.Log("onPageStarted……", url, webviewImpl.getUrl(), Thread.currentThread().getId());
 		View mWebView = (View) webviewImpl;
@@ -653,12 +693,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		if(layout==null||layout.implView!=mWebView) {
 			return;
 		}
-		if(!a.opt.getUpdateUALowEnd()) { // 在此处更新UA或导致页面往复重载，慎之
-			if(a.updateUserAgentString(layout, url)) {
-				return;
-			}
-		}
-		
+		layout.queryDomain(url, false); // 在此处更新UA或导致页面往复重载以及冻结，慎之
 		// 滑动隐藏底栏  滑动隐藏顶栏 0
 		// 底栏不动  滑动隐藏顶栏 1
 		// 底栏不动  顶栏不动 2
@@ -679,7 +714,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		layout.forbidScrollWhenSelecting = false;
 		boolean shutdownJs = false;
 		layout.modifiers = null;
-		int ts = 100;
+		int ts = 115;
 		for (Pair<Pattern, SiteRule> siteRulePair:SiteConfigsByPattern) {
 			if(siteRulePair.first.matcher(url).find()) {
 				SiteRule rI = siteRulePair.second;
@@ -728,7 +763,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	
 	
 	/**if (!window.PPTurboKit) {
-			window.polyme = {};
+			//window.polyme = {};
 			var w = window;
 			w.PPTurboKit = 1;
 			w.addEventListener('keydown', function(e) {
@@ -808,7 +843,8 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	 		w._docAnnots="";
 	 		w._docAnnott="";
 			function wrappedFscrFunc(e) {
-	 			if(document.fullscreen)
+	 			//console.log('fatal fullscreen 111'+ document.fullscreenElement);
+	 			if(document.fullscreen || true)
 	 			{
 					var vw=0,vh=0;
 					var se = e.srcElement;
@@ -821,7 +857,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 						vw = se.clientWidth;
 						vh = se.clientHeight;
 					}
-					//console.log('fatal fullscreen!!!',vw,vh);
+					//console.log('fatal fullscreen!!! '+vw+","+vh);
 					polyme.onRequestFView(vw, vh);
 					return false;
 	 			}
@@ -831,7 +867,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 			w.addEventListener('webkitfullscreenchange', wrappedFscrFunc);
 			w.addEventListener('mozfullscreenchange', wrappedFscrFunc);
 		}
-	 	polyme.logm('fatal logm test', '1','2','3');
+	 	polyme.logm(['fatal logm test', '1','2','3']);
 	 */
 	@Multiline(trim=true, compile=true)
 	public final static String PRI = "Primary Rule Insertion";
@@ -852,33 +888,32 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	@Multiline(trim=true, compile=true)
 	public final static String ForceResizable = "";
 	
-	/** var w = window.hasVPM;
-		if(w===undefined) {
-	 		w = false;
+	/** var tmp = window.hasVPM;
+		if(tmp===undefined) {
+	 		tmp = false;
 			var m = document.head.querySelectorAll('meta');
 			for (var i = 0; i < m.length; i++) {
 				var iI = m[i];
 				if (iI.name === 'viewport') {
-					w = true;
+					tmp = true;
 					break;
 				}
 			}
 	 	} else {
-	 	 	w=!w;
+	 	 	tmp=!tmp;
 		}
-	 	if(w) {
+	 	if(tmp) {
 			window._frcWrp = polyme.craft('style', '');
 		}
 		window.metas = 0;
-	 	w?1:0
+	 	tmp?1:0
 	 */
 	@Multiline(trim=true, compile=true)
 	public final static String ForceWarpable = "";
 	
 	
 	/** (function(wd){
-			var w=window._frcWrp;
-			if(wd&&w) {
+			if(wd&&window._frcWrp) {
 				wd = (wd-25)+"px";
 				console.log("fatal WrappedOnResize!!! "+wd);
 				function traverseDom(p) {
@@ -887,17 +922,20 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 					var cc = 1;
 					for(var j=0;j<cc;j++) {
 						p = n[j];
-						if(p.tagName!='A' && p.className.indexOf('code')<0) {
+						if(p.className!=undefined && p.className.indexOf && p.className.indexOf('code')<0) { // p.tagName!='A' &&
 							var m = p.childNodes, ln = m.length, pl = cc, i=0;
-							if(ln>p.childElementCount) {
+							//if(ln>p.childElementCount)
+							{
 								for(;i<ln;i++) {
 									var e = m[i];
-									if(e.nodeType==3) {
+	 								if(e.id==='b_results' || e.tagName==='A') {
+										e.style.maxWidth = wd;
+									} else if(e.nodeType==3) {
 										var t=e.textContent;
-										if (/\S/.test(t) && t.length>8) {
+										if (/\S/.test(t) && t.length>3) {
 											cc = pl;
 											p.style.maxWidth = wd;
-											//console.log(p);
+											console.log(p);
 											break;
 										}
 									} else if(e.tagName!=undefined){
@@ -941,6 +979,12 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		}
 		//if(true) return;
 		if(layout.PageStarted) {
+//			if(!a.opt.getUpdateUALowEnd()) { // 在此处更新UA或导致页面往复重载，慎之
+//				if(a.updateUserAgentString(layout, url)) {
+//					layout.refresh();
+//					return;
+//				}
+//			}
 			String ordinalUrl=webviewImpl.getUrl();
 			if(ordinalUrl!=null) {
 				url = ordinalUrl;
@@ -1096,6 +1140,9 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		if(layout.forbidLoading) {
 			return true;
 		}
+		if(WebOptions.getNoCORSJump(layout.getDelegateFlag(BackendSettings, false)) && !layout.domain.matches(url)) {
+			return true;
+		}
 		if(!url.regionMatches(false, 0, "http", 0, 4)
 				&&!url.regionMatches(false, 0, "https", 0, 5)) {
 			//if(a.webtitle.getVisibility()== View.VISIBLE) a.etSearch.setText(url);
@@ -1121,19 +1168,21 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 			long now = CMN.now();
 			if(now>0&&now-a.supressingNxtLux<350) {
 				CMN.Log("supressingNxtLux", url);
-				layout.setNavStacksDirty();
-				return false;
-			}
-			a.supressingNxtLux = now;
-			if(!layout.hasValidUrl()) {
-				layout.clearHistroyRequested=true;
+				//layout.setNavStacksDirty();
+				//return false;
 			} else {
-				//a.LuxuriouslyLoadUrl(layout, url);
-				return true;
+				a.supressingNxtLux = now;
+				if(!layout.hasValidUrl()) {
+					layout.clearHistroyRequested=true;
+				} else {
+					//a.LuxuriouslyLoadUrl(layout, url);
+					return true;
+				}
 			}
 		}
 		
 		//view.loadUrl(url);
+		layout.queryDomain(url, true);
 		layout.setNavStacksDirty();
 		return false;
 	}
@@ -1238,8 +1287,16 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		return null;
 	}
 	
+	
+	@Nullable
+	@Override
+	public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
+		return null;
+	}
+	
 	@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 	public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+		if(true) return null;
 		String url = request.getUrl().toString();
 		//CMN.Log("SIR::", url);
 		//CMN.Log("SIR::", headers);
@@ -1287,7 +1344,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 				return getClientResponse(url, host, moders, request.getRequestHeaders(), request.getMethod());
 			} catch (IOException e) {
 				CMN.Log(url+"\n", e);
-				//return emptyResponse;
+				return emptyResponse;
 				//return null;
 			}
 		}
