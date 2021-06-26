@@ -2121,6 +2121,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		}
 		
 		if(/*pseudoAdd==0 &&*/ weblayout.lazyLoad()) {
+			weblayout.setStorageSettings();
+			weblayout.setBackEndSettings(); // 初始化
 			tabsManagerIsDirty = true;
 		}
 		
@@ -4082,9 +4084,6 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		layout.implView = theView;
 		layout.mWebView = mWebView;
 		layout.addView(theView, addIdx, new FrameLayout.LayoutParams(-1, -1));
-		
-		layout.setStorageSettings();
-		layout.setBackEndSettings(); // 初始化
 		
 		mWebView.addJavascriptInterface(mWebListener.bridge, "polyme");
 		mWebView.addJavascriptInterface(holder.TabID, "chrmtd");

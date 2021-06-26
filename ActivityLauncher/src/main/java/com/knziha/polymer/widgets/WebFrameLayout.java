@@ -597,8 +597,8 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 	
 	///////// AdvancedNestScrollWebView END /////////
 	
-	final static long StorageSettingsMask = (0x1<<4)|(0x1<<5);
-	final static long BackendSettingsMask = (0x1<<12)|(0x1<<8)|(0x1<<7);
+	final static long StorageSettingsMask = (0x1<<3)|(0x1<<4)|(0x1<<5)|(0x1<<6);
+	final static long BackendSettingsMask = (0x1<<11)|(0x1<<12)|(0x1<<8)|(0x1<<7);
 	
 	long SettingsStamp;
 	public int mSettingsVersion;
@@ -723,23 +723,23 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 	}
 	
 	
-	HashMap<SubStringKey, DomainInfo> domainInfoMap = new HashMap<>();
+	final static HashMap<SubStringKey, DomainInfo> domainInfoMap = new HashMap<>();
 	
 	// 设置变化、SOUL、刷新、OPS、加载网页。
 	// 搜索引擎列表，导航页，需要域数据库记录的图标。
 	// 常规访问，updateua (loadurl、刷新、onpagestart之时) 需要域数据库记录的配置信息。
 	public void queryDomain(String url, boolean updateUa) {
-		if (!domain.matches(url)) {
+		if (!domain.matches(url))
+		{
 			SubStringKey domainKey = SubStringKey.new_hostKey(url);
-			CMN.Log("queryDomain::", CMN.tid(), domainKey, url);
+			//CMN.Log("queryDomain::", CMN.tid(), domainKey, url);
 			long flag = domainInfo.f1;
 			DomainInfo domainInfo = domainInfoMap.get(domainKey);
-			//if (!domainKey.equals(layout.domain))
 			if (domainInfo!=null) {
 				setDomainInfo(domainInfo.domainKey, domainInfo);
 			} else {
 				String domain = domainKey.toString();
-				domainKey = SubStringKey.new_hostKey(domain);
+				domainKey = SubStringKey.fast_hostKey(domain);
 				try(Cursor infoCursor = LexicalDBHelper.getInstancedDb()
 						.rawQuery("select * from domains where url = ? ", new String[]{domain})){
 					if (infoCursor.moveToFirst()) {

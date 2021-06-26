@@ -17,7 +17,7 @@ public class SubStringKey {
 	}
 	
 	public  static SubStringKey new_hostKey(String text) {
-		int st=0, ed= text.length();
+		int st=0, ed=text.length();
 		int idx=text.indexOf("://");
 		if(idx>0) {
 			st=idx+3;
@@ -44,8 +44,8 @@ public class SubStringKey {
 		this.st = st;
 		this.ed = ed;
 		this.text = text;
-		this.hash = Utils.hashCode(text, st, ed);
 		this.len = ed-st;
+		this.hash = Utils.hashCode(text, st, ed);
 	}
 	
 	@Override

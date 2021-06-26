@@ -431,7 +431,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		public boolean onJsAlert(WebView view, String url, String message, JsResult result) {
 			View mWebView = (View) (view instanceof UniversalWebviewInterface?view:getTag());
 			WebFrameLayout layout = (WebFrameLayout) mWebView.getParent();
-			if (WebOptions.getNoCORSJump(layout.getDelegateFlag(BackendSettings, false))) {
+			if (WebOptions.getNoAlerts(layout.getDelegateFlag(BackendSettings, false))) {
 				return true;
 			}
 			return false;
@@ -441,7 +441,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		public boolean onJsPrompt(WebView view, String url, String message, String defaultValue, JsPromptResult result) {
 			View mWebView = (View) (view instanceof UniversalWebviewInterface?view:getTag());
 			WebFrameLayout layout = (WebFrameLayout) mWebView.getParent();
-			if (WebOptions.getNoCORSJump(layout.getDelegateFlag(BackendSettings, false))) {
+			if (WebOptions.getNoAlerts(layout.getDelegateFlag(BackendSettings, false))) {
 				return true;
 			}
 			return super.onJsPrompt(view, url, message, defaultValue, result);
@@ -451,7 +451,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		public boolean onJsConfirm(WebView view, String url, String message, JsResult result) {
 			View mWebView = (View) (view instanceof UniversalWebviewInterface?view:getTag());
 			WebFrameLayout layout = (WebFrameLayout) mWebView.getParent();
-			if (WebOptions.getNoCORSJump(layout.getDelegateFlag(BackendSettings, false))) {
+			if (WebOptions.getNoAlerts(layout.getDelegateFlag(BackendSettings, false))) {
 				return true;
 			}
 			return super.onJsConfirm(view, url, message, result);
