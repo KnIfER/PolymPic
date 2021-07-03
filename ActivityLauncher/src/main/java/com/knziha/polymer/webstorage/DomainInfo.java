@@ -13,24 +13,33 @@ public class DomainInfo {
 	public final SubStringKey domainKey;
 	public long domainID;
 	public long f1;
+	public long f1Stamp;
 	public Bitmap thumbnail;
-	public boolean isDirty;
 	
 	public DomainInfo(SubStringKey domainKey, long rowID, long f1) {
 		this.domainKey = domainKey;
 		this.domainID = rowID;
 		this.f1 = f1;
+		this.f1Stamp = f1;
 	}
 	@Multiline(flagPos=6) public boolean getApplyOverride_group_storage(){ f1=f1; throw new RuntimeException(); }
-	@Multiline(flagPos=11) public boolean getApplyOverride_group_client(){ f1=f1; throw new RuntimeException(); }
+	@Multiline(flagPos=6) public void setApplyOverride_group_storage(boolean val){ f1=f1; throw new RuntimeException(); }
 	
+	@Multiline(flagPos=11) public boolean getApplyOverride_group_client(){ f1=f1; throw new RuntimeException(); }
+	@Multiline(flagPos=11) public void setApplyOverride_group_client(boolean val){ f1=f1; throw new RuntimeException(); }
+	
+	@Multiline(flagPos=14) public boolean getApplyOverride_group_scroll(){ f1=f1; throw new RuntimeException(); }
+	@Multiline(flagPos=14) public void setApplyOverride_group_scroll(boolean val){ f1=f1; throw new RuntimeException(); }
+
+	@Multiline(flagPos=21) public boolean getApplyOverride_group_text(){ f1=f1; throw new RuntimeException(); }
+	@Multiline(flagPos=21) public void setApplyOverride_group_text(boolean val){ f1=f1; throw new RuntimeException(); }
+
 	public void updateFlag(long val) {
 		f1 = val;
-		isDirty = true;
 	}
 	
 	public void checkDirty() {
-		if(isDirty) {
+		if(f1Stamp != f1) {
 			ContentValues values = new ContentValues();
 			values.put("f1", f1);
 			SQLiteDatabase database = LexicalDBHelper.getInstancedDb();
@@ -42,7 +51,7 @@ public class DomainInfo {
 					domainID = database.insert("domains", null, values);
 				}
 			}
-			isDirty = false;
+			f1Stamp = f1;
 		}
 	}
 }

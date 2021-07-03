@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:tools="http://schemas.android.com/tools">
+<com.knziha.polymer.widgets.XYLinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	android:id="@+id/root"
+	android:orientation="vertical"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	android:clickable="true"
+	android:elevation="10dp"
+	android:animateLayoutChanges="true"
+	tools:ignore="ContentDescription,HardcodedText"
+	>
+
+	<LinearLayout
+		android:id="@+id/immPanel"
+		android:orientation="horizontal"
+		android:layout_width="match_parent"
+		android:layout_height="55dp"
+		>
+		<ImageView
+			android:id="@+id/imm_arrow"
+			android:src="@drawable/ic_keyboard_arrow_right_black_18dp"
+			style="@style/quick_settings_arrow"
+			/>
+		<TextView
+			android:id="@+id/imm"
+			android:text="沉浸式滚动"
+			style="@style/quick_settings_menu" />
+		<View style="@style/quick_settings_sepver" />
+		<ImageView
+			android:id="@+id/imm_rlm"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			tools:src="@drawable/ic_viewpager_carousel_1"
+			android:padding="8dp"
+			android:layout_marginStart="5dp"
+			android:layout_marginEnd=  "5dp"
+			android:layout_gravity="center_vertical"
+			android:background="?actionBarItemBackground"
+			/>
+		<View style="@style/quick_settings_sepver" />
+		<com.knziha.polymer.widgets.SwitchCompatBeautiful
+			android:id="@+id/imm_switch"
+			android:src="@drawable/ic_fullscreen2_01"
+			app:track="@drawable/switch_ios_track_selector"
+			app:dim0="2dp"
+			app:dim1="0dp"
+			style="@style/quick_settings_sw" />
+	</LinearLayout>
+<!--		<LinearLayout-->
+<!--			android:layout_width="match_parent"-->
+<!--			android:layout_height="wrap_content"-->
+<!--			android:orientation="vertical"-->
+<!--			android:paddingLeft="15dp"-->
+<!--			android:paddingRight="10dp"-->
+<!--			android:background="#fff"-->
+<!--			android:paddingTop="2dp"-->
+<!--			android:paddingBottom="15dp"-->
+<!--			>-->
+<!--			<com.knziha.polymer.preferences.RadioSwitchButton-->
+<!--				android:id="@+id/radio"-->
+<!--				android:layout_width="match_parent"-->
+<!--				android:layout_height="wrap_content"-->
+<!--				android:text="滑动隐藏顶栏"-->
+<!--				android:button="@drawable/radio_selector"-->
+<!--				android:paddingStart="8dp"-->
+<!--				android:paddingTop=   "9dp"-->
+<!--				android:paddingBottom="9dp"-->
+<!--				android:drawableRight="@drawable/ic_viewpager_carousel_1"-->
+<!--				/>-->
+<!--			<com.knziha.polymer.preferences.RadioSwitchButton-->
+<!--				android:layout_width="match_parent"-->
+<!--				android:layout_height="wrap_content"-->
+<!--				android:text="滑动隐藏底栏"-->
+<!--				android:button="@drawable/radio_selector"-->
+<!--				android:paddingStart="8dp"-->
+<!--				android:paddingTop=   "9dp"-->
+<!--				android:paddingBottom="9dp"-->
+<!--				android:drawableRight="@drawable/ic_polymer1"-->
+<!--				/>-->
+<!--			<com.knziha.polymer.preferences.RadioSwitchButton-->
+<!--				android:layout_width="match_parent"-->
+<!--				android:layout_height="wrap_content"-->
+<!--				android:text="滑动隐藏中栏"-->
+<!--				android:button="@drawable/radio_selector"-->
+<!--				android:paddingStart="8dp"-->
+<!--				android:paddingTop=   "9dp"-->
+<!--				android:paddingBottom="9dp"-->
+<!--				android:drawableRight="@drawable/ic_domain_bk"-->
+<!--				/>-->
+<!--		</LinearLayout>-->
+
+	<View style="@style/quick_settings_sephor" />
+
+
+	<LinearLayout
+		android:id="@+id/fs_pannel"
+		android:orientation="horizontal"
+		android:layout_width="match_parent"
+		android:layout_height="55dp"
+		>
+		<ImageView
+			android:id="@+id/fs_arrow"
+			android:src="@drawable/ic_keyboard_arrow_right_black_18dp"
+			style="@style/quick_settings_arrow"
+			/>
+		<TextView
+			android:id="@+id/fs"
+			android:text="常用网页设置"
+			style="@style/quick_settings_menu" />
+	</LinearLayout>
+
+	<View style="@style/quick_settings_sephor" />
+
+
+	<LinearLayout
+		android:id="@+id/textPanel"
+		android:orientation="horizontal"
+		android:layout_width="match_parent"
+		android:layout_height="55dp"
+		>
+		<ImageView
+			android:id="@+id/text_arrow"
+			android:src="@drawable/ic_keyboard_arrow_right_black_18dp"
+			style="@style/quick_settings_arrow"
+			/>
+		<TextView
+			android:id="@+id/text"
+			android:text="文本选项"
+			style="@style/quick_settings_menu" />
+		<View style="@style/quick_settings_sepver" />
+		<ImageView
+			android:id="@+id/text_rlm"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			tools:src="@drawable/ic_viewpager_carousel_1"
+			android:padding="8dp"
+			android:layout_marginStart="5dp"
+			android:layout_marginEnd=  "5dp"
+			android:layout_gravity="center_vertical"
+			android:background="?actionBarItemBackground"
+			/>
+		<View style="@style/quick_settings_sepver" />
+		<com.knziha.polymer.widgets.SwitchCompatBeautiful
+			android:id="@+id/text_switch"
+			android:src="@drawable/ic_baseline_text_format_24"
+			app:track="@drawable/switch_ios_track_selector"
+			app:dim0="2dp"
+			app:dim1="0dp"
+			style="@style/quick_settings_sw" />
+	</LinearLayout>
+
+	<ViewStub
+		android:id="@+id/textscale_picker"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:layout="@layout/textscale_picker"
+		/>
+	<View style="@style/quick_settings_sephor" />
+
+
+	<LinearLayout
+		android:orientation="horizontal"
+		android:layout_width="match_parent"
+		android:layout_height="55dp"
+		>
+		<ImageView
+			android:id="@+id/sys_vol_arrow"
+			android:src="@drawable/ic_keyboard_arrow_right_black_18dp"
+			style="@style/quick_settings_arrow" />
+		<TextView
+			android:id="@+id/sys_vol"
+			android:text="调节系统音量"
+			style="@style/quick_settings_menu" />
+		<View style="@style/quick_settings_sepver" />
+		<com.knziha.polymer.widgets.SwitchCompatBeautiful
+			android:id="@+id/sys_vol_switch"
+			android:src="@drawable/equi"
+			app:track="@drawable/switch_ios_track_selector"
+			app:dim0="2dp"
+			app:dim1="2dp"
+			style="@style/quick_settings_sw" />
+	</LinearLayout>
+
+	<ViewStub
+		android:id="@+id/sys_vol_eq"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:layout="@layout/sys_vol_eq"
+		/>
+	<View style="@style/quick_settings_sephor" />
+
+
+</com.knziha.polymer.widgets.XYLinearLayout>
+</layout>

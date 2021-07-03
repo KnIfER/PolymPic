@@ -16,6 +16,8 @@ import com.knziha.polymer.Utils.OptionProcessor;
 import com.knziha.polymer.Utils.Options;
 import com.knziha.polymer.widgets.WebFrameLayout;
 
+import static com.knziha.polymer.webstorage.WebOptions.BackendSettings;
+import static com.knziha.polymer.webstorage.WebOptions.StorageSettings;
 import static com.knziha.polymer.widgets.Utils.indexOf;
 
 public class WebViewSettingsDialog extends StandardConfigDialogBase
@@ -121,7 +123,7 @@ public class WebViewSettingsDialog extends StandardConfigDialogBase
 			default:
 				//ssb.append("存储组");
 			/* Group#存储 */
-			case 0:
+			case StorageSettings:
 				if(!buildSingle) webSepGroupApply(builder, ssb, 0, 6, flagIndex);
 				builder.withTitle(mResource.getStringArray(R.array.BenDiCunChu))
 					.init_clickspan_with_bits_at(0,  0, bitMask, 2, bitMax, flagIndex, 1)//总开关
@@ -139,7 +141,7 @@ public class WebViewSettingsDialog extends StandardConfigDialogBase
 					append_hr(ssb, tab);
 				}
 			/* Group#客户端 */
-			case 1:
+			case BackendSettings:
 				if(!buildSingle) webSepGroupApply(builder, ssb, 1, 11, flagIndex);
 				builder.withTitle(mResource.getStringArray(R.array.KeHuDuan))
 					.init_clickspan_with_bits_at(0,  0, bitMask, 7, bitMax, flagIndex, 2)

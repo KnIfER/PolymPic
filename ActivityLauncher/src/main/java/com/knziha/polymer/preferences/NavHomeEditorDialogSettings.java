@@ -8,13 +8,14 @@ import android.widget.FrameLayout;
 
 import androidx.appcompat.app.GlobalOptions;
 
+import com.knziha.polymer.BrowserActivity;
 import com.knziha.polymer.Utils.Options;
 import com.knziha.polymer.widgets.NavigationHomeAdapter;
 
 public class NavHomeEditorDialogSettings extends SettingsPanel {
 	final NavigationHomeAdapter navigationHomeAdapter;
 	public NavHomeEditorDialogSettings(Context context, ViewGroup root, int bottomPaddding, Options opt, NavigationHomeAdapter navigationHomeAdapter) {
-		super(context, root, bottomPaddding, opt);
+		super(context, root, bottomPaddding, opt, (BrowserActivity) context);
 		this.navigationHomeAdapter = navigationHomeAdapter;
 		syncHeights();
 		settingsLayout.getChildAt(0).setPadding((int) (15*GlobalOptions.density), (int) (10*GlobalOptions.density), 0, 0);
@@ -34,11 +35,12 @@ public class NavHomeEditorDialogSettings extends SettingsPanel {
 	}
 	
 	@Override
-	public void toggle(ViewGroup root) {
+	public boolean toggle(ViewGroup root) {
 		super.toggle(root);
 		if (bIsShowing) {
 			syncHeights();
 		}
+		return bIsShowing;
 	}
 	
 	private final static String[][] UITexts = new String[][]{
@@ -48,15 +50,15 @@ public class NavHomeEditorDialogSettings extends SettingsPanel {
 		, "填充当前URL与标题"
 	}};
 	
-	private final static Object[][] UITags = new Object[][]{
-	{ null
+	private final static int[][] UITags = new int[][]{
+	{ Integer.MAX_VALUE
 		, makeInt(1, 58, false) // getAlwaysShowMultilineEditField
 		, makeInt(1, 59, true) // getAppendNewNavNodeToEnd
 		, makeInt(0, 0, true) // ApplyNavNode
 		, makeInt(0, 1, true) // FillNavNode
 	}};
 	
-	protected void onAction(int flagIdx, int flagPos, boolean val) {
+	protected void onAction(int flagIdx, int flagPos, boolean dynamic, boolean val) {
 		if(flagIdx==0) {
 			if (flagPos==0) {
 				navigationHomeAdapter.OnNavHomeEditorActions(0);
@@ -70,11 +72,11 @@ public class NavHomeEditorDialogSettings extends SettingsPanel {
 	}
 	
 	@Override
-	protected void init() {
+	protected void init(Context context, ViewGroup root) {
 		super.UITexts = UITexts;
 		super.UITags = UITags;
 		super.shouldRemoveAfterDismiss = false;
-		super.listenToActions = true;
+		super.init(context, root);
 	}
 }
 	

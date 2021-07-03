@@ -40,6 +40,10 @@ public class AppToastManager implements Resumable{
 					a.showHistory();
 				} else if(appUrl.equals("downloads")) {
 					a.showDownloads();
+				} else if(appUrl.equals("reload")) {
+					try {
+						a.currentWebView.reload();
+					} catch (Exception ignored) { }
 				} else {
 					try {
 						this.a.startActivity(new Intent(Intent.ACTION_VIEW

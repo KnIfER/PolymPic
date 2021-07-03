@@ -15,7 +15,6 @@ import androidx.appcompat.app.GlobalOptions;
 import com.knziha.filepicker.model.GlideCacheModule;
 import com.knziha.filepicker.settings.FilePickerOptions;
 import com.knziha.filepicker.utils.CMNF;
-import com.knziha.polymer.BrowserActivity;
 import com.knziha.polymer.pdviewer.bookdata.BookOptions;
 import com.knziha.polymer.widgets.XYTouchRecorder;
 
@@ -103,6 +102,20 @@ public class Options implements BookOptions {
 	
 	@Multiline(flagPos=0, shift=1) public static boolean getAlwaysRefreshThumbnail(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=0, shift=1) public static boolean setAlwaysRefreshThumbnail(boolean val){ FirstFlag=FirstFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=1) public boolean getAdjustSystemVolume(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=1) public void setAdjustSystemVolume(boolean val){ FirstFlag=FirstFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=2) public boolean getAdjustSystemVolumeShown(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=2) public boolean toggleAdjustSystemVolumeShown(){ FirstFlag=FirstFlag; throw new IllegalArgumentException(); }
+	@Multiline(flagPos=3) public boolean getEqAdjustOctopusMode(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
+	
+	@Multiline(flagPos=4) public boolean getAdjustIMShown(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=4) public boolean toggleAdjustIMShown(){ FirstFlag=FirstFlag; throw new IllegalArgumentException(); }
+	@Multiline(flagPos=5) public boolean getAdjustFrequentSettingsShown(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=5) public boolean toggleAdjustFrequentSettingsShown(){ FirstFlag=FirstFlag; throw new IllegalArgumentException(); }
+	@Multiline(flagPos=6) public boolean getAdjustTextShown(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=6) public boolean toggleAdjustTextShown(){ FirstFlag=FirstFlag; throw new IllegalArgumentException(); }
+	
+	
 	@Multiline(flagPos=15) public static boolean getInDarkMode(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=15) public static boolean setInDarkMode(boolean val){ FirstFlag=FirstFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=16) public static boolean isFullScreen(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
@@ -176,7 +189,18 @@ public class Options implements BookOptions {
 	public static void SecondFlag(long _SecondFlag) {
 		SecondFlag=_SecondFlag;
 	}
-
+	
+	@Multiline(flagPos=0, debug=0) public boolean checkTabsOnPause(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=1) public boolean saveTabsOnPause(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=2, debug=1) public boolean getDelayRemovingClosedTabs(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
+	
+	@Multiline(flagPos=3, shift=0) public boolean getUpdateUAOnClkLnk(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=4, shift=0) public boolean getUpdateUAOnPageSt(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=4, shift=0) public void setUpdateUAOnPageSt(boolean val){ SecondFlag=SecondFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=5, shift=1) public boolean getUpdateUAOnPageFn(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=6, shift=1) public boolean getUpdateTextZoomOnPageSt(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
+	
+	
 	@Multiline(flagPos=19, shift=1) public static boolean getUseCustomCrashCatcher(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=20, shift=1) public static boolean getSilentExitBypassingSystem(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
 	/** ffmr */
@@ -189,6 +213,23 @@ public class Options implements BookOptions {
 	@Multiline(flagPos=28, shift=0) public static boolean getKeepScreen(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=28, shift=1) public static boolean getKeepScreen(long SecondFlag){ SecondFlag=SecondFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=28, shift=1) public static boolean setKeepScreen(boolean val){ SecondFlag=SecondFlag; throw new RuntimeException(); }
+	
+	// 管理标签动画效果
+	@Multiline(flagPos=29, shift=1, debug=1) public boolean getShowWebCoverDuringTransition(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=30, debug=0) public boolean getAlwaysPostAnima(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=31, shift=1, debug=1) public boolean getAnimateTabsManager(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
+	
+	@Multiline(flagPos=32, shift=1, debug=0) public boolean getUseStdViewAnimator(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
+	
+	
+	
+	
+	
+	@Multiline(flagPos=35, debug=0) public boolean getAlwaysShowWebCoverDuringTransition(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=36, debug=0) public boolean getHideWebViewWhenShowingWebCoverDuringTransition(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
+	/** Need to Rearrange ViewPager's View order. */
+	@Multiline(flagPos=37, debug=0) public boolean getAnimateImageviewAlone(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
+
 	
 	@Multiline(flagPos=53, debug=1) public static boolean getRebuildToast(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=55, shift=1) public static boolean getToastRoundedCorner(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
@@ -226,26 +267,7 @@ public class Options implements BookOptions {
 //	@Multiline(flagPos=12) public boolean getForbitNetworkImage(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
 //	@Multiline(flagPos=13) public boolean getPremature(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
 	
-	// 管理标签动画效果
-	@Multiline(flagPos=14, shift=1, debug=1) public boolean getShowWebCoverDuringTransition(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
-	@Multiline(flagPos=15, debug=0) public boolean getAlwaysPostAnima(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
-	@Multiline(flagPos=16, shift=1, debug=1) public boolean getAnimateTabsManager(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
-	
-	@Multiline(flagPos=17, shift=1, debug=0) public boolean getUseStdViewAnimator(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
-	
-	@Multiline(flagPos=18, shift=0) public boolean getUpdateUALowEnd(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
-	@Multiline(flagPos=18, shift=0) public void setUpdateUALowEnd(boolean val){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
-	
-	@Multiline(flagPos=19, debug=0) public boolean getAlwaysShowWebCoverDuringTransition(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
-	@Multiline(flagPos=20, debug=0) public boolean getHideWebViewWhenShowingWebCoverDuringTransition(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
-	/** Need to Rearrange ViewPager's View order. */
-	@Multiline(flagPos=21, debug=0) public boolean getAnimateImageviewAlone(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
-	@Multiline(flagPos=22, debug=1) public boolean getDelayRemovingClosedTabs(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
-	@Multiline(flagPos=23, debug=0) public boolean checkTabsOnPause(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
-	@Multiline(flagPos=24) public boolean saveTabsOnPause(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
-	
-	@Multiline(flagPos=25, shift=1) public boolean getForceTextWrap(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
-	@Multiline(flagPos=26) public boolean getForceTextWrapForAllWebs(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=21, debug=0) public boolean getForceTextWrapForAllWebs(){ ThirdFlag=ThirdFlag; throw new RuntimeException(); }
 	
 	// 25 getNavHomeShowMultiline
 	// 26 getShowDragHandle
@@ -269,7 +291,6 @@ public class Options implements BookOptions {
 	
 	@Multiline(flagPos=1, shift=0) public void getPDocImmersiveAutoHideMenu(boolean val){ FourthFlag=FourthFlag; throw new IllegalArgumentException(); }
 	
-	
 	/////////////////////End Fourth Flag////////////////////////////////////
 	
 	static XYTouchRecorder xyt;
@@ -290,15 +311,11 @@ public class Options implements BookOptions {
 		tv.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
 	}
 	
-	public final static int WebViewSettingsSource_DOMAIN=-2;
-	public final static int WebViewSettingsSource_TAB=-1;
+	public final static int WebViewSettingsSource_DOMAIN=6;
+	public final static int WebViewSettingsSource_TAB=7;
 	
-	public long Flag(BrowserActivity a, int flagIndex) {
+	public long Flag(int flagIndex) {
 		switch (flagIndex){
-			case WebViewSettingsSource_DOMAIN:
-				return a.currentViewImpl.getDomainFlag();
-			case WebViewSettingsSource_TAB:
-				return a.currentViewImpl.holder.flag;
 			case 1:
 				return FirstFlag;
 			case 2:
@@ -309,41 +326,35 @@ public class Options implements BookOptions {
 		return 0;
 	}
 	
-	public boolean EvalBooleanForFlag(BrowserActivity a, int flagIndex, int flagPos, boolean reverse) {
-		long flag = Flag(a, flagIndex);
-		return reverse ^ (((flag>>flagPos)&0x1)!=0);
-	}
-	
-	public void PutBooleanForFlag(BrowserActivity a, int flagIndex, int flagPos, boolean value, boolean reverse) {
-		long flag = Flag(a, flagIndex);
-		long mask = 1l<<flagPos;
-		if(value ^ reverse) {
-			flag |= mask;
-		} else {
-			flag &= ~mask;
-		}
-		Flag(a, flagIndex, flag);
-	}
-	
-	public void Flag(BrowserActivity a, int flagIndex, long val) {
+	public void Flag(int flagIndex, long val) {
 		switch (flagIndex){
-			case -2:
-				a.currentViewImpl.setDomainFlag(val);
-			break;
-			case -1:
-				a.currentViewImpl.holder.flag=val;
-			break;
 			case 1:
 				FirstFlag=val;
-			break;
+				break;
 			case 2:
 				SecondFlag=val;
-			break;
+				break;
 			case 3:
 				ThirdFlag=val;
-			break;
+				break;
 		}
 	}
+	
+//	public boolean EvalBooleanForFlag(BrowserActivity a, int flagIndex, int flagPos, boolean reverse) {
+//		long flag = Flag(a, flagIndex);
+//		return reverse ^ (((flag>>flagPos)&0x1)!=0);
+//	}
+//
+//	public void PutBooleanForFlag(BrowserActivity a, int flagIndex, int flagPos, boolean value, boolean reverse) {
+//		long flag = Flag(a, flagIndex);
+//		long mask = 1l<<flagPos;
+//		if(value ^ reverse) {
+//			flag |= mask;
+//		} else {
+//			flag &= ~mask;
+//		}
+//		Flag(a, flagIndex, flag);
+//	}
 	
 	public long getLastOpenedPDocID() {
 		return defaultReader.getLong("docId", -1);
@@ -351,6 +362,42 @@ public class Options implements BookOptions {
 	
 	public void putLastOpenedPDocID(long rowID) {
 		defaultReader.edit().putLong("docId", rowID).apply();
+	}
+	
+	public int getGlobalEqShift() {
+		return defaultReader.getInt("eqSft", 5000);
+	}
+	
+	public void putGlobalEqShift(int val) {
+		defaultReader.edit().putInt("eqSft", val).apply();
+	}
+	
+	public void getBandLevels(int[] levels) {
+		String[] bands = defaultReader.getString("bands", "").split(";");
+		for (int i = 0, len=Math.min(levels.length, bands.length); i < len; i++) {
+			levels[i] = IU.parsint(bands[i]);
+		}
+	}
+	
+	public void putBandLevels(int[] levels, int globalEqShift) {
+		StringBuilder str= new StringBuilder(32);
+		for (int i = 0, len=levels.length; i < len; i++) {
+			str.append(levels[i]);
+			if (i<len-1) {
+				str.append(";");
+			}
+		}
+		defaultReader.edit().putString("bands", str.toString()).putInt("eqSft", globalEqShift).apply();
+	}
+	
+	public int getEqBarSpacing() {
+		return -1;
+		//return defaultReader.getInt("EqGap",(int) (10 * GlobalOptions.density));
+	}
+	
+	public int getEqBarSize() {
+		return (int) (30 * GlobalOptions.density);
+		//return Math.max(defaultReader.getInt("EqSize",(int) (30 * GlobalOptions.density)), (int) (5 * GlobalOptions.density));
 	}
 	
 	public void putWebType(int type) {
@@ -370,4 +417,5 @@ public class Options implements BookOptions {
 	public boolean getSingleTapClearSel() {
 		return true;
 	}
+
 }

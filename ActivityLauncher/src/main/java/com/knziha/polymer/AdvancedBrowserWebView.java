@@ -72,8 +72,9 @@ public class AdvancedBrowserWebView extends WebViewImplExt {
 		
 		//settings.setOffscreenPreRaster(true);
 		
-		settings.setUseWideViewPort(true);//设定支持viewport
-		settings.setLoadWithOverviewMode(true);
+		//settings.setUseWideViewPort(true);//设定支持viewport
+		//settings.setLoadWithOverviewMode(true);
+		
 		//settings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.TEXT_AUTOSIZING);
 		//settings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.SINGLE_COLUMN);
 		//settings.setSupportZoom(support);

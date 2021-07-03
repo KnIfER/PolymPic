@@ -44,4 +44,7 @@
 	<dimen name="search_height">48dp</dimen>
 	<dimen name="image_padding">12dp</dimen>
 	<dimen name="search_text_size">18sp</dimen>
+
+	<dimen name="seek_bar_thickness">2dp</dimen>
+	<dimen name="seek_bar_thumb_size">12dp</dimen>
 </resources>

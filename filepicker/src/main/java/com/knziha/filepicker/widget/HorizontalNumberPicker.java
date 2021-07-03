@@ -33,7 +33,9 @@ import android.view.ViewConfiguration;
  * then derive, with minimum modification!
  */
 public class HorizontalNumberPicker extends NumberKicker{
-    public HorizontalNumberPicker(Context context) {
+	public int mSetValue;
+	
+	public HorizontalNumberPicker(Context context) {
         super(context);
     }
 
@@ -87,7 +89,11 @@ public class HorizontalNumberPicker extends NumberKicker{
             // with the new one.
             if ((showSelectorWheel && i != SELECTOR_MIDDLE_ITEM_INDEX) ||
                 (i == SELECTOR_MIDDLE_ITEM_INDEX && mInputText.getVisibility() != VISIBLE)) {
-                canvas.drawText(scrollSelectorValue, x, y, mSelectorWheelPaint);
+            	if (i == SELECTOR_MIDDLE_ITEM_INDEX && mSetValueStr!=null)
+            	{
+					scrollSelectorValue = mSetValueStr;
+				}
+				canvas.drawText(scrollSelectorValue, x, y, mSelectorWheelPaint);
             }
             x += mSelectorElementHeight;
         }
@@ -292,4 +298,27 @@ public class HorizontalNumberPicker extends NumberKicker{
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(h, w, oldw, oldh);// 宽高值互换  
     }
+    
+    public int getScrollState() {
+    	return mScrollState;
+	}
+	
+	public void SafeSetValue(int value) {
+		//CMN.Log("SafeSetValue", value, mInputText.getText());
+    	if (mSetValue!=value) {
+			mSetValue = value;
+			OnValueChangeListener l = mOnValueChangeListener;
+			mOnValueChangeListener = null;
+			setValue(mStepValue>1?mMinValue+(value - mMinValue)/mStepValue:value);
+			if (mStepValue>1) {
+				mSetValueStr = String.valueOf(value);
+				mInputText.setText(mSetValueStr);
+			}
+			mOnValueChangeListener = l;
+		}
+	}
+	
+	public void setStepMuliplier(int i) {
+		mStepValue = i;
+	}
 }

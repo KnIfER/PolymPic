@@ -57,8 +57,15 @@ the valueOf method.
     }
     return negative ? result : -result;
 }
-
-
+	
+	public static long parseLong(Object o) {
+		try {
+			return Long.parseLong(o.toString());
+		} catch (NumberFormatException e) {
+			return 0;
+		}
+	}
+		
     public static int parsint(Object o){
         return parsint(o,-1);
     }

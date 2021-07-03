@@ -72,7 +72,7 @@ public class StandardConfigDialogBase {
 			text.append(title[titleOff]);
 			if(coef!=null){
 				text.append(" :");
-				long val = (opt.Flag(a, flagIndex)>>flagPosition)&mask;
+				long val = (a.Flag(flagIndex)>>flagPosition)&mask;
 				text.append(coef[coefOff+(int) ((val)+coefShift)%(flagMax+1)]);
 			}
 			text.append(prenth?"]":" }").append("\r\n");
@@ -91,12 +91,12 @@ public class StandardConfigDialogBase {
 						}
 						return;
 					}
-					long flag = opt.Flag(a, flagIndex);
+					long flag = a.Flag(flagIndex);
 					long val = (flag>>flagPosition)&mask;
 					val=(val+1)%(flagMax+1);
 					flag &= ~(mask << flagPosition);
 					flag |= (val << flagPosition);
-					opt.Flag(a, flagIndex, flag);
+					a.Flag(flagIndex, flag);
 					int fixedRange = indexOf(text, ':', now);
 					text.delete(fixedRange+1, prenth?indexOf(text, ']', fixedRange):(fixedRange+3));
 					val=(val+coefShift)%(flagMax+1);

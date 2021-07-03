@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:orientation="vertical"
+	android:layout_width="match_parent"
+	android:layout_height="wrap_content">
+	<com.knziha.polymer.equalizer.EqualizerGroup
+		android:id="@+id/equlizer_group"
+		android:layout_width="match_parent"
+		android:layout_height="120dp"
+		android:orientation="horizontal"
+		/>
+	<LinearLayout
+		android:layout_width="match_parent"
+		android:layout_height="@dimen/_35_"
+		android:orientation="horizontal"
+		android:paddingStart="16dp"
+		>
+		<TextView
+			android:text="整体偏移："
+			android:layout_width="wrap_content"
+			android:layout_height="match_parent"
+			android:gravity="center_vertical"
+			android:textSize="12sp"
+			android:textColor="#3E3E3E"
+			/>
+		<SeekBar
+			android:id="@+id/sys_vol_seek"
+			android:theme="@style/seekBarStyle"
+
+			android:layout_width="0dp"
+			android:layout_weight="1"
+			android:layout_height="match_parent"
+
+			android:splitTrack="false"
+			android:progress="5000"
+			android:max="10000"
+			android:layout_marginEnd=  "2dp"
+			android:focusableInTouchMode="true"
+			/>
+		<TextView
+			android:id="@+id/sys_vol_percent"
+			android:text="+50%"
+			android:layout_width="35dp"
+			android:layout_height="match_parent"
+			android:gravity="center_vertical"
+			android:textSize="11sp"
+			android:textColor="#3E3E3E"
+			android:layout_marginEnd=  "6dp"
+			/>
+	</LinearLayout>
+</LinearLayout>

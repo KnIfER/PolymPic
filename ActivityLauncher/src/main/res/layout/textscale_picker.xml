@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:id="@+id/numberpickerp"
+	android:layout_width="match_parent"
+	android:layout_height="wrap_content"
+	android:orientation="horizontal">
+<!--	<TextView-->
+<!--		android:id="@+id/numberpickerh"-->
+<!--		android:layout_width="wrap_content"-->
+<!--		android:layout_height="wrap_content"-->
+<!--		android:layout_gravity="left"-->
+<!--		android:text="文本缩放："-->
+<!--		android:paddingTop="5dp"-->
+<!--		android:paddingBottom="5dp"-->
+<!--		android:textColor="#000"-->
+<!--		android:paddingStart="30dp"-->
+<!--		android:textAppearance="@style/Base.TextAppearance.AppCompat.Medium"-->
+<!--		/>-->
+	<com.knziha.polymer.preferences.RadioSwitchButton
+		android:id="@+id/radio"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:text="文本缩放："
+		android:button="@drawable/radio_selector"
+		android:paddingStart="8dp"
+		android:paddingTop=   "9dp"
+		android:paddingBottom="9dp"
+		/>
+	<View
+		android:layout_width="0dp"
+		android:layout_height="match_parent"
+		android:layout_weight="1"/>
+	<com.knziha.filepicker.widget.HorizontalNumberPicker
+		android:id="@+id/numberpicker"
+		android:layout_width="wrap_content"
+		android:layout_height="match_parent"
+		android:layout_gravity="end"
+		android:layout_marginRight="5dp"
+		style="@style/NumberKicker_l"
+		/>
+	<View
+		android:layout_width="0dp"
+		android:layout_height="match_parent"
+		android:layout_weight="1"/>
+</LinearLayout>

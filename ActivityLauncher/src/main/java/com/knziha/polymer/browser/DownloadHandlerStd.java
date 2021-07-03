@@ -73,7 +73,7 @@ public class DownloadHandlerStd {
 		dwnldReceiver = new DownloadCompleteReceiver();
 		IntentFilter intentFilter = new IntentFilter();
 		intentFilter.addAction(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
-		a.registerReceiver(dwnldReceiver, intentFilter);
+		a.registerReceiver(dwnldReceiver, intentFilter); // todo fix leaked IntentReceiver
 		this.a = a;
 	}
 	

@@ -24,6 +24,7 @@ import android.webkit.HttpAuthHandler;
 import android.webkit.JavascriptInterface;
 import android.webkit.JsPromptResult;
 import android.webkit.JsResult;
+import android.webkit.RenderProcessGoneDetail;
 import android.webkit.SslErrorHandler;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
@@ -90,7 +91,9 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 import static com.knziha.polymer.HttpRequestUtil.DO_NOT_VERIFY;
+import static com.knziha.polymer.Utils.Options.WebViewSettingsSource_DOMAIN;
 import static com.knziha.polymer.webstorage.WebOptions.BackendSettings;
+import static com.knziha.polymer.webstorage.WebOptions.TextSettings;
 import static org.xwalk.core.Utils.getTag;
 import static org.xwalk.core.Utils.unlock;
 
@@ -683,6 +686,11 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	
 	HostKey startHostMatcher = new HostKey();
 	
+	public boolean onRenderProcessGone(WebView view, RenderProcessGoneDetail detail){
+		showT("渲染进程崩溃！", "刷新", "reload", false);
+		return true;
+	}
+	
 	@Override
 	public void onPageStarted(WebView view, String url, Bitmap favicon) { // OPS
 		//if(true) return;
@@ -693,13 +701,21 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		if(layout==null||layout.implView!=mWebView) {
 			return;
 		}
-		layout.queryDomain(url, false); // 在此处更新UA或导致页面往复重载以及冻结，慎之
+		layout.queryDomain(url, false);
+		if (layout.bNeedCheckUA && a.opt.getUpdateUAOnPageSt()) {
+			// 在此处更新UA或导致页面往复重载以及冻结，慎之
+			layout.updateUserAgentString();
+		}
+		if (layout.bNeedCheckTextZoom>0) {
+			layout.setTextZoom();
+		}
 		// 滑动隐藏底栏  滑动隐藏顶栏 0
 		// 底栏不动  滑动隐藏顶栏 1
 		// 底栏不动  顶栏不动 2
+		// 滑动隐藏底栏  顶栏不动 3
 		int hideBarType = 1;
-		boolean PadPartPadBar = false; // lalala 就不让你看懂
-		layout.syncBarType(hideBarType, PadPartPadBar, a.UIData);
+		boolean PadPartPadBar = false;
+//		layout.syncBarType(hideBarType, PadPartPadBar, a.UIData);
 		
 		//((ViewGroup.MarginLayoutParams)mWebView.layout.getLayoutParams()).bottomMargin=2*a.UIData.bottombar2.getHeight();
 		layout.transientTitle=null;
@@ -737,7 +753,6 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		}
 		layout.hasPrune = prunes.size()>0;
 		//CMN.Log("prunes", layout.hasPrune, prunes, url);
-		webviewImpl.getSettings().setTextZoom(ts);
 		
 		if(shutdownJs) {
 			layout.shutdownJS();
@@ -903,7 +918,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	 	 	tmp=!tmp;
 		}
 	 	if(tmp) {
-			window._frcWrp = polyme.craft('style', '');
+			window._frcWrp = 1;
 		}
 		window.metas = 0;
 	 	tmp?1:0
@@ -1003,6 +1018,10 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 			layout.incrementVerIfAtNormalPage();
 			layout.lastThumbScroll=mWebView.getScrollY();
 			
+			if(layout.bNeedCheckUA && a.opt.getUpdateUAOnPageFn()) {
+				layout.updateUserAgentString();
+			}
+			
 //			boolean bEnableJavaScript = mWebView.getSettings().getJavaScriptEnabled();
 //
 //			if(!bEnableJavaScript)
@@ -1014,21 +1033,24 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 			/* 原天道契 */
 			webviewImpl.evaluateJavascript(PRI, null);
 			
-			if(true) {
-				webviewImpl.evaluateJavascript(ForceResizable, null);
-			}
-			
 			layout.frcWrp = false;
-			if(a.opt.getForceTextWrap()) {
-				if(a.opt.getForceTextWrapForAllWebs()) {
-					layout.frcWrp = true;
-					SendTextWarp(layout);
-				} else {
-					webviewImpl.evaluateJavascript(ForceWarpable, value -> {
-						if (layout.frcWrp = "1".equals(value)) {
-							SendTextWarp(layout);
-						}
-					});
+			long flag = layout.getDelegateFlag(TextSettings, false);
+			if(WebOptions.getTextTurboEnabled(flag)) {
+				if(WebOptions.getForcePageZoomable(flag)) {
+					webviewImpl.evaluateJavascript(ForceResizable, null);
+				}
+				if(WebOptions.getForceTextWrap(flag)) {
+					if(a.opt.getForceTextWrapForAllWebs() || layout.getDelegateFlagIndex(TextSettings)==WebViewSettingsSource_DOMAIN) {
+						webviewImpl.evaluateJavascript("window._frcWrp=1", null);
+						layout.frcWrp = true;
+						SendTextWarp(layout);
+					} else {
+						webviewImpl.evaluateJavascript(ForceWarpable, value -> {
+							if (layout.frcWrp = "1".equals(value)) {
+								SendTextWarp(layout);
+							}
+						});
+					}
 				}
 			}
 			
@@ -1182,7 +1204,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		}
 		
 		//view.loadUrl(url);
-		layout.queryDomain(url, true);
+		layout.queryDomain(url, a.opt.getUpdateUAOnClkLnk());
 		layout.setNavStacksDirty();
 		return false;
 	}
@@ -1296,7 +1318,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	
 	@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 	public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-		if(true) return null;
+		//if(true) return null;
 		String url = request.getUrl().toString();
 		//CMN.Log("SIR::", url);
 		//CMN.Log("SIR::", headers);
@@ -1350,7 +1372,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		}
 		//CMN.Log("request.getUrl().getScheme()", request.getUrl().getScheme());
 		if(url.startsWith("https://mark.js")&&markjsBytesArr!=null) {
-			//CMN.Log("加载中", new String(markjsBytesArr, 0, 200));
+			CMN.Log("加载中", new String(markjsBytesArr, 0, 200));
 			return new WebResourceResponse("text/javascript", "utf8", new ByteArrayInputStream(markjsBytesArr));
 		}
 		return null;

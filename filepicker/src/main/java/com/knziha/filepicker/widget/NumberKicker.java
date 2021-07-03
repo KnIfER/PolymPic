@@ -155,13 +155,21 @@ public class NumberKicker extends LinearLayout {
      * Constant for unspecified size.
      */
     protected static final int SIZE_UNSPECIFIED = -1;
-
-    /**
+    
+	/**
      * User choice on whether the selector wheel should be wrapped.
      */
     protected boolean mWrapSelectorWheelPreferred = true;
-
-    /**
+    
+    protected int mStepValue = 1;
+	public String mSetValueStr;
+	
+	public void setTextColor(int textColor) {
+		mInputText.setTextColor(textColor);
+		mSelectorWheelPaint.setColor(textColor);
+	}
+	
+	/**
      * Use a custom NumberPicker formatting callback to use two-digit minutes
      * strings like "01". Keeping a static formatter etc. is the most efficient
      * way to do this; it avoids creating temporary objects on every call to
@@ -739,17 +747,21 @@ public class NumberKicker extends LinearLayout {
 
         // input text
         mInputText = findViewById(R.id.numberpicker_input);
-        if(GlobalOptions.isDark) mInputText.setTextColor(Color.WHITE);
+		if(GlobalOptions.isDark) mInputText.setTextColor(Color.WHITE);
         mInputText.setOnFocusChangeListener(new OnFocusChangeListener() {
             public void onFocusChange(View v, boolean hasFocus) {
                 if (hasFocus) {
                     mInputText.selectAll();
                 } else {
                     mInputText.setSelection(0, 0);
-                    if(mValue>mMaxValue){//xxx
-						setMaxValue(mValue);
+                    if (mStepValue>1) {
+						mSetValueStr = mInputText.getText().toString();
 						notifyChange(mValue, mValue);
-                    }
+					}
+//                    if(mValue>mMaxValue) {//xxx
+//						setMaxValue(mValue);
+//						notifyChange(mValue, mValue);
+//                    }
                     validateInputTextView(v);
                 }
             }
@@ -1267,6 +1279,7 @@ public class NumberKicker extends LinearLayout {
      * @see #setMaxValue(int)
      */
     public void setValue(int value) {
+		value = Math.max(mMinValue, value);
         setValueInternal(value, false);
     }
 
@@ -1335,7 +1348,10 @@ public class NumberKicker extends LinearLayout {
                 }
             }
             int numberOfDigits = 0;
-            int current = mMaxValue;
+			int current = mMaxValue;
+			if (mStepValue>1) {
+				current = mMinValue + (current - mMinValue)*mStepValue;
+			}
             while (current > 0) {
                 numberOfDigits++;
                 current = current / 10;
@@ -1939,6 +1955,9 @@ public class NumberKicker extends LinearLayout {
     }
 
     protected String formatNumber(int value) {
+    	if (mStepValue>1) {
+			value = mMinValue + (value - mMinValue)*mStepValue;
+		}
         return (mFormatter != null) ? mFormatter.format(value) : formatNumberWithLocale(value);
     }
 
@@ -1949,8 +1968,8 @@ public class NumberKicker extends LinearLayout {
             updateInputTextView();
         } else {
             // Check the new value and ensure it's in range
-            int current = getSelectedPos(str.toString());
-            setValueInternal(current, true);
+            int current = getSelectedPos(str);
+            setValueInternal(current, mStepValue<=1);
         }
     }
 
@@ -1970,6 +1989,9 @@ public class NumberKicker extends LinearLayout {
          */
         String text = (mDisplayedValues == null) ? formatNumber(mValue)
                 : mDisplayedValues[mValue - mMinValue];
+        if (mSetValueStr!=null) {
+        	text = mSetValueStr;
+		}
         if (!TextUtils.isEmpty(text)) {
             CharSequence beforeText = mInputText.getText();
             if (!text.equals(beforeText.toString())) {
@@ -2000,7 +2022,15 @@ public class NumberKicker extends LinearLayout {
      */
     protected void notifyChange(int previous, int current) {
         if (mOnValueChangeListener != null) {
-            mOnValueChangeListener.onValueChange(this, previous, mValue);
+        	int value = mValue;
+			if (mStepValue>1) {
+				try {
+					value = Integer.parseInt(mSetValueStr);
+				} catch (NumberFormatException e) {
+					value = mMinValue + (value - mMinValue)*mStepValue;
+				}
+			}
+            mOnValueChangeListener.onValueChange(this, previous, value);
         }
     }
 
@@ -2072,7 +2102,11 @@ public class NumberKicker extends LinearLayout {
     protected int getSelectedPos(String value) {
         if (mDisplayedValues == null) {
             try {
-                return Integer.parseInt(value);
+            	int ret = Integer.parseInt(value);
+            	if (mStepValue>1) {
+					ret = mMinValue + (ret-mMinValue)/mStepValue;
+				}
+            	return ret;
             } catch (NumberFormatException e) {
                 // Ignore as if it's not a number we don't care
             }

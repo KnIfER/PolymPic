@@ -70,11 +70,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import static com.knziha.polymer.Utils.Options.WebViewSettingsSource_DOMAIN;
+import static com.knziha.polymer.Utils.Options.WebViewSettingsSource_TAB;
 import static com.knziha.polymer.browser.webkit.WebViewHelper.LookForANobleSteedCorrespondingWithDrawnClasses;
 import static com.knziha.polymer.browser.webkit.WebViewHelper.bAdvancedMenu;
 import static com.knziha.polymer.browser.webkit.WebViewHelper.minW;
 import static com.knziha.polymer.webstorage.WebOptions.BackendSettings;
+import static com.knziha.polymer.webstorage.WebOptions.ImmersiveSettings;
 import static com.knziha.polymer.webstorage.WebOptions.StorageSettings;
+import static com.knziha.polymer.webstorage.WebOptions.TextSettings;
 import static com.knziha.polymer.widgets.Utils.DummyBMRef;
 import static com.knziha.polymer.widgets.Utils.getWindowManagerViews;
 import static org.xwalk.core.Utils.Log;
@@ -190,6 +194,10 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 	private boolean lastDwnStill;
 	
 	public static int GlobalSettingsVersion;
+	private boolean hideBothBars = true;
+	private boolean hideNoBars = true;
+	public boolean bNeedCheckUA;
+	public int bNeedCheckTextZoom;
 	
 	public WebFrameLayout(@NonNull Context context, BrowserActivity.TabHolder holder) {
 		super(context);
@@ -312,10 +320,10 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 		
 //		if(!isIMScrollSupressed){
 //			MotionEvent ev = MotionEvent.obtain(event);
-//			handleSimpleNestedScrolling(this, this, ev, action);
+//			handleSimpleNestedScrolling(this, this, ev);
 //			ev.recycle();
 //		}
-//
+
 		return super.dispatchTouchEvent(event);
 	}
 	
@@ -410,7 +418,7 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 				}
 				break;
 		}
-		if(isIMScrollSupressed||appBarLayout==null) {
+		if(isIMScrollSupressed||appBarLayout==null|| hideNoBars) {
 			return;
 		}
 		NestedScrollingChild scrollingChild = (NestedScrollingChild) scrollingView;
@@ -442,21 +450,21 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 				float rawY = event.getRawY();
 				float dRawY = rawY - OrgRawY;
 				long evTime = limitSpd?event.getEventTime():0;
-				if(nestedParent.getTop()==0&&!dragged) {
+				if(hideBothBars && !dragged && nestedParent.getTop()==0) {
 					float dstFactor=0.45f;
 					if(limitSpd&&(rawY-lastRawY)/(evTime-lastRawYTime)<1.15) {
 						OrgRawY += rawY-lastRawY;
-					} else // Math.abs
+					} else // Math.abs  important
 						if((dRawY)>=appBarLayout.getHeight()*dstFactor) {
 							mLastMotionY = (int) (y+(dRawY-appBarLayout.getHeight()*dstFactor));
 							//mLastMotionY = (int) (y-(event.getRawY() - (downRawY + appBarLayout.getHeight())));
-							//mLastMotionY = y;
+							//mLastMotionY = (int) y;
 							dragged=true;
 						}
 				}
 				lastRawY = rawY;
 				lastRawYTime = evTime;
-				if(!dragged) {
+				if(!dragged && hideBothBars) {
 					break;
 				}
 				int deltaY = mLastMotionY - y;
@@ -599,6 +607,8 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 	
 	final static long StorageSettingsMask = (0x1<<3)|(0x1<<4)|(0x1<<5)|(0x1<<6);
 	final static long BackendSettingsMask = (0x1<<11)|(0x1<<12)|(0x1<<8)|(0x1<<7);
+	final static long ScrollSettingsMask = (0x1<<14)|(0x1<<15)|(0x1<<16)|(0x1<<17);
+	final static long TextSettingsMask = (0x1<<18)|(0x1<<19)|(0x1<<20)|(0x1<<21)|(0x1<<22)|(0x1FFL<<23);
 	
 	long SettingsStamp;
 	public int mSettingsVersion;
@@ -610,10 +620,22 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 				setStorageSettings();
 			}
 			if ((SettingsStamp&BackendSettingsMask)!=(getDelegateFlag(BackendSettings, false)&BackendSettingsMask)) {
-				if (updateUa && WebOptions.getPCMode(getDelegateFlag(BackendSettings, false))!=WebOptions.getPCMode(SettingsStamp)) {
+				if (!bNeedCheckUA) {
+					bNeedCheckUA = WebOptions.getPCMode(getDelegateFlag(BackendSettings, false))!=WebOptions.getPCMode(SettingsStamp);
+				}
+				if (updateUa && bNeedCheckUA) {
 					updateUserAgentString();
 				}
 				setBackEndSettings();
+			}
+			if ((SettingsStamp&ScrollSettingsMask)!=(getDelegateFlag(ImmersiveSettings, false)&ScrollSettingsMask)) {
+				if (activity!=null && activity.currentViewImpl==this) {
+					activity.checkImmersiveMode();
+				}
+				setImmersiveScrollSettings();
+			}
+			if ((SettingsStamp&TextSettingsMask)!=(getDelegateFlag(TextSettings, false)&TextSettingsMask)) {
+				setTextSettings(false, true);
 			}
 			CMN.Log("已应用设置变化……", mSettingsVersion, GlobalSettingsVersion, forceCheckAll, updateUa);
 			mSettingsVersion = GlobalSettingsVersion;
@@ -637,14 +659,57 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 	public void setBackEndSettings() {
 		WebSettings settings = mWebView.getSettings();
 		long flag=getDelegateFlag(BackendSettings, false)&BackendSettingsMask;
-		settings.setBlockNetworkImage(WebOptions.getForbidNetworkImage(flag));
+		settings.setBlockNetworkImage(WebOptions.getNoNetworkImage(flag));
 		settings.setJavaScriptEnabled(WebOptions.getEnableJavaScript(flag));
 //		settings.setUserAgentString(WebOptions.getPCMode(flag)
 //				?"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36"
 //				:null);
-		CMN.Log("--- 设置了设置了 ---", WebOptions.getEnableJavaScript(flag), WebOptions.getForbidNetworkImage(flag));
+		CMN.Log("--- 设置了设置了 ---", WebOptions.getEnableJavaScript(flag), WebOptions.getNoNetworkImage(flag));
 		SettingsStamp &= ~BackendSettingsMask;
 		SettingsStamp |= flag;
+	}
+	
+	public void setImmersiveScrollSettings() {
+		long flag=getDelegateFlag(ImmersiveSettings, false)&ScrollSettingsMask;
+		setNestedScrollingEnabled(WebOptions.getImmersiveScrollEnabled(flag));
+		boolean b1=WebOptions.getImmersiveScroll_HideTopBar(flag);
+		boolean b2=WebOptions.getImmersiveScroll_HideBottomBar(flag);
+		hideBothBars = !(!b1&&b2);
+		hideNoBars = !b1&&!b2;
+		SettingsStamp &= ~ScrollSettingsMask;
+		SettingsStamp |= flag;
+	}
+	
+	public void setTextSettings(boolean init, boolean setTextZoom) {
+		long flag=getDelegateFlag(TextSettings, false)&TextSettingsMask;
+		WebSettings settings = mWebView.getSettings();
+		boolean b = WebOptions.getTextTurboEnabled(flag);
+		init |= WebOptions.getTextTurboEnabled(SettingsStamp)!=b;
+		if (init || WebOptions.getOverviewMode(SettingsStamp)!=WebOptions.getOverviewMode(flag))
+		{
+			boolean  b1 = !b || WebOptions.getOverviewMode(flag);
+			settings.setLoadWithOverviewMode(b1);
+			settings.setUseWideViewPort(b1);
+			//CMN.Log("setTextSettings::", b1, WebOptions.getTextTurboEnabled(flag), WebOptions.getOverviewMode(flag));
+		}
+		if (setTextZoom && (init || WebOptions.getTextZoom(SettingsStamp)!=WebOptions.getTextZoom(flag)) )
+		{
+			if (activity.opt.getUpdateTextZoomOnPageSt()) {
+				bNeedCheckTextZoom = WebOptions.getTextZoom(flag);
+			} else {
+				settings.setTextZoom(b?Math.min(500, Math.max(15, WebOptions.getTextZoom(flag))):110);
+				CMN.Log("setTextZoom::", WebOptions.getTextZoom(flag));
+			}
+		}
+		SettingsStamp &= ~TextSettingsMask;
+		SettingsStamp |= flag;
+	}
+	
+	public void setTextZoom() {
+		int ts = WebOptions.getTextZoom(getDelegateFlag(TextSettings, false));
+		CMN.Log("setTextZoom 1::", ts);
+		mWebView.getSettings().setTextZoom(Math.min(500, Math.max(15, ts)));
+		bNeedCheckTextZoom = 0;
 	}
 	
 	public long getDelegateFlag(int section, boolean bWillChange) {
@@ -655,7 +720,15 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 			break;
 			case BackendSettings:
 				if(domainInfo.getApplyOverride_group_client()) return domainInfo.f1;
-				if(holder.getApplyOverride_group_client()) return holder.flag;
+				if(holder.getApplyOverride_group_client())     return holder.flag;
+			break;
+			case ImmersiveSettings:
+				if(domainInfo.getApplyOverride_group_scroll()) return domainInfo.f1;
+				if(holder.getApplyOverride_group_scroll())     return holder.flag;
+			break;
+			case TextSettings:
+				if(domainInfo.getApplyOverride_group_text()) return domainInfo.f1;
+				if(holder.getApplyOverride_group_text())     return holder.flag;
 			break;
 		}
 		if (bWillChange) {
@@ -664,15 +737,49 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 		return Options.ThirdFlag;
 	}
 	
+	public int getDelegateFlagIndex(int section) {
+		switch(section) {
+			case StorageSettings:
+				if(domainInfo.getApplyOverride_group_storage()) return WebViewSettingsSource_DOMAIN;
+				if(holder.getApplyOverride_group_storage()) return WebViewSettingsSource_TAB;
+			break;
+			case BackendSettings:
+				if(domainInfo.getApplyOverride_group_client()) return WebViewSettingsSource_DOMAIN;
+				if(holder.getApplyOverride_group_client()) return WebViewSettingsSource_TAB;
+			break;
+			case ImmersiveSettings:
+				if(domainInfo.getApplyOverride_group_scroll()) return WebViewSettingsSource_DOMAIN;
+				if(holder.getApplyOverride_group_scroll()) return WebViewSettingsSource_TAB;
+			break;
+			case TextSettings:
+				if(domainInfo.getApplyOverride_group_text()) return WebViewSettingsSource_DOMAIN;
+				if(holder.getApplyOverride_group_text()) return WebViewSettingsSource_TAB;
+			break;
+		}
+		return 3;
+	}
+	
 	public void setDelegateFlag(int section, long tmpFlag) {
 		switch(section) {
 			case StorageSettings:
 				if(domainInfo.getApplyOverride_group_storage()) domainInfo.f1=tmpFlag;
 				else if(holder.getApplyOverride_group_storage()) holder.flag=tmpFlag;
+				else break;
 				return;
 			case BackendSettings:
 				if(domainInfo.getApplyOverride_group_client()) domainInfo.f1=tmpFlag;
 				else if(holder.getApplyOverride_group_client()) holder.flag=tmpFlag;
+				else break;
+				return;
+			case ImmersiveSettings:
+				if(domainInfo.getApplyOverride_group_scroll()) domainInfo.f1=tmpFlag;
+				else if(holder.getApplyOverride_group_scroll()) holder.flag=tmpFlag;
+				else break;
+				return;
+			case TextSettings:
+				if(domainInfo.getApplyOverride_group_text()) domainInfo.f1=tmpFlag;
+				else if(holder.getApplyOverride_group_text()) holder.flag=tmpFlag;
+				else break;
 				return;
 		}
 		Options.ThirdFlag = tmpFlag;
@@ -680,7 +787,8 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 	
 	/** @param hideBarType 滑动隐藏底栏  滑动隐藏顶栏 0
 	 *   底栏不动  滑动隐藏顶栏 1
-	 *   底栏不动  顶栏不动 2  */
+	 *   底栏不动  顶栏不动 2
+	 *   滑动隐藏底栏  顶栏不动 3  */
 	public void syncBarType(int hideBarType, boolean padPartPadBar, ActivityMainBinding UIData) {
 		if(hideBarType==2) { // 两者皆不动
 			PadPartPadBar = false;
@@ -756,6 +864,9 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 			if (this.domainInfo.f1!=flag) {
 				checkSettings(true, updateUa); // 域名变化
 			}
+			if (activity!=null && activity.settingsPanel!=null) {
+				activity.settingsPanel.refresh();
+			}
 		}
 	}
 	
@@ -773,6 +884,7 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 		}
 		targetUa = target_ua;
 		WebSettings settings = mWebView.getSettings();
+		bNeedCheckUA = false;
 		if(!TextUtils.equals(settings.getUserAgentString(), target_ua)) {
 			CMN.Log("测试 ua 设置处……", CMN.tid(), target_ua);
 			settings.setUserAgentString(target_ua);
@@ -839,8 +951,10 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 		else {
 			CMN.Log("大风起兮……");
 			WebBackForwardList stacks = mWebView.restoreState(bundle);
+			//bundle.clear(); mWebView.saveState(bundle); stacks = mWebView.restoreState(bundle);
 			CMN.Log("云飞扬……", stacks);
 			if(stacks!=null && stacks.getSize()>0) {
+				//mWebView.reload();
 				CMN.Log("复活……", stacks.getSize());
 				return true;
 			}

@@ -17,7 +17,6 @@ import android.widget.TextView;
 import androidx.appcompat.app.GlobalOptions;
 
 import com.knziha.polymer.R;
-import com.knziha.polymer.Utils.CMN;
 
 import java.util.ArrayList;
 
@@ -26,7 +25,7 @@ public class PopupMenuHelper implements View.OnClickListener, View.OnLongClickLi
 	public final FrameLayout popRoot;
 	public final LinearLayout lv;
 	public final Context context;
-	private final Drawable leftDrawable;
+	public Drawable leftDrawable;
 	private int[] texts;
 	private PopupMenuListener listener;
 	private final Runnable postDismissRunnable = this::dismiss;

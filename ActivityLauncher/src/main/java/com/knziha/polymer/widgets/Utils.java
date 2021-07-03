@@ -31,6 +31,7 @@ import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.media.audiofx.Equalizer;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
@@ -43,6 +44,7 @@ import android.util.DisplayMetrics;
 import android.util.LayoutDirection;
 import android.util.SparseArray;
 import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.View;
@@ -59,8 +61,10 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.GlobalOptions;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.appbar.AppBarLayout;
 import com.knziha.polymer.Toastable_Activity;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.Options;
@@ -504,6 +508,58 @@ public class Utils {
 		return (int) (dp * GlobalOptions.density);
 	}
 	
+	public static void embedViewInCoordinatorLayout(View v) {
+		ViewGroup.LayoutParams lp = v.getLayoutParams();
+		if (lp instanceof CoordinatorLayout.LayoutParams) {
+			CoordinatorLayout.LayoutParams params = (CoordinatorLayout.LayoutParams) lp;
+			params.gravity = Gravity.BOTTOM|Gravity.CENTER_HORIZONTAL;
+			params.width = -1;
+			params.height = -1;
+			//params.topMargin = UIData.appbar.getHeight()-TargetTransY;
+			//root.setForegroundGravity();
+			params.setBehavior(new AppBarLayout.ScrollingViewBehavior(v.getContext(), null));
+		}
+	}
+	
+	public static int mGlobalEqShift = Integer.MAX_VALUE;
+	public static Equalizer mEqualizer;
+	public static int[] bandLevels;
+	
+	public static void setSystemEqualizer(Options opt, boolean prepareUI) {
+		boolean adjust = opt.getAdjustSystemVolume();
+		Equalizer mEqualizer = Utils.mEqualizer;
+		if (adjust || prepareUI) {
+			if (mEqualizer==null) {
+				try {
+					Utils.mEqualizer = mEqualizer = new Equalizer(999, 0);
+				} catch (Exception ignored) { }
+				if (bandLevels==null) {
+					bandLevels = new int[mEqualizer.getNumberOfBands()];
+				}
+				if (mGlobalEqShift==Integer.MAX_VALUE) {
+					opt.getBandLevels(bandLevels);
+					mGlobalEqShift = opt.getGlobalEqShift();
+				}
+			}
+			if (!prepareUI && mEqualizer!=null) {
+				int min = mEqualizer.getBandLevelRange()[0];
+				int max = mEqualizer.getBandLevelRange()[1];
+				
+				float shiftGlobal = (mGlobalEqShift-5000)/10000.f*(max-min);
+				
+				int count = bandLevels.length;
+				for (int i = 0; i < count; i++) {
+					int modified = (int) Math.max(min, Math.min(max, bandLevels[i]+shiftGlobal));
+					CMN.Log("modified::", modified, i);
+					mEqualizer.setBandLevel((short) i, (short) modified);
+				}
+				mEqualizer.setEnabled(true);
+			}
+		} else if (mEqualizer!=null) {
+			mEqualizer.setEnabled(false);
+		}
+	}
+	
 	public static class DummyOnClick implements View.OnClickListener {
 		@Override
 		public void onClick(View v) {
@@ -705,6 +761,10 @@ public class Utils {
 			return true;
 		}
 		return false;
+	}
+	
+	public static boolean addViewToParent(View view2Add, ViewGroup parent, View index) {
+		return addViewToParent(view2Add, parent, parent.indexOfChild(index)+1);
 	}
 	
 	public static boolean addViewToParent(View view2Add, ViewGroup parent) {

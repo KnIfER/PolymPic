@@ -83,4 +83,14 @@ Donec feugiat ac nunc vel laoreet. In laoreet pretium fringilla. Suspendisse pot
 	<string name="save_webstacks">保存浏览快照</string>
 	<string name="web_screen_shot">网页长截图</string>
 	<string name="save_thumb_as">缩略图另存为...</string>
+	<string name="quanju">全局</string>
+	<string name="biaoqianye">标签页</string>
+	<string name="wangzhan">网站</string>
+	<string name="genduo">更多...</string>
+	<string name="ts_110">110%</string>
+	<string name="ts_75">75%</string>
+	<string name="ts_90">90%</string>
+	<string name="ts_100">100%</string>
+	<string name="ts_125">125%</string>
+	<string name="ts_150">150%</string>
 </resources>

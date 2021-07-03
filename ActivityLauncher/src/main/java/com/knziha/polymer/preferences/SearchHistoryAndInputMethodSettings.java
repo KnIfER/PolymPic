@@ -1,27 +1,18 @@
 package com.knziha.polymer.preferences;
 
 import android.content.Context;
-import android.view.Gravity;
 import android.view.ViewGroup;
 
-import androidx.coordinatorlayout.widget.CoordinatorLayout;
-
-import com.google.android.material.appbar.AppBarLayout;
 import com.knziha.polymer.BrowserActivity;
 import com.knziha.polymer.Utils.Options;
+import com.knziha.polymer.widgets.Utils;
 
 public class SearchHistoryAndInputMethodSettings extends SettingsPanel {
 	BrowserActivity a;
 	public SearchHistoryAndInputMethodSettings(Context context, ViewGroup root, int bottomPaddding, Options opt) {
-		super(context, root, bottomPaddding, opt);
-		a = (BrowserActivity) context;
-		CoordinatorLayout.LayoutParams params = (CoordinatorLayout.LayoutParams) settingsLayout.getLayoutParams();
-		params.gravity = Gravity.BOTTOM|Gravity.CENTER_HORIZONTAL;
-		params.width = -1;
-		params.height = -1;
-		//params.topMargin = UIData.appbar.getHeight()-TargetTransY;
-		//root.setForegroundGravity();
-		params.setBehavior(new AppBarLayout.ScrollingViewBehavior(context, null));
+		super(context, root, bottomPaddding, opt, (BrowserActivity) context);
+		a=(BrowserActivity) context;
+		Utils.embedViewInCoordinatorLayout(settingsLayout);
 	}
 	
 	private final static String[][] UITexts = new String[][]{
@@ -34,10 +25,10 @@ public class SearchHistoryAndInputMethodSettings extends SettingsPanel {
 			, "淡入透明背景色"
 	}};
 	
-	private final static Object[][] UITags = new Object[][]{
+	private final static int[][] UITags = new int[][]{
 			// 	 , getShowImeImm , getSelectAllOnFocus, getShowKeyIMEOnClean
-			{null, makeInt(1, 24, true), makeInt(1, 23, true), makeInt(1, 57, true)}
-			,{null
+			{Integer.MAX_VALUE, makeInt(1, 24, true), makeInt(1, 23, true), makeInt(1, 57, true)}
+			,{Integer.MAX_VALUE
 			, makeInt(1, 51, true) // getShowSearchHints
 			, makeInt(1, 53, true) // getShowSearchHintsOnClear
 			, makeInt(1, 55, true) // getHideKeyboardOnShowSearchHints
@@ -46,17 +37,17 @@ public class SearchHistoryAndInputMethodSettings extends SettingsPanel {
 	}};
 	
 	@Override
-	protected void onAction(int flagIdx, int flagPos, boolean val) {
+	protected void onAction(int flagIdx, int flagPos, boolean dynamic, boolean val) {
 		if (flagIdx==1 && flagPos==23) {
 			a.UIData.etSearch.setSelectAllOnFocus(opt.getSelectAllOnFocus());
 		}
 	}
 	
 	@Override
-	protected void init() {
+	protected void init(Context context, ViewGroup root) {
 		super.UITexts = UITexts;
 		super.UITags = UITags;
-		super.listenToActions = true;
+		super.init(context, root);
 	}
 }
 	
