@@ -150,7 +150,6 @@
 			app:dim1="0dp"
 			style="@style/quick_settings_sw" />
 	</LinearLayout>
-
 	<ViewStub
 		android:id="@+id/textscale_picker"
 		android:layout_width="match_parent"
@@ -161,6 +160,101 @@
 
 
 	<LinearLayout
+		android:id="@+id/lockPanel"
+		android:orientation="horizontal"
+		android:layout_width="match_parent"
+		android:layout_height="55dp"
+		>
+		<ImageView
+			android:id="@+id/lock_arrow"
+			android:src="@drawable/ic_keyboard_arrow_right_black_18dp"
+			style="@style/quick_settings_arrow"
+			/>
+		<TextView
+			android:id="@+id/lock"
+			android:text="锁定网页滚动等"
+			style="@style/quick_settings_menu" />
+		<View style="@style/quick_settings_sepver" />
+		<ImageView
+			android:id="@+id/lock_rlm"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			tools:src="@drawable/ic_viewpager_carousel_1"
+			android:padding="8dp"
+			android:layout_marginStart="5dp"
+			android:layout_marginEnd=  "5dp"
+			android:layout_gravity="center_vertical"
+			android:background="?actionBarItemBackground"
+			/>
+		<View style="@style/quick_settings_sepver" />
+		<com.knziha.polymer.widgets.SwitchCompatBeautiful
+			android:id="@+id/lock_switch"
+			android:src="@drawable/ic_baseline_lock_24"
+			app:track="@drawable/switch_ios_track_selector"
+			app:dim0="2dp"
+			app:dim1="3.2dp"
+			style="@style/quick_settings_sw" />
+	</LinearLayout>
+	<View style="@style/quick_settings_sephor" />
+
+
+	<LinearLayout
+		android:id="@+id/scnPanel"
+		android:orientation="horizontal"
+		android:layout_width="match_parent"
+		android:layout_height="55dp"
+		>
+		<ImageView
+			android:id="@+id/scn_arrow"
+			android:src="@drawable/ic_keyboard_arrow_right_black_18dp"
+			style="@style/quick_settings_arrow"
+			/>
+		<TextView
+			android:id="@+id/scn"
+			android:text="屏幕方向/亮度/熄屏"
+			style="@style/quick_settings_menu" />
+	</LinearLayout>
+	<View style="@style/quick_settings_sephor" />
+
+	<LinearLayout
+		android:id="@+id/stanzaPanel"
+		android:orientation="horizontal"
+		android:layout_width="match_parent"
+		android:layout_height="55dp"
+		>
+		<ImageView
+			android:id="@+id/stanza_arrow"
+			android:src="@drawable/ic_keyboard_arrow_right_black_18dp"
+			style="@style/quick_settings_arrow"
+			/>
+		<TextView
+			android:id="@+id/stanza"
+			android:text="段落工具"
+			style="@style/quick_settings_menu" />
+	</LinearLayout>
+	<View style="@style/quick_settings_sephor" />
+
+	<LinearLayout
+		android:id="@+id/pdfPanel"
+		android:orientation="horizontal"
+		android:layout_width="match_parent"
+		android:layout_height="55dp"
+		>
+		<ImageView
+			android:id="@+id/pdf_arrow"
+			android:src="@drawable/ic_keyboard_arrow_right_black_18dp"
+			style="@style/quick_settings_arrow"
+			/>
+		<TextView
+			android:id="@+id/pdf"
+			android:text="PDF 阅读"
+			style="@style/quick_settings_menu" />
+	</LinearLayout>
+	<View style="@style/quick_settings_sephor" />
+
+
+	<LinearLayout
+		android:id="@+id/sys_vol_panel"
 		android:orientation="horizontal"
 		android:layout_width="match_parent"
 		android:layout_height="55dp"
@@ -182,12 +276,36 @@
 			app:dim1="2dp"
 			style="@style/quick_settings_sw" />
 	</LinearLayout>
-
 	<ViewStub
 		android:id="@+id/sys_vol_eq"
 		android:layout_width="match_parent"
 		android:layout_height="wrap_content"
 		android:layout="@layout/sys_vol_eq"
+		/>
+	<View style="@style/quick_settings_sephor" />
+
+
+	<LinearLayout
+		android:id="@+id/infoPanel"
+		android:orientation="horizontal"
+		android:layout_width="match_parent"
+		android:layout_height="55dp"
+		>
+		<ImageView
+			android:id="@+id/info_arrow"
+			android:src="@drawable/ic_keyboard_arrow_right_black_18dp"
+			style="@style/quick_settings_arrow"
+			/>
+		<TextView
+			android:id="@+id/info"
+			android:text="网站信息"
+			style="@style/quick_settings_menu" />
+	</LinearLayout>
+	<ViewStub
+		android:id="@+id/website_info"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:layout="@layout/website_info"
 		/>
 	<View style="@style/quick_settings_sephor" />
 

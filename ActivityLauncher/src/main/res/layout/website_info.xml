@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:orientation="vertical"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	android:paddingLeft="15dp"
+	android:paddingRight="10dp"
+	android:background="#fff"
+	android:paddingTop="2dp"
+	android:paddingBottom="15dp"
+	>
+
+	<LinearLayout
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:paddingStart="2dp"
+		android:orientation="horizontal"
+		>
+		<TextView
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:text="域名"
+			android:button="@drawable/radio_selector"
+			android:drawableLeft="@drawable/ic_domain_bk"
+			android:drawablePadding="10dp"
+			android:gravity="center_vertical"
+			/>
+		<View
+			style="@style/quick_settings_sepver"
+			android:layout_marginStart="10dp"
+			android:layout_marginEnd="10dp"
+			/>
+		<TextView
+			android:id="@+id/domainNameTv"
+			android:layout_width="0dp"
+			android:layout_weight="1"
+			android:layout_height="wrap_content"
+			android:text="www.baidu.com"
+			android:button="@drawable/radio_selector"
+			android:gravity="center_vertical"
+			android:paddingTop=   "9dp"
+			android:paddingBottom="9dp"
+			/>
+		<View
+			style="@style/quick_settings_sepver"
+			android:layout_marginStart="10dp"
+			android:layout_marginEnd="10dp"
+			/>
+		<TextView
+			android:id="@+id/domainQuery"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:text="照妖镜"
+			android:gravity="center_vertical"
+			android:layout_marginEnd="5dp"
+			android:padding="5dp"
+			android:minWidth="58dp"
+			android:background="?listChoiceBackgroundIndicator"
+			/>
+	</LinearLayout>
+
+	<LinearLayout
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:orientation="horizontal"
+		>
+		<com.knziha.polymer.preferences.RadioSwitchButton
+			android:id="@+id/domainOptTv"
+			android:layout_width="0dp"
+			android:layout_weight="1"
+			android:layout_height="wrap_content"
+			android:text="已保存网站设定"
+			android:button="@drawable/radio_selector"
+			android:paddingStart="8dp"
+			android:paddingTop=   "9dp"
+			android:paddingBottom="9dp"
+			/>
+		<View
+			style="@style/quick_settings_sepver"
+			android:layout_marginStart="10dp"
+			android:layout_marginEnd="10dp"
+			/>
+		<TextView
+			android:id="@+id/domainRemove"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:text="删除"
+			android:gravity="center_vertical"
+			android:layout_marginEnd="5dp"
+			android:padding="5dp"
+			android:minWidth="58dp"
+			android:background="?listChoiceBackgroundIndicator"
+			/>
+	</LinearLayout>
+
+
+	<LinearLayout
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:orientation="horizontal"
+		>
+		<com.knziha.polymer.preferences.RadioSwitchButton
+			android:id="@+id/domainCookieTv"
+			android:layout_width="0dp"
+			android:layout_weight="1"
+			android:layout_height="wrap_content"
+			android:text="管理Cookie数据…"
+			android:button="@drawable/radio_selector"
+			android:paddingStart="8dp"
+			android:paddingTop=   "9dp"
+			android:paddingBottom="9dp"
+			/>
+		<View
+			style="@style/quick_settings_sepver"
+			android:layout_marginStart="10dp"
+			android:layout_marginEnd="10dp"
+			/>
+		<TextView
+			android:id="@+id/domainRemove1"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:text="清空"
+			android:gravity="center_vertical"
+			android:layout_marginEnd="5dp"
+			android:minWidth="58dp"
+			android:padding="5dp"
+			android:background="?listChoiceBackgroundIndicator"
+			/>
+	</LinearLayout>
+
+
+</LinearLayout>

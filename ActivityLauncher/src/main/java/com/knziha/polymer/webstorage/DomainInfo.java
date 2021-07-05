@@ -33,6 +33,9 @@ public class DomainInfo {
 
 	@Multiline(flagPos=21) public boolean getApplyOverride_group_text(){ f1=f1; throw new RuntimeException(); }
 	@Multiline(flagPos=21) public void setApplyOverride_group_text(boolean val){ f1=f1; throw new RuntimeException(); }
+	
+	@Multiline(flagPos=33) public boolean getApplyOverride_group_lock(){ f1=f1; throw new RuntimeException(); }
+	@Multiline(flagPos=33) public void setApplyOverride_group_lock(boolean val){ f1=f1; throw new RuntimeException(); }
 
 	public void updateFlag(long val) {
 		f1 = val;
@@ -44,14 +47,29 @@ public class DomainInfo {
 			values.put("f1", f1);
 			SQLiteDatabase database = LexicalDBHelper.getInstancedDb();
 			if (database!=null) {
-				if(domainID!=0) {
-					database.update("domains", values, "id=?", new String[]{""+domainID});
-				} else {
-					values.put("url", domainKey.toString());
-					domainID = database.insert("domains", null, values);
-				}
+				try {
+					if(domainID!=0) {
+						database.update("domains", values, "id=?", new String[]{""+domainID});
+					} else {
+						values.put("url", domainKey.toString());
+						domainID = database.insert("domains", null, values);
+					}
+				} catch (Exception ignored) {  }
 			}
 			f1Stamp = f1;
+		}
+	}
+	
+	public void remove() {
+		if (domainID!=0) {
+			SQLiteDatabase database = LexicalDBHelper.getInstancedDb();
+			if (database!=null) {
+				try {
+					database.delete("domains", "id=?", new String[]{""+domainID});
+				} catch (Exception ignored) { }
+			}
+			domainID = 0;
+			f1Stamp = f1 = 0;
 		}
 	}
 }

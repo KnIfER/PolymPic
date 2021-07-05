@@ -415,6 +415,10 @@ public class Utils {
 		return ((TextView)view.findViewById(id)).getText().toString();
 	}
 	
+	public static void setTextInView(View view, CharSequence cs) {
+		((TextView)view).setText(cs);
+	}
+	
 	public static View replaceView(View viewToAdd, View viewToRemove) {
 		return replaceView(viewToAdd, viewToRemove, true);
 	}
@@ -714,6 +718,38 @@ public class Utils {
 								break;
 							}
 						}
+					}
+				}
+			}
+		}
+	}
+	
+	public static void setOnClickListenersOneDepth(ViewGroup vg, View.OnClickListener clicker, SparseArray<View> viewFetcher, int depth) {
+		int cc = vg.getChildCount();
+		View ca;
+		boolean longClickable = clicker instanceof View.OnLongClickListener;
+		if(vg.isClickable()) {
+			click(vg, clicker, longClickable);
+		}
+		for (int i = 0; i < cc; i++) {
+			ca = vg.getChildAt(i);
+			//CMN.Log("setOnClickListenersOneDepth", ca, (i+1)+"/"+(cc));
+			if(ca instanceof ViewGroup) {
+				if(--depth>0) {
+					if(ca.isClickable()) {
+						click(ca, clicker, longClickable);
+					} else {
+						setOnClickListenersOneDepth((ViewGroup) ca, clicker, viewFetcher, depth);
+					}
+				}
+			} else {
+				int id = ca.getId();
+				if(ca.getId()!=View.NO_ID){
+					if(!(ca instanceof EditText) && ca.isEnabled()) {
+						click(ca, clicker, longClickable);
+					}
+					if(viewFetcher!=null) {
+						viewFetcher.put(ca.getId(), ca);
 					}
 				}
 			}

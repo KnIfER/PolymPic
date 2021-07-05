@@ -35,4 +35,9 @@ public class RadioSwitchButton extends CompoundButton {
     public CharSequence getAccessibilityClassName() {
         return RadioSwitchButton.class.getName();
     }
+	
+	@Override
+	public void setActivated(boolean activated) {
+		super.setChecked(activated);
+	}
 }

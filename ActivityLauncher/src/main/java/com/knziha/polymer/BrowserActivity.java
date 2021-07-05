@@ -15,6 +15,7 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.database.Cursor;
@@ -47,6 +48,7 @@ import android.text.style.ClickableSpan;
 import android.text.style.RelativeSizeSpan;
 import android.view.ActionMode;
 import android.view.GestureDetector;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -123,6 +125,7 @@ import com.knziha.polymer.databinding.LoginViewBinding;
 import com.knziha.polymer.databinding.SearchEnginesItemBinding;
 import com.knziha.polymer.databinding.SearchHintsItemBinding;
 import com.knziha.polymer.preferences.QuickBrowserSettingsPanel;
+import com.knziha.polymer.preferences.QuickBrowserSettingsPanel_V1;
 import com.knziha.polymer.preferences.SearchHistoryAndInputMethodSettings;
 import com.knziha.polymer.preferences.SettingsPanel;
 import com.knziha.polymer.qrcode.QRActivity;
@@ -194,6 +197,7 @@ import static com.knziha.polymer.browser.webkit.WebViewHelper.getTypedTagInAnces
 import static com.knziha.polymer.webslideshow.ViewUtils.ViewDataHolder;
 import static com.knziha.polymer.webstorage.WebOptions.BackendSettings;
 import static com.knziha.polymer.webstorage.WebOptions.ImmersiveSettings;
+import static com.knziha.polymer.webstorage.WebOptions.LockSettings;
 import static com.knziha.polymer.webstorage.WebOptions.StorageSettings;
 import static com.knziha.polymer.webstorage.WebOptions.TextSettings;
 import static com.knziha.polymer.widgets.Utils.DummyTransX;
@@ -371,7 +375,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		}
 		if (hasFocus) {
 			WebFrameLayout layout = this.currentViewImpl;
-			if (layout.selSuppressed && layout.hasSelection()) {
+			if (layout!=null && layout.selSuppressed && layout.hasSelection()) {
 				layout.suppressSelection(true);
 			}
 			if(resumer!=null) {
@@ -390,7 +394,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		if(searchEnginePopup!=null && searchEnginePopup.isShowing()) {
 			searchEnginePopup.dismiss();
 		} else if(settingsPanel!=null) {
-			UIData.browserWidget8.performClick();
+			hideSettingsPanel();
 		} else if(navAdapter!=null && navAdapter.dismiss(true)) {
 			// intentionally empty.
 		} else if(MainMenuListVis) {
@@ -456,13 +460,11 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			ObjectAnimator fadeInContents = ObjectAnimator.ofFloat(root, "alpha", 0, 1);
 			fadeInContents.setInterpolator(new AccelerateDecelerateInterpolator());
 			fadeInContents.setDuration(350);
-			fadeInContents.addListener(new Animator.AnimatorListener() {
-				@Override public void onAnimationStart(Animator animation) { }
-				@Override public void onAnimationEnd(Animator animation) {
+			fadeInContents.addListener(new AnimatorListenerAdapter() {
+				@Override
+				public void onAnimationEnd(Animator animation) {
 					win.setBackgroundDrawable(new ColorDrawable(0));
 				}
-				@Override public void onAnimationCancel(Animator animation) { }
-				@Override public void onAnimationRepeat(Animator animation) { }
 			});
 			root.post(fadeInContents::start);
 		}
@@ -490,8 +492,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		transientAnimator.playTogether(progressTransient, progressProceed);
 		transientAnimator.setDuration(100);
 		animatorTransient = transientAnimator;
-		animatorTransient.addListener(new Animator.AnimatorListener() {
-			@Override public void onAnimationStart(Animator animation) { }
+		animatorTransient.addListener(new AnimatorListenerAdapter() {
 			@Override public void onAnimationEnd(Animator animation) {
 				progressbar_background.setLevel(0);
 				UIData.progressbar.setVisibility(View.GONE);
@@ -502,7 +503,6 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			@Override public void onAnimationCancel(Animator animation) {
 				UIData.progressbar.setAlpha(1);
 			}
-			@Override public void onAnimationRepeat(Animator animation) { }
 		});
 		checkLog(savedInstanceState);
 		CrashHandler.getInstance(this, opt).TurnOn();
@@ -510,6 +510,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		mHandler = new MyHandler(this);
 		CMN.browserTaskId = getTaskId();
 		Utils.PadWindow(root);
+		if (opt.getLockScreenOn()) acquireWakeLock();
 	}
 	
 	protected void checkLog(Bundle savedInstanceState){
@@ -567,7 +568,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 							startActivityForResult(intent, 795);
 						break;
 						case R.id.tut_create_shortcut:
-							AddPDFViewerShortCut(getApplicationContext());
+							AddPDFViewerShortCut();
 						break;
 						case R.id.tut_continue:
 							BrowserActivity.super.checkLog(savedInstanceState);
@@ -647,6 +648,10 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		if (IsReqCheckingNxtResume) {
 			checkResume();
 		}
+	}
+	
+	protected boolean getShouldKeepScreenOn() {
+		return opt.getLockScreenOn();
 	}
 	
 	private void checkResume() {
@@ -809,13 +814,14 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		opt.setUpdateUAOnPageSt(false);
 		//showT("低端设备无法积极地更新UA::"+opt.getUpdateUALowEnd());
 		
+		
 		toggleMenuGrid(false);
-		menu_grid.findViewById(R.id.menu_icon9).performClick();
 
 		//TestHelper.notifyStart(this);
-//		root.postDelayed(new Runnable() {
-//			@Override
-//			public void run() {
+		root.postDelayed(new Runnable() {
+			@Override
+			public void run() {
+				menu_grid.findViewById(R.id.menu_icon9).performClick();
 //				UIData.browserWidget10.performClick();
 //				root.postDelayed(new Runnable() {
 //					@Override
@@ -823,8 +829,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 //						//UIData.ivRefresh.performClick();
 //					}
 //				}, 350);
-//			}
-//		}, 350);
+			}
+		}, 250);
 		
 		if (opt.getAdjustSystemVolume()) {
 			Utils.setSystemEqualizer(opt, false);
@@ -1351,6 +1357,45 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			//CMN.Log("fast_recalc_adapter_idx::快找", refPos, adapter_idx, idx);
 		}
 		adapter_idx = idx;
+	}
+	
+	final int[] ScreenOrientation = new int[]{
+			ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+			,ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE
+			,ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE
+			,ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+			,ActivityInfo.SCREEN_ORIENTATION_USER_PORTRAIT
+			,ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT
+			,ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR
+			,ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+			,ActivityInfo.SCREEN_ORIENTATION_LOCKED
+	};
+	
+	public void setScreenOrientation(int idx) {
+		//CMN.Log("setScreenOrientation::", ScreenOrientation[idx]);
+		//setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+		setRequestedOrientation(ScreenOrientation[idx]);
+	}
+	
+	public void reload() {
+		if (settingsPanel!=null) hideSettingsPanel();
+		if (currentWebView!=null) currentWebView.reload();
+	}
+	
+	private void hideSettingsPanel() {
+		settingsPanel.dismiss();
+		settingsPanel = null;
+	}
+	
+	public void embedPopInCoordinatorLayout(PopupWindow pop) {
+		pop.setWidth(dm.widthPixels);
+		//pop.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+		pop.setBackgroundDrawable(null);
+		int[] vLocationOnScreen = new int[2];
+		UIData.appbar.getLocationOnScreen(vLocationOnScreen);
+		int top = vLocationOnScreen[1] + UIData.appbar.getHeight();
+		pop.setHeight(root.getHeight() - top - UIData.bottombar2.getHeight());
+		pop.showAtLocation(root, Gravity.TOP, 0, top);
 	}
 	
 	public class BrowserSlider implements View.OnTouchListener {
@@ -2131,6 +2176,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			weblayout.setBackEndSettings(); // 初始化
 			weblayout.setImmersiveScrollSettings();
 			weblayout.setTextSettings(true, true);
+			weblayout.setLockSettings();
 			tabsManagerIsDirty = true;
 		}
 		
@@ -2197,7 +2243,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		
 		weblayout.checkSettings(false, true); // Attach检查
 		checkImmersiveMode(); // Attach检查
-
+		if (settingsPanel!=null) hideSettingsPanel();
+		
 		webtitle_setVisibility(false);
 		etSearch_clearFocus();
 		//if(pseudoAdd==0)
@@ -2764,9 +2811,6 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					}
 					shimObj.toggle(UIData.webcoord);
 					settingsPanel = shimObj.isVisible()?shimObj:null;
-					if (MainMenuListVis && shimObj.isVisible()) {
-						toggleMenuGrid(true);
-					}
 					break;
 				}
 				if (tabViewAdapter.isVisible()) {
@@ -3160,6 +3204,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 									, opt
 							);
 							putReferencedObject(jd, quickSettings);
+							CMN.Log("重建QuickBrowserSettingsPanel...");
 						} else {
 							quickSettings.refresh();
 						}
@@ -3172,7 +3217,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 							if (UIData.bottombar2.getBottom()<=UIData.webcoord.getHeight()) {
 								padding += UIData.bottombar2.getHeight();
 							}
-							quickSettings.setBottomPadding(padding);
+							//quickSettings.setBottomPadding(padding);
 						}
 						settingsPanel = vis?quickSettings:null;
 						if (MainMenuListVis && vis) {
@@ -3180,7 +3225,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 						}
 					} return;
 					case R.id.menu_icon10: {
-						AddPDFViewerShortCut(getApplicationContext());
+						AddPDFViewerShortCut();
 		//				Intent intent = new Intent("colordict.intent.action.SEARCH");
 		//				intent.putExtra("EXTRA_QUERY", "happy");
 		//				startActivity(intent);
@@ -3318,12 +3363,11 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		}
 	}
 	
-	private void AddPDFViewerShortCut(Context context) {
+	public void AddPDFViewerShortCut() {
 		//showT("啦啦啦"+(ContextCompat.checkSelfPermission(context, "com.android.launcher.permission.INSTALL_SHORTCUT")
 		//		!= PackageManager.PERMISSION_GRANTED));
+		Context context = getApplicationContext();
 		if (ShortcutManagerCompat.isRequestPinShortcutSupported(context)) {
-			showT("啦啦啦");
-			
 			Intent intent = new Intent(Intent.ACTION_MAIN);
 			intent.setClassName("com.knziha.polymer", "com.knziha.polymer.PDocShortCutActivity");
 			intent.putExtra("main", true);
@@ -4452,6 +4496,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		
 		@Multiline(flagPos=21) public boolean getApplyOverride_group_text(){ flag=flag; throw new RuntimeException(); }
 		@Multiline(flagPos=21) public void setApplyOverride_group_text(boolean val){ flag=flag; throw new RuntimeException(); }
+		
+		@Multiline(flagPos=33) public boolean getApplyOverride_group_lock(){ flag=flag; throw new RuntimeException(); }
+		@Multiline(flagPos=33) public void setApplyOverride_group_lock(boolean val){ flag=flag; throw new RuntimeException(); }
 
 		public void close() {
 			if (viewImpl != null) {
@@ -4889,6 +4936,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	public void showT(Object text) {
 		if("downloads".equals(text)) {
 			mWebListener.showT("下载完成", "查看", "downloads", true);
+		} else if("deleted_refresh".equals(text)) {
+			mWebListener.showT("已删除", "刷新", "reload", true);
 		} else {
 			super.showT(text);
 		}
@@ -4966,6 +5015,10 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			case TextSettings:
 				if (b2) holder.setApplyOverride_group_text(b1);
 				domainInfo.setApplyOverride_group_text(b3);
+			break;
+			case LockSettings:
+				if (b2) holder.setApplyOverride_group_lock(b1);
+				domainInfo.setApplyOverride_group_lock(b3);
 			break;
 		}
 	}

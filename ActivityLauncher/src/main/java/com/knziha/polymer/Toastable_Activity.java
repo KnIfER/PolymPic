@@ -124,6 +124,13 @@ public class Toastable_Activity extends AppCompatActivity {
 		mWakeLock.acquire();
 	}
 	
+	public void releaseWakeLock() {
+		try {
+			mWakeLock.release();
+			mWakeLocked=false;
+		} catch (Exception ignored) { }
+	}
+	
 	static class BaseHandler extends Handler {
 		float animator = 0.1f;
 		float animatorD = 0.15f;
@@ -194,6 +201,9 @@ public class Toastable_Activity extends AppCompatActivity {
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
+		if(mWakeLocked) {
+			releaseWakeLock();
+		}
 		CrashHandler.getInstance(this, opt).TurnOn();
 	}
 
@@ -202,16 +212,17 @@ public class Toastable_Activity extends AppCompatActivity {
 		try {
 			super.onResume();
 		} catch (Exception ignored) { /*无敌*/ }
-		if(mWakeLocked) {
-			try {
-				mWakeLock.release();
-				mWakeLocked=false;
-			} catch (Exception ignored) { }
+		if(mWakeLocked && !getShouldKeepScreenOn()) {
+			releaseWakeLock();
 		}
 		if(checkResumeQRText && StaticTextExtra!=null) {
 			onQRGetText(StaticTextExtra);
 			StaticTextExtra = null;
 		}
+	}
+	
+	protected boolean getShouldKeepScreenOn() {
+		return false;
 	}
 	
 	protected void wakeUp() {

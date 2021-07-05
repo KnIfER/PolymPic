@@ -254,7 +254,24 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		{
 			Pattern p = Pattern.compile("^https?://tieba.baidu.com/");
 			SiteRule rule = new SiteRule();
-			rule.JS = "window.setTimeoutPlus = window.setTimeout;window.setTimeout = function(e,t){var es = e+\"\";console.log(\"es=\"+es);if(es.indexOf(\"tb-modal-open\")>0||es.indexOf(\"href=i\")>0||es.indexOf(\"clearTimeout(z)\")>0) {return 0;} else {return window.setTimeoutPlus(e,t);}}\n";
+			rule.JS = "window.setTimeoutPlus = window.setTimeout;\n" +
+					"window.setTimeout = function(e,t){\n" +
+					"var es = e+\"\";\n" +
+					"if(es.indexOf(\"tb-modal-open\")>0||es.indexOf(\"href=i\")>0||es.indexOf(\"clearTimeout(z)\")>0) {\n" +
+					"console.log(\"es=\"+es);\n" +
+					"return 0;\n" +
+					"} else {\n" +
+					"return window.setTimeoutPlus(e,t);\n" +
+					"}\n" +
+					"}\n" +
+					"document.addEventListener(\"click\", function(e){\n" +
+					"var p = e.srcElement.parentNode;\n" +
+					"if(p.className==='pop-mask') {\n" +
+					"p.parentNode.removeChild(p);\n" +
+					"p = document.getElementById('passport-login-pop');\n" +
+					"p.parentNode.removeChild(p);\n" +
+					"}\n" +
+					"})";
 			rule.gstHandler = Pattern.compile("^com\\.baidu\\.tieba");
 			rule.gstHandlerJS = "var getUrlParameter = function (url, name) { \n" +
 					"var reg = new RegExp(\"(^|&)\" + name + \"=([^&]*)(&|$)\"); \n" +
@@ -670,6 +687,9 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		if (layout.frcWrp) {
 			layout.mWebView.evaluateJavascript(WrappedOnResize+(layout.getWidth()/newScale)+")", null);
 		}
+		if (layout.bNeedPtsCnt && !layout.pts_2_scaled) {
+			layout.pts_2_scaled = true;
+		}
 	}
 	
 //	@Override
@@ -943,17 +963,18 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 							{
 								for(;i<ln;i++) {
 									var e = m[i];
-	 								if(e.id==='b_results' || e.tagName==='A') {
+	 								if(e.id==='b_results' || e.tagName==='A' || e.tagName==='TABLE') {
 										e.style.maxWidth = wd;
 									} else if(e.nodeType==3) {
 										var t=e.textContent;
 										if (/\S/.test(t) && t.length>3) {
 											cc = pl;
 											p.style.maxWidth = wd;
+											p.style.whiteSpace = "unset";
 											console.log(p);
 											break;
 										}
-									} else if(e.tagName!=undefined){
+									} else if(e.tagName!=undefined && e.tagName!="SCRIPT" && e.tagName!="STYLE"){
 										n.push(e);
 										cc++;
 									}
@@ -1516,19 +1537,25 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		if(layout==null||layout.implView!=mWebView) {
 			return;
 		}
-		if(PrintStartTime>0 && System.currentTimeMillis()-CustomViewHideTime<5350){
-			CMN.Log("re_scroll...", a.focused);
+		if(PrintStartTime>0 && System.currentTimeMillis()-CustomViewHideTime<5350) {
+			//CMN.Log("re_scroll...", a.focused);
 			webviewImpl.SafeScrollTo(a.printSX, a.printSY);
 			mWebView.requestLayout();
 			return;
 		}
-		boolean scrollforbid;
 		//CMN.Log("onScrollChange", scrollY-oldy);
 		if(layout.forbidScrollWhenSelecting && layout.bIsActionMenuShown && oldy-scrollY>200
 			|| /*a.tabViewAdapter.isVisible()*/ layout.hideForTabView
-			|| CustomViewHideTime>0 && System.currentTimeMillis()-CustomViewHideTime<350){
-			CMN.Log("re_scroll...");
+			|| CustomViewHideTime>0 && System.currentTimeMillis()-CustomViewHideTime<350) {
+			//CMN.Log("re_scroll...");
 			webviewImpl.SafeScrollTo(oldx, oldy);
+			return;
+		}
+		if(layout.lockX && oldx!=scrollX || layout.lockY && oldy!=scrollY) {
+			CMN.Log("re_scroll...", layout.pts);
+			if (layout.pts<2 /*!layout.pts_2_scaled*/ && !layout.isIMScrollSupressed) {
+				webviewImpl.SafeScrollTo(layout.lockX?oldx:scrollX, layout.lockY?oldy:scrollY);
+			}
 			return;
 		}
 	}

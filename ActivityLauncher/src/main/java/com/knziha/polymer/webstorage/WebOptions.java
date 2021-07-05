@@ -7,6 +7,7 @@ public class WebOptions {
 	public final static int BackendSettings=2;
 	public final static int ImmersiveSettings=3;
 	public final static int TextSettings=4;
+	public final static int LockSettings=5;
 	public static long tmpFlag;
 //	@Multiline(flagPos=2) public static boolean getForbidLocalStorage(long flag){ flag=flag; throw new RuntimeException(); }
 //	@Multiline(flagPos=2) public static boolean toggleForbidLocalStorage(long flag){ flag=flag; throw new IllegalArgumentException(); }
@@ -41,5 +42,11 @@ public class WebOptions {
 	@Multiline(flagPos=23, flagSize=9, shift=110) public static int getTextZoom(long flag){ flag=flag; throw new RuntimeException(); }
 	@Multiline(flagPos=23, flagSize=9, shift=110) public static void setTextZoom(int val){ tmpFlag=tmpFlag; throw new RuntimeException(); }
 	
+	// 33
+	
+	@Multiline(flagPos=34) public static boolean getLockEnabled(long flag){ flag=flag; throw new RuntimeException(); }
+	@Multiline(flagPos=34) public static void setLockEnabled(boolean val){ tmpFlag=tmpFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=35, shift=1) public static boolean getLockX(long flag){ flag=flag; throw new RuntimeException(); }
+	@Multiline(flagPos=36) public static boolean getLockY(long flag){ flag=flag; throw new RuntimeException(); }
 	
 }

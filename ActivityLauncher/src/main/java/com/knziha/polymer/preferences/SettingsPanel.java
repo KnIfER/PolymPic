@@ -7,6 +7,7 @@ import android.graphics.drawable.Drawable;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
+import android.widget.PopupWindow;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
@@ -31,6 +32,8 @@ public class SettingsPanel extends AnimatorListenerAdapter implements View.OnCli
 	protected boolean shouldWrapInScrollView = true;
 	protected boolean shouldRemoveAfterDismiss = true;
 	protected boolean hasDelegatePicker = false;
+	protected boolean showInPopWindow = false;
+	protected PopupWindow pop;
 	protected int mPaddingLeft=10;
 	protected int mPaddingRight=10;
 	protected int mPaddingTop=0;
@@ -38,6 +41,7 @@ public class SettingsPanel extends AnimatorListenerAdapter implements View.OnCli
 	protected int mItemPaddingLeft=5;
 	protected int mItemPaddingTop=8;
 	protected int mItemPaddingBottom=8;
+	protected int mBackgroundColor = 0xefffffff;
 	SettingsPanel parent;
 	
 	public void setEmbedded(ActionListener actionListener){
@@ -150,9 +154,9 @@ public class SettingsPanel extends AnimatorListenerAdapter implements View.OnCli
 	}
 	
 	protected void setBooleanInFlag(int storageInt, boolean val) {
-		CMN.Log("setBooleanInFlag", storageInt, val);
 		int flagIdx=storageInt>>FLAG_IDX_SHIFT;
 		int flagPos=storageInt&MAX_FLAG_POS_MASK;
+		CMN.Log("setBooleanInFlag", flagIdx, val);
 		boolean reverse = (storageInt&BIT_IS_REVERSE)!=0;
 		boolean dynamic = (storageInt&BIT_IS_DYNAMIC)!=0;
 		if(flagIdx!=0) {
@@ -198,11 +202,12 @@ public class SettingsPanel extends AnimatorListenerAdapter implements View.OnCli
 		init(context, root);
 		ViewGroup sl = this.settingsLayout;
 		if (bottomPadding>0) {
-			sl.setAlpha(0);
 			sl.setTranslationY(bottomPadding);
-			sl.setBackgroundColor(0xefffffff);
+			sl.setBackgroundColor(mBackgroundColor);
+		} else {
+			sl.setBackgroundColor(mBackgroundColor);
 		}
-		if(root!=null) {
+		if(root!=null && !showInPopWindow) {
 			Utils.addViewToParent(sl, root);
 		}
 	}
@@ -286,11 +291,14 @@ public class SettingsPanel extends AnimatorListenerAdapter implements View.OnCli
 	}
 	
 	public boolean toggle(ViewGroup root) {
-		settingsLayout.setBackgroundColor(0xefffffff);
 		float targetAlpha = 1;
 		float targetTrans = 0;
 		if (bIsShowing=!bIsShowing) {
-			Utils.addViewToParent(settingsLayout, root, -1);
+			if (showInPopWindow) {
+				showPop();
+			} else {
+				Utils.addViewToParent(settingsLayout, root, -1);
+			}
 			settingsLayout.setVisibility(View.VISIBLE);
 		} else {
 			targetAlpha = 0;
@@ -310,14 +318,23 @@ public class SettingsPanel extends AnimatorListenerAdapter implements View.OnCli
 		return bIsShowing;
 	}
 	
+	protected void showPop() {
+		throw new RuntimeException("Stub!");
+	}
+	
 	protected void onDismiss() { }
 	
 	@Override
 	public void onAnimationEnd(Animator animation) {
 		if (!bIsShowing) {
-			settingsLayout.setVisibility(View.GONE);
-			if (shouldRemoveAfterDismiss) {
-				Utils.removeIfParentBeOrNotBe(settingsLayout, null, false);
+			if (pop!=null && showInPopWindow) {
+				pop.dismiss();
+				CMN.Log("dismiss!!!");
+			} else {
+				settingsLayout.setVisibility(View.GONE);
+				if (shouldRemoveAfterDismiss) {
+					Utils.removeView(settingsLayout);
+				}
 			}
 		}
 	}

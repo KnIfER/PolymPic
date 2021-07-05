@@ -42,7 +42,7 @@ public class AppToastManager implements Resumable{
 					a.showDownloads();
 				} else if(appUrl.equals("reload")) {
 					try {
-						a.currentWebView.reload();
+						a.reload();
 					} catch (Exception ignored) { }
 				} else {
 					try {

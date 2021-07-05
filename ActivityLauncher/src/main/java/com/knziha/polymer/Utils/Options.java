@@ -102,6 +102,7 @@ public class Options implements BookOptions {
 	
 	@Multiline(flagPos=0, shift=1) public static boolean getAlwaysRefreshThumbnail(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=0, shift=1) public static boolean setAlwaysRefreshThumbnail(boolean val){ FirstFlag=FirstFlag; throw new RuntimeException(); }
+	
 	@Multiline(flagPos=1) public boolean getAdjustSystemVolume(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=1) public void setAdjustSystemVolume(boolean val){ FirstFlag=FirstFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=2) public boolean getAdjustSystemVolumeShown(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
@@ -114,6 +115,18 @@ public class Options implements BookOptions {
 	@Multiline(flagPos=5) public boolean toggleAdjustFrequentSettingsShown(){ FirstFlag=FirstFlag; throw new IllegalArgumentException(); }
 	@Multiline(flagPos=6) public boolean getAdjustTextShown(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=6) public boolean toggleAdjustTextShown(){ FirstFlag=FirstFlag; throw new IllegalArgumentException(); }
+	@Multiline(flagPos=7) public boolean getAdjustLockShown(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=7) public boolean toggleAdjustLockShown(){ FirstFlag=FirstFlag; throw new IllegalArgumentException(); }
+	
+	@Multiline(flagPos=8) public boolean getLockScreenOn(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=9) public boolean getAdjustScnShown(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=9) public boolean toggleAdjustScnShown(){ FirstFlag=FirstFlag; throw new IllegalArgumentException(); }
+	@Multiline(flagPos=10) public boolean getAdjustWebsiteInfoShown(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=10) public boolean toggleAdjustWebsiteInfoShown(){ FirstFlag=FirstFlag; throw new IllegalArgumentException(); }
+	@Multiline(flagPos=11) public boolean    getAdjustStanzaShown(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=11) public boolean toggleAdjustStanzaShown(){ FirstFlag=FirstFlag; throw new IllegalArgumentException(); }
+	@Multiline(flagPos=12) public boolean    getAdjustPdfShown(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=12) public boolean toggleAdjustPdfShown(){ FirstFlag=FirstFlag; throw new IllegalArgumentException(); }
 	
 	
 	@Multiline(flagPos=15) public static boolean getInDarkMode(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
