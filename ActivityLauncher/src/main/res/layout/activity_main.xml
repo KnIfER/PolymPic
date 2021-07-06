@@ -316,13 +316,6 @@
 			/>
 
 		<ViewStub
-			android:id="@+id/tutorials"
-			android:layout="@layout/launch_tutorials"
-			android:layout_width="match_parent"
-			android:layout_height="match_parent"
-			/>
-
-		<ViewStub
 			android:id="@+id/app_toast"
 			android:layout="@layout/app_toast_small"
 			android:layout_width="wrap_content"
