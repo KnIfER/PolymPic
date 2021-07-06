@@ -24,6 +24,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.knziha.polymer.BrowserActivity;
 import com.knziha.polymer.R;
 import com.knziha.polymer.Utils.CMN;
+import com.knziha.polymer.Utils.IU;
 import com.knziha.polymer.database.LexicalDBHelper;
 import com.knziha.polymer.databinding.HistoryBinding;
 import com.knziha.polymer.databinding.HistoryItemBinding;
@@ -147,6 +148,7 @@ public class BrowserHistory extends DialogFragment implements View.OnClickListen
 			ViewHolder ret = new ViewHolder(HistoryItemBinding.inflate(inflater, parent, false));
 			ret.itemView.setOnLongClickListener(BrowserHistory.this);
 			ret.itemView.setOnClickListener(BrowserHistory.this);
+			ret.itemData.icon.setOnClickListener(BrowserHistory.this);
 			return ret;
 		}
 		
@@ -157,6 +159,7 @@ public class BrowserHistory extends DialogFragment implements View.OnClickListen
 			String url = cursor.getString(1);
 			String title = cursor.getString(2);
 			long time = cursor.getLong(3);
+			long tab_id = cursor.getLong(4);
 			holder.setFields(rowID, url, title, time);
 			
 			int idx = Utils.httpIndex(url);
@@ -172,7 +175,10 @@ public class BrowserHistory extends DialogFragment implements View.OnClickListen
 			viewData.title.setMaxLines(Utils.httpIndex(title)>0?1:10);
 			viewData.title.setSingleLine();
 			viewData.title.setTextSize(15f);
-			date.setTime(time);
+			
+			viewData.icon.setVisibility(tab_id!=-1?View.VISIBLE:View.INVISIBLE);
+			viewData.icon.setTag(tab_id!=-1?tab_id:null);
+			
 			if (showTime) {
 				viewData.time.setText(dateFormatter.format(date));
 			}
@@ -242,7 +248,7 @@ public class BrowserHistory extends DialogFragment implements View.OnClickListen
 	}
 	
 	protected void pullData() {
-		cursor = LexicalDBHelper.getInstancedDb().rawQuery("select id,url,title,last_visit_time from urls order by last_visit_time DESC", null);
+		cursor = LexicalDBHelper.getInstancedDb().rawQuery("select id,url,title,last_visit_time,tab_id from urls order by last_visit_time DESC", null);
 		adapter.notifyDataSetChanged();
 	}
 
@@ -256,10 +262,20 @@ public class BrowserHistory extends DialogFragment implements View.OnClickListen
 			case R.id.root: {
 				BrowserActivity a = (BrowserActivity) getActivity();
 				if (a!=null) {
-					ViewHolder viewHolder = (ViewHolder) v.getTag();
+					ViewHolder viewHolder = (ViewHolder) Utils.getViewHolderInParents(v);
 					a.execBrowserGoTo(viewHolder.url);
 				}
 				postDismiss(v);
+			} break;
+			case R.id.icon: {
+				BrowserActivity a = (BrowserActivity) getActivity();
+				if (a!=null) {
+					long tab_id = IU.parsint(v.getTag(), -1);
+					if (tab_id>0) {
+						a.NavigateToTab(tab_id);
+						v.post(this::dismiss);
+					}
+				}
 			} break;
 		}
 	}

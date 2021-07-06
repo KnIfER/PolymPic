@@ -5,6 +5,8 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
@@ -146,8 +148,35 @@ public class TestHelper {
 			//System.out.println(title);
 			String url = convolute(rand, builder, rand.nextInt(255));
 			//System.out.println(url);
-			con.insertUpdateBrowserUrl(url, title);
+			//con.insertUpdateBrowserUrl(url, title, 0);
 		}
+	}
+	
+	private static boolean columnExists(SQLiteDatabase db, String tableName, String columnName) {
+		String query;
+		try (Cursor cursor = db.rawQuery("PRAGMA table_info(" + tableName + ")", null)) {
+			while (cursor.moveToNext()) {
+				query = cursor.getString(cursor.getColumnIndex("name"));
+				CMN.Log("columnExists::", query);
+				if (columnName.equals(query)) {
+					return true;
+				}
+			}
+		} catch (Exception e) {
+			CMN.Log(e);
+		}
+		return false;
+	}
+	
+	public static void alterDomainToTabID(SQLiteDatabase db) {
+		if (columnExists(db, "urls", "domain_id")) {
+			//db.execSQL("ALTER TABLE urls DROP COLUMN domain_id"); // 不支持
+			//db.execSQL("ALTER TABLE urls RENAME COLUMN domain_id TO tab_id"); // 不支持
+		}
+//		if (!columnExists(db, "urls", "tab_id")) {
+//			db.execSQL("ALTER TABLE urls ADD COLUMN tab_id DEFAULT 0 NOT NULL");
+//		}
+		CMN.Log("domain_id::", columnExists(db, "urls", "domain_id"));
 	}
 	
 	/**方法1*/

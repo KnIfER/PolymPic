@@ -39,7 +39,7 @@ public class PolyShareActivity extends Activity {
 		Uri uri = intent.getData();
 		if(uri!=null) {
 			String path = Utils.getRunTimePath(uri);
-			CMN.Log("PolySharing", "path = "+path);
+			CMN.Log("----------- PolySharing -----------\n path="+path+"\n type="+intent.getType());
 			if(path!=null) {
 				if ("application/pdf".equals(intent.getType()) || ".pdf".equals(Utils.getSuffix(path))) {
 					CMN.Log("PDocView.books", PDocView.books);

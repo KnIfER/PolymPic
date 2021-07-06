@@ -125,7 +125,6 @@ import com.knziha.polymer.databinding.LoginViewBinding;
 import com.knziha.polymer.databinding.SearchEnginesItemBinding;
 import com.knziha.polymer.databinding.SearchHintsItemBinding;
 import com.knziha.polymer.preferences.QuickBrowserSettingsPanel;
-import com.knziha.polymer.preferences.QuickBrowserSettingsPanel_V1;
 import com.knziha.polymer.preferences.SearchHistoryAndInputMethodSettings;
 import com.knziha.polymer.preferences.SettingsPanel;
 import com.knziha.polymer.qrcode.QRActivity;
@@ -202,6 +201,7 @@ import static com.knziha.polymer.webstorage.WebOptions.StorageSettings;
 import static com.knziha.polymer.webstorage.WebOptions.TextSettings;
 import static com.knziha.polymer.widgets.Utils.DummyTransX;
 import static com.knziha.polymer.widgets.Utils.EmptyCursor;
+import static com.knziha.polymer.widgets.Utils.RequestPDFFile;
 import static com.knziha.polymer.widgets.Utils.RequsetFileFromFilePicker;
 import static com.knziha.polymer.widgets.Utils.RequsetUrlFromCamera;
 import static com.knziha.polymer.widgets.Utils.RequsetUrlFromStorage;
@@ -243,6 +243,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	
 	MyHandler mHandler;
 	
+	/** The webview implementation type in this App.
+	 * 0=System WebView; 1=X5 WebView; 2=XWalk WebView*/
 	private int webType=2;
 	
 	private UniversalWebviewInterface wvPreInitInstance;
@@ -331,6 +333,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	private int _45_;
 	
 	public SettingsPanel settingsPanel;
+	public PopupWindow   settingsPopup;
 	private NavigationHomeAdapter navAdapter;
 	private long lastOpenedTab;
 	
@@ -361,7 +364,20 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				menu_grid.setTranslationY(-targetH);
 			}
 		}
+		if(settingsPopup!=null) {
+			root.postDelayed(postOnConfigurationChanged, 200);
+		}
 	}
+	
+	Runnable postOnConfigurationChanged = new Runnable() {
+		@Override
+		public void run() {
+			if(settingsPopup!=null) {
+				//settingsPopup.dismiss();
+				embedPopInCoordinatorLayout(settingsPopup);
+			}
+		}
+	};
 	
 	@Override
 	public void onWindowFocusChanged(boolean hasFocus) {
@@ -565,7 +581,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 							Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
 							intent.setType("application/pdf");
 							intent.addCategory(Intent.CATEGORY_OPENABLE);
-							startActivityForResult(intent, 795);
+							startActivityForResult(intent, RequestPDFFile);
 						break;
 						case R.id.tut_create_shortcut:
 							AddPDFViewerShortCut();
@@ -732,14 +748,16 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					if(id==lastOpenedTab) {
 						adapter_idx=TabHolders.size();
 					}
-					TabHolder tabI = allTabs.remove(id);
+					TabHolder tabI = allTabs.get(id);
 					if(tabI!=null) {
+						tabI.setClosed(false);
 						TabHolders.add(tabI);
 					}
 				} catch (Exception ignored) { }
 			}
 		}
-		closedTabs = new ArrayList<>(Arrays.asList(allTabs.values().toArray(new TabHolder[]{})));
+		// todo build closed tabs' stack
+		//closedTabs = new ArrayList<>(Arrays.asList(allTabs.values().toArray(new TabHolder[]{})));
 		
 		checkCurrentTab(true);
 		//SetupPasteBin();
@@ -811,17 +829,17 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		//tg
 		
 		opt.setUpdateUAOnPageSt(Build.VERSION.SDK_INT>=28);
-		opt.setUpdateUAOnPageSt(false);
+		//opt.setUpdateUAOnPageSt(false);
 		//showT("低端设备无法积极地更新UA::"+opt.getUpdateUALowEnd());
 		
 		
-		toggleMenuGrid(false);
+//		toggleMenuGrid(false);
 
 		//TestHelper.notifyStart(this);
 		root.postDelayed(new Runnable() {
 			@Override
 			public void run() {
-				menu_grid.findViewById(R.id.menu_icon9).performClick();
+//				menu_grid.findViewById(R.id.menu_icon9).performClick();
 //				UIData.browserWidget10.performClick();
 //				root.postDelayed(new Runnable() {
 //					@Override
@@ -835,6 +853,15 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		if (opt.getAdjustSystemVolume()) {
 			Utils.setSystemEqualizer(opt, false);
 		}
+		
+		// 性能测试 - 多网页同时加载
+//		new Runnable() {
+//			@Override
+//			public void run() {
+//				AttachWebAt(adapter_idx+1, 0);
+//				root.postDelayed(this, 600);
+//			}
+//		}.run();
 		
 		//wakeUp();
 		//CMN.Log("device space is ::",  getExternalFilesDir(null).getFreeSpace());
@@ -912,6 +939,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			if(id!=-1) {
 				tab0.url=defaultUrl;
 				tab0.id=id;
+				tab0.setClosed(false);
+				allTabs.put(tab0.id, tab0);
 				TabHolders.add(tab0);
 			}
 			tabsDirty=true;
@@ -1383,19 +1412,29 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	}
 	
 	private void hideSettingsPanel() {
-		settingsPanel.dismiss();
-		settingsPanel = null;
+		if (settingsPanel!=null) {
+			settingsPanel.dismiss();
+			settingsPanel = null;
+		}
+		if(settingsPopup!=null) settingsPopup = null;
 	}
 	
 	public void embedPopInCoordinatorLayout(PopupWindow pop) {
+		settingsPopup = pop;
 		pop.setWidth(dm.widthPixels);
 		//pop.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
 		pop.setBackgroundDrawable(null);
 		int[] vLocationOnScreen = new int[2];
 		UIData.appbar.getLocationOnScreen(vLocationOnScreen);
 		int top = vLocationOnScreen[1] + UIData.appbar.getHeight();
-		pop.setHeight(root.getHeight() - top - UIData.bottombar2.getHeight());
-		pop.showAtLocation(root, Gravity.TOP, 0, top);
+		pop.setWidth(-1);
+		int h = root.getHeight() - top - UIData.bottombar2.getHeight();
+		pop.setHeight(h);
+		if (pop.isShowing()) {
+			pop.update(0, top, -1, h);
+		} else {
+			pop.showAtLocation(root, Gravity.TOP, 0, top);
+		}
 	}
 	
 	public class BrowserSlider implements View.OnTouchListener {
@@ -2133,6 +2172,17 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		}
 	}
 	
+	/** 根据标签页ID（来自数据库）
+	 * 	跳转至标签页。 | Jump Tab By It's ID */
+	public void NavigateToTab(long tab_id) {
+		TabHolder tab = allTabs.get(tab_id);
+		if (!tab.closed) {
+			int idx = TabHolders.indexOf(tab);
+			if (idx>=0) {
+				AttachWebAt(idx, 0);
+			}
+		}
+	}
 	
 	public boolean AttachWebAt(int i, int pseudoAdd) {
 		CMN.Log("AttachWebAt", i, "pseudoAdd", pseudoAdd);
@@ -2909,6 +2959,13 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				toggleMenuGrid(true);
 			break;
 			case R.id.browser_widget10:
+//				if (true) {
+//					// test new tabs
+//					//newTab(null, false, true, -1);
+//					// test switch tabs
+//					AttachWebAt(adapter_idx+1, 0);
+//					break;
+//				}
 				if (MainMenuListVis) {
 					toggleMenuGrid(true);
 				}
@@ -3217,7 +3274,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 							if (UIData.bottombar2.getBottom()<=UIData.webcoord.getHeight()) {
 								padding += UIData.bottombar2.getHeight();
 							}
-							//quickSettings.setBottomPadding(padding);
+							quickSettings.setBottomPadding(padding);
 						}
 						settingsPanel = vis?quickSettings:null;
 						if (MainMenuListVis && vis) {
@@ -3374,9 +3431,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			
 			intent.setData(Uri.fromFile(new File("123345")));
 			
-			ShortcutInfoCompat info = new ShortcutInfoCompat.Builder(context, "knziha.pd2f")
-					.setIcon(IconCompat.createWithResource(context, R.drawable.ic_pdoc_house))
-					.setShortLabel("PDF Viewer")
+			ShortcutInfoCompat info = new ShortcutInfoCompat.Builder(context, "knziha.pdf")
+					.setIcon(IconCompat.createWithResource(context, R.mipmap.ic_pdoc_viewer))
+					.setShortLabel(mResource.getString(R.string.pdf_viewer))
 					.setIntent(intent)
 					.build();
 			
@@ -3684,6 +3741,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	public void ResetIMSettings() {
 		if (getDynamicFlagIndex(ImmersiveSettings)==3) {
 			WebFrameLayout.GlobalSettingsVersion ++;
+		}
+		if (settingsPopup!=null) {
+			embedPopInCoordinatorLayout(settingsPopup);
 		}
 		currentViewImpl.setImmersiveScrollSettings();
 		checkImmersiveMode();
@@ -4475,6 +4535,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		public long rank;
 		public long id;
 		public final TabIdentifier TabID = new TabIdentifier();
+		public boolean closed=true;
 		public boolean paused;
 		WebFrameLayout viewImpl;
 		public long last_visit_time;
@@ -4518,6 +4579,10 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			if (viewImpl != null) {
 				viewImpl.onSalvaged();
 			}
+		}
+		
+		public void setClosed(boolean val) {
+			closed = val;
 		}
 		
 		class TabIdentifier{
@@ -4805,43 +4870,44 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	
 	@Override @SuppressWarnings("ALL")
 	protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-		CMN.Log("onActivityResult", requestCode, resultCode, data);
-		
-		if(RequsetUrlFromCamera==requestCode) {
-			String text = data==null?null:data.getStringExtra(Intent.EXTRA_TEXT);
-			if(Utils.littleCat) {
-				checkResumeQRText = true;
-			}
-			onQRGetText(text);
-			//etSearch.setText(data.getStringExtra(Intent.EXTRA_TEXT));
-		}
-		else if(RequsetUrlFromStorage==requestCode) {
-			Uri result = data.getData();
-			if(result!=null) {
-				Uri docUri = DocumentsContract.buildDocumentUriUsingTree(result
-						, DocumentsContract.getTreeDocumentId(result));
-				String realPath = Utils.getFullPathFromTreeUri(this, docUri);
-				if(realPath!=null) {
-					showT(realPath);
-					if(downloadDlgHandler!=null) {
-						downloadDlgHandler.downloadTargetDir = new File(realPath);
+		CMN.Log("onActivityResult", requestCode, resultCode, data, data==null?"nullUri":data.getData());
+		switch (requestCode){
+			case RequsetUrlFromCamera: {
+				String text = data==null?null:data.getStringExtra(Intent.EXTRA_TEXT);
+				if(Utils.littleCat) {
+					checkResumeQRText = true;
+				}
+				onQRGetText(text);
+			} break;
+			case RequsetUrlFromStorage: {
+				Uri result = data.getData();
+				if(result!=null) {
+					Uri docUri = DocumentsContract.buildDocumentUriUsingTree(result
+							, DocumentsContract.getTreeDocumentId(result));
+					String realPath = Utils.getFullPathFromTreeUri(this, docUri);
+					if(realPath!=null) {
+						showT(realPath);
+						if(downloadDlgHandler!=null) {
+							downloadDlgHandler.downloadTargetDir = new File(realPath);
+						}
 					}
 				}
-			}
-		}
-		else if(RequsetFileFromFilePicker==requestCode) {
-			if (filePathCallback!=null) {
-				Uri[] value = new Uri[]{};
-				if (data!=null && data.getData()!=null) {
-					value = new Uri[]{data.getData()};
+			} break;
+			case RequsetFileFromFilePicker: {
+				if (filePathCallback!=null) {
+					Uri[] value = new Uri[]{};
+					if (data!=null && data.getData()!=null) {
+						value = new Uri[]{data.getData()};
+					}
+					filePathCallback.onReceiveValue(value);
+					filePathCallback = null;
 				}
-				filePathCallback.onReceiveValue(value);
-				filePathCallback = null;
-			}
-		}
-		
-		if(795==requestCode && resultCode==RESULT_OK && data!=null) { // tutorial showing how to open pdf using the system file picker.
-			startActivity(new Intent(this, PolyShareActivity.class).setData(data.getData()));
+			} break;
+			case RequestPDFFile: {
+				if (resultCode==RESULT_OK && data!=null)
+					startActivity(new Intent(this, PolyShareActivity.class)
+						.setDataAndType(data.getData(), "application/pdf"));
+			} break;
 		}
 		super.onActivityResult(requestCode, resultCode, data);
 	}
@@ -4951,7 +5017,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	
 	@Override
 	public void startActivity(Intent intent) {
-		CMN.Log("startActivity", intent);
+		CMN.Log("APP::startActivity::", intent);
 		if (intent.getAction()==Intent.ACTION_WEB_SEARCH) {
 			String text = intent.getStringExtra(SearchManager.QUERY);
 			newTab(null, false, true, -1);

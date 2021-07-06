@@ -91,6 +91,7 @@ public class Utils {
 	public static final int RequsetUrlFromCamera=1101;
 	public static final int RequsetUrlFromStorage=1102;
 	public static final int RequsetFileFromFilePicker=1103;
+	public static final int RequestPDFFile = 795;
 	public final static Matrix IDENTITYXIRTAM = new Matrix();
 	public final static Object DummyTransX = new Object(){
 		public void setTranslationX(float val) { }

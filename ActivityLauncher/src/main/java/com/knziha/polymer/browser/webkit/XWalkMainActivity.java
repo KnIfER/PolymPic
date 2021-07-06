@@ -10,6 +10,8 @@ import com.knziha.polymer.R;
 import org.xwalk.core.XWalkActivityDelegate;
 import org.xwalk.core.XWalkView;
 
+/** Deprecated. Use XWalkActivityDelegate in your Activity directly. */
+@Deprecated
 public class XWalkMainActivity extends Activity {
 	private XWalkView mXWalkView;
 	private ViewGroup root;

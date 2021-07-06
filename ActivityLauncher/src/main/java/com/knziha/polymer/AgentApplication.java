@@ -5,10 +5,8 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 
-import androidx.annotation.NonNull;
-
 import com.knziha.filepicker.model.GlideCacheModule;
-import com.knziha.polymer.Utils.CMN;
+import com.knziha.polymer.Utils.Options;
 import com.knziha.polymer.browser.AppIconCover.AppIconCover;
 import com.knziha.polymer.browser.AppIconCover.AppIconCoverLoaderFactory;
 import com.knziha.polymer.pdviewer.pagecover.PageCover;
@@ -46,6 +44,7 @@ public class AgentApplication extends Application {
 	@Override
 	public void onCreate() {
 		super.onCreate();
+		Options.AppVersion ++;
 	}
 	
 }

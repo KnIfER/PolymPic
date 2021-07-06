@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">PolymPic</string>
+    <string name="app_name">多聚浏览器</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
     <string name="tools">工具</string>
@@ -93,4 +93,5 @@ Donec feugiat ac nunc vel laoreet. In laoreet pretium fringilla. Suspendisse pot
 	<string name="ts_100">100%</string>
 	<string name="ts_125">125%</string>
 	<string name="ts_150">150%</string>
+	<string name="pdf_viewer">PDF 阅读器</string>
 </resources>

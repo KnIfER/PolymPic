@@ -697,6 +697,15 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 		boolean b2=WebOptions.getImmersiveScroll_HideBottomBar(flag);
 		hideBothBars = !(!b1&&b2);
 		hideNoBars = !b1&&!b2;
+		
+		// 滑动隐藏底栏  滑动隐藏顶栏 0
+		// 底栏不动  滑动隐藏顶栏 1
+		// 底栏不动  顶栏不动 2
+		// 滑动隐藏底栏  顶栏不动 3
+//		int hideBarType = 2;
+//		boolean PadPartPadBar = false;
+//		syncBarType(hideBarType, PadPartPadBar, activity.UIData);
+		
 		SettingsStamp &= ~ScrollSettingsMask;
 		SettingsStamp |= flag;
 	}
@@ -880,7 +889,7 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 		if (!domain.matches(url))
 		{
 			SubStringKey domainKey = SubStringKey.new_hostKey(url);
-			//CMN.Log("queryDomain::", CMN.tid(), domainKey, url);
+			CMN.Log("queryDomain::", CMN.tid(), domainKey, url);
 			long flag = domainInfo.f1;
 			DomainInfo domainInfo = domainInfoMap.get(domainKey);
 			if (domainInfo!=null) {

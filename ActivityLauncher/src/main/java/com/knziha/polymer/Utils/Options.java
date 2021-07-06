@@ -14,7 +14,6 @@ import androidx.appcompat.app.GlobalOptions;
 
 import com.knziha.filepicker.model.GlideCacheModule;
 import com.knziha.filepicker.settings.FilePickerOptions;
-import com.knziha.filepicker.utils.CMNF;
 import com.knziha.polymer.pdviewer.bookdata.BookOptions;
 import com.knziha.polymer.widgets.XYTouchRecorder;
 
@@ -22,13 +21,13 @@ import org.adrianwalker.multilinestring.Multiline;
 
 //@SuppressWarnings("ALL")
 public class Options implements BookOptions {
-	
 	public final SharedPreferences defaultReader;
 	public DisplayMetrics dm;
 	public static boolean isLarge;
-	public static long FirstFlag;
+	public static long FirstFlag = 0;
 	public static String locale;
 	public Configuration mConfiguration;
+	public static int AppVersion = 0;
 
 	public Options(Context a_){
 		defaultReader = PreferenceManager.getDefaultSharedPreferences(a_);
@@ -85,7 +84,11 @@ public class Options implements BookOptions {
 
 	/////////////////////////////////////////start first flag/////////////////////////////////////////
 	public long getFirstFlag() {
-		return CMNF.FirstFlag=FirstFlag=defaultReader.getLong("MFF",0);
+		if(FirstFlag==0) {
+			FirstFlag=defaultReader.getLong("MFF",0);
+			CMN.Log("Init FirstFlag::", FirstFlag, CMN.now());
+		}
+		return FirstFlag;
 	}
 
 	public long FirstFlag() {
@@ -208,8 +211,8 @@ public class Options implements BookOptions {
 	@Multiline(flagPos=2, debug=1) public boolean getDelayRemovingClosedTabs(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
 	
 	@Multiline(flagPos=3, shift=0) public boolean getUpdateUAOnClkLnk(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
-	@Multiline(flagPos=4, shift=0) public boolean getUpdateUAOnPageSt(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
-	@Multiline(flagPos=4, shift=0) public void setUpdateUAOnPageSt(boolean val){ SecondFlag=SecondFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=4, shift=1) public boolean getUpdateUAOnPageSt(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=4, shift=1) public void setUpdateUAOnPageSt(boolean val){ SecondFlag=SecondFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=5, shift=1) public boolean getUpdateUAOnPageFn(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=6, shift=1) public boolean getUpdateTextZoomOnPageSt(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
 	

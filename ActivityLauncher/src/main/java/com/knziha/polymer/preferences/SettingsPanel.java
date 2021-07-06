@@ -33,7 +33,7 @@ public class SettingsPanel extends AnimatorListenerAdapter implements View.OnCli
 	protected boolean shouldRemoveAfterDismiss = true;
 	protected boolean hasDelegatePicker = false;
 	protected boolean showInPopWindow = false;
-	protected PopupWindow pop;
+	public PopupWindow pop;
 	protected int mPaddingLeft=10;
 	protected int mPaddingRight=10;
 	protected int mPaddingTop=0;
@@ -98,8 +98,10 @@ public class SettingsPanel extends AnimatorListenerAdapter implements View.OnCli
 	}
 	
 	public void setBottomPadding(int padding) {
-		View v = settingsLayout.getChildAt(0);
-		v.setPadding(0, 0, 0, padding);
+		if (!showInPopWindow) {
+			View v = settingsLayout.getChildAt(0);
+			v.setPadding(0, 0, 0, padding);
+		}
 	}
 	
 	public interface ActionListener{

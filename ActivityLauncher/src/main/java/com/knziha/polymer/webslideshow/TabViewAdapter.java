@@ -886,7 +886,10 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 			
 			ttY=(H+titleH-viewpager_holder.getPaddingBottom()-tabH*targetScale)/2-10;
 			
-			if(!a.anioutTopBotForTab) {
+			ttY=(H+titleH-viewpager_holder.getPaddingBottom()-(tabH-a.currentViewImpl.getPaddingTop())*targetScale)/2-10;
+			
+			if(!a.anioutTopBotForTab)
+			{
 				ttY+=-appbar.getHeight()-appbar.getTop();
 			}
 			

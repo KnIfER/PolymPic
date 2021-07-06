@@ -18,7 +18,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.knziha.polymer.R;
-import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.widgets.Utils;
 
 public class ServiceEnhancer extends Service {

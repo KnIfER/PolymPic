@@ -203,6 +203,27 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	
 	LinkedList<RgxPlc> DNSIntelligence = new LinkedList<>();
 	
+	/**
+	 window.setTimeoutPlus = window.setTimeout;
+	 window.setTimeout = function(e,t){
+		 var es = e+"";
+		 if(es.indexOf("tb-modal-open")>0||es.indexOf("href=i")>0||es.indexOf("clearTimeout(z)")>0) {
+			 console.log("es="+es);
+			 return 0;
+		 } else {
+		 	return window.setTimeoutPlus(e,t);
+		 }
+	 };
+	 document.addEventListener("click", function(e) {
+		 var p = e.srcElement.parentNode;
+		 if(p.id==="tiebaCustomPassLogin") {
+			 p.parentNode.removeChild(p);
+		 }
+	 });
+	 */
+	@Multiline(trim=true, compile=true)
+	final static String tieba_turbo = "";
+	
 	public WebCompoundListener(BrowserActivity activity) {
 		a = activity;
 		//wg
@@ -254,24 +275,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		{
 			Pattern p = Pattern.compile("^https?://tieba.baidu.com/");
 			SiteRule rule = new SiteRule();
-			rule.JS = "window.setTimeoutPlus = window.setTimeout;\n" +
-					"window.setTimeout = function(e,t){\n" +
-					"var es = e+\"\";\n" +
-					"if(es.indexOf(\"tb-modal-open\")>0||es.indexOf(\"href=i\")>0||es.indexOf(\"clearTimeout(z)\")>0) {\n" +
-					"console.log(\"es=\"+es);\n" +
-					"return 0;\n" +
-					"} else {\n" +
-					"return window.setTimeoutPlus(e,t);\n" +
-					"}\n" +
-					"}\n" +
-					"document.addEventListener(\"click\", function(e){\n" +
-					"var p = e.srcElement.parentNode;\n" +
-					"if(p.className==='pop-mask') {\n" +
-					"p.parentNode.removeChild(p);\n" +
-					"p = document.getElementById('passport-login-pop');\n" +
-					"p.parentNode.removeChild(p);\n" +
-					"}\n" +
-					"})";
+			rule.JS = tieba_turbo;
 			rule.gstHandler = Pattern.compile("^com\\.baidu\\.tieba");
 			rule.gstHandlerJS = "var getUrlParameter = function (url, name) { \n" +
 					"var reg = new RegExp(\"(^|&)\" + name + \"=([^&]*)(&|$)\"); \n" +
@@ -401,11 +405,6 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 				CMN.Log(e);
 			}
 		}
-	}
-	
-	@Override
-	public void doUpdateVisitedHistory(WebView view, String url, boolean isReload) {
-		//todo
 	}
 	
 	public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
@@ -723,19 +722,13 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		}
 		layout.queryDomain(url, false);
 		if (layout.bNeedCheckUA && a.opt.getUpdateUAOnPageSt()) {
-			// 在此处更新UA或导致页面往复重载以及冻结，慎之
+			// 在此处更新UA或导致页面往复重载以及冻结，慎之 | Dangerous to Update UA Here.
 			layout.updateUserAgentString();
 		}
 		if (layout.bNeedCheckTextZoom>0) {
+			// 若过早修改字体缩放，则加载前的页面也会收到影响。 | For Per-Website Font scale Updating.
 			layout.setTextZoom();
 		}
-		// 滑动隐藏底栏  滑动隐藏顶栏 0
-		// 底栏不动  滑动隐藏顶栏 1
-		// 底栏不动  顶栏不动 2
-		// 滑动隐藏底栏  顶栏不动 3
-		int hideBarType = 1;
-		boolean PadPartPadBar = false;
-//		layout.syncBarType(hideBarType, PadPartPadBar, a.UIData);
 		
 		//((ViewGroup.MarginLayoutParams)mWebView.layout.getLayoutParams()).bottomMargin=2*a.UIData.bottombar2.getHeight();
 		layout.transientTitle=null;
@@ -1000,6 +993,17 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	@Multiline(file="ActivityLauncher\\src\\main\\assets\\mark.js")
 	public static int markjsBytesLen = 0;
 	
+	@Override
+	public void doUpdateVisitedHistory(WebView view, String url, boolean isReload) {
+		CMN.Log("OPV:: ", url, isReload);
+		//a.showT("doUpdateVisitedHistory "+url+" "+isReload);
+		boolean bOnReloadUpdateHistory = true;
+		boolean bOnReloadIncreaseVisitCount = true;
+		// 从 urls 记录获取 note_id，用以加速数据库查询。
+		// note_id  仅作参考，需再次对比确认。
+		
+	}
+	
 	/** 加载完成的回调接口。<br/>
 	 * 注入基础规则。<br/>
 	 * 注入网页规则。<br/>
@@ -1129,9 +1133,9 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 				webviewImpl.clearHistory();
 				layout.clearHistroyRequested=false;
 			}
-			CMN.rt();
-			a.historyCon.insertUpdateBrowserUrl(url, title);
-			CMN.pt("历史插入时间：");
+			if (true) {
+				a.historyCon.insertUpdateBrowserUrl(layout.holder);
+			}
 			if(layout.holder.getLuxury()) {
 				int idx = layout.getThisIdx();
 				if(idx>0) {
@@ -1224,7 +1228,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 			}
 		}
 		
-		//view.loadUrl(url);
+		// 此处设置UA，可能导致旧的页面重载而略过新的页面加载。
 		layout.queryDomain(url, a.opt.getUpdateUAOnClkLnk());
 		layout.setNavStacksDirty();
 		return false;
@@ -1245,7 +1249,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		if(appToastMngr==null) {
 			appToastMngr = new AppToastManager(a);
 		}
-		appToastMngr.showT(message, yesText, url, forceShow, a.hasWindowFocus()?-1:0);
+		appToastMngr.showT(message, yesText, url, forceShow, (a.hasWindowFocus()&&a.settingsPopup==null)?-1:0);
 	}
 	
 	private OkHttpClient prepareKlient() {

@@ -1348,7 +1348,8 @@ public class NavigationHomeAdapter extends TreeViewAdapter<NavigationHomeAdapter
 							}
 							refreshList(false);
 						}
-						if(!np.checkHarmony() || !mp.checkHarmony()) {
+						if(!np.checkHarmony()
+								|| !mp.checkHarmony()) {
 							CMN.Log(np.getName(), np.checkHarmony(), mp.getName(), mp.checkHarmony());
 							CMN.Log(np, mp);
 							CMN.Log("dragging="+fromNode.toString());

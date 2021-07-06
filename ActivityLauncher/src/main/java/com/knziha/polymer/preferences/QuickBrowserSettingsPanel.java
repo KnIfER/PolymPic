@@ -95,16 +95,16 @@ public class QuickBrowserSettingsPanel extends SettingsPanel implements Settings
 		
 		ScrollView sv = new ScrollView(context);
 		
-		root.postDelayed(() -> {
-			lv.setLayoutTransition(transition);
-		}, 450);
+		root.postDelayed(() -> lv.setLayoutTransition(transition), 450);
 		
 		sv.setLayoutParams(lv.getLayoutParams());
 		sv.addView(lv, new ViewGroup.LayoutParams(-1, -2));
 		sv.setOverScrollMode(View.OVER_SCROLL_ALWAYS);
 		settingsLayout = sv;
 		
-		//Utils.embedViewInCoordinatorLayout(settingsLayout);
+		if (!showInPopWindow) {
+			Utils.embedViewInCoordinatorLayout(settingsLayout);
+		}
 		
 		UIData.sysVolSwitch.setChecked(opt.getAdjustSystemVolume());
 		
@@ -181,7 +181,7 @@ public class QuickBrowserSettingsPanel extends SettingsPanel implements Settings
 			textSettings.refresh();
 			setTextZoomNumber();
 		}
-		if (screenSettings!=null) setTextZoomNumber();
+		if (screenSettings!=null) screenSettings.refresh();
 		if (webSiteInfoListener!=null) webSiteInfoListener.onClick(null);
 	}
 	
@@ -438,10 +438,10 @@ public class QuickBrowserSettingsPanel extends SettingsPanel implements Settings
 					a.startActivity(intent);
 				} break;
 				case dakaipdfwenjian: {
-					Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-					intent.setType("application/pdf");
-					intent.addCategory(Intent.CATEGORY_OPENABLE);
-					a.startActivityForResult(intent, 795);
+					a.startActivityForResult(new Intent(Intent.ACTION_GET_CONTENT)
+						.addCategory(Intent.CATEGORY_OPENABLE)
+						.setType("application/pdf")
+						, Utils.RequestPDFFile);
 				} break;
 			}
 		}

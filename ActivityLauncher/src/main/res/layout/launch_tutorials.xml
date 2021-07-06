@@ -79,7 +79,8 @@
 			android:background="?attr/listChoiceBackgroundIndicator"
 			android:padding="10dp"
 			android:textColor="#000"
-			android:drawableStart="@drawable/ic_pdoc_house2"
+			android:drawableStart="@drawable/ic_pdoc_house"
+				android:drawableTint="#00f"
 			/>
 
 		<LinearLayout
@@ -94,7 +95,7 @@
 				android:autoSizeTextType="uniform"
 				android:autoSizeMaxTextSize="25sp"
 				android:layout_width="0dp"
-				android:layout_height="wrap_content"
+				android:layout_height="60dp"
 				android:layout_weight="1"
 				android:textSize="22sp"
 				android:text="创建深色图标"
@@ -102,7 +103,8 @@
 				android:background="?attr/listChoiceBackgroundIndicator"
 				android:padding="10dp"
 				android:textColor="#000"
-				android:drawableStart="@drawable/ic_pdoc_house2"
+				android:drawableStart="@drawable/ic_pdoc_house"
+				android:drawableTint="#00f"
 				/>
 			<View android:layout_width="1px" android:layout_height="match_parent" android:background="#000" />
 			<androidx.appcompat.widget.AppCompatTextView
@@ -111,7 +113,7 @@
 				android:autoSizeTextType="uniform"
 				android:autoSizeMaxTextSize="25sp"
 				android:layout_width="0dp"
-				android:layout_height="wrap_content"
+				android:layout_height="60dp"
 				android:layout_weight="1"
 				android:textSize="22sp"
 				android:text="启动"
@@ -119,7 +121,8 @@
 				android:background="?attr/listChoiceBackgroundIndicator"
 				android:padding="10dp"
 				android:textColor="#000"
-				android:drawableStart="@drawable/ic_pdoc_house2"
+				android:drawableStart="@drawable/ic_pdoc_house"
+				android:drawableTint="#00f"
 				/>
 		</LinearLayout>
 

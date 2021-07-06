@@ -12,19 +12,17 @@ import android.os.CancellationSignal;
 import android.text.TextUtils;
 import android.util.SparseArray;
 
+import com.knziha.polymer.BrowserActivity;
+import com.knziha.polymer.TestHelper;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.pdviewer.PDocument;
 import com.knziha.polymer.pdviewer.bookdata.PDocBookInfo;
-import com.knziha.polymer.webstorage.DomainInfo;
-import com.knziha.polymer.webstorage.SubStringKey;
-import com.knziha.polymer.widgets.WebFrameLayout;
 
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 
 import static com.knziha.polymer.widgets.Utils.EmptyCursor;
@@ -45,6 +43,7 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 	private boolean search_active_updated;
 	private boolean search_empty_updated;
 	private List<Cursor> cursors_to_close = Collections.synchronizedList(new ArrayList<>());
+	private String TABLE_URLS = "urls";
 	
 	public static synchronized LexicalDBHelper connectInstance(Context context) {
 		if(INSTANCE==null) {
@@ -130,15 +129,17 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 		CMN.Log("onDbCreate");
 		// browse history.
 		//db.execSQL("drop table if exists urls");
+		// 创建 TABLE_URLS
 		final String createHistoryTable = "create table if not exists urls(" +
-				"id INTEGER PRIMARY KEY AUTOINCREMENT," + //0
-				"url LONGVARCHAR," + //1
-				"title LONGVARCHAR," + //2
-				"visit_count INTEGER DEFAULT 0 NOT NULL," + //3
-				"note_id INTEGER DEFAULT -1 NOT NULL,"+ //4
-				"domain_id INTEGER DEFAULT -1 NOT NULL,"+ //5
-				"creation_time INTEGER NOT NULL,"+ //6
-				"last_visit_time INTEGER NOT NULL)"; //7
+				"id INTEGER PRIMARY KEY AUTOINCREMENT" + //0
+				", url LONGVARCHAR" + //1
+				", title LONGVARCHAR" + //2
+				", visit_count INTEGER DEFAULT 0 NOT NULL" + //3
+				", note_id INTEGER DEFAULT -1 NOT NULL"+ //4
+				", tab_id INTEGER DEFAULT -1 NOT NULL" + // 5
+				", creation_time INTEGER NOT NULL"+ //6
+				", last_visit_time INTEGER NOT NULL" +
+				")"; //7
         db.execSQL(createHistoryTable);
         
 		final String createDomainsTable = "create table if not exists domains(" +
@@ -235,6 +236,8 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 		db.execSQL("CREATE INDEX if not exists webtabs_time_index ON webtabs (creation_time)");
 		
 		
+		TestHelper.alterDomainToTabID(db);
+		
 		CMN.Log("onDbCreate..done");
     }
 	
@@ -295,7 +298,7 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 			sql = MainBuilder.append(sql).append(" limit ").append(limitation).toString();
 		}
 		Cursor activeUrlCursor = database.rawQuery(sql, new String[]{term, term}, stopSign);
-		//Cursor activeUrlCursor = database.query(true, "urls", new String[]{"url","title"}, "url like ? or title like ?",new String[]{term, term}, null, null,"visit_count desc, last_visit_time desc", "0,8",stopSign);
+		//Cursor activeUrlCursor = database.query(true, TABLE_URLS, new String[]{"url","title"}, "url like ? or title like ?",new String[]{term, term}, null, null,"visit_count desc, last_visit_time desc", "0,8",stopSign);
 		history_active_updated =false;
 		return ActiveUrlCursor = activeUrlCursor;
 	}
@@ -363,45 +366,51 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 	}
 	
 	// 在 onpagefinished 之时记录下url等信息
-	public long insertUpdateBrowserUrl(String url, String tile) {
-		history_empty_updated=history_active_updated=true;
-    	int count=-1;
-		int id=-1;
-		final String sql = "select id,visit_count from urls where url = ? ";
-		boolean insertNew=true;
-		String[] where = new String[]{url};
-		Cursor c = database.rawQuery(sql, where);
-		if(c.moveToFirst()) {
-			insertNew = false;
-			id = c.getInt(0);
-			count = c.getInt(1);
+	public long insertUpdateBrowserUrl(BrowserActivity.TabHolder tabHolder) {
+		CMN.rt();
+		int count=-1;
+		try {
+			int id=-1;
+			String[] where = new String[]{tabHolder.url};
+			boolean insertNew=true;
+			Cursor c = database.rawQuery("select id,visit_count from urls where url = ? ", where);
+			if(c.moveToFirst()) {
+				insertNew = false;
+				id = c.getInt(0);
+				count = c.getInt(1);
+			}
+			c.close();
+			
+			boolean notUpdateHistory=false;
+			
+			if(!insertNew&&notUpdateHistory) {
+				return 1;
+			}
+			//CMN.Log("count=", count);
+			
+			ContentValues values = new ContentValues();
+			values.put("url", tabHolder.url);
+			values.put("title", tabHolder.title);
+			values.put("visit_count", ++count);
+			values.put("tab_id", tabHolder.id);
+			
+			long now = CMN.now();
+			values.put("last_visit_time", now);
+			if(insertNew) {
+				values.put("creation_time", now);
+				database.insert(TABLE_URLS, null, values);
+			} else {
+				//values.put("id", id);
+				//database.update(TABLE_URLS, values, "url=?", where);
+				//database.insertWithOnConflict(TABLE_URLS, null, values, SQLiteDatabase.CONFLICT_REPLACE);
+				where[0]=""+id;
+				database.update(TABLE_URLS, values, "id=?", where);
+			}
+			history_empty_updated=history_active_updated=true;
+		} catch (Exception e) {
+			CMN.Log(e);
 		}
-		c.close();
-		
-		boolean notUpdateHistory=false;
-		
-		if(!insertNew&&notUpdateHistory) {
-			return 1;
-		}
-		
-		//CMN.Log("countcount", count);
-		
-		ContentValues values = new ContentValues();
-		values.put("url", url);
-		values.put("title", tile);
-		values.put("visit_count", ++count);
-		values.put("last_visit_time", System.currentTimeMillis());
-		values.put("creation_time", System.currentTimeMillis());
-		
-		if(insertNew) {
-			database.insert("urls", null, values);
-		} else {
-			//values.put("id", id);
-			//database.update("urls", values, "url=?", where);
-			//database.insertWithOnConflict("urls", null, values, SQLiteDatabase.CONFLICT_REPLACE);
-			where[0]=""+id;
-			database.update("urls", values, "id=?", where);
-		}
+		CMN.pt("历史插入时间：");
 		return count;
 	}
 	
