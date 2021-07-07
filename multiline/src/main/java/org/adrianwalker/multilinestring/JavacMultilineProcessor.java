@@ -319,7 +319,7 @@ public final class JavacMultilineProcessor extends AbstractProcessor {
 										finalExpr = maker.Binary(Tag.PLUS, var, maker.Literal(shift));
 										finalExpr = maker.Binary(Tag.MOD, maker.Parens(finalExpr), maker.Literal(max));
 									}
-									finalExpr = maker.Binary(Tag.BITAND, finalExpr==null?var:maker.Parens(finalExpr), maker.Literal(mask));
+									finalExpr = maker.Binary(Tag.BITAND, finalExpr==null?var:maker.Parens(finalExpr), maker.Literal((long)mask));
 									finalExpr = maker.Binary(Tag.SL, maker.Parens(finalExpr), maker.Literal(flagPos));
 									finalExpr = maker.Binary(Tag.BITOR, maker.Parens(core), maker.Parens(finalExpr));
 									metDcl.body = maker.Block(0, List.from(new JCStatement[]{maker.Exec(maker.Assign(flag, finalExpr))}));
