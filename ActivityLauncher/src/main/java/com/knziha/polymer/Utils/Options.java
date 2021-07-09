@@ -216,6 +216,9 @@ public class Options implements BookOptions {
 	@Multiline(flagPos=5, shift=1) public boolean getUpdateUAOnPageFn(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=6, shift=1) public boolean getUpdateTextZoomOnPageSt(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
 	
+	@Multiline(flagPos=7) public boolean getOnReloadIncreaseVisitCount(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=8, shift=1) public boolean getOnReloadUpdateHistory(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
+	
 	
 	@Multiline(flagPos=19, shift=1) public static boolean getUseCustomCrashCatcher(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=20, shift=1) public static boolean getSilentExitBypassingSystem(){ SecondFlag=SecondFlag; throw new RuntimeException(); }

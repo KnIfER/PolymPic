@@ -43,7 +43,15 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 	private boolean search_active_updated;
 	private boolean search_empty_updated;
 	private List<Cursor> cursors_to_close = Collections.synchronizedList(new ArrayList<>());
-	private String TABLE_URLS = "urls";
+	
+	public final static String TABLE_URLS = "urls";
+	public final static String TABLE_ANNOTS = "annots";
+	public final static String TABLE_ANNOTS_TEXT = "annott";
+	
+	public final static String FIELD_URL = "url";
+	public final static String FIELD_URL_ID = "url_id";
+	public final static String FIELD_LAST_TIME = "last_visit_time";
+	public final static String FIELD_CREATE_TIME = "creation_time";
 	
 	public static synchronized LexicalDBHelper connectInstance(Context context) {
 		if(INSTANCE==null) {
@@ -165,9 +173,10 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 				"id INTEGER PRIMARY KEY AUTOINCREMENT," +
 				"url LONGVARCHAR," +
 				"notes LONGVARCHAR,"+
-				"texts LONGVARCHAR,"+
+				//"texts LONGVARCHAR,"+
 				"url_id INTEGER DEFAULT -1 NOT NULL,"+
 				"flag INTEGER DEFAULT -1 NOT NULL,"+
+				"edit INTEGER DEFAULT 0 NOT NULL,"+
 				"creation_time INTEGER DEFAULT 0 NOT NULL," +
 				"last_visit_time INTEGER NOT NULL)";
 		db.execSQL(createNotesTable);
@@ -356,21 +365,17 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 		}
 	}
 	
-	public Cursor queryNote(String url_key) {
-		String sql = "select notes,texts,url,url_id from annots where url=?";
-		return database.rawQuery(sql, new String[]{url_key});
-	}
-	
 	public void updateLastSearchTerm(String url_key) {
 		LastSearchTerm = url_key;
 	}
 	
-	// 在 onpagefinished 之时记录下url等信息
-	public long insertUpdateBrowserUrl(BrowserActivity.TabHolder tabHolder) {
+	
+	public long insertUpdateBrowserUrl(BrowserActivity.TabHolder tabHolder, long nid, boolean incVisCnt) {
 		CMN.rt();
 		int count=-1;
 		try {
 			int id=-1;
+			
 			String[] where = new String[]{tabHolder.url};
 			boolean insertNew=true;
 			Cursor c = database.rawQuery("select id,visit_count from urls where url = ? ", where);
@@ -381,19 +386,16 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 			}
 			c.close();
 			
-			boolean notUpdateHistory=false;
-			
-			if(!insertNew&&notUpdateHistory) {
-				return 1;
-			}
-			//CMN.Log("count=", count);
-			
 			ContentValues values = new ContentValues();
 			values.put("url", tabHolder.url);
 			values.put("title", tabHolder.title);
-			values.put("visit_count", ++count);
+			if (incVisCnt) {
+				values.put("visit_count", ++count);
+			}
+			if (nid!=-1) {
+				values.put("note_id", nid);
+			}
 			values.put("tab_id", tabHolder.id);
-			
 			long now = CMN.now();
 			values.put("last_visit_time", now);
 			if(insertNew) {
@@ -468,35 +470,6 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 		}
 		//CMN.Log("insertSearchTerm::", lex, count);
 		return count;
-	}
-	
-	public long insertUpdateNote (String lex, String notes, String texts) {
-		history_empty_updated=history_active_updated=true;
-		long id=-1;
-		final String sql = "select id from urls where url = ? ";
-		String[] where = new String[]{lex};
-		Cursor c = database.rawQuery(sql, where);
-		if(c.getCount()>0) {
-			c.moveToFirst();
-			id = c.getInt(0);
-		}
-		c.close();
-		
-		ContentValues values = new ContentValues();
-		values.put("url", lex);
-		values.put("notes", notes);
-		values.put("texts", texts);
-		values.put("last_visit_time", System.currentTimeMillis());
-		
-		if(id>=0) {
-			values.put("id", (int)id);
-			//id = database.update("annots", values, "id=?", new String[]{Integer.toString((int) id)});
-			id = database.insertWithOnConflict("annots", null, values, SQLiteDatabase.CONFLICT_REPLACE);
-		} else {
-			values.put("creation_time", System.currentTimeMillis());
-			id = database.insert("annots", null, values);
-		}
-		return id;
 	}
 	
 	SQLiteStatement preparedSelectExecutor;
@@ -630,7 +603,25 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 		return null;
 	}
 	
-	/** 做标注时，将页面位置、文本索引、文本片段储存在数据库。 */
+	/** 做网页标注时，将网页笔记索引、页面位置、文本索引、文本片段储存在数据库。 */
+	public void createWebAnnotationTextTable() {
+		SQLiteDatabase db = getDB();
+		final String createNotesTable = "create table if not exists \"annott\" ("+
+				"id INTEGER PRIMARY KEY AUTOINCREMENT" +
+				",note_id INTEGER DEFAULT -1 NOT NULL"+
+				",text_id INTEGER DEFAULT -1 NOT NULL"+
+				",creation_time INTEGER DEFAULT 0 NOT NULL" +
+				",text LONGVARCHAR"+
+				",parms LONGVARCHAR"+
+				",type INTEGER DEFAULT -1 NOT NULL"+
+				",cols LONGVARCHAR"+
+				")";
+		db.execSQL(createNotesTable);
+		db.execSQL("CREATE INDEX if not exists annott_time_index ON  annott(creation_time)"); // 时间索引
+		db.execSQL("CREATE UNIQUE INDEX if not exists annott_id_index ON  annott(note_id, text_id)"); // ID索引
+	}
+	
+	/** 做PDF标注时，将页面位置、文本索引、文本片段储存在数据库。 */
 	public boolean connectPagesTable(String name) {
 		SQLiteDatabase db = getDB();
 		if(db==null) {

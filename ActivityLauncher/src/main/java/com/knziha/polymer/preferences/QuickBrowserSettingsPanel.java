@@ -424,6 +424,7 @@ public class QuickBrowserSettingsPanel extends SettingsPanel implements Settings
 				case quanxuan: {
 					a.currentWebView.evaluateJavascript("document.execCommand('selectAll', false)", null);
 				} break;
+				// PDF 阅读
 				case quanwenfanyi: {
 					Utils.blinkView(settingsPanel.settingsLayout, false);
 					a.showT("灵气不足，运转失败…");

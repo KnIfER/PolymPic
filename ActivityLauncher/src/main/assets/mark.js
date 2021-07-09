@@ -1236,9 +1236,7 @@ var Maya;
       value: function serializeRange(range) {
         //var rootNode = this.getDocumentRangy(range.startContainer).documentElement;
         var rootNode = document.body;
-        var serialized = this.serializePosition(range.startContainer, range.startOffset, rootNode) + "," +
-            this.serializePosition(range.endContainer, range.endOffset, rootNode);
-        return serialized;
+        return [this.serializePosition(range.startContainer, range.startOffset, rootNode), this.serializePosition(range.endContainer, range.endOffset, rootNode)];
       }
     }, {
       key: "deserializePosition",
@@ -1260,23 +1258,21 @@ var Maya;
       }
     }, {
         key: "deserializeRange",
-        value: function deserializeRange(serialized) {
-        if(serialized.length==0) return null;
+        value: function deserializeRange(r0, r1) {
+        if(r0.length==0||r1.length==0) return null;
         //var doc = document.body;
         var rootNode = document.body;
-        var deserializeRegex = /^([^,]+),([^,\{]+)\|([0-9]+)$/; //(\{([^}]+)\})?
-        var result = deserializeRegex.exec(serialized);
+        //var result = serialized.split(',');
         //todo checksum
-        console.log('1__'+result[1]);
-        console.log('2__'+result[2]);
-        console.log('3__'+result[3]);
-        var start = this.deserializePosition(result[1], rootNode), end = this.deserializePosition(result[2], rootNode);
+        //console.log('1__'+result[0]);
+        //console.log('2__'+result[1]);
+        var start = this.deserializePosition(r0, rootNode), end = this.deserializePosition(r1, rootNode);
         var range = new Range();
         if(start&&end) {
           try{
             range.setStart(start[0], start[1]);
             range.setEnd(end[0], end[1]);
-            return [range, result[3]];
+            return range;
           } catch(e){}
         }
        }
@@ -1412,33 +1408,77 @@ var Maya;
         b.setEnd(a, a.length);
       }
     }, {
+      key: "TO_RGB",
+      value: function TO_RGB(col, d) {
+          if(col!=undefined) {
+            if(col[0]==='#') return col; // legacy support
+            col = parseInt(col);
+            if(!isNaN(col)) {
+              col = col.toString(16);
+              return "#"+col.substr(2)+col.substr(0,2);
+            }
+          }
+          return d;
+      }
+    }, {
+      key: "PADRPC",
+      value: function PDARR(e, n, col) {
+          col = parseInt(col);
+          if(!isNaN(col)) {
+            for(var i=e.length;i<n;i++) e.push('');
+            e.push(col);
+          }
+      }
+    }, {
       key: "HighlightSelection",
-      value: function HighlightSelection() {
-        console.log('HighlightSelection called');
+      value: function HighlightSelection(sty, co1, co2) {
+        //console.log('fatal HighlightSelection called',sty,co1,co2);
         if (window.getSelection) {
-           var spanner = document.createElement("span");
-           spanner.className = "PLOD_HL";
-           spanner.style = "background:#ffaaaa;";
            var this_=this;
            var w=window;
            var sel = w.getSelection();
            if(sel.rangeCount) {
               var range = sel.getRangeAt(0);
-              w._docAnnots+=this_.serializeRange(range)+('|0'+'…');
-              w._docAnnott+=range+('…');
-              this_.surroundRangeContents(range, spanner)
-              polyme.SaveAnnots(chrmtd.get(), w._docAnnots, w._docAnnott);
+              var note = this_.serializeRange(range);
+              note.push(sty);
+              this_.PADRPC(note, 0, co1);
+              this_.PADRPC(note, 1, co2);
+              var tid = w._docAnnotsArr.length;
+              this_.HighlightRange(range, note, tid);
+              w._docAnnotsArr.push(note);
+              polyme.SaveAnnots(chrmtd.get(), w._docAnnotsArr.join('…'), range+'', tid, sty, note.slice(3).join('…'));
            }
            //sel.removeAllRanges();
         }
         return window._docAnnots;
       }
     }, {
+      key: "MakeSpan",
+      value: function MakeSpan(e, sty, id) {
+        var type = parseInt(sty[2])||0;
+        //type|=0x1;
+        //type|=0x2;
+        //type|=0x4;
+        e.className = "PLOD_HL";
+        if(parseInt(sty[3])
+          /*legacy support*/ || sty[3]==undefined || sty[3][0]==='#') {
+          e.style.background=this.TO_RGB(sty[3], "#ffaaaa");
+        }
+        if(type&0x7) {
+          var td = "";
+          if(type&0x1)  td += " underline"; // 下划线
+          if(type&0x2)  td += " overline"; // 上划线
+          if(type&0x4)  td += " line-through"; // 删除线
+          if(sty[4]) td += " "+this.TO_RGB(sty[4], "#ffaaaa");
+          e.style.textDecoration = td;
+        }
+      }
+    }, {
       key: "HighlightRange",
-      value: function HighlightRange(range, type) {
+      value: function HighlightRange(range, sty, id) {
         var spanner = document.createElement("span");
-        spanner.className = "PLOD_HL";
-        spanner.style = "background:#ffaaaa;";
+        this.MakeSpan(spanner, sty, id);
+        spanner.id = "PLOD_HL_"+id;
         this.surroundRangeContents(range, spanner)
       }
     }, {
@@ -1486,12 +1526,18 @@ var Maya;
       key: "RestoreAnnots",
       value: function RestoreAnnots() {
         console.log('Restoring'+window._docAnnots+'\n'+document.body.getElementsByClassName('PLOD_HL').length);
+        window._docAnnotsArr = [];
         var list = window._docAnnots.split('…');
         for(var i=0;i<list.length;i++) {
-            var dsl = this.deserializeRange(list[i]);
-            if(dsl) {
-                console.log('range_'+dsl);
-                this.HighlightRange(dsl[0]);
+            var note = list[i].split(/[,|]/g); // legacy support for | sep
+            //var note = list[i].split(',');
+            if(note.length>1) {
+              _docAnnotsArr.push(note);
+              var dsl = this.deserializeRange(note[0], note[1]);
+              if(dsl) {
+                  console.log('range_'+dsl);
+                  this.HighlightRange(dsl, note, i);
+              }
             }
         }
       }
@@ -1555,14 +1601,14 @@ var Maya;
       polyme.lights = document.getElementsByTagName("mark");
     }
 
-    _this.HighlightSelection = function () {
+    _this.HighlightSelection = function (sty, co1, co2) {
         console.log('HighlightSelection super called'+polyme.bOnceHL);
       if(instance.rejectHL) return;
       if(polyme.bOnceHL) {
         instance.rejectHL=1;
         instance.unmark({done: function() {
           instance.rejectHL=0;
-          instance.HighlightSelection();
+          instance.HighlightSelection(sty, co1, co2);
           console.log('rehighlighting...'+polyme.keys);
             instance.mark(polyme.keys, {
               separateWordSearch: 'enabled',done: _this.done_highlight,
@@ -1571,7 +1617,7 @@ var Maya;
           }
         })
       } else {
-        instance.HighlightSelection();
+        instance.HighlightSelection(sty, co1, co2);
       }
     };
     
@@ -1599,23 +1645,25 @@ if(window.Wαrk==undefined) {
 }
 window._PPMInst = new window.Wαrk(document);
 
-polyme.craft("style", "mark{background:yellow;}mark.current{background:orange;}"+
-  ".PLOD_HL{position:relative;background:#ffaaaa;}.PLOD_HL::after{"+
-  "content: '···';"+
-  "border-radius: 16px;"+
-  "background: #abcdef;"+
-  "color: #fff;"+
-  "position: absolute;"+
-  "left: 95%;"+
-  "bottom: 80%;"+
-  "white-space: nowrap;"+
-  "padding: 0px 8px;"+
-  "margin: 0px;"+
-  "font-size: 14px;"+
-  "opacity: 1;"+
-  "transition: all 0.4s ease;"+
-  "z-index: -1;"+
-  "text-indent:0;"+
-"}");
+polyme.craft("style", `mark{background:yellow;}
+mark.current{background:orange;}
+.PLOD_HL{position:relative;}
+.PLOD_HL::after{
+  content: '···'
+  border-radius: 16px
+  background: #abcdef
+  color: #fff
+  position: absolute
+  left: 95%
+  bottom: 80%
+  white-space: nowrap
+  padding: 0px 8px
+  margin: 0px
+  font-size: 14px
+  opacity: 1
+  transition: all 0.4s ea
+  z-index: -1;
+  text-indent:0;
+}`);
 
 console.log('fatal mark_js_loaded');

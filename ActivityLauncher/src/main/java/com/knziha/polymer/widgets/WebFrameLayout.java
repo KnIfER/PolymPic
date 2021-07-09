@@ -3,6 +3,7 @@ package com.knziha.polymer.widgets;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -21,7 +22,6 @@ import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.webkit.CookieManager;
 import android.webkit.DownloadListener;
-import android.webkit.ValueCallback;
 import android.webkit.WebBackForwardList;
 import android.webkit.WebHistoryItem;
 import android.webkit.WebSettings;
@@ -43,6 +43,7 @@ import com.knziha.polymer.AdvancedBrowserWebView;
 import com.knziha.polymer.BrowserActivity;
 import com.knziha.polymer.R;
 import com.knziha.polymer.Utils.CMN;
+import com.knziha.polymer.Utils.IU;
 import com.knziha.polymer.Utils.Options;
 import com.knziha.polymer.WebCompoundListener;
 import com.knziha.polymer.browser.webkit.UniversalWebviewInterface;
@@ -75,6 +76,12 @@ import static com.knziha.polymer.Utils.Options.WebViewSettingsSource_TAB;
 import static com.knziha.polymer.browser.webkit.WebViewHelper.LookForANobleSteedCorrespondingWithDrawnClasses;
 import static com.knziha.polymer.browser.webkit.WebViewHelper.bAdvancedMenu;
 import static com.knziha.polymer.browser.webkit.WebViewHelper.minW;
+import static com.knziha.polymer.database.LexicalDBHelper.FIELD_CREATE_TIME;
+import static com.knziha.polymer.database.LexicalDBHelper.FIELD_LAST_TIME;
+import static com.knziha.polymer.database.LexicalDBHelper.FIELD_URL;
+import static com.knziha.polymer.database.LexicalDBHelper.FIELD_URL_ID;
+import static com.knziha.polymer.database.LexicalDBHelper.TABLE_ANNOTS;
+import static com.knziha.polymer.database.LexicalDBHelper.TABLE_ANNOTS_TEXT;
 import static com.knziha.polymer.webstorage.WebOptions.BackendSettings;
 import static com.knziha.polymer.webstorage.WebOptions.ImmersiveSettings;
 import static com.knziha.polymer.webstorage.WebOptions.LockSettings;
@@ -881,6 +888,115 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 	
 	
 	final static HashMap<SubStringKey, DomainInfo> domainInfoMap = new HashMap<>();
+
+	final static HashMap<String, Note> noteMap = new HashMap<>();
+	
+	static class Note {
+		final long id;
+		final String url;
+		String data;
+		public int edit;
+		Note(String url, long id, String data, int edit) {
+			this.id = id;
+			this.url = url;
+			this.data = data;
+			this.edit = edit;
+		}
+	}
+	final static Note DummyNote = new Note("", -1, null, 0);
+	private Note mNote = DummyNote;
+
+	
+//	public void saveNote() {
+//		if (mNote!=DummyNote) {
+//			saveNote(mNote.data, null);
+//		}
+//	}
+	
+	public void saveNote(String data, String text, int textId, int type, String cols) {
+		String url = holder.url;
+		Note note = mNote.url.equals(url)?mNote:null;
+		SQLiteDatabase db = activity.historyCon.getDB();
+		if(db.isOpen()) {
+			long now = CMN.now();
+			try {
+				ContentValues values = new ContentValues();
+				values.put(FIELD_URL, url);
+				byte[] dataArr = data.getBytes();
+				byte[] new_data = BU.zlib_compress(dataArr);
+				CMN.Log("压缩前长度：："+dataArr.length, "压缩后长度：："+new_data.length);
+				values.put("notes", new_data);
+				if (holder.url_id!=-1) {
+					values.put(FIELD_URL_ID, holder.url_id);
+				}
+				values.put(FIELD_LAST_TIME, now);
+				if (note==null) {
+					values.put(FIELD_CREATE_TIME, now);
+					long id = db.insert(TABLE_ANNOTS, null, values);
+					noteMap.put(url, mNote=/* 新的笔记 */new Note(url, id, data, 1));
+				} else {
+					note.data = data;
+					values.put("edit", ++note.edit);
+					db.update(TABLE_ANNOTS, values, "id=?", new String[]{Long.toString(note.id)});
+				}
+				CMN.pt("保存了……", holder.url, CMN.now()-now);
+				if (text!=null && mNote!=null) {
+					activity.historyCon.createWebAnnotationTextTable();
+					values = new ContentValues();
+					values.put("note_id", mNote.id);
+					values.put("text_id", textId);
+					values.put("text", text);
+					values.put("type", type);
+					values.put("cols", cols);
+					values.put(FIELD_CREATE_TIME, now);
+					db.insertWithOnConflict(TABLE_ANNOTS_TEXT, null, values, SQLiteDatabase.CONFLICT_REPLACE);
+				}
+			} catch (Exception e) { CMN.Log(e); }
+		}
+	}
+	
+	public long preQueryNote(String url) {
+		if (!mNote.url.equals(url)) {
+			mNote = noteMap.get(url);
+			if (mNote==null) {
+				mNote = DummyNote;
+			}
+		}
+		return mNote.id;
+	}
+	
+	public Cursor queryNoteInDB(String url_key) {
+		final String sql = "select id,notes,edit from annots where url=?";
+		return activity.historyCon.getDB().rawQuery(sql, new String[]{url_key});
+	}
+	
+	public String queryNote(String url) {
+		CMN.rt();
+		if (!mNote.url.equals(url)) {
+			mNote = DummyNote;
+			try (Cursor c = queryNoteInDB(url)) {
+				Note note = null;
+				if(c.getCount()>0) {
+					c.moveToFirst();
+					String text = null;
+					// legacy support for un zipped format. ( deprecating )
+					try {
+						text = c.getString(1);
+						if(!(text.length()>2 && text.charAt(2)=='/' && IU.parsint(text.substring(1,2), -1)>=0)) {
+							text = null;
+						}
+					} catch (Exception e) { CMN.Log(e); }
+					if(text == null) text = new String(BU.zlib_decompress(c.getBlob(1), 0));
+					note=/* 读取笔记 */new Note(url, c.getLong(0), text, c.getInt(2));
+				}
+				if (note!=null) {
+					noteMap.put(url, mNote = note);
+				}
+				CMN.pt("搜索完毕...", mNote.data);
+			} catch (Exception e) { CMN.Log(e); }
+		}
+		return mNote.data;
+	}
 	
 	// 设置变化、SOUL、刷新、OPS、加载网页。
 	// 搜索引擎列表，导航页，需要域数据库记录的图标。
@@ -1401,23 +1517,18 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 	}
 	
 	private boolean onMenuItemClick(ActionMode mode, MenuItem item) {
-		//CMN.Log("onMenuItemClick", item.getClass(), item.getTitle(), item.getItemId(), android.R.id.copy);
+		CMN.Log("onMenuItemClick", item.getClass(), item.getTitle(), item.getItemId(), android.R.id.copy);
 		//CMN.Log("onActionItemClicked");
 		int id = item.getItemId();
 		switch(id) {
 			case R.id.plaindict:{
 				activity.handleVersatileShare(21);
 			} return true;
-			case R.id.web_highlight:{
+			case R.id.web_highlight: {
 				HLED=true;
 				listener.ensureMarkJS(activity);
-				mWebView.evaluateJavascript(WebViewHelper.getInstance().getHighLightIncantation(),new ValueCallback<String>() {
-					@Override
-					public void onReceiveValue(String value) {
-						CMN.Log(value);
-						
-						invalidate();
-					}});
+				mWebView.evaluateJavascript(WebViewHelper.getInstance()
+						.getHighLightIncantation(1, 0xFFFFAAAAL, null), null);
 			} return true;
 			case R.id.web_tools:{//工具复用，我真厉害啊啊啊啊！
 				//evaluateJavascript("document.execCommand('selectAll'); console.log('dsadsa')",null);
@@ -1554,9 +1665,13 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 		}
 		
 		OnLongClickListener MenuLongClicker = v -> {
+			CMN.Log("onMenuItemClick MenuLongClicker!!!", v.getId());
 			switch (v.getId()) {
 				case R.id.web_highlight:
-					mWebView.evaluateJavascript("if(window.app)app.setTTS()",null);
+					HLED=true;
+					listener.ensureMarkJS(activity);
+					mWebView.evaluateJavascript(WebViewHelper.getInstance()
+							.getHighLightIncantation(1, 0, null), null);
 					break;
 				case R.id.web_tools:
 					//evaluateJavascript(getUnderlineIncantation().toString(),null);

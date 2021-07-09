@@ -6,9 +6,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.app.Dialog;
-import android.app.PendingIntent;
 import android.app.SearchManager;
 import android.content.ClipData;
 import android.content.ClipboardManager;
@@ -33,7 +31,6 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.CancellationSignal;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.provider.DocumentsContract;
@@ -103,12 +100,7 @@ import com.bumptech.glide.request.target.Target;
 import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.math.MathUtils;
-import com.knziha.filepicker.model.DialogConfigs;
-import com.knziha.filepicker.model.DialogProperties;
-import com.knziha.filepicker.model.DialogSelectionListener;
-import com.knziha.filepicker.view.FilePickerDialog;
 import com.knziha.polymer.Utils.CMN;
-import com.knziha.polymer.Utils.MyReceiver;
 import com.knziha.polymer.Utils.Options;
 import com.knziha.polymer.Utils.RgxPlc;
 import com.knziha.polymer.browser.BlockingDlgs;
@@ -127,6 +119,7 @@ import com.knziha.polymer.databinding.SearchHintsItemBinding;
 import com.knziha.polymer.preferences.QuickBrowserSettingsPanel;
 import com.knziha.polymer.preferences.SearchHistoryAndInputMethodSettings;
 import com.knziha.polymer.preferences.SettingsPanel;
+import com.knziha.polymer.webstorage.WebAnnotationPanel;
 import com.knziha.polymer.qrcode.QRActivity;
 import com.knziha.polymer.qrcode.QRGenerator;
 import com.knziha.polymer.toolkits.Utils.BU;
@@ -745,14 +738,16 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		//opt.setUpdateUAOnPageSt(false);
 		//showT("低端设备无法积极地更新UA::"+opt.getUpdateUALowEnd());
 		
+		//TestHelper.simplePagingTest(this);
 		
-//		toggleMenuGrid(false);
+		
+		toggleMenuGrid(false);
 
 		//TestHelper.notifyStart(this);
 		root.postDelayed(new Runnable() {
 			@Override
 			public void run() {
-//				menu_grid.findViewById(R.id.menu_icon9).performClick();
+				menu_grid.findViewById(R.id.menu_icon7).performClick();
 //				UIData.browserWidget10.performClick();
 //				root.postDelayed(new Runnable() {
 //					@Override
@@ -820,6 +815,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 //		holder.dlg.show();
 		
 		//TestHelper.insertMegaUrlDataToHistory(historyCon, 2500);
+		
+		//TestHelper.insertMegaAnnotsTextToHistory(historyCon, 9000);
 		
 		root.getViewTreeObserver().addOnGlobalLayoutListener(() -> {
 			if(softMode!=softModeHold) {
@@ -1341,6 +1338,10 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		UIData.appbar.getLocationOnScreen(vLocationOnScreen);
 		int top = vLocationOnScreen[1] + UIData.appbar.getHeight();
 		pop.setWidth(-1);
+		if (true) {
+			UIData.webcoord.getLocationOnScreen(vLocationOnScreen);
+			top = vLocationOnScreen[1];
+		}
 		int h = root.getHeight() - top - UIData.bottombar2.getHeight();
 		pop.setHeight(h);
 		if (pop.isShowing()) {
@@ -3194,6 +3195,36 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 							toggleMenuGrid(true);
 						}
 					} return;
+					case R.id.menu_icon7: {
+						int jd = WeakReferenceHelper.web_annots;
+						WebAnnotationPanel wenAnnots
+								= (WebAnnotationPanel) getReferencedObject(jd);
+						if (wenAnnots==null||true) {
+							wenAnnots = new WebAnnotationPanel(
+									this
+									, UIData.webcoord
+									, UIData.bottombar2.getHeight()
+									, opt
+							);
+							putReferencedObject(jd, wenAnnots);
+							CMN.Log("重建WebAnnotationPanel...");
+						}
+						boolean vis = wenAnnots.toggle(UIData.webcoord);
+						if (vis) {
+							int padding = 0;
+							if (UIData.appbar.getTop()>=0) {
+								padding += UIData.toolbar.getHeight();
+							}
+							if (UIData.bottombar2.getBottom()<=UIData.webcoord.getHeight()) {
+								padding += UIData.bottombar2.getHeight();
+							}
+							wenAnnots.setBottomPadding(padding);
+						}
+						settingsPanel = vis?wenAnnots:null;
+						if (MainMenuListVis && vis) {
+							toggleMenuGrid(true);
+						}
+					} return;
 					case R.id.menu_icon10: {
 						AddPDFViewerShortCut();
 		//				Intent intent = new Intent("colordict.intent.action.SEARCH");
@@ -3334,28 +3365,23 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	}
 	
 	public void AddPDFViewerShortCut() {
-		//showT("啦啦啦"+(ContextCompat.checkSelfPermission(context, "com.android.launcher.permission.INSTALL_SHORTCUT")
-		//		!= PackageManager.PERMISSION_GRANTED));
 		Context context = getApplicationContext();
-		if (ShortcutManagerCompat.isRequestPinShortcutSupported(context)) {
-			Intent intent = new Intent(Intent.ACTION_MAIN);
-			intent.setClassName("com.knziha.polymer", "com.knziha.polymer.PDocShortCutActivity");
-			intent.putExtra("main", true);
-			
-			intent.setData(Uri.fromFile(new File("123345")));
-			
-			ShortcutInfoCompat info = new ShortcutInfoCompat.Builder(context, "knziha.pdf")
+		boolean succ = false;
+		try {
+			//if (ShortcutManagerCompat.isRequestPinShortcutSupported(context))
+			Intent intent = new Intent(Intent.ACTION_MAIN)
+					.setClassName("com.knziha.polymer", "com.knziha.polymer.PDocShortCutActivity")
+					.putExtra("main", true)
+					.setData(Uri.fromFile(new File("123345")));
+			ShortcutInfoCompat shortcutInfo = new ShortcutInfoCompat.Builder(context, "knziha.pdf")
 					.setIcon(IconCompat.createWithResource(context, R.mipmap.ic_pdoc_viewer))
 					.setShortLabel(mResource.getString(R.string.pdf_viewer))
 					.setIntent(intent)
 					.build();
-			
-			//当添加快捷方式的确认弹框弹出来时，将被回调
-			PendingIntent shortcutCallbackIntent = PendingIntent.getBroadcast(context, 0, new Intent(context, MyReceiver.class), PendingIntent.FLAG_UPDATE_CURRENT);
-			//ShortcutManagerCompat.requestPinShortcut(context, info, shortcutCallbackIntent.getIntentSender());
-			ShortcutManagerCompat.requestPinShortcut(context, info, shortcutCallbackIntent.getIntentSender());
-			//ShortcutManagerCompat.addDynamicShortcuts(context, Collections.singletonList(info));
-			//ShortcutManagerCompat.requestPinShortcut(context, info, null);
+			succ = ShortcutManagerCompat.requestPinShortcut(context, shortcutInfo, null);
+		} catch (Exception e) { }
+		if (!succ) {
+			showT("不支持或没有权限！");
 		}
 	}
 	
@@ -4443,6 +4469,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	public static class TabHolder {
 		public String url;
 		public String title;
+		public long url_id;
+		public long note_id;
 		public String page_search_term;
 		public long flag;
 		public long rank;

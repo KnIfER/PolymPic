@@ -73,16 +73,18 @@ public class WebViewHelper {
 	public StringBuilder HighlightBuilder = new StringBuilder();
 
 	/**
-	 if(script) {
-		 script.onload=function(){
-	 		w._PPMInst.HighlightSelection();
-			delete script.onload;
-	 	};
-	 	document.head.appendChild(script);
-	 	'delay'
-	 } else {
-	 	w._PPMInst.HighlightSelection();
-	 }
+	 (function f(sty,co1,co2){
+		 if(script) {
+			 script.onload=function(){
+				w._PPMInst.HighlightSelection(sty,co1,co2);
+				delete script.onload;
+			};
+			document.head.appendChild(script);
+			'delay'
+		 } else {
+			w._PPMInst.HighlightSelection(sty,co1,co2);
+		 }
+	 })(
 	 */
 	@Multiline(trim=true)
 	private final static String HighLightIncantation="ASDASDASD";
@@ -176,10 +178,18 @@ public class WebViewHelper {
 				.append(RestoreHighLightIncantation2).toString();
 	}
 	
-	public String getHighLightIncantation() {
+	public String getHighLightIncantation(int style, long highlightColor, Integer lineColor) {
 		HighlightBuilder.setLength(0);
-		HighlightBuilder.append(commonIcan);
-		return HighlightBuilder.append(HighLightIncantation).toString();
+		HighlightBuilder.append(commonIcan)
+				.append(HighLightIncantation)
+				.append(style)
+				.append(",")
+				.append(highlightColor);
+		if (lineColor!=null) {
+			HighlightBuilder.append(",").append(lineColor);
+		}
+		CMN.Log(HighlightBuilder);
+		return HighlightBuilder.append(")").toString();
 	}
 	public String getDeHighLightIncantation() {
 		HighlightBuilder.setLength(0);

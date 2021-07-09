@@ -18,7 +18,8 @@ public class WeakReferenceHelper {
 	public final static int edit_navhome = 11;
 	public final static int popup_menu = 12;
 	public final static int quick_settings = 13;
-	public final static int poolSize = 14;
+	public final static int web_annots = 14;
+	public final static int poolSize = 15;
 	public final static String[] topDomainNames = new String[]{
 		"aaa",
 		"aarp",

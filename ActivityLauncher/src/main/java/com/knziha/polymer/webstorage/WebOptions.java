@@ -26,8 +26,8 @@ public class WebOptions {
 	
 	// 14
 	
-	@Multiline(flagPos=15, shift=1) public static boolean getImmersiveScrollEnabled(long flag){ flag=flag; throw new RuntimeException(); }
-	@Multiline(flagPos=15, shift=1) public static void setImmersiveScrollEnabled(boolean val){ tmpFlag=tmpFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=15, shift=0) public static boolean getImmersiveScrollEnabled(long flag){ flag=flag; throw new RuntimeException(); }
+	@Multiline(flagPos=15, shift=0) public static void setImmersiveScrollEnabled(boolean val){ tmpFlag=tmpFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=16, shift=1) public static boolean getImmersiveScroll_HideTopBar(long flag){ flag=flag; throw new RuntimeException(); }
 	@Multiline(flagPos=17, shift=0) public static boolean getImmersiveScroll_HideBottomBar(long flag){ flag=flag; throw new RuntimeException(); }
 	
@@ -41,6 +41,7 @@ public class WebOptions {
 	
 	@Multiline(flagPos=23, flagSize=9, shift=110) public static int getTextZoom(long flag){ flag=flag; throw new RuntimeException(); }
 	@Multiline(flagPos=23, flagSize=9, shift=110) public static void setTextZoom(int val){ tmpFlag=tmpFlag; throw new RuntimeException(); }
+	// 23 24 25 26 27 28 29 30 31
 	
 	// 33
 	

@@ -17,9 +17,15 @@
 
 package com.knziha.polymer.toolkits.Utils;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.zip.Adler32;
+import java.util.zip.Deflater;
 import java.util.zip.InflaterOutputStream;
 
 
@@ -41,22 +47,37 @@ public class  BU{//byteUtils
         int sum = (int) a32.getValue();
         return sum;
     }
+	
+	
+	
     //解压等utils
-    @Deprecated
-    public static byte[] zlib_decompress(byte[] encdata,int offset,int ln) {
-	    try {
-			    ByteArrayOutputStream out = new ByteArrayOutputStream();
-			    InflaterOutputStream inf = new InflaterOutputStream(out); 
-			    inf.write(encdata,offset, ln); 
-			    inf.close(); 
-			    return out.toByteArray(); 
-		    } catch (Exception ex) {
-		    	ex.printStackTrace(); 
-		    	return "ERR".getBytes(); 
-		    }
-    }
-
-    @Deprecated
+	public static byte[] zlib_decompress(byte[] encdata,int offset) {
+		try {
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			InflaterOutputStream inf = new InflaterOutputStream(out);
+			inf.write(encdata,offset, encdata.length-offset);
+			inf.close();
+			return out.toByteArray();
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			return "ERR".getBytes();
+		}
+	}
+	
+	public static byte[] zlib_compress(byte[] encdata) {
+		byte[] buffer = new byte[1024];
+		ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);
+		Deflater df = new Deflater();
+		df.setInput(encdata, 0, encdata.length);
+		df.finish();
+		while (!df.finished()) {
+			int n1 = df.deflate(buffer);
+			baos.write(buffer, 0, n1);
+		}
+		return baos.toByteArray();
+	}
+	
+	@Deprecated
     public static byte[] toLH(int n) {  
     	  byte[] b = new byte[4];  
     	  b[0] = (byte) (n & 0xff);  

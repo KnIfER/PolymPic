@@ -3,6 +3,7 @@ package com.knziha.polymer;
 import android.app.Activity;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
@@ -25,6 +26,8 @@ import com.knziha.polymer.toolkits.Utils.BU;
 import com.knziha.polymer.webstorage.WebDict;
 import com.knziha.polymer.widgets.Utils;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -36,6 +39,7 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -49,6 +53,8 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 import static com.knziha.polymer.HttpRequestUtil.DO_NOT_VERIFY;
+import static com.knziha.polymer.database.LexicalDBHelper.FIELD_CREATE_TIME;
+import static com.knziha.polymer.database.LexicalDBHelper.TABLE_ANNOTS_TEXT;
 
 public class TestHelper {
 	public static int debuggingWebType = 0;
@@ -152,6 +158,20 @@ public class TestHelper {
 		}
 	}
 	
+	public static void insertMegaAnnotsTextToHistory(LexicalDBHelper con, int len) {
+		Random rand = new Random();
+		for (int i = 0; i < len; i++) {
+			String title = randomName(rand.nextBoolean(), rand.nextInt(64));
+			ContentValues values = new ContentValues();
+			values.put("note_id", -1);
+			values.put("text_id", -1);
+			values.put("text", title);
+			values.put("type", 0);
+			values.put(FIELD_CREATE_TIME, CMN.now());
+			con.getDB().insertWithOnConflict(TABLE_ANNOTS_TEXT, null, values, SQLiteDatabase.CONFLICT_REPLACE);
+		}
+	}
+	
 	private static boolean columnExists(SQLiteDatabase db, String tableName, String columnName) {
 		String query;
 		try (Cursor cursor = db.rawQuery("PRAGMA table_info(" + tableName + ")", null)) {
@@ -173,6 +193,10 @@ public class TestHelper {
 			//db.execSQL("ALTER TABLE urls DROP COLUMN domain_id"); // 不支持
 			//db.execSQL("ALTER TABLE urls RENAME COLUMN domain_id TO tab_id"); // 不支持
 		}
+//		if (!columnExists(db, "annots", "edit")) {
+//			db.execSQL("ALTER TABLE annots ADD COLUMN edit INTEGER DEFAULT 0 NOT NULL");
+//		}
+
 //		if (!columnExists(db, "urls", "tab_id")) {
 //			db.execSQL("ALTER TABLE urls ADD COLUMN tab_id DEFAULT 0 NOT NULL");
 //		}
@@ -591,5 +615,94 @@ public class TestHelper {
 				CMN.Log(e);
 			}
 		});
+	}
+	
+	static class SimplePage{
+		long st_fd;
+		long st_id;
+		long ed_fd=Long.MAX_VALUE;
+		long ed_id=-1;
+		int number_of_row;
+		String[] rows;
+		
+		@Override
+		public String toString() {
+			return "SimplePage{" +
+					"st_fd=" + new Date(st_fd).toLocaleString() +
+					", ed_fd=" + new Date(ed_fd).toLocaleString() +
+					", number_of_row=" + number_of_row +
+					", rows=" + rows[0]+ " ~ " + rows[number_of_row-1] +
+					'}';
+		}
+	}
+	
+	public static void simplePagingTest(BrowserActivity a) {
+		CMN.Log("SimplePagingTest……");
+		SQLiteDatabase db = a.historyCon.getDB();
+		int pageSz = 5;
+		SimplePage lastPage = new SimplePage();
+		ArrayList<SimplePage> pages = new ArrayList<>();
+		
+		boolean DESC = false;
+		String sortField = "creation_time";
+		String dataFields = "text";
+		String table = "annott";
+		
+		String sql = "SELECT ROWID," + sortField + "," + dataFields
+				+ " FROM " + table + " WHERE " + sortField + (DESC?"<=?":">=?")
+				+ " ORDER BY " + sortField + " " + (DESC?"DESC":"ASC")  + " LIMIT " + pageSz;
+		if (!DESC) {
+			lastPage.ed_fd = Long.MIN_VALUE;
+		}
+		while(true) {
+			boolean finished = false;
+			Cursor cursor = db.rawQuery(sql, new String[]{lastPage.ed_fd+""});
+			//cursor = db.rawQuery("select id, text, creation_time from annott where creation_time<=?  order by creation_time DESC limit " + pageSz, new String[]{lastPage.ed_fd + ""});
+			int len = cursor.getCount();
+			if (len>0) {
+				ArrayList<String> rows = new ArrayList<>(pageSz);
+				long lastEndId = lastPage.ed_id;
+				SimplePage page = new SimplePage();
+				boolean lastRowFound = false;
+				long id = -1;
+				long sort_number = 0;
+				while (cursor.moveToNext()) {
+					id = cursor.getLong(0);
+					sort_number = cursor.getLong(1);
+					String rowText = cursor.getString(2);
+					if (lastEndId!=-1) {
+						if (lastEndId==id) {
+							lastEndId=-1;
+							lastRowFound = true;
+							if (page.number_of_row>0) {
+								rows.clear();
+								page.number_of_row=0;
+							}
+							continue;
+						}
+					}
+					if (page.number_of_row==0) {
+						page.st_fd = sort_number;
+						page.st_id = id;
+					}
+					rows.add(rowText);
+					page.number_of_row++;
+				}
+				if ((!lastRowFound || id==lastEndId) && lastEndId!=-1) {
+					throw new IllegalStateException("pageSz too small!");
+				}
+				page.ed_fd = sort_number;
+				page.ed_id = id;
+				page.rows = rows.toArray(new String[]{});
+				pages.add(lastPage = page);
+				finished = len<pageSz;
+			} else {
+				finished = true;
+			}
+			if (finished) {
+				break;
+			}
+		}
+		CMN.Log(StringUtils.join(pages, "\n"));
 	}
 }

@@ -22,11 +22,11 @@ import com.knziha.polymer.widgets.Utils;
 import com.knziha.polymer.widgets.XYLinearLayout;
 
 public class SettingsPanel extends AnimatorListenerAdapter implements View.OnClickListener {
-	ViewGroup settingsLayout;
-	LinearLayout linearLayout;
-	boolean bIsShowing;
-	final int bottomPaddding;
-	final Options opt;
+	protected ViewGroup settingsLayout;
+	protected LinearLayout linearLayout;
+	protected boolean bIsShowing;
+	protected final int bottomPaddding;
+	protected final Options opt;
 	protected String[][] UITexts;
 	protected int[][] UITags;
 	protected boolean shouldWrapInScrollView = true;
@@ -42,7 +42,7 @@ public class SettingsPanel extends AnimatorListenerAdapter implements View.OnCli
 	protected int mItemPaddingTop=8;
 	protected int mItemPaddingBottom=8;
 	protected int mBackgroundColor = 0xefffffff;
-	SettingsPanel parent;
+	protected SettingsPanel parent;
 	
 	public void setEmbedded(ActionListener actionListener){
 		mPaddingLeft = 15;
@@ -274,6 +274,7 @@ public class SettingsPanel extends AnimatorListenerAdapter implements View.OnCli
 	}
 	
 	public void refresh() {
+		if(linearLayout!=null)
 		for (int i = 0, len=linearLayout.getChildCount(); i < len; i++) {
 			View v = linearLayout.getChildAt(i);
 			if (v instanceof RadioSwitchButton) {

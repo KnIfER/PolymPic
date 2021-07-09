@@ -5,7 +5,6 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
-import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.net.Uri;
@@ -995,13 +994,20 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	
 	@Override
 	public void doUpdateVisitedHistory(WebView view, String url, boolean isReload) {
-		CMN.Log("OPV:: ", url, isReload);
-		//a.showT("doUpdateVisitedHistory "+url+" "+isReload);
-		boolean bOnReloadUpdateHistory = true;
-		boolean bOnReloadIncreaseVisitCount = true;
-		// 从 urls 记录获取 note_id，用以加速数据库查询。
-		// note_id  仅作参考，需再次对比确认。
-		
+		UniversalWebviewInterface webviewImpl = (UniversalWebviewInterface) (view instanceof UniversalWebviewInterface?view:getTag());
+		View mWebView = (View) webviewImpl;
+		WebFrameLayout layout = (WebFrameLayout) mWebView.getParent();
+		if(layout==null||layout.implView!=mWebView) {
+			return;
+		}
+		//CMN.Log("OPV:: ", url, isReload, webviewImpl.getUrl(), webviewImpl.getTitle());
+		String title = layout.getTitle();
+		layout.holder.url=url;
+		layout.transientTitle=title;
+		layout.holder.title=title;
+		if (!isReload || a.opt.getOnReloadUpdateHistory()) {
+			layout.holder.url_id = a.historyCon.insertUpdateBrowserUrl(layout.holder, layout.preQueryNote(url), !isReload||a.opt.getOnReloadIncreaseVisitCount());
+		}
 	}
 	
 	/** 加载完成的回调接口。<br/>
@@ -1029,16 +1035,14 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 			if(ordinalUrl!=null) {
 				url = ordinalUrl;
 			}
-			layout.holder.url = url;
+			layout.holder.url=url;
 			CMN.Log("OPF:::", url, webviewImpl.getTitle(), Thread.currentThread().getId());
 			//CMN.Log("OPF:::", mWebView.holder.url);
 			mWebView.setTag(url);
 			layout.removePostFinished();
 			layout.PageStarted=false;
-			layout.holder.url=url;
-			String title = layout.getTitle();
-			layout.transientTitle=title;
-			layout.holder.title=title;
+			
+			
 			layout.time=System.currentTimeMillis();
 			layout.incrementVerIfAtNormalPage();
 			layout.lastThumbScroll=mWebView.getScrollY();
@@ -1092,21 +1096,21 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 //				mWebView.postDelayed(() -> mWebView.getSettings().setJavaScriptEnabled(false), 1350);
 //			}
 			
+			String title = layout.getTitle();
+			layout.transientTitle=title;
+			layout.holder.url=url;
+			layout.holder.title=title;
 			//todo 高亮
-			boolean MarkJsRequired=true;
-			if(MarkJsRequired&&WebCompoundListener.markjsBytesArr==null) {
+			String note = layout.queryNote(url);
+			boolean MarkJsRequired = note!=null;
+			//todo 笔记，先复原笔记，后上高亮，但是因为笔记最后会用到高亮的功能，所以加载笔记的同时加载高亮支持。
+			if(MarkJsRequired&&markjsBytesArr==null) {
 				ensureMarkJS(a);
 			}
-			//todo 笔记，先复原笔记，后上高亮，但是因为笔记最后会用到高亮的功能，所以加载笔记的同时加载高亮支持。
-			CMN.rt();
-			Cursor c = a.historyCon.queryNote(url);
-			CMN.pt("搜索完毕...", c.getCount(), url);
-			//if(false)
-			if(c.getCount()>0) {
-				c.moveToFirst();
-				CMN.Log("搜索完毕...", c.getString(0));
+			if (note!=null) {
 				//"0/0/2/0/1/5/0/4/0/1/2/2:63,0/0/2/0/1/5/0/4/0/1/2/2:65|0\\n0/0/2/0/1/5/0/4/0/1/2/2:24,0/0/2/0/1/5/0/4/0/1/2/2:26|0\\n0/0/2/0/1/5/0/4/0/1/2/2:15,0/0/2/0/1/5/0/4/0/1/2/2:17|0\\n"
-				webviewImpl.evaluateJavascript(WebViewHelper.getInstance().getResoreHighLightIncantation(c.getString(0)), new ValueCallback<String>() {
+				webviewImpl.evaluateJavascript(WebViewHelper.getInstance()
+						.getResoreHighLightIncantation(note), new ValueCallback<String>() {
 					@Override
 					public void onReceiveValue(String value) {
 						CMN.Log("asd", value);
@@ -1132,9 +1136,6 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 			if(layout.clearHistroyRequested) {
 				webviewImpl.clearHistory();
 				layout.clearHistroyRequested=false;
-			}
-			if (true) {
-				a.historyCon.insertUpdateBrowserUrl(layout.holder);
 			}
 			if(layout.holder.getLuxury()) {
 				int idx = layout.getThisIdx();
@@ -1576,23 +1577,12 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		
 		@org.xwalk.core.JavascriptInterface
 		@JavascriptInterface
-		public void SaveAnnots(long tabID, String annots, String texts) {
-			CMN.Log("SaveAnnots", tabID, annots, texts, a.historyCon.isOpen());
-			//if(true) return;
+		public void SaveAnnots(long tabID, String annots, String text, int textId, int type, String cols) {
+			CMN.Log("SaveAnnots", tabID, annots, text, a.historyCon.isOpen());
 			WebFrameLayout layout = a.getWebViewFromID(tabID);
 			if(layout!=null && layout.HLED) {
 				layout.HLED=false;
-				//a.root.removeCallbacks()
-				long ret=-1;
-				if(a.historyCon.isOpen()) {
-					CMN.rt("保存中……");
-					try {
-						ret = a.historyCon.insertUpdateNote(layout.holder.url, annots, texts);
-					} catch (Exception e) {
-						CMN.Log(e);
-					}
-					CMN.pt("保存了……", ret, layout.holder.url);
-				}
+				layout.saveNote(annots, text, textId, type, cols);
 			}
 		}
 		
