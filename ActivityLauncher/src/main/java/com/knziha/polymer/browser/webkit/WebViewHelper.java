@@ -62,6 +62,7 @@ public class WebViewHelper {
 	 var script=undefined;
 	 if(!w._PPMInst) {
 	 	w._docAnnots = '';
+	 	w._docAnnotsArr = [];
 		script = document.createElement('script');
 		script.type = 'text/javascript';
 		script.src = 'https://mark.js';
@@ -80,9 +81,11 @@ public class WebViewHelper {
 				delete script.onload;
 			};
 			document.head.appendChild(script);
+	 console.log('HighLightIncantation delay !!!');
 			'delay'
 		 } else {
 			w._PPMInst.HighlightSelection(sty,co1,co2);
+	 console.log('HighLightIncantation 456 !!!');
 		 }
 	 })(
 	 */
@@ -188,7 +191,7 @@ public class WebViewHelper {
 		if (lineColor!=null) {
 			HighlightBuilder.append(",").append(lineColor);
 		}
-		CMN.Log(HighlightBuilder);
+		//CMN.Log(HighlightBuilder);
 		return HighlightBuilder.append(")").toString();
 	}
 	public String getDeHighLightIncantation() {

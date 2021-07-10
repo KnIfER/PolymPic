@@ -1,6 +1,7 @@
 package com.knziha.polymer.preferences;
 
 import android.animation.LayoutTransition;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
@@ -397,7 +398,7 @@ public class QuickBrowserSettingsPanel extends SettingsPanel implements Settings
 					int[] vLocationOnScreen = new int[2];
 					settingsLayout.getLocationOnScreen(vLocationOnScreen);
 					XYLinearLayout xy = UIData.root;
-					popupMenu.show(settingsLayout, vLocationOnScreen[0]+(int) (60*GlobalOptions.density), vLocationOnScreen[1]+(int) (xy.lastY-settingsLayout.getScrollY()));
+					popupMenu.show(a.root, vLocationOnScreen[0]+(int) (60*GlobalOptions.density), vLocationOnScreen[1]+(int) (xy.lastY-settingsLayout.getScrollY()));
 				} break;
 				// 切换屏幕方向
 				case hengping1:
@@ -865,11 +866,21 @@ public class QuickBrowserSettingsPanel extends SettingsPanel implements Settings
 		Utils.addViewToParent(settingsLayout, root, panelTitle);
 	}
 	
+	@SuppressLint("NewApi")
 	@Override
 	protected void showPop() {
 		if (pop==null) {
 			pop = new PopupWindow(a);
 			pop.setContentView(settingsLayout);
+		}
+		try {
+//			pop.setTouchModal(false);
+//			pop.setFocusable(true);
+//			pop.setOutsideTouchable(false);
+//			pop.setInputMethodMode(PopupWindow.INPUT_METHOD_NEEDED);
+//			pop.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+		} catch (Exception e) {
+			// todo 自带小数输入法 | Need to embed number input method
 		}
 		a.embedPopInCoordinatorLayout(pop);
 	}

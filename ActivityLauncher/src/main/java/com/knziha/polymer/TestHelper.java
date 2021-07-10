@@ -24,6 +24,7 @@ import com.knziha.polymer.Utils.MyReceiver;
 import com.knziha.polymer.database.LexicalDBHelper;
 import com.knziha.polymer.toolkits.Utils.BU;
 import com.knziha.polymer.webstorage.WebDict;
+import com.knziha.polymer.webstorage.WebOptions.WebTypes;
 import com.knziha.polymer.widgets.Utils;
 
 import org.apache.commons.lang3.StringUtils;
@@ -57,7 +58,12 @@ import static com.knziha.polymer.database.LexicalDBHelper.FIELD_CREATE_TIME;
 import static com.knziha.polymer.database.LexicalDBHelper.TABLE_ANNOTS_TEXT;
 
 public class TestHelper {
-	public static int debuggingWebType = 0;
+	public static WebTypes debuggingWebType;
+	static {
+//		debuggingWebType = WebTypes.WEBTYPE_TENCENT;
+		debuggingWebType = WebTypes.WEBTYPE_SYSTEM;
+//		debuggingWebType = WebTypes.WEBTYPE_INTEL;
+	}
 	public static boolean showSearchTabs=true;
 	
 	static void savePngBitmap(Context c, int resId, int w, int h, String path) {
@@ -163,8 +169,9 @@ public class TestHelper {
 		for (int i = 0; i < len; i++) {
 			String title = randomName(rand.nextBoolean(), rand.nextInt(64));
 			ContentValues values = new ContentValues();
-			values.put("note_id", -1);
-			values.put("text_id", -1);
+			values.put("note_id", rand.nextInt(64));
+			values.put("text_id", rand.nextInt(64));
+			values.put("tab_id", -1);
 			values.put("text", title);
 			values.put("type", 0);
 			values.put(FIELD_CREATE_TIME, CMN.now());
@@ -193,13 +200,15 @@ public class TestHelper {
 			//db.execSQL("ALTER TABLE urls DROP COLUMN domain_id"); // 不支持
 			//db.execSQL("ALTER TABLE urls RENAME COLUMN domain_id TO tab_id"); // 不支持
 		}
-//		if (!columnExists(db, "annots", "edit")) {
-//			db.execSQL("ALTER TABLE annots ADD COLUMN edit INTEGER DEFAULT 0 NOT NULL");
-//		}
-
-//		if (!columnExists(db, "urls", "tab_id")) {
-//			db.execSQL("ALTER TABLE urls ADD COLUMN tab_id DEFAULT 0 NOT NULL");
-//		}
+		if (!columnExists(db, "annots", "edit")) {
+			db.execSQL("ALTER TABLE annots ADD COLUMN edit INTEGER DEFAULT -1 NOT NULL");
+		}
+		if (!columnExists(db, "annott", "tab_id")) {
+			db.execSQL("ALTER TABLE annott ADD COLUMN tab_id INTEGER DEFAULT -1 NOT NULL");
+		}
+		if (!columnExists(db, "urls", "tab_id")) {
+			db.execSQL("ALTER TABLE urls ADD COLUMN tab_id DEFAULT 0 NOT NULL");
+		}
 		CMN.Log("domain_id::", columnExists(db, "urls", "domain_id"));
 	}
 	

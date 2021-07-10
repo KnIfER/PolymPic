@@ -227,27 +227,6 @@
 			<!--			app:layout_behavior="@string/appbar_scrolling_view_behavior"-->
 			<!--			/>-->
 
-
-			<View
-				android:id="@+id/menu_grid_shadow"
-				android:layout_width="match_parent"
-				android:layout_height="match_parent"
-				app:layout_behavior="@string/appbar_scrolling_view_behavior"
-				android:background="#3E8F8F8F"
-				android:visibility="gone"
-				android:elevation="3dp"
-				android:onClick="onClick"
-				/>
-			<ViewStub
-				android:id="@+id/menu_grid"
-				android:layout="@layout/menu_grid"
-				android:layout_width="match_parent"
-				android:layout_height="wrap_content"
-				android:layout_gravity="bottom|end"
-				android:elevation="3dp"
-				tools:layout_width="250dp"
-				/>
-
 			<View
 				android:id="@+id/progressbar"
 				android:layout_width="match_parent"

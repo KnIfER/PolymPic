@@ -90,6 +90,8 @@ public interface UniversalWebviewInterface {
 	
 	View getView();
 	
+	Object getLastRequest();
+	
 	Map<String, String> getLastRequestHeaders();
 	
 	Object initPrintDocumentAdapter(String name);

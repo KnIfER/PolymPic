@@ -3,8 +3,12 @@ package com.knziha.polymer.browser.webkit;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Picture;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Message;
 import android.view.ActionMode;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.webkit.DownloadListener;
@@ -14,6 +18,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.knziha.polymer.BrowserActivity;
@@ -24,7 +29,6 @@ import com.knziha.polymer.widgets.WebFrameLayout;
 import org.xwalk.core.XWalkDownloadListener;
 import org.xwalk.core.XWalkHitTestResult;
 import org.xwalk.core.XWalkNavigationHistory;
-import org.xwalk.core.XWalkPreferences;
 import org.xwalk.core.XWalkResourceClient;
 import org.xwalk.core.XWalkUIClient;
 import org.xwalk.core.XWalkView;
@@ -32,7 +36,6 @@ import org.xwalk.core.XWalkWebResourceRequest;
 
 import java.util.Map;
 
-import static com.knziha.polymer.browser.webkit.WebViewHelper.bAdvancedMenu;
 import static org.xwalk.core.Utils.unlock;
 
 public class XWalkWebView extends XWalkView implements UniversalWebviewInterface
@@ -44,7 +47,7 @@ public class XWalkWebView extends XWalkView implements UniversalWebviewInterface
 	XWalkUIClient xWalkUIClient;
 	
 	static {
-		XWalkPreferences.setValue(XWalkPreferences.ANIMATABLE_XWALK_VIEW, true);
+		//XWalkPreferences.setValue(XWalkPreferences.ANIMATABLE_XWALK_VIEW, true);
 	}
 	
 	public XWalkWebView(@NonNull Context context) {
@@ -80,6 +83,42 @@ public class XWalkWebView extends XWalkView implements UniversalWebviewInterface
 	@Override
 	public View getView() {
 		return this;
+	}
+	
+	@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+	@Override
+	public Object getLastRequest() {
+		XWalkWebResourceRequest wrr = this.wrr;
+		unlock();
+		if(wrr==null) {
+			return null;
+		}
+		return new android.webkit.WebResourceRequest(){
+			@Override
+			public Uri getUrl() {
+				return wrr.getUrl();
+			}
+			@Override
+			public boolean isForMainFrame() {
+				return wrr.isForMainFrame();
+			}
+			@Override
+			public boolean isRedirect() {
+				return false;
+			}
+			@Override
+			public boolean hasGesture() {
+				return wrr.hasGesture();
+			}
+			@Override
+			public String getMethod() {
+				return wrr.getMethod();
+			}
+			@Override
+			public Map<String, String> getRequestHeaders() {
+				return wrr.getRequestHeaders();
+			}
+		};
 	}
 	
 	@Override
@@ -237,34 +276,66 @@ public class XWalkWebView extends XWalkView implements UniversalWebviewInterface
 		return startActionMode(callback, type);
 	}
 	
-	@Override
-	public ActionMode startActionModeForChild(View originalView, ActionMode.Callback callback) {
-		CMN.Log("startActionModeForChild 1 …");
-		return super.startActionModeForChild(originalView, callback);
-	}
+//	@Override
+//	public ActionMode startActionModeForChild(View originalView, ActionMode.Callback callback) {
+//		CMN.Log("startActionModeForChild 1 …");
+//		return super.startActionModeForChild(originalView, callback);
+//	}
 	
-	@SuppressLint("NewApi")
+
+//	@Override
+//	public ActionMode startActionMode(ActionMode.Callback callback) {
+//		CMN.Log("startActionMode 0 …");
+//		return super.startActionMode(callback);
+//	}
+	
 	//Viva Marshmallow!
+//	@Override
+//	public ActionMode startActionMode(ActionMode.Callback callback, int type) {
+//		CMN.Log("startActionMode…");
+//		layout.isIMScrollSupressed = layout.isWebHold;
+//		if(bAdvancedMenu) {
+//			WebFrameLayout.AdvancedWebViewCallback webviewcallback = layout.getWebViewActionModeCallback();
+//
+//			ActionMode mode = super.startActionMode(webviewcallback.wrap(callback), type);
+//
+//			//if(true) return mode;
+//
+//			WebViewHelper.getInstance().TweakWebviewContextMenu(getContext(), mode.getMenu());
+//
+//			postDelayed(webviewcallback.explodeMenuRunnable, 350);
+//
+//			return mode;
+//		}
+//		return super.startActionMode(callback, type);
+//	}
+	
 	@Override
 	public ActionMode startActionMode(ActionMode.Callback callback, int type) {
-		CMN.Log("startActionMode…");
-		layout.isIMScrollSupressed = layout.isWebHold;
-		if(bAdvancedMenu) {
-			WebFrameLayout.AdvancedWebViewCallback webviewcallback = layout.getWebViewActionModeCallback();
-			
-			ActionMode mode = super.startActionMode(webviewcallback.wrap(callback), type);
-			
-			//if(true) return mode;
-			
-			WebViewHelper.getInstance().TweakWebviewContextMenu(getContext(), mode.getMenu());
-			
-			postDelayed(webviewcallback.explodeMenuRunnable, 350);
-			
-			return mode;
-		}
-		return super.startActionMode(callback, type);
+		return this.dummyActionMode();
 	}
 	
+	@Override
+	public ActionMode startActionMode(ActionMode.Callback callback) {
+		return this.dummyActionMode();
+	}
+	
+	public ActionMode dummyActionMode() {
+		return new ActionMode() {
+			@Override public void setTitle(CharSequence title) {}
+			@Override public void setTitle(int resId) {}
+			@Override public void setSubtitle(CharSequence subtitle) {}
+			@Override public void setSubtitle(int resId) {}
+			@Override public void setCustomView(View view) {}
+			@Override public void invalidate() {}
+			@Override public void finish() {}
+			@Override public Menu getMenu() { return null; }
+			@Override public CharSequence getTitle() { return null; }
+			@Override public CharSequence getSubtitle() { return null; }
+			@Override public View getCustomView() { return null; }
+			@Override public MenuInflater getMenuInflater() { return null; }
+		};
+	}
 	
 	@SuppressLint("ClickableViewAccessibility")
 	@Override

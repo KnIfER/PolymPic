@@ -1801,6 +1801,9 @@ public class NumberKicker extends LinearLayout {
      * @param increment True to increment, false to decrement.
      */
      protected void changeValueByOne(boolean increment) {
+		if (mSetValueStr!=null) {
+			mSetValueStr=null;
+		}
         if (mHasSelectorWheel) {
             hideSoftInput();
             if (!moveToFinalScrollerPosition(mFlingScroller)) {

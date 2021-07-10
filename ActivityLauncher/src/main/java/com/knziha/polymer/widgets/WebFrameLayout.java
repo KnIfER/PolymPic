@@ -116,6 +116,8 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 	public boolean allowAppScheme = true;
 	private int scaledTouchSlop;
 	
+	public int postTime;
+	
 	public boolean hideForTabView;
 	public boolean forbidScrollWhenSelecting;
 	public boolean forbidLoading;
@@ -754,8 +756,11 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 	
 	public void setTextZoom() {
 		int ts = WebOptions.getTextZoom(getDelegateFlag(TextSettings, false));
-		CMN.Log("setTextZoom 1::", ts);
-		mWebView.getSettings().setTextZoom(Math.min(500, Math.max(15, ts)));
+		CMN.Log("setTextZoom 1::", ts=Math.min(500, Math.max(15, ts)));
+		WebSettings settings = mWebView.getSettings();
+		if (settings.getTextZoom()!=ts) {
+			settings.setTextZoom(ts);
+		}
 		bNeedCheckTextZoom = 0;
 	}
 	
@@ -945,6 +950,7 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 					values = new ContentValues();
 					values.put("note_id", mNote.id);
 					values.put("text_id", textId);
+					values.put("tab_id", holder.id);
 					values.put("text", text);
 					values.put("type", type);
 					values.put("cols", cols);
@@ -1478,8 +1484,13 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 	public void postFinished() {
 		if(!PageFinishedPosted) {
 			PageFinishedPosted=true;
-			post(OnPageFinishedNotifier);
-			//postDelayed(OnPageFinishedNotifier, 350);
+			if (postTime>0) {
+				postDelayed(OnPageFinishedNotifier, postTime);
+				postTime = 0;
+			} else {
+				post(OnPageFinishedNotifier);
+				//postDelayed(OnPageFinishedNotifier, 350);
+			}
 		}
 	}
 	
@@ -1525,10 +1536,12 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 				activity.handleVersatileShare(21);
 			} return true;
 			case R.id.web_highlight: {
+				CMN.Log("点击了高亮按钮！");
 				HLED=true;
 				listener.ensureMarkJS(activity);
 				mWebView.evaluateJavascript(WebViewHelper.getInstance()
 						.getHighLightIncantation(1, 0xFFFFAAAAL, null), null);
+				mWebView.evaluateJavascript("console.log(123456);", null);
 			} return true;
 			case R.id.web_tools:{//工具复用，我真厉害啊啊啊啊！
 				//evaluateJavascript("document.execCommand('selectAll'); console.log('dsadsa')",null);

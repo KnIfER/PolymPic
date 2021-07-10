@@ -138,6 +138,7 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 		// browse history.
 		//db.execSQL("drop table if exists urls");
 		// 创建 TABLE_URLS
+		database = db;
 		final String createHistoryTable = "create table if not exists urls(" +
 				"id INTEGER PRIMARY KEY AUTOINCREMENT" + //0
 				", url LONGVARCHAR" + //1
@@ -244,6 +245,7 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 		//db.execSQL("CREATE INDEX if not exists pdoc_url_index ON pdoc (url)");
 		db.execSQL("CREATE INDEX if not exists webtabs_time_index ON webtabs (creation_time)");
 		
+		createWebAnnotationTextTable();
 		
 		TestHelper.alterDomainToTabID(db);
 		
@@ -610,6 +612,7 @@ public class LexicalDBHelper extends SQLiteOpenHelper {
 				"id INTEGER PRIMARY KEY AUTOINCREMENT" +
 				",note_id INTEGER DEFAULT -1 NOT NULL"+
 				",text_id INTEGER DEFAULT -1 NOT NULL"+
+				",tab_id INTEGER DEFAULT -1 NOT NULL"+
 				",creation_time INTEGER DEFAULT 0 NOT NULL" +
 				",text LONGVARCHAR"+
 				",parms LONGVARCHAR"+

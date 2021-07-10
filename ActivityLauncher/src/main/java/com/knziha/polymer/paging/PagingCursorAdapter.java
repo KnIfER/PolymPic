@@ -2,46 +2,60 @@ package com.knziha.polymer.paging;
 
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.drawable.Drawable;
+import android.util.Pair;
+import android.widget.ImageView;
 
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.RequestBuilder;
+import com.bumptech.glide.load.DataSource;
+import com.bumptech.glide.load.engine.GlideException;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.target.Target;
 import com.knziha.polymer.Utils.CMN;
+import com.knziha.polymer.browser.AppIconCover.AppIconCover;
+import com.knziha.polymer.browser.AppIconCover.AppInfoBean;
 
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.ArrayList;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
+import static com.knziha.polymer.webslideshow.ImageViewTarget.FuckGlideDrawable;
 
 public class PagingCursorAdapter<T extends CursorReader> implements PagingAdapterInterface<T> {
+	private RecyclerView recyclerView;
+	
 	ArrayList<SimpleCursorPage<T>> pages =  new ArrayList<>(1024);
+	Queue<Pair<Integer, SimpleCursorPage<T>>> insertQueue = new ConcurrentLinkedQueue<>();
+	Queue<SimpleCursorPage<T>> dataQueue = new ConcurrentLinkedQueue<>();
+	Queue<SimpleCursorPage<T>> updateQueue = new ConcurrentLinkedQueue<>();
+	
 	int number_of_rows_detected;
 	final ConstructorInterface<T> mRowConstructor;
 	final ConstructorInterface<T[]> mRowArrConstructor;
 	final SQLiteDatabase db;
 	
-	final String sortField = "creation_time";
-	final String dataFields = "text";
-	final String table = "annott";
-	boolean DESC = true;
-	int pageSz = 20;
-	String sql = "SELECT ROWID," + sortField + "," + dataFields
-			+ " FROM " + table + " WHERE " + sortField + (DESC?"<=?":">=?")
-			+ " ORDER BY " + sortField + " " + (DESC?"DESC":"ASC")  + " LIMIT " + pageSz;
+	private ImageView pageAsyncLoader;
+	private boolean glide_init = true;
+	private RequestBuilder<Drawable> glide;
 	
-	String sql_reverse = "SELECT ROWID," + sortField + "," + dataFields
-			+ " FROM " + table + " WHERE " + sortField + (!DESC?"<=?":">=?")
-			+ " ORDER BY " + sortField + " " + (!DESC?"DESC":"ASC")  + " LIMIT " + pageSz;
+	private int pageSz = 20;
 	
-	String sql_fst = "SELECT ROWID," + sortField
-			+ " FROM " + table + " WHERE " + sortField + (DESC?"<=?":">=?")
-			+ " ORDER BY " + sortField + " " + (DESC?"DESC":"ASC")  + " LIMIT " + pageSz;
-	
+	private String sortField;
+	private String dataFields;
+	private String table;
+	private boolean DESC = true;
+	private String sql, sql_reverse, sql_fst;
 	
 	public PagingCursorAdapter(SQLiteDatabase db, ConstructorInterface<T> mRowConstructor
 			, ConstructorInterface<T[]> mRowArrConstructor) {
 		this.mRowConstructor = mRowConstructor;
 		this.mRowArrConstructor = mRowArrConstructor;
 		this.db = db;
-		
 	}
 	
 	@Override
@@ -49,72 +63,198 @@ public class PagingCursorAdapter<T extends CursorReader> implements PagingAdapte
 		return number_of_rows_detected;
 	}
 	
+	int pageDataSz = 100;
+	
 	@Override
 	public T getReaderAt(int position) {
 		int idx = getPageAt(position);
 		SimpleCursorPage<T> page = pages.get(idx);
 		int offsetedPos = (int) (position-basePosOffset);
-		CMN.Log("getReaderAt basePosOffset="+basePosOffset
-				, position, "@"+idx, basePosOffset+page.pos, basePosOffset+page.end);
-		CMN.Log("--- "+page);
-		CMN.Log("--- "+offsetedPos, page.rows[(int) (offsetedPos-page.pos)]);
+		//CMN.Log("getReaderAt basePosOffset="+basePosOffset
+		//		, position, "@"+idx, basePosOffset+page.pos, basePosOffset+page.end);
+		//CMN.Log("--- "+page);
+		//CMN.Log("--- "+offsetedPos, page.rows[(int) (offsetedPos-page.pos)]);
 		boolean b1=idx==pages.size()-1 && offsetedPos >=page.end-page.number_of_row/2;
 		if (b1
 				|| idx==0 && offsetedPos<=page.pos+page.number_of_row/2
 		) {
 			PrepareNxtPage(page, b1);
 		}
-		return page.rows[(int) (offsetedPos-page.pos)];
+		T ret;
+		if (page.rows==null) {
+			ret = null;
+			CMN.Log("重新加载数据……");
+			init_glide();
+			glide.load(new AppIconCover(new PageAsyncLoaderBean(number_of_rows_detected, page, false)))
+					.into(pageAsyncLoader);
+		} else {
+			ret = page.rows[(int) (offsetedPos-page.pos)];
+		}
+//		if(dataQueue.size()>pageDataSz) {
+//			SimpleCursorPage<T> toRemove;
+//			int toRemoveCnt = dataQueue.size()-pageDataSz;
+//			while((toRemove=dataQueue.poll())!=null && toRemoveCnt>0) {
+//				if (toRemove.rows!=null) {
+//					toRemove.rows = null;
+//					toRemoveCnt--;
+//				}
+//			}
+//		}
+		return ret;
 	}
 	
-	@Override
-	public void bindTo(RecyclerView recyclerView) {
+	public PagingCursorAdapter<T> bindTo(RecyclerView recyclerView) {
 		this.recyclerView = recyclerView;
+		return this;
+	}
+	
+	public PagingCursorAdapter<T> setAsyncLoader(RequestBuilder<Drawable> glide, ImageView pageAsyncLoader) {
+		this.glide = glide;
+		this.pageAsyncLoader = pageAsyncLoader;
+		glide_init = false;
+		return this;
+	}
+	
+	public PagingCursorAdapter<T> sortBy(String table, String sortField, boolean desc, String dataFields) {
+		this.table = table;
+		this.sortField = sortField;
+		this.dataFields = dataFields;
+		this.DESC = desc;
+		glide_init = false;
+		return this;
+	}
+	
+	private void remakeSql() {
+		sql = "SELECT ROWID," + sortField + "," + dataFields
+				+ " FROM " + table + " WHERE " + sortField + (DESC?"<=?":">=?")
+				+ " ORDER BY " + sortField + " " + (DESC?"DESC":"ASC")  + " LIMIT " + pageSz;
+		
+		sql_reverse = "SELECT ROWID," + sortField + "," + dataFields
+				+ " FROM " + table + " WHERE " + sortField + (!DESC?"<=?":">=?")
+				+ " ORDER BY " + sortField + " " + (!DESC?"DESC":"ASC")  + " LIMIT " + pageSz;
+		
+		sql_fst = "SELECT ROWID," + sortField
+				+ " FROM " + table + " WHERE " + sortField + (DESC?"<=?":">=?")
+				+ " ORDER BY " + sortField + " " + (DESC?"DESC":"ASC")  + " LIMIT " + pageSz;
 	}
 	
 	@Override
 	public void startPaging(long resume_to_sort_number, int init_page) {
-		// 回复到 resume_to_sort_number。
 		pages.clear();
-		
-		
-//		if (resume_to_sort_number!=0) {
-//			lastPage.ed_fd = resume_to_sort_number;
-//		}
-		
+		remakeSql();
+		number_of_rows_detected = 0;
 		PreparePageAt(init_page, resume_to_sort_number);
-		
-		//getReaderAt(init_page);
 	}
-	
-	public RecyclerView recyclerView;
 	
 	Runnable mGrowRunnable = new Runnable() {
 		@Override
 		public void run() {
 			int st = number_of_rows_detected;
-			GrowPage(mGrowingPage, mGrowingPageDir);
-			//PreparePageAt((int) (page.end+1));
-			if (!mGrowingPageDir) {
-				CMN.Log("reverse GrowPage::", number_of_rows_detected - st);
-			}
-			if (number_of_rows_detected!=st) {
-				RecyclerView.Adapter ada = recyclerView.getAdapter();
-				if (mGrowingPageDir) {
-					ada.notifyItemRangeInserted(st + 1, number_of_rows_detected - st);
+			boolean dir = mGrowingPageDir;
+			SimpleCursorPage<T> pg = GrowPage(dir);
+			if (pg!=null) {
+				number_of_rows_detected += pg.number_of_row;
+				if (!dir) {
+					pages.add(0, pg);
+					basePosOffset += pg.number_of_row;
 				} else {
-					ada.notifyItemRangeInserted(0, number_of_rows_detected - st);
+					pages.add(pg);
+				}
+				//if (!dir) CMN.Log("reverse GrowPage::", number_of_rows_detected - st);
+				if (number_of_rows_detected!=st) {
+					recyclerView.getAdapter().notifyItemRangeInserted(dir?st+1:0, number_of_rows_detected - st);
 				}
 			}
 		}
 	};
 	
+	class PageAsyncLoaderBean extends AppInfoBean {
+		final int st;
+		final SimpleCursorPage<T> page;
+		final boolean dir;
+		PageAsyncLoaderBean(int st, SimpleCursorPage<T> page, boolean dir) {
+			this.st = st;
+			this.page = page;
+			this.dir = dir;
+		}
+		@Override
+		public Drawable load() {
+			//CMN.Log("PrepareNxtPage :: load!!!");
+			if (page!=null) {
+				ReLoadPage(page);
+				updateQueue.add(page);
+			} else {
+				SimpleCursorPage<T> inserted = GrowPage(dir);
+				//if (!dir) CMN.Log("PrepareNxtPage :: reverse GrowPage::", inserted);
+				if (inserted!=null) {
+					insertQueue.add(new Pair<>(dir?st+1:0, inserted));
+				}
+			}
+			return FuckGlideDrawable;
+		}
+		
+		@Override
+		public boolean equals(@Nullable Object o) {
+			if (this == o) return true;
+			if (o == null || getClass() != o.getClass()) return false;
+			PageAsyncLoaderBean other = ((PageAsyncLoaderBean) o);
+			return dir==other.dir && page==other.page;
+		}
+	}
+	
 	private void PrepareNxtPage(SimpleCursorPage<T> page, boolean dir) {
-		if (recyclerView!=null && (mGrowingPage!=page || mGrowingPageDir!=dir)) {
-			mGrowingPage = page;
-			mGrowingPageDir = dir;
-			//recyclerView.removeCallbacks(mGrowRunnable);
-			recyclerView.post(mGrowRunnable);
+		//CMN.Log("PrepareNxtPage::???", dir, mGrowingPage);
+		if (!glide_init || recyclerView!=null && (mGrowingPage!=page || mGrowingPageDir!=dir)) {
+			//CMN.Log("PrepareNxtPage::", dir, page);
+			if (glide!=null) {
+				mGrowingPage = page;
+				mGrowingPageDir = dir;
+				//CMN.Log("PrepareNxtPage::glide loading...", dir, page);
+				init_glide();
+				glide.load(new AppIconCover(new PageAsyncLoaderBean(number_of_rows_detected, null, dir)))
+						.into(pageAsyncLoader);
+			} else {
+				mGrowingPage = page;
+				mGrowingPageDir = dir;
+				recyclerView.removeCallbacks(mGrowRunnable);
+				recyclerView.post(mGrowRunnable);
+			}
+		}
+	}
+	
+	private void init_glide() {
+		if (!glide_init) {
+			pageAsyncLoader.setTag(null);
+			glide = glide.listener(new RequestListener<Drawable>() {
+				@Override
+				public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
+					mGrowingPage = null;
+					return false;
+				}
+				@Override
+				public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
+					Pair<Integer, SimpleCursorPage<T>> rng;
+					SimpleCursorPage<T> pg;
+					RecyclerView.Adapter ada = recyclerView.getAdapter();
+					while((rng = insertQueue.poll())!=null) {
+						pg = rng.second;
+						number_of_rows_detected += pg.number_of_row;
+						if (rng.first==0) {
+							pages.add(0, pg);
+							basePosOffset += pg.number_of_row;
+						} else {
+							pages.add(pg);
+						}
+						ada.notifyItemRangeInserted(rng.first, pg.number_of_row);
+					}
+					SimpleCursorPage<T> page;
+					while((page = updateQueue.poll())!=null) {
+						ada.notifyItemRangeChanged((int)(page.pos+basePosOffset), (int) (page.end+basePosOffset));
+					}
+					return true;
+				}
+			});
+			glide_init = true;
 		}
 	}
 	
@@ -131,7 +271,7 @@ public class PagingCursorAdapter<T extends CursorReader> implements PagingAdapte
 	}
 	
 	private int getPageAt(int position) {
-		PreparePageAt(position, 0);
+		//PreparePageAt(position, 0);
 		return reduce((int) (position-basePosOffset), 0, pages.size());
 	}
 	
@@ -141,10 +281,37 @@ public class PagingCursorAdapter<T extends CursorReader> implements PagingAdapte
 	boolean mGrowingPageDir;
 	long basePosOffset;
 	
-	public void GrowPage(SimpleCursorPage<T> lastPage, boolean dir) {
-		lastPage = dir?pages.get(pages.size()-1):pages.get(0);
-		CMN.Log("GrowPage::", dir, lastPage);
+	public void ReLoadPage(SimpleCursorPage<T> page) {
+		try (Cursor cursor = db.rawQuery(sql, new String[]{page.st_fd+""})){
+			int len = cursor.getCount();
+			if (len>0) {
+				ArrayList<T> rows = new ArrayList<>(pageSz);
+				//if (!dir && cursor.moveToLast()) cursor.moveToPrevious();
+				int cc=0;
+				long id = -1;
+				long sort_number = 0;
+				while (cursor.moveToNext() && cc< page.number_of_row) {
+					id = cursor.getLong(0);
+					sort_number = cursor.getLong(1);
+					T row = mRowConstructor.newInstance(0);
+					row.ReadCursor(cursor, id, sort_number);
+					rows.add(row);
+					cc++;
+				}
+				page.rows = rows.toArray(mRowArrConstructor.newInstance(rows.size()));
+				dataQueue.add(page);
+			}
+		} catch (Exception e) {
+			CMN.Log(e);
+			throw new RuntimeException(e);
+		}
+	}
+	
+	public SimpleCursorPage<T> GrowPage(boolean dir) {
+		SimpleCursorPage<T> lastPage = dir?pages.get(pages.size()-1):pages.get(0);
+		//CMN.Log("GrowPage::", dir, lastPage);
 		boolean popData = true;
+		SimpleCursorPage<T> ret=null;
 		try (Cursor cursor = db.rawQuery(dir?sql:sql_reverse, new String[]{(dir?lastPage.ed_fd:lastPage.st_fd)+""});){
 			int len = cursor.getCount();
 			if (len>0) {
@@ -186,10 +353,7 @@ public class PagingCursorAdapter<T extends CursorReader> implements PagingAdapte
 					page.number_of_row++;
 				}
 				if ((!lastRowFound || id==lastEndId) && lastEndId!=-1) {
-					if (len==1) {
-						CMN.Log("pageSz too small! len==1");
-						return;
-					}
+					if (len==1) return null;
 					throw new IllegalStateException("pageSz too small!"+lastRowFound+" "+rows.size()+" "+dir);
 				}
 				if (popData) {
@@ -200,24 +364,27 @@ public class PagingCursorAdapter<T extends CursorReader> implements PagingAdapte
 					page.ed_id = id;
 					page.pos = lastPage.end + 1;
 					page.end = lastPage.end + page.number_of_row;
-					pages.add(page);
+					//pages.add(page);
 				} else {
 					page.st_fd = sort_number;
 					page.st_id = id;
 					page.pos = lastPage.pos - page.number_of_row;
 					page.end = lastPage.pos - 1;
-					basePosOffset += page.number_of_row;
-					pages.add(0, page);
+					//basePosOffset += page.number_of_row;
+					//pages.add(0, page);
 					if (popData) {
 						ArrayUtils.reverse(page.rows);
 					}
 				}
-				number_of_rows_detected += page.number_of_row;
+				dataQueue.add(page);
+				ret = page;
+				//number_of_rows_detected += page.number_of_row;
 			}
 		} catch (Exception e) {
 			CMN.Log(e);
 			throw new RuntimeException(e);
 		}
+		return ret;
 	}
 	
 	public void PreparePageAt(int position, long resume) {
@@ -235,7 +402,7 @@ public class PagingCursorAdapter<T extends CursorReader> implements PagingAdapte
 				}
 			}
 			while(true) {
-				CMN.Log("PreparePageAt::");
+				//CMN.Log("PreparePageAt::");
 				long st_pos = number_of_rows_detected;
 				boolean popData = st_pos + pageSz > position;
 				popData = true;

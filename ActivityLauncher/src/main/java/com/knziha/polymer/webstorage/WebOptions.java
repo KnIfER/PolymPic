@@ -3,6 +3,14 @@ package com.knziha.polymer.webstorage;
 import org.adrianwalker.multilinestring.Multiline;
 
 public class WebOptions {
+	/** The webview implementation type in this App.
+	 * 0=System WebView; 1=X5 WebView; 2=XWalk WebView*/
+	public enum WebTypes {
+		WEBTYPE_SYSTEM
+		,WEBTYPE_TENCENT
+		,WEBTYPE_INTEL
+	}
+	
 	public final static int StorageSettings=1;
 	public final static int BackendSettings=2;
 	public final static int ImmersiveSettings=3;

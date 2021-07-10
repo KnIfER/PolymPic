@@ -66,6 +66,7 @@ public class DescriptiveImageView extends ImageView {
 			canvas.drawRoundRect(bShadowRect, round, round, shadowPainter);
 			//CMN.Log("Shadow_Painted…");
 		}
+		//CMN.Log("draw DescriptiveImageView…");
 		super.onDraw(canvas);
 		if(mText!=null&&textPainter!=null) {
 			Paint.FontMetrics fontMetrics = textPainter.getFontMetrics();

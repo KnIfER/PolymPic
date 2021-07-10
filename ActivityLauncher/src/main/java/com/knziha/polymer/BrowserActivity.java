@@ -44,6 +44,7 @@ import android.text.method.LinkMovementMethod;
 import android.text.style.ClickableSpan;
 import android.text.style.RelativeSizeSpan;
 import android.view.ActionMode;
+import android.view.ContextMenu;
 import android.view.GestureDetector;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -116,6 +117,7 @@ import com.knziha.polymer.databinding.ActivityMainBinding;
 import com.knziha.polymer.databinding.LoginViewBinding;
 import com.knziha.polymer.databinding.SearchEnginesItemBinding;
 import com.knziha.polymer.databinding.SearchHintsItemBinding;
+import com.knziha.polymer.preferences.MenuGrid;
 import com.knziha.polymer.preferences.QuickBrowserSettingsPanel;
 import com.knziha.polymer.preferences.SearchHistoryAndInputMethodSettings;
 import com.knziha.polymer.preferences.SettingsPanel;
@@ -187,11 +189,8 @@ import static com.knziha.polymer.WebCompoundListener.requestPattern;
 import static com.knziha.polymer.browser.webkit.WebViewHelper.bAdvancedMenu;
 import static com.knziha.polymer.browser.webkit.WebViewHelper.getTypedTagInAncestors;
 import static com.knziha.polymer.webslideshow.ViewUtils.ViewDataHolder;
-import static com.knziha.polymer.webstorage.WebOptions.BackendSettings;
-import static com.knziha.polymer.webstorage.WebOptions.ImmersiveSettings;
-import static com.knziha.polymer.webstorage.WebOptions.LockSettings;
-import static com.knziha.polymer.webstorage.WebOptions.StorageSettings;
-import static com.knziha.polymer.webstorage.WebOptions.TextSettings;
+import static com.knziha.polymer.webstorage.WebOptions.*;
+import static com.knziha.polymer.webstorage.WebOptions.WebTypes.*;
 import static com.knziha.polymer.widgets.Utils.DummyTransX;
 import static com.knziha.polymer.widgets.Utils.EmptyCursor;
 import static com.knziha.polymer.widgets.Utils.RequestPDFFile;
@@ -230,15 +229,11 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	public HashSet<WebFrameLayout> checkWebViewDirtyMap = new HashSet<>();
 	boolean tabsRead = false;
 	
-	boolean faguo=false;
-	
 	FileOutputStream url_file_recorder;
 	
 	MyHandler mHandler;
 	
-	/** The webview implementation type in this App.
-	 * 0=System WebView; 1=X5 WebView; 2=XWalk WebView*/
-	private int webType=2;
+	private WebTypes webType=WEBTYPE_SYSTEM;
 	
 	private UniversalWebviewInterface wvPreInitInstance;
 	
@@ -281,6 +276,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	private boolean etSearch_scrolled;
 	public LexicalDBHelper historyCon;
 	
+	MenuGrid menuGrid;
+	
 //	private Cursor ActiveUrlCursor=Utils.EmptyCursor;
 //	private Cursor ActiveSearchCursor=Utils.EmptyCursor;
 	private int ActiveSearchCount =0;
@@ -293,9 +290,6 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	Drawable progressbar_background;
 	boolean supressingProgressListener;
 	
-	TextPaint menu_grid_painter;
-	private ScrollViewTransparent menu_grid;
-	private AnimatorListenerAdapter menu_grid_animlis;
 	long supressingNxtLux;
 	public static boolean closing;
 	
@@ -316,8 +310,6 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	private int softMode;
 	public final int softModeHold = WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN | WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN;
 	public final int softModeResize = WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN|WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE;
-	private boolean MainMenuListVis;
-	private boolean MenuClicked;
 	private SardineCloud syncHandler;
 	private WaveView waveView;
 	private boolean IsShowingSearchHistory;
@@ -329,6 +321,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	public PopupWindow   settingsPopup;
 	private NavigationHomeAdapter navAdapter;
 	private long lastOpenedTab;
+	private ViewGroup actionBarRoot;
 	
 	@Override
 	public void onConfigurationChanged(@NonNull Configuration newConfig) {
@@ -339,8 +332,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		mConfiguration.setTo(newConfig);
 		getWindowManager().getDefaultDisplay().getMetrics(dm);
 		tabViewAdapter.onConfigurationChanged();
-		if(MainMenuListVis) {
-			refreshMenuGridSize();
+		if(menuGrid!=null) {
+			menuGrid.refreshMenuGridSize(false);
 		}
 		if(!GlobalOptions.isLarge) {
 			// 压扁你，底部工具栏！
@@ -353,9 +346,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			}
 			targetH*=GlobalOptions.density;
 			UIData.bottombar2.getLayoutParams().height = (int) (targetH);
-			if(MainMenuListVis) {
-				menu_grid.setTranslationY(-targetH);
-			}
+//			if(menuGrid!=null) {
+//				menu_grid.setTranslationY(-targetH);
+//			}
 		}
 		if(settingsPopup!=null) {
 			root.postDelayed(postOnConfigurationChanged, 200);
@@ -406,7 +399,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			hideSettingsPanel();
 		} else if(navAdapter!=null && navAdapter.dismiss(true)) {
 			// intentionally empty.
-		} else if(MainMenuListVis) {
+		} else if(menuGrid!=null) {
 			toggleMenuGrid(true);
 		} else if(webtitle.getVisibility()!=View.VISIBLE) {
 			webtitle_setVisibility(false);
@@ -434,6 +427,11 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		//win.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN|WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
 		setSoftInputMode(softModeResize);
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
+		if(Utils.littleCake) {
+			requestWindowFeature(Window.FEATURE_ACTION_MODE_OVERLAY);
+			supportRequestWindowFeature(Window.FEATURE_ACTION_MODE_OVERLAY);
+		}
+		
 		
 		//win.setFlags(WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED, WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED);
 		
@@ -443,8 +441,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		UIData = DataBindingUtil.setContentView(this, R.layout.activity_main);
 		
 		root=UIData.root;
-		
-		webType = opt.getWebType();
+
+		webType = WebTypes.values()[opt.getWebType()];
 		
 		mWebListener = Utils.version>=21?new WebCompoundListener(this):new WebCompatListener(this);
 		//mWebListener = new WebCompoundListener(this);
@@ -577,7 +575,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	}
 	
 	private void checkResume() {
-		modThreeBtnForMenuGrid();
+//		modThreeBtnForMenuGrid(menuGrid!=null, true);
 		IsReqCheckingNxtResume = false;
 	}
 	@Override
@@ -588,17 +586,16 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			return;
 		}
 		if(historyCon==null) {
-			if(TestHelper.debuggingWebType>=0) {
+			if(TestHelper.debuggingWebType!=null) {
 				webType=TestHelper.debuggingWebType;
 			}
-			//setWebType(webType=0);
 			try {
 				historyCon = LexicalDBHelper.connectInstance(this);
 			} catch (SQLiteFullException e) {
 				BlockingDlgs.blameNoSpace(this, savedInstanceState);
 				return;
 			}
-			if(webType==2 && BlockingDlgs.initXWalk(this, savedInstanceState)) {
+			if(webType==WEBTYPE_INTEL && BlockingDlgs.initXWalk(this, savedInstanceState)) {
 				return;
 			}
 		}
@@ -617,8 +614,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		checkMargin(this);
 		_45_ = (int) mResource.getDimension(R.dimen._45_);
 		WebViewHelper.minW = Math.min(512, Math.min(dm.widthPixels, dm.heightPixels));
-		menu_grid_painter = DescriptiveImageView.createTextPainter();
-		UIData.browserWidget10.textPainter = menu_grid_painter;
+		CMN.mTextPainter = DescriptiveImageView.createTextPainter();
+		UIData.browserWidget10.textPainter = CMN.mTextPainter;
 
 		tabViewAdapter = new TabViewAdapter(this);
 		
@@ -741,13 +738,14 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		//TestHelper.simplePagingTest(this);
 		
 		
-		toggleMenuGrid(false);
 
 		//TestHelper.notifyStart(this);
 		root.postDelayed(new Runnable() {
 			@Override
 			public void run() {
-				menu_grid.findViewById(R.id.menu_icon7).performClick();
+//				toggleMenuGrid(false);
+
+//				menu_grid.findViewById(R.id.menu_icon7).performClick();
 //				UIData.browserWidget10.performClick();
 //				root.postDelayed(new Runnable() {
 //					@Override
@@ -816,7 +814,25 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		
 		//TestHelper.insertMegaUrlDataToHistory(historyCon, 2500);
 		
-		//TestHelper.insertMegaAnnotsTextToHistory(historyCon, 9000);
+		//TestHelper.insertMegaAnnotsTextToHistory(historyCon, 1000);
+		
+		if(false)
+		if(Utils.littleCake) {
+			View p2th = Utils.getNthParent(root, 2);
+			if (p2th!=null && p2th.getId()==R.id.action_bar_root) {
+				actionBarRoot = (ViewGroup) p2th;
+				Utils.replaceView(Utils.getNthParent(root, 1), p2th);
+			}
+//			root.postDelayed(new Runnable() {
+//				@Override
+//				public void run() {
+//					if (actionBarRoot!=null && actionBarRoot.getParent()==null) {
+//						Utils.replaceView(actionBarRoot, root);
+//						actionBarRoot.addView(root, 0);
+//					}
+//				}
+//			}, 10000);
+		}
 		
 		root.getViewTreeObserver().addOnGlobalLayoutListener(() -> {
 			if(softMode!=softModeHold) {
@@ -1261,13 +1277,13 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	public int setWebType(int type) {
 		//if(!systemIntialized)
 		{
-			webType=type;
+			webType=WebTypes.values()[type];
 		}
-		return webType;
+		return type;
 	}
 	
 	public int getWebType() {
-		return webType;
+		return webType.ordinal();
 	}
 	
 	public PopupMenuHelper getPopupMenu() {
@@ -2088,18 +2104,36 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	
 	/** 根据标签页ID（来自数据库）
 	 * 	跳转至标签页。 | Jump Tab By It's ID */
-	public void NavigateToTab(long tab_id) {
+	public boolean NavigateToTab(long tab_id) {
 		TabHolder tab = allTabs.get(tab_id);
-		if (!tab.closed) {
+		if (tab!=null && !tab.closed) {
 			int idx = TabHolders.indexOf(tab);
 			if (idx>=0) {
-				AttachWebAt(idx, 0);
+				//AttachWebAt(idx, 0);
+				//hideTabView();
+				selectTab(idx);
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	private void hideTabView() {
+		if(tabViewAdapter.isVisible()) {
+			tabViewAdapter.hideTabView(false);
+			WebFrameLayout layout = this.currentViewImpl;
+			if (layout!=null) {
+				layout.setScaleX(1);
+				layout.setScaleY(1);
+				layout.setTranslationX(0);
+				layout.setTranslationY(0);
 			}
 		}
 	}
 	
 	public boolean AttachWebAt(int i, int pseudoAdd) {
 		CMN.Log("AttachWebAt", i, "pseudoAdd", pseudoAdd);
+		hideSettingsPanel();
 		int size = TabHolders.size()-1; // sanity check
 		if(size<0) return pseudoAdd!=0;
 		if(i<0) i=0;
@@ -2205,6 +2239,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		currentWebView=weblayout.mWebView;
 		webtitle.setText(holder.title);
 		
+		weblayout.hideForTabView = false;
 		weblayout.checkSettings(false, true); // Attach检查
 		checkImmersiveMode(); // Attach检查
 		if (settingsPanel!=null) hideSettingsPanel();
@@ -2334,11 +2369,12 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				}
 			}
 		}
-		if (MainMenuListVis) {
+		if (menuGrid!=null) {
 			//CMN.Log(v);
-			if(vid!=R.id.browser_widget11&&vid!=R.id.browser_widget9&&vid!=R.id.menu_grid_shadow) {
-				toggleMenuGrid(true);
-			}
+			// todo menus
+//			if(vid!=R.id.browser_widget11&&vid!=R.id.browser_widget9&&vid!=R.id.menu_grid_shadow) {
+//				toggleMenuGrid(true);
+//			}
 			if(vid==R.id.browser_widget7
 					|| vid==R.id.browser_widget8
 			) {
@@ -2548,6 +2584,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			case R.id.webtitle: {
 				CharSequence text = etSearch.getText();
 				boolean t0 = text.length() == 0;
+				ResetIMOffset();
 				if(t0) {
 					etSearch.setText(currentWebView.getUrl());
 				}
@@ -2829,13 +2866,13 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 					
 					//break;
 				}
-				if (MainMenuListVis) {
+				if (menuGrid!=null) {
 					//v.getBackground().jumpToCurrentState();
 					moveTaskToBack(false);
 					toggleMenuGrid(false);
 					//IsReqCheckingNxtResume = true;
 					//v.postDelayed(() -> toggleMenuGrid(false), 250);
-					v.postDelayed(() -> modThreeBtnForMenuGrid(), 250);
+//					v.postDelayed(() -> modThreeBtnForMenuGrid(menuGrid!=null, true), 250);
 					break;
 				}
 				if (IsShowingSearchHistory) {
@@ -2869,7 +2906,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 //				showT("fixTopBar : "+fixTopBar);
 			break;
 			case R.id.browser_widget11:
-				MenuClicked=MainMenuListVis;
+				// todo MenuClicked=menuGrid!=null;
+				mWebListener.dismissAppToast();
 				toggleMenuGrid(true);
 			break;
 			case R.id.browser_widget10:
@@ -2880,7 +2918,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 //					AttachWebAt(adapter_idx+1, 0);
 //					break;
 //				}
-				if (MainMenuListVis) {
+				if (menuGrid!=null) {
 					toggleMenuGrid(true);
 				}
 				tabViewAdapter.toggle(v);
@@ -2895,11 +2933,11 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			case R.id.browser_widget1:{
 				onBackPressed();
 			} break;
-			case R.id.menu_grid_shadow:{
-				if (MainMenuListVis) {
-					toggleMenuGrid(true);
-				}
-			} break;
+//			case R.id.menu_grid_shadow:{
+//				if (menuGrid!=null) {
+//					toggleMenuGrid(true);
+//				}
+//			} break;
 			case R.id.show_search_history_dropdown:{
 				if (webtitle.getVisibility()!=View.VISIBLE)
 				{
@@ -3112,250 +3150,149 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		getNavAdapter().toggle();
 	}
 	
-	private void toggleMenuGrid(boolean animate) {
+	public void toggleMenuGrid(boolean animate) {
 		//tabViewAdapter.dismiss();
-		WebFrameLayout layout = this.currentViewImpl;
-		if (animate && layout !=null && layout.hasSelection()) {
-			root.removeCallbacks(postResoreSel_internal_rn);
-			layout.suppressSelection(!MainMenuListVis);
-			layout.removeCallbacks(toggleMenuGrid_internal_rn);
-			layout.post(toggleMenuGrid_internal_rn);
+//		WebFrameLayout layout = this.currentViewImpl;
+//		if (animate && layout !=null && layout.hasSelection()) {
+//			root.removeCallbacks(postResoreSel_internal_rn);
+//			layout.suppressSelection(!(menuGrid!=null));
+//			layout.removeCallbacks(toggleMenuGrid_internal_rn);
+//			layout.post(toggleMenuGrid_internal_rn);
+//		} else {
+//			toggleMenuGrid_internal(animate);
+//		}
+		
+		int jd = WeakReferenceHelper.menu_grid;
+		MenuGrid menuGrid = (MenuGrid) getReferencedObject(jd);
+		if (menuGrid==null) {
+			menuGrid = new MenuGrid(
+					this
+					, UIData.webcoord
+					, UIData.bottombar2.getHeight()/2
+					, opt
+			);
+			putReferencedObject(jd, menuGrid);
+			CMN.Log("MenuGrid...");
+		}
+		boolean vis = menuGrid.toggle(UIData.webcoord);
+		if (vis) {
+			int padding = 0;
+			if (UIData.appbar.getTop()>=0) {
+				padding += UIData.toolbar.getHeight();
+			}
+			if (UIData.bottombar2.getBottom()<=UIData.webcoord.getHeight()) {
+				padding += UIData.bottombar2.getHeight();
+			}
+			menuGrid.setBottomPadding(padding);
+			this.menuGrid = menuGrid;
 		} else {
-			toggleMenuGrid_internal(animate);
+			this.menuGrid = null;
 		}
 	}
 	
 	private void toggleMenuGrid_internal(boolean animate) {
-		faguo = true;
-		int TargetTransY = -UIData.bottombar2.getHeight();
-		int legalMenuTransY = (int) (GlobalOptions.density*55);
-		//appbar.setExpanded(false, true);
-		if(menu_grid==null) {
-			// init_menu_layout
-			// todo avoid
-			UIData.bottombar2.setOnClickListener(new Utils.DummyOnClick());
-			menu_grid_animlis = new AnimatorListenerAdapter() {
-				@Override
-				public void onAnimationEnd(Animator animation) {
-					if(!MainMenuListVis) {
-						menu_grid.setVisibility(View.GONE);
-						if (opt.getTransitListBG()) {
-							UIData.menuGridShadow.setVisibility(View.GONE);
-						}
-					}
-				}
-			};
-			View.OnClickListener menuGridClicker = v -> {
-				if(MenuClicked) {
-					return;
-				}
-				MenuClicked = true;
-				switch (v.getId()) {
-					/* 历史 */
-					case R.id.menu_icon3: {
-						showHistory();
-					} break;
-					/* 下载 */
-					case R.id.menu_icon4: {
-						showDownloads();
-					} break;
-					/* 分享 */
-					case R.id.menu_icon5: {
-						shareUrlOrText(null, null);
-					} break;
-					case R.id.menu_icon9: {
-						int jd = WeakReferenceHelper.quick_settings;
-						QuickBrowserSettingsPanel quickSettings
-								= (QuickBrowserSettingsPanel) getReferencedObject(jd);
-						if (quickSettings==null) {
-							quickSettings = new QuickBrowserSettingsPanel(
-									this
-									, UIData.webcoord
-									, UIData.bottombar2.getHeight()
-									, opt
-							);
-							putReferencedObject(jd, quickSettings);
-							CMN.Log("重建QuickBrowserSettingsPanel...");
-						} else {
-							quickSettings.refresh();
-						}
-						boolean vis = quickSettings.toggle(UIData.webcoord);
-						if (vis) {
-							int padding = 0;
-							if (UIData.appbar.getTop()>=0) {
-								padding += UIData.toolbar.getHeight();
-							}
-							if (UIData.bottombar2.getBottom()<=UIData.webcoord.getHeight()) {
-								padding += UIData.bottombar2.getHeight();
-							}
-							quickSettings.setBottomPadding(padding);
-						}
-						settingsPanel = vis?quickSettings:null;
-						if (MainMenuListVis && vis) {
-							toggleMenuGrid(true);
-						}
-					} return;
-					case R.id.menu_icon7: {
-						int jd = WeakReferenceHelper.web_annots;
-						WebAnnotationPanel wenAnnots
-								= (WebAnnotationPanel) getReferencedObject(jd);
-						if (wenAnnots==null||true) {
-							wenAnnots = new WebAnnotationPanel(
-									this
-									, UIData.webcoord
-									, UIData.bottombar2.getHeight()
-									, opt
-							);
-							putReferencedObject(jd, wenAnnots);
-							CMN.Log("重建WebAnnotationPanel...");
-						}
-						boolean vis = wenAnnots.toggle(UIData.webcoord);
-						if (vis) {
-							int padding = 0;
-							if (UIData.appbar.getTop()>=0) {
-								padding += UIData.toolbar.getHeight();
-							}
-							if (UIData.bottombar2.getBottom()<=UIData.webcoord.getHeight()) {
-								padding += UIData.bottombar2.getHeight();
-							}
-							wenAnnots.setBottomPadding(padding);
-						}
-						settingsPanel = vis?wenAnnots:null;
-						if (MainMenuListVis && vis) {
-							toggleMenuGrid(true);
-						}
-					} return;
-					case R.id.menu_icon10: {
-						AddPDFViewerShortCut();
-		//				Intent intent = new Intent("colordict.intent.action.SEARCH");
-		//				intent.putExtra("EXTRA_QUERY", "happy");
-		//				startActivity(intent);
-						//intent.addCategory(Intent.CATEGORY_BROWSABLE);
-		//				intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-		//				intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-		//				intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
-		//				intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
-						//intent.setFlags(0x10000000);
-					} break;
-				}
-				v.postDelayed(() -> toggleMenuGrid(true), 250);
-			};
-			menu_grid=(ScrollViewTransparent) UIData.menuGrid.getViewStub().inflate();
-			ViewGroup svp = (ViewGroup) menu_grid.getChildAt(0);
-			menu_grid.setTranslationY(TargetTransY + legalMenuTransY);
-			for (int i = 0; i < 2; i++) {
-				ViewGroup sv = (ViewGroup) svp.getChildAt(i);
-				for (int j = 0; j < 5; j++) {
-					DescriptiveImageView vv = (DescriptiveImageView) sv.getChildAt(j);
-					vv.textPainter=menu_grid_painter;
-					vv.setOnClickListener(menuGridClicker);
-				}
-			}
-			if (opt.getTransitListBG()) {
-				UIData.menuGridShadow.setAlpha(0);
-			}
-		}
 		
-		float alpha = 0;
-		if(MainMenuListVis) { // 隐藏
-			TargetTransY = TargetTransY + legalMenuTransY;
-			MainMenuListVis=false;
-			if (!opt.getTransitListBG()) {
-				UIData.menuGridShadow.setVisibility(View.GONE);
-			}
-		}
-		else { // 显示
-			alpha=1;
-			MainMenuListVis=true;
-			refreshMenuGridSize();
-			menu_grid.setVisibility(View.VISIBLE);
-			UIData.menuGridShadow.setVisibility(View.VISIBLE);
-			//UIData.bottombar.getLayoutParams().height = UIData.mainMenuLst.getHeight()+UIData.bottombar2.getHeight();
-		}
-		menu_grid.focusable=MainMenuListVis;
-		//UIData.browserWidget11.jumpDrawablesToCurrentState();
-		if (animate) {
-			menu_grid
-					.animate()
-					.translationY(TargetTransY)
-					.alpha(alpha)
-					.setDuration(180)
-					//.setInterpolator(linearInterpolator)
-					.setListener(MainMenuListVis?null:menu_grid_animlis)
-					.start()
-			;
-			if (opt.getTransitListBG()) {
-				UIData.menuGridShadow
-						.animate()
-						.alpha(alpha)
-						.setDuration(180)
-						.start();
-			}
-		}
-		else {
-			currentViewImpl.suppressSelection(MainMenuListVis);
-			menu_grid.setTranslationY(TargetTransY);
-			menu_grid.setAlpha(alpha);
-			if (!MainMenuListVis) {
-				menu_grid_animlis.onAnimationEnd(null);
-			}
-			UIData.menuGridShadow.setVisibility(View.GONE);
-		}
 		if (!animate) {
 			return;
 		}
-		modThreeBtnForMenuGrid();
+		//modThreeBtnForMenuGrid(menuGrid!=null, true);
 	}
 	
-	private void modThreeBtnForMenuGrid() {
-		View[] sameView = new View[]{UIData.browserWidget7, UIData.browserWidget8};
-		for (View vue:sameView) {
-			if (true) {
-				vue.animate().
-						alpha(MainMenuListVis?0:1)
-						.setListener(MainMenuListVis?new AnimatorListenerAdapter() {
-							@Override
-							public void onAnimationEnd(Animator animation) {
-								vue.setVisibility(View.INVISIBLE);
-							}
-						}:null)
-						.setDuration(90);
-				if (!MainMenuListVis) {
-					vue.setVisibility(View.VISIBLE);
-				}
-			} else {
-				vue.setAlpha(1);
-				vue.setVisibility(MainMenuListVis?View.INVISIBLE:View.VISIBLE);
-			}
+	public void showWebAnnots() {
+		int jd = WeakReferenceHelper.web_annots;
+		WebAnnotationPanel wenAnnots
+				= (WebAnnotationPanel) getReferencedObject(jd);
+		if (wenAnnots==null||true) {
+			wenAnnots = new WebAnnotationPanel(
+					this
+					, UIData.webcoord
+					, UIData.bottombar2.getHeight()/2
+					, opt
+			);
+			putReferencedObject(jd, wenAnnots);
+			CMN.Log("重建WebAnnotationPanel...");
 		}
-		UIData.browserWidget9.setImageResource(MainMenuListVis?R.drawable.ic_exit_to_app:R.drawable.ic_home_black_24dp);
+		boolean vis = wenAnnots.toggle(UIData.webcoord);
+		if (vis) {
+			int padding = 0;
+			if (UIData.appbar.getTop()>=0) {
+				padding += UIData.toolbar.getHeight();
+			}
+			if (UIData.bottombar2.getBottom()<=UIData.webcoord.getHeight()) {
+				padding += UIData.bottombar2.getHeight();
+			}
+			wenAnnots.setBottomPadding(padding);
+		}
+		settingsPanel = vis?wenAnnots:null;
+		if (menuGrid!=null && vis) {
+			//modThreeBtnForMenuGrid(false, true);
+//							settingsPanel.settingsLayout.postDelayed(new Runnable() {
+//								@Override
+//								public void run() {
+//									toggleMenuGrid(false);
+//								}
+//							}, 220);
+			//modThreeBtnForMenuGrid(false, true);
+			
+		}
 	}
 	
-	private void refreshMenuGridSize() {
-		int w = dm.widthPixels;
-		if(w>dm.heightPixels) {
-			w -= GlobalOptions.density*18;
+	public void showBrowserSettings() {
+		int jd = WeakReferenceHelper.quick_settings;
+		QuickBrowserSettingsPanel quickSettings
+				= (QuickBrowserSettingsPanel) getReferencedObject(jd);
+		if (quickSettings==null) {
+			quickSettings = new QuickBrowserSettingsPanel(
+					this
+					, UIData.webcoord
+					, UIData.bottombar2.getHeight()
+					, opt
+			);
+			putReferencedObject(jd, quickSettings);
+			CMN.Log("重建QuickBrowserSettingsPanel...");
+		} else {
+			quickSettings.refresh();
 		}
-		int maxWidth = Math.min(w, (int) (GlobalOptions.density*560));
-		if(Utils.actualLandscapeMode(this)) {
-			maxWidth = Math.min(dm.heightPixels, maxWidth);
-		}
-		//if(root.getWidth()>maxWidth)
-		{
-			menu_grid.setBackgroundResource(R.drawable.frame_top_rounded);
-			ViewGroup.MarginLayoutParams layoutParams = (ViewGroup.MarginLayoutParams) menu_grid.getLayoutParams();
-			layoutParams.width=maxWidth;
-			int shortLim = dm.heightPixels-UIData.bottombar2.getHeight();
-			boolean tooShort = GlobalOptions.density*200>shortLim;
-			layoutParams.height=tooShort?shortLim:-2;
-			if(GlobalOptions.isLarge) {
-				layoutParams.setMarginEnd((int) (15*GlobalOptions.density));
-				int pad = (int) (GlobalOptions.density*8);
-				int HPad = (int) (pad*2.25);
-				menu_grid.setPadding(HPad, pad/2, HPad, pad*2);
+		boolean vis = quickSettings.toggle(UIData.webcoord);
+		if (vis) {
+			int padding = 0;
+			if (UIData.appbar.getTop()>=0) {
+				padding += UIData.toolbar.getHeight();
 			}
+			if (UIData.bottombar2.getBottom()<=UIData.webcoord.getHeight()) {
+				padding += UIData.bottombar2.getHeight();
+			}
+			quickSettings.setBottomPadding(padding);
+		}
+		settingsPanel = vis?quickSettings:null;
+		if (menuGrid!=null && vis) {
+			toggleMenuGrid(true);
 		}
 	}
+	
+//	private void modThreeBtnForMenuGrid(boolean menuGrid!=null, boolean animate) {
+//		View[] sameView = new View[]{UIData.browserWidget7, UIData.browserWidget8};
+//		for (View vue:sameView) {
+//			if (animate) {
+//				vue.animate().
+//						alpha(menuGrid!=null?0:1)
+//						.setListener(menuGrid!=null?new AnimatorListenerAdapter() {
+//							@Override
+//							public void onAnimationEnd(Animator animation) {
+//								vue.setVisibility(View.INVISIBLE);
+//							}
+//						}:null)
+//						.setDuration(90);
+//				if (!menuGrid!=null) {
+//					vue.setVisibility(View.VISIBLE);
+//				}
+//			} else {
+//				vue.setAlpha(1);
+//				vue.setVisibility(menuGrid!=null?View.INVISIBLE:View.VISIBLE);
+//			}
+//		}
+//		UIData.browserWidget9.setImageResource(menuGrid!=null?R.drawable.ic_exit_to_app:R.drawable.ic_home_black_24dp);
+//	}
 	
 	public void setSoftInputMode(int mode) {
 		if(softMode!=mode) {
@@ -3365,6 +3302,16 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	}
 	
 	public void AddPDFViewerShortCut() {
+		//				Intent intent = new Intent("colordict.intent.action.SEARCH");
+		//				intent.putExtra("EXTRA_QUERY", "happy");
+		//				startActivity(intent);
+		//intent.addCategory(Intent.CATEGORY_BROWSABLE);
+		//				intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+		//				intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+		//				intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
+		//				intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
+		//intent.setFlags(0x10000000);
+		
 		Context context = getApplicationContext();
 		boolean succ = false;
 		try {
@@ -3732,7 +3679,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				//adaptermy.notifyDataSetChanged();
 				tabViewAdapter.notifyItemInserted(newtabloc);
 				tabViewAdapter.notifyItemRangeChanged(newtabloc, TabHolders.size()-newtabloc+1);
-				tabViewAdapter.hideTabView();
+				tabViewAdapter.hideTabView(true);
 			} else {
 				onLeaveCurrentTab(3);
 				tabsManagerIsDirty = true;
@@ -3751,31 +3698,34 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	}
 	
 	public void selectTab(int newtabloc) {
-		if(tabViewAdapter.isVisible()) {
+		if(tabViewAdapter.isVisible() && false) {
 			//tabViewAdapter.hideTabView();
 			tabViewAdapter.toggleTabView(newtabloc, null, 0);
-		} else {
-			onLeaveCurrentTab(3);
-			boolean b1=newtabloc!=adapter_idx||currentViewImpl==null||currentViewImpl.getParent()==null;
-			boolean added = AttachWebAt(newtabloc, 0);
-			if(b1) {
-				TabHolder tab = TabHolders.get(newtabloc);
-				if(tab.version<=0 || true) {
-					tabViewAdapter.coverupTheTab(currentViewImpl, added);
-					if(currentViewImpl.getBitmap()==null) {
-						glide.load(new WebPic(tab.id, tab.version, id_table))
-								.into(imageViewCover);
-					}
+			return;
+		}
+		onLeaveCurrentTab(3);
+		boolean b1=newtabloc!=adapter_idx||currentViewImpl==null||currentViewImpl.getParent()==null;
+		boolean added = AttachWebAt(newtabloc, 0);
+		if(b1) {
+			TabHolder tab = TabHolders.get(newtabloc);
+			if(tab.version<=0 || true) {
+				tabViewAdapter.coverupTheTab(currentViewImpl, added);
+				if(currentViewImpl.getBitmap()==null) {
+					glide.load(new WebPic(tab.id, tab.version, id_table))
+							.into(imageViewCover);
 				}
 			}
-			if (currentViewImpl!=null) {
-				currentViewImpl.hideForTabView = false;
-				currentViewImpl.setTranslationX(0);
-				currentViewImpl.setTranslationY(0);
-			}
-			if(b1) {
-				tabViewAdapter.uncoverTheTab(350); // 225
-			}
+		}
+		if (currentViewImpl!=null) {
+			currentViewImpl.hideForTabView = false;
+			currentViewImpl.setTranslationX(0);
+			currentViewImpl.setTranslationY(0);
+		}
+		if(b1) {
+			tabViewAdapter.uncoverTheTab(350); // 225
+		}
+		if(tabViewAdapter.isVisible()) {
+			hideTabView();
 		}
 	}
 	
@@ -4135,28 +4085,28 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		//Utils.sendog(opt);
 		View theView;
 		if(wvPreInitInstance!=null) {
-			if(wvPreInitInstance.getType()==webType) {
+			if(wvPreInitInstance.getType()==webType.ordinal()) {
 				mWebView = wvPreInitInstance;
 			}
 			wvPreInitInstance = null;
 		}
 		if(mWebView==null) {
-			if(webType==1) {
+			if(webType==WEBTYPE_TENCENT) {
 				try {
 					mWebView = new XPlusWebView(this);
 				} catch (Exception e) {
 					CMN.Log(e);
-					if(fallBack) webType=0;
+					if(fallBack) webType=WEBTYPE_SYSTEM;
 				}
-			} else if(webType==2) {
+			} else if(webType==WEBTYPE_INTEL) {
 				try {
 					mWebView = new XWalkWebView(this);
 				} catch (Exception e) {
 					CMN.Log(e);
-					if(fallBack) webType=0;
+					if(fallBack) webType=WEBTYPE_SYSTEM;
 				}
 			}
-			if(webType==0) {
+			if(webType==WEBTYPE_SYSTEM) {
 				//WebView.setWebContentsDebuggingEnabled(true);
 				mWebView = new AdvancedBrowserWebView(this);
 //				mWebView.setPictureListener(new WebView.PictureListener() {
@@ -4868,14 +4818,13 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	@Override
 	public void onActionModeStarted(ActionMode mode) {
 		View v = getCurrentFocus();
-		CMN.Log("-->onActionModeStarted", v);
-		Menu menu;
-		if (v==currentWebView && v instanceof AdvancedBrowserWebView && !bAdvancedMenu) {
+		//CMN.Log("-->onActionModeStarted", v);
+		if (!bAdvancedMenu && (v==currentWebView || Utils.getNthParent(v, 2)==currentWebView)) {
 			MenuItem.OnMenuItemClickListener listener = this.currentViewImpl;
 			mode.setTitle(null);
 			mode.setSubtitle(null);
 			
-			menu = mode.getMenu();
+			Menu menu = mode.getMenu();
 			
 			String websearch = null;
 			int websearch_id = Resources.getSystem().getIdentifier("websearch", "string", "android");
@@ -4918,7 +4867,6 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			menu.add(0, R.id.web_tools, ++ToolsOrder, R.string.tools).setOnMenuItemClickListener(listener).setShowAsActionFlags(af).setIcon(R.drawable.ic_tune_black_24dp);
 			menu.add(0, R.id.web_tts, ++ToolsOrder, "TTS").setOnMenuItemClickListener(listener).setShowAsActionFlags(af).setIcon(R.drawable.voice_ic_big);
 		}
-		
 		super.onActionModeStarted(mode);
 	}
 	

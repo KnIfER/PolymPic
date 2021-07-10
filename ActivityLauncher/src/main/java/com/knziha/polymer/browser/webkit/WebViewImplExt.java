@@ -65,6 +65,11 @@ public class WebViewImplExt extends WebView implements UniversalWebviewInterface
 	}
 	
 	@Override
+	public Object getLastRequest() {
+		return null;
+	}
+	
+	@Override
 	public Map<String, String> getLastRequestHeaders() {
 		return null;
 	}

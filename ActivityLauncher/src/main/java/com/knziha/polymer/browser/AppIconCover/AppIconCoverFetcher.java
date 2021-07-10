@@ -24,7 +24,7 @@ public class AppIconCoverFetcher implements DataFetcher<Drawable> {
 
 	@Override
 	public void loadData(@NonNull Priority priority, @NonNull DataCallback<? super Drawable> callback) {
-		CMN.Log("IconCoverFetcher loadData");
+		//CMN.Log("IconCoverFetcher loadData");
 		Drawable dw = null;
 		Exception exception = null;
 		try {

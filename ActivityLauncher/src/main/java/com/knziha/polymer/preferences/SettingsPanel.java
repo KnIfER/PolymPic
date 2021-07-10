@@ -22,7 +22,7 @@ import com.knziha.polymer.widgets.Utils;
 import com.knziha.polymer.widgets.XYLinearLayout;
 
 public class SettingsPanel extends AnimatorListenerAdapter implements View.OnClickListener {
-	protected ViewGroup settingsLayout;
+	public ViewGroup settingsLayout;
 	protected LinearLayout linearLayout;
 	protected boolean bIsShowing;
 	protected final int bottomPaddding;
@@ -204,6 +204,7 @@ public class SettingsPanel extends AnimatorListenerAdapter implements View.OnCli
 		init(context, root);
 		ViewGroup sl = this.settingsLayout;
 		if (bottomPadding>0) {
+			sl.setAlpha(0);
 			sl.setTranslationY(bottomPadding);
 			sl.setBackgroundColor(mBackgroundColor);
 		} else {

@@ -26,11 +26,6 @@ public class CursorAdapter<T extends CursorReader> implements PagingAdapterInter
 	}
 	
 	@Override
-	public void bindTo(RecyclerView recyclerView) {
-	
-	}
-	
-	@Override
 	public void startPaging(long resume_to_sort_number, int i) {
 	
 	}

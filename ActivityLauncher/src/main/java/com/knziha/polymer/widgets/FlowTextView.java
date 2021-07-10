@@ -521,7 +521,9 @@ public class FlowTextView extends View {
 	public void setTextSize(float textSize) {
 		this.mTextsize = textSize;
 		mTextPaint.setTextSize(mTextsize);
-		mFocusPaint.setTextSize(mTextsize);
+		if(mFocusPaint!=null) {
+			mFocusPaint.setTextSize(mTextsize);
+		}
 		invalidate();
 	}
 	

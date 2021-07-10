@@ -2,6 +2,7 @@ package com.knziha.polymer;
 
 import android.util.Pair;
 import android.view.View;
+import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 
@@ -103,6 +104,11 @@ public class WebCompatListener extends WebCompoundListener{
 			//CMN.Log("加载中", new String(markjsBytesArr, 0, 200));
 			return new WebResourceResponse("text/javascript", "utf8", new ByteArrayInputStream(markjsBytesArr));
 		}
+		return null;
+	}
+	
+	@Override
+	public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
 		return null;
 	}
 }

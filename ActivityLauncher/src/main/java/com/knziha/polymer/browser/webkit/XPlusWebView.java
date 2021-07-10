@@ -3,12 +3,14 @@ package com.knziha.polymer.browser.webkit;
 import android.content.Context;
 import android.graphics.Picture;
 import android.graphics.Rect;
+import android.net.Uri;
 import android.os.Build;
 import android.view.ActionMode;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
+import androidx.annotation.RequiresApi;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.knziha.polymer.R;
@@ -228,6 +230,42 @@ public class XPlusWebView extends WebView implements UniversalWebviewInterface {
 	public void setOnScrollChangedListener(RecyclerView.OnScrollChangedListener onSrollChangedListener) {
 		mOnScrollChangeListener =onSrollChangedListener;
 		//X5WebView.getView().setOnScrollChangeListener(mOnScrollChangeListener);
+	}
+	
+	@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+	@Override
+	public Object getLastRequest() {
+		WebResourceRequest wrr = this.wrr;
+		unlock();
+		if(wrr==null) {
+			return null;
+		}
+		return new android.webkit.WebResourceRequest(){
+			@Override
+			public Uri getUrl() {
+				return wrr.getUrl();
+			}
+			@Override
+			public boolean isForMainFrame() {
+				return wrr.isForMainFrame();
+			}
+			@Override
+			public boolean isRedirect() {
+				return wrr.isRedirect();
+			}
+			@Override
+			public boolean hasGesture() {
+				return wrr.hasGesture();
+			}
+			@Override
+			public String getMethod() {
+				return wrr.getMethod();
+			}
+			@Override
+			public Map<String, String> getRequestHeaders() {
+				return wrr.getRequestHeaders();
+			}
+		};
 	}
 	
 	@Override

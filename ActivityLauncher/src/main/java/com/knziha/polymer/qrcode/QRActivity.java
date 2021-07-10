@@ -176,7 +176,7 @@ public /*final*/ class QRActivity extends Activity implements View.OnClickListen
 	}
 	
 	public void further_loading() {
-		CMN.Log("mid::", CMN.tid());
+		CMN.Log("mid::", CMN.mid=CMN.tid());
 		
 		Window win = getWindow();
 		

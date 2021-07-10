@@ -699,14 +699,16 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 		}
 	}
 	
-	public void hideTabView() {
+	public void hideTabView(boolean alteringTab) {
 		if (viewpager_holder!=null && viewpager_holder.getVisibility()==View.VISIBLE) {
-			int targetPos = layoutManager.targetPos-1;
-			if(targetPos<0) targetPos=0;
-			if(targetPos!=a.adapter_idx) {
-				a.onLeaveCurrentTab(3);
-				a.adapter_idx = targetPos;
-				a.currentViewImpl = null;
+			if (alteringTab) {
+				int targetPos = layoutManager.targetPos-1;
+				if(targetPos<0) targetPos=0;
+				if(targetPos!=a.adapter_idx) {
+					a.onLeaveCurrentTab(3);
+					a.adapter_idx = targetPos;
+					a.currentViewImpl = null;
+				}
 			}
 			DismissingViewHolder = true;
 			viewpager_holder.setVisibility(View.GONE); // 放

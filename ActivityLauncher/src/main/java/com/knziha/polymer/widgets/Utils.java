@@ -111,7 +111,7 @@ public class Utils {
 	};
 	public static Rect rect = new Rect();
 	public static final boolean littleCat = Build.VERSION.SDK_INT<=Build.VERSION_CODES.KITKAT;
-	public static final boolean littleCake = Build.VERSION.SDK_INT<=21;
+	public static final boolean littleCake = Build.VERSION.SDK_INT<=23;
 	public static final boolean bigCake= Build.VERSION.SDK_INT>=21;
 	public static final boolean bigMountain = Build.VERSION.SDK_INT>22;
 	public static final boolean bigMouth = Build.VERSION.SDK_INT>=Build.VERSION_CODES.O;
@@ -563,6 +563,16 @@ public class Utils {
 		} else if (mEqualizer!=null) {
 			mEqualizer.setEnabled(false);
 		}
+	}
+	
+	public static View getNthParent(View v, int i) {
+		ViewParent vp;
+		while(i-->0) {
+			vp = v.getParent();
+			if (!(vp instanceof View)) break;
+			v = (View) vp;
+		}
+		return v;
 	}
 	
 	public static class DummyOnClick implements View.OnClickListener {

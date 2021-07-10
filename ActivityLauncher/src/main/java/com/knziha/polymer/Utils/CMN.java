@@ -1,13 +1,12 @@
 package com.knziha.polymer.Utils;
 
 import android.content.res.Resources;
+import android.text.TextPaint;
 import android.view.View;
 import android.view.ViewGroup;
 
 import org.xwalk.core.Utils;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.HashMap;
 
@@ -42,6 +41,8 @@ public class CMN {
 	public static boolean testing;
 	public static Resources mResource;
 	public static int browserTaskId;
+	public static long mid;
+	public static TextPaint mTextPainter;
 	
 	public static void rt(Object... o) {
 		ststrt = System.currentTimeMillis();
@@ -111,7 +112,7 @@ public class CMN {
 		return System.currentTimeMillis();
 	}
 	
-	public static Object tid() {
+	public static long tid() {
 		return Thread.currentThread().getId();
 	}
 }

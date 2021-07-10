@@ -446,6 +446,17 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		Dialog d; View cv;
 		
 		@Override
+		public void onConsoleMessage(String message, int lineNumber, String sourceID) {
+			//CMN.Log("onConsoleMessage::", message, lineNumber, sourceID);
+		}
+		
+//		@Override
+//		public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
+//			CMN.Log("onConsoleMessage::", consoleMessage);
+//			return super.onConsoleMessage(consoleMessage);
+//		}
+		
+		@Override
 		public boolean onJsAlert(WebView view, String url, String message, JsResult result) {
 			View mWebView = (View) (view instanceof UniversalWebviewInterface?view:getTag());
 			WebFrameLayout layout = (WebFrameLayout) mWebView.getParent();
@@ -621,7 +632,6 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		 * see {@link WebCompoundListener#onPageFinished}*/
 		@Override
 		public void onProgressChanged(WebView view, int newProgress) {
-			//CMN.Log("OPC::", newProgress, Thread.currentThread().getId());
 			//if(true) return;
 			UniversalWebviewInterface webviewImpl = (UniversalWebviewInterface) (view instanceof UniversalWebviewInterface?view:getTag());
 			View mWebView = (View) webviewImpl;
@@ -629,7 +639,14 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 			if(layout==null||layout.implView!=mWebView) {
 				return;
 			}
-			//AdvancedBrowserWebView mWebView = (AdvancedBrowserWebView) view;
+			//CMN.Log("OPC::", newProgress, Thread.currentThread().getId(), webviewImpl.getUrl());
+			if (!layout.PageStarted) {
+				String url = webviewImpl.getUrl();
+				if (!TextUtils.equals(url, layout.holder.url)) {
+					onPageStarted(view, url, null);
+				}
+				layout.postTime = 350;
+			}
 			if(mWebView==a.currentWebView && layout.PageStarted) {
 				a.tabsManagerIsDirty =true;
 				layout.isloading=true;
@@ -724,7 +741,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 			// 在此处更新UA或导致页面往复重载以及冻结，慎之 | Dangerous to Update UA Here.
 			layout.updateUserAgentString();
 		}
-		if (layout.bNeedCheckTextZoom>0) {
+		if (layout.bNeedCheckTextZoom>0||true) {
 			// 若过早修改字体缩放，则加载前的页面也会收到影响。 | For Per-Website Font scale Updating.
 			layout.setTextZoom();
 		}
@@ -1102,6 +1119,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 			layout.holder.title=title;
 			//todo 高亮
 			String note = layout.queryNote(url);
+			//CMN.Log("note::", note);
 			boolean MarkJsRequired = note!=null;
 			//todo 笔记，先复原笔记，后上高亮，但是因为笔记最后会用到高亮的功能，所以加载笔记的同时加载高亮支持。
 			if(MarkJsRequired&&markjsBytesArr==null) {
@@ -1336,20 +1354,28 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	}
 	
 	
+	@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 	@Nullable
 	@Override
 	public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
+		//CMN.Log("SIR::1::", view, url);
+		if (view==null && url==null) {
+			return shouldInterceptRequest(view, (WebResourceRequest)null);
+		}
 		return null;
 	}
 	
 	@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 	public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+		View mWebView = (View) (view instanceof UniversalWebviewInterface?view:getTag());
+		WebFrameLayout layout = (WebFrameLayout) mWebView.getParent();
+		if (request==null) {
+			request = (WebResourceRequest) ((UniversalWebviewInterface)mWebView).getLastRequest();
+		}
 		//if(true) return null;
 		String url = request.getUrl().toString();
 		//CMN.Log("SIR::", url);
 		//CMN.Log("SIR::", headers);
-		View mWebView = (View) (view instanceof UniversalWebviewInterface?view:getTag());
-		WebFrameLayout layout = (WebFrameLayout) mWebView.getParent();
 		if(layout==null) {
 			return null;
 		}
