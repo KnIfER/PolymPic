@@ -554,7 +554,7 @@ public class PDocViewerActivity extends Toastable_Activity implements View.OnCli
 				if (!this_instanceof_PDocMainViewer && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
 					ActivityManager.TaskDescription taskDesc = new ActivityManager.TaskDescription(
 							new File(uri.getPath()).getName(),//title
-							BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher),//图标
+							BitmapFactory.decodeResource(getResources(), R.mipmap.ic_pdoc_viewer),//图标
 							ResourcesCompat.getColor(getResources(), R.color.colorPrimary,
 									getTheme()));
 					setTaskDescription(taskDesc);

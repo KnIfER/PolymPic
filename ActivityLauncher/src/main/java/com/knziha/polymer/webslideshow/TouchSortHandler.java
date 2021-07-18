@@ -2,6 +2,7 @@ package com.knziha.polymer.webslideshow;
 
 
 import android.graphics.Canvas;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
@@ -22,7 +23,7 @@ public class TouchSortHandler extends ItemTouchHelper.Callback {
 		void onDragFinished(RecyclerView.ViewHolder viewHolder);
 	}
 	private MoveSwapAdapter moveSwap;
-	private Drawable background = null;
+	//private Drawable background = null;
 	private RecyclerView.ViewHolder draggingView = null;
 	public boolean alterAlpha = true;
 	public boolean isDragging=false;
@@ -34,7 +35,7 @@ public class TouchSortHandler extends ItemTouchHelper.Callback {
 	private final int mDragFlags;
 	private final int mSwipeFlags;
 	public float mAutoScrollSpeed = 1;
-	public Drawable dragBackground;
+	public int dragBackgroundColor;
 	public float dragScale = 1;
 	public TouchSortHandler(MoveSwapAdapter itemTouchAdapter, int mDragFlags, int mSwipeFlags){
 		this.moveSwap = itemTouchAdapter;
@@ -95,16 +96,27 @@ public class TouchSortHandler extends ItemTouchHelper.Callback {
 			super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive);
 		}
 	}
+	
+	static class ColorDrawableWrapper extends ColorDrawable {
+		final Drawable drawable;
+		ColorDrawableWrapper(int color_int, Drawable drawable) {
+			super(color_int);
+			this.drawable = drawable;
+		}
+	}
 
 	@Override
 	public void onSelectedChanged(RecyclerView.ViewHolder viewHolder, int actionState) {
+		if (actionState == ItemTouchHelper.ACTION_STATE_DRAG && draggingView!=viewHolder
+				&& viewHolder!=null) {
+			removeDragDecoration(draggingView);
+		}
 		if (actionState == ItemTouchHelper.ACTION_STATE_DRAG && draggingView==viewHolder
 			&& viewHolder!=null && !hasDragDecoration)
 		{
 			hasDragDecoration = true;
-			if (dragBackground!=null) {
-				background = viewHolder.itemView.getBackground();
-				viewHolder.itemView.setBackground(dragBackground);
+			if (dragBackgroundColor!=0) {
+				viewHolder.itemView.setBackground(new ColorDrawableWrapper(dragBackgroundColor, viewHolder.itemView.getBackground()));
 			}
 		}
 		super.onSelectedChanged(viewHolder, actionState);
@@ -165,14 +177,17 @@ public class TouchSortHandler extends ItemTouchHelper.Callback {
 	}
 	
 	public void removeDragDecoration(RecyclerView.ViewHolder viewHolder) {
-		if (hasDragDecoration) {
+		//if (hasDragDecoration)
+		{
 			hasDragDecoration = false;
 			if(viewHolder!=null && draggingView==viewHolder) {
 				viewHolder.itemView.setAlpha(1.0f);
-				if (background != null)
+				if (dragBackgroundColor != 0)
 				{
-					viewHolder.itemView.setBackground(background);
-					background = null;
+					Drawable background = viewHolder.itemView.getBackground();
+					if (background instanceof ColorDrawableWrapper) {
+						viewHolder.itemView.setBackground(((ColorDrawableWrapper) background).drawable);
+					}
 				}
 			}
 		}

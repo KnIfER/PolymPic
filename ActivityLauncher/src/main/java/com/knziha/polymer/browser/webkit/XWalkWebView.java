@@ -2,6 +2,7 @@ package com.knziha.polymer.browser.webkit;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.Canvas;
 import android.graphics.Picture;
 import android.net.Uri;
 import android.os.Build;
@@ -170,6 +171,11 @@ public class XWalkWebView extends XWalkView implements UniversalWebviewInterface
 	@Override
 	public void setPictureListener(WebView.PictureListener pictureListener) {
 		// no impl.
+	}
+	
+	@Override
+	public void drawToBitmap(Canvas canvas) {
+		super.onDraw(canvas);
 	}
 	
 	public int getContentWidth(){

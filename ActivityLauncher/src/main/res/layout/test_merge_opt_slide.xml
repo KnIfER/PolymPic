@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:orientation="horizontal"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	android:background="#fff"
+	android:layout_marginStart="2dp"
+	android:layout_marginEnd="2dp"
+	android:clickable="true"
+	>
+	<com.knziha.polymer.preferences.RadioSwitchButton
+		android:id="@+id/check1"
+		android:layout_width="0dp"
+		android:layout_weight="1"
+		android:layout_height="wrap_content"
+		android:button="@drawable/radio_selector"
+		android:paddingStart="5dp"
+		android:paddingTop=   "8dp"
+		android:paddingBottom="8dp"
+		android:drawableStart="@drawable/ic_polymer1"
+		android:maxLines="1"
+		android:ellipsize="end"
+		/>
+
+	<com.knziha.polymer.preferences.RadioSwitchButton
+		android:id="@+id/check2"
+		android:layout_width="0dp"
+		android:layout_weight="1"
+		android:layout_height="wrap_content"
+		android:button="@drawable/radio_selector"
+		android:paddingStart="5dp"
+		android:paddingTop=   "8dp"
+		android:paddingBottom="8dp"
+		android:drawableStart="@drawable/ic_viewpager_carousel_1"
+		android:maxLines="1"
+		android:ellipsize="end"
+		/>
+
+	<com.knziha.polymer.preferences.RadioSwitchButton
+		android:id="@+id/check3"
+		android:layout_width="0dp"
+		android:layout_weight="1"
+		android:layout_height="wrap_content"
+		android:button="@drawable/radio_selector"
+		android:paddingStart="5dp"
+		android:paddingTop=   "8dp"
+		android:paddingBottom="8dp"
+		android:drawableStart="@drawable/ic_domain_bk"
+		android:maxLines="1"
+		android:ellipsize="end"
+		/>
+
+
+</LinearLayout>

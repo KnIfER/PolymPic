@@ -23,6 +23,7 @@ import android.view.ViewAnimationUtils;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
+import android.widget.PopupWindow;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -62,6 +63,7 @@ public class MaterialSearchView extends CardView {
 	private Animator animatorShow;
 	public final EditText etSearch;
 	public Dialog d;
+	public PopupWindow p;
 	
     ArrayList<String> searchRecords = new ArrayList<>();
     ArrayList searchResults;
@@ -401,9 +403,8 @@ public class MaterialSearchView extends CardView {
 								@Override
 								public void onAnimationEnd(Animator animation) {
 									//if (visibilityListener != null) visibilityListener.onClose();
-									if (d!=null) {
-										d.dismiss();
-									}
+									if (d!=null) d.dismiss();
+									if (p!=null) p.dismiss();
 									animation.removeAllListeners();
 									//setVisibility(GONE);
 								}

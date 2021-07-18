@@ -12,6 +12,7 @@ public class ViewUtils {
 	public static class ViewDataHolder<T extends ViewDataBinding> extends RecyclerView.ViewHolder{
 		public T data;
 		public long position;
+		public Object tag;
 		public ViewDataHolder(T data){
 			super(data.getRoot());
 			itemView.setTag(this);

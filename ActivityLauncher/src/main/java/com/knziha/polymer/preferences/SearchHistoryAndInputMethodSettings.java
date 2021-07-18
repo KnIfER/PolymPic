@@ -12,7 +12,7 @@ public class SearchHistoryAndInputMethodSettings extends SettingsPanel {
 	public SearchHistoryAndInputMethodSettings(Context context, ViewGroup root, int bottomPaddding, Options opt) {
 		super(context, root, bottomPaddding, opt, (BrowserActivity) context);
 		a=(BrowserActivity) context;
-		Utils.embedViewInCoordinatorLayout(settingsLayout);
+		Utils.embedViewInCoordinatorLayout(settingsLayout, true);
 	}
 	
 	private final static String[][] UITexts = new String[][]{

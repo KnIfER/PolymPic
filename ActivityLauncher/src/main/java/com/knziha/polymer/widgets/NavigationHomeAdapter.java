@@ -2,32 +2,23 @@ package com.knziha.polymer.widgets;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
-import android.content.DialogInterface;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
-import android.graphics.drawable.LayerDrawable;
-import android.text.Editable;
 import android.text.SpannableString;
 import android.text.TextUtils;
 import android.text.style.LeadingMarginSpan;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
-import android.view.WindowManager;
-import android.widget.EditText;
-import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.GlobalOptions;
-import androidx.appcompat.widget.ButtonBarLayout;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -35,33 +26,19 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.serializer.SerializerFeature;
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.RequestBuilder;
-import com.bumptech.glide.load.DataSource;
-import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.bumptech.glide.load.engine.GlideException;
-import com.bumptech.glide.request.RequestListener;
-import com.bumptech.glide.request.target.Target;
-import com.knziha.polymer.BrowserActivity;
 import com.knziha.polymer.R;
 import com.knziha.polymer.Utils.CMN;
-import com.knziha.polymer.WeakReferenceHelper;
 import com.knziha.polymer.browser.AppIconCover.AppIconCover;
 import com.knziha.polymer.browser.AppIconCover.AppLoadableBean;
-import com.knziha.polymer.databinding.LoginViewBinding;
-import com.knziha.polymer.preferences.NavHomeEditorDialogSettings;
 import com.knziha.polymer.webslideshow.TouchSortHandler;
 import com.shockwave.pdfium.treeview.TreeViewAdapter;
 import com.shockwave.pdfium.treeview.TreeViewNode;
-
-import org.adrianwalker.multilinestring.Multiline;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -73,72 +50,124 @@ import static com.knziha.polymer.widgets.NavigationNode.removeChild;
 
 public class NavigationHomeAdapter extends TreeViewAdapter<NavigationHomeAdapter.ViewHolder>
 		implements View.OnTouchListener, DragSelectRecyclerView.IDragSelectAdapter {
-	BrowserActivity a;
 	protected View root;
 	protected RecyclerView recyclerView;
 	JSONObject jsonData = new JSONObject();
 	NavigationRootNode navRoot;
-	RequestBuilder<Drawable> glideSaver;
 	boolean bIsShowing;
-	final int bottomPaddding;
 	private EditTextmy etSearch;
 	TouchSortHandler touchHandler;
 	ItemTouchHelper touchHelper;
 	private NavigationNode draggingNode;
 	private ViewHolder draggingView;
-	private NavigationNode editingNavHomeBean;
-	private NavigationNode activeNavHomeBean;
+	NavigationNode editingNavHomeBean;
+	NavigationNode activeNavHomeBean;
 	private ArrayList<NavigationNode> mRecyclerBin = new ArrayList<>();
-	private int activeNavHomeBeanPos;
-	
-	static  WeakReference<NavFolderFragment> navFolderRef = new WeakReference<>(null);
-	private FolderNavListener folderNavListener;
-	private boolean folderViewDirty;
+	public int activeNavHomeBeanPos;
 	
 	HashSet<NavigationNode> selection = new HashSet<>();
+	int folderSelCnt;
 	private int lastDragFromPosition;
 	private int lastDragToPosition;
 	private NavigationNode draggingPosStPvNode;
 	private boolean isDraggingDown;
+	private NavViewListener navListener;
+	private LayoutInflater inflater;
 	
 	@Override
 	public void setSelected(int idx, boolean selected) {
 		if (getSelMode() && idx>=0 && idx<displayNodes.size()-1) { // sanity check
 			NavigationNode node = (NavigationNode) displayNodes.get(idx);
 			//selected = !selection.containsKey(node);
-			boolean upd;
-			if (selected) {
-				upd = selection.add(node);
-			} else {
-				upd = selection.remove(node);
-			}
-			if (upd) {
+			int dn = selected?1:-1;
+			if (selected?selection.add(node):selection.remove(node)) {
+				if (!node.isLeaf()) folderSelCnt += dn;
 				notifyItemChanged(idx, "0");
 			}
 		}
 	}
 	
-	interface FolderNavListener {
-		void onNavToFolder(NavigationNode node);
+	public boolean select_between_nodes() {
+		int selSt = selInterval[0];
+		int selEd = selInterval[2];
+		boolean valid = selSt!=selEd;
+		if (valid) {
+			if (selSt<0 || selSt>=displayNodes.size() || CMN.id(displayNodes.get(selSt).getContent())!=selInterval[1]) {
+				valid = false;
+			}
+			if (selEd<0 || selEd>=displayNodes.size() || CMN.id(displayNodes.get(selEd).getContent())!=selInterval[3]) {
+				valid = false;
+			}
+		}
+		if (valid) {
+			if (selSt>selEd) {
+				int tmp = selEd;
+				selEd = selSt;
+				selSt = tmp;
+			}
+			boolean removeSel = !selection.contains(displayNodes.get(selSt)) && !selection.contains(displayNodes.get(selEd));
+			NavigationNode n;
+			int dn = removeSel?-1:1;
+			for (int i = selSt; i < selEd; i++) {
+				n = (NavigationNode) displayNodes.get(i);
+				if (removeSel?selection.remove(n):selection.add(n)) {
+					if (!n.isLeaf()) folderSelCnt += dn;
+				}
+			}
+			notifyDataSetChanged();
+			return true;
+		}
+		return false;
 	}
 	
-	public void setFolderNavListener(FolderNavListener folderNavListener) {
-		this.folderNavListener = folderNavListener;
+	public TreeViewNode getDisplayedNodeAt(int position) {
+		return displayNodes.get(position);
 	}
 	
-	public NavigationHomeAdapter(BrowserActivity activity, int bottomPaddding)
+	public void NavToFolder(NavigationNode node) {
+		lastSelectionId = CMN.id(node.getContent());
+		boolean allExpanded = true;
+		NavigationNode targetNode = node;
+		while ((node = (NavigationNode) node.getParent())!=null) {
+			if (!node.isExpand(currentExpChannel)) {
+				node.setExpanded(currentExpChannel, true);
+				allExpanded = false;
+			}
+		}
+		boolean expandSel = true;
+		if (allExpanded) {
+			lastSelectionPos = displayNodes.indexOf(targetNode);
+			//a.showT("allExpanded"+lastSelectionPos);
+			if (lastSelectionPos==-1) {
+				allExpanded = false;
+			} else {
+				LinearLayoutManager lmm = ((LinearLayoutManager) recyclerView.getLayoutManager());
+				lmm.scrollToPositionWithOffset(lastSelectionPos, 0);
+				//CMN.Log("soft upd::"+recyclerView.getChildAt(0).getTag());
+				if (expandSel && !targetNode.isExpand(currentExpChannel)) {
+					notifyItemRangeInserted(lastSelectionPos+1
+							, addChildNodesFiltered(targetNode, lastSelectionPos+1, 0x1));
+				}
+			}
+		}
+		if (!allExpanded) {
+			if (expandSel) {
+				targetNode.setExpanded(currentExpChannel, true);
+			}
+			refreshList(false);
+		}
+	}
+	
+	public NavigationHomeAdapter(File bmFile, NavViewListener navListener)
 	{
 		super(null);
-		a = activity;
-		this.bottomPaddding = bottomPaddding;
-		
-		File f = new File(a.getExternalFilesDir(null), "Bookmarks.json");
-		try (FileInputStream fin = new FileInputStream(f)){
+		this.navListener = navListener;
+		//File f = bmFile;//new File(a.getExternalFilesDir(null), "Bookmarks.json");
+		try (FileInputStream fin = new FileInputStream(bmFile)){
 			jsonData = JSON.parseObject(fin, null);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		NavigationNode.cc = 0;
 		JSONObject navigation = null;
 		if (jsonData!=null) {
 			JSONObject roots = jsonData.getJSONObject("roots");
@@ -151,40 +180,78 @@ public class NavigationHomeAdapter extends TreeViewAdapter<NavigationHomeAdapter
 				//}
 			}
 		}
-		
 		if (navigation==null) {
 			jsonData = null;
 			navigation = new JSONObject();
 		}
-		navRoot = new NavigationRootNode(f, jsonData, navigation);
-		a.showT(""+NavigationNode.cc);
+		navRoot = new NavigationRootNode(bmFile, jsonData, navigation);
+		
 		rootNode = navRoot;
-		footNode = new NavigationNode(new JSONObject());
-		footNode.setParent(rootNode);
+		
+//		footNode = new NavigationNode(new JSONObject());
+//		footNode.setParent(rootNode);
 		//setPadding(15);
 	}
 	
-	private NavigationHomeAdapter(NavigationHomeAdapter parentView)
+	public NavigationHomeAdapter(NavigationHomeAdapter parentView)
 	{
 		super(null);
-		a = parentView.a;
 		rootNode = parentView.rootNode;
 		navRoot = parentView.navRoot;
+		this.navListener = parentView.navListener;
 		isFolderView = true;
-		bottomPaddding = 0;
+//		bottomPaddding = 0;
 		currentExpChannel=0x2;
 		normalExpChannel=0x2;
 		schViewExpChannel=0x2;
 	}
 	
+	public void clearSel() {
+		selection.clear();
+		folderSelCnt = 0;
+		notifyDataSetChanged();
+	}
+	
+	public void deleteSel() {
+		NavigationNode node = activeNavHomeBean;
+		int index = activeNavHomeBeanPos;
+		if (index>=0&&index<displayNodes.size() && node==displayNodes.get(index)) {
+			boolean bIsInSel = selection.contains(node);
+			if (bIsInSel && getSelMode()) {
+				NavigationNode bigNode = resolveBigNode(node, selection);
+				NavigationNode[] arr = selection.toArray(new NavigationNode[]{});
+				selection.clear();
+				for (NavigationNode n : arr) {
+					removeChild(n);
+					mRecyclerBin.add(n);
+				}
+				refreshList(false);
+			} else {
+				if (!node.isLeaf()) {
+					collapseNode(index);
+				}
+				node.tag = node.getIdsPath();
+				removeChild(node);
+				displayNodes.remove(node);
+				mRecyclerBin.add(node);
+				notifyItemRemoved(index);
+				if (bIsInSel) {
+					selection.remove(node);
+				}
+			}
+			MarkDirty();
+		}
+	}
+	
 	static class NavigationRootNode extends NavigationNode implements AppLoadableBean
 	{
 		public final AppIconCover saveTask = new AppIconCover(this);
-		boolean isDirty;
 		final File f;
 		final JSONObject jsonRoot;
+		boolean isDirty;
+		
 		public NavigationRootNode(File f, JSONObject jsonRoot, @NonNull JSONObject itemData) {
-			super(itemData);
+			super(null, itemData);
 			this.f = f;
 			if (jsonRoot==null) {
 				jsonRoot = new JSONObject();
@@ -200,6 +267,8 @@ public class NavigationHomeAdapter extends TreeViewAdapter<NavigationHomeAdapter
 			if (isDirty) {
 				String json = jsonRoot.toString(SerializerFeature.PrettyFormat);
 				//CMN.Log(data);
+				jsonRoot.put("id_prefix", id_prefix);
+				jsonRoot.put("id_max", id_max);
 				byte[] data = json.getBytes();
 				if (f.length()<data.length) {
 					try (FileOutputStream fileOutputStream = new FileOutputStream(f, true)) {
@@ -248,72 +317,14 @@ public class NavigationHomeAdapter extends TreeViewAdapter<NavigationHomeAdapter
 	}
 	
 	public View getNavigationView() {
-		if (root==null) {
-			root = (ViewGroup) a.getLayoutInflater().inflate(R.layout.nav_view, a.UIData.webcoord, false);
-			//root.setPadding(0, 0, 0, bottomPaddding);
-			ViewGroup nav_header = root.findViewById(R.id.nav_header);
-			Utils.setOnClickListenersOneDepth(nav_header, this, 1, null);
-			etSearch = nav_header.findViewById(R.id.etSearch);
-			View clearText = root.findViewById(R.id.clearText);
-			etSearch.bNeverBlink = true;
-			etSearch.setOnFocusChangeListener((v, hasFocus)
-					-> clearText.setVisibility(hasFocus&&etSearch.getText().length()>0?View.VISIBLE:View.GONE));
-			Runnable postFilterRunnable = ()-> {
-				String text = etSearch.getText().toString();
-				Object pattern=text;
-				if(text.length()==0) {
-					text=null;
-				}
-				int schFlag = 0;
-				if(text!=null) {
-					boolean bUseRegex = false;
-					if ((currentSchFlg&0x3)!=0) { // 不区分大小写
-						text = text.toLowerCase();
-					}
-					if (bUseRegex) {
-						try {
-							String patStr = text;
-							if ((schFlag&0x5)!=0 && text.charAt(text.length()-1)!='\b') { // 全词匹配
-								patStr = "\b"+text+"\b";
-							}
-							if ((schFlag&0x4)!=0 && text.charAt(0)!='^') { // 从头匹配
-								patStr = "^"+text;
-							}
-							pattern = Pattern.compile(patStr);
-						} catch (Exception ignored) { }
-					} else {
-						if ((schFlag&0x5)!=0) {
-							pattern = Pattern.compile("\b"+text+"\b");
-						}
-					}
-				}
-				filterTreeView(pattern, schFlag);
-			};
-			etSearch.addTextChangedListener(new TextWatcherAdapter() {
-				@Override
-				public void afterTextChanged(Editable s) {
-					clearText.setVisibility(etSearch.hasFocus()&&etSearch.getText().length()>0?View.VISIBLE:View.GONE);
-					etSearch.removeCallbacks(postFilterRunnable);
-					etSearch.postDelayed(postFilterRunnable, 90);
-				}
-			});
-			clearText.setOnClickListener(this);
-			root.setAlpha(0);
-			root.setTranslationY(bottomPaddding);
-			SetRecyclerView(root.findViewById(R.id.recycler_view));
-			if (getEditMode()) {
-				toggleEditMode();
-				nav_header.findViewById(R.id.edit).performClick();
-			} else if (getShowDragHandle()) {
-				InitDragSort();
-			}
-		}
+
 		return root;
 	}
 	
 	public void SetRecyclerView(RecyclerView recyclerView) {
 		this.recyclerView = recyclerView;
-		LinearLayoutManager lm = new LinearLayoutManager(a);
+		inflater = LayoutInflater.from(recyclerView.getContext());
+		LinearLayoutManager lm = new LinearLayoutManager(recyclerView.getContext());
 		recyclerView.setLayoutManager(lm);
 		recyclerView.setItemAnimator(null);
 		recyclerView.setRecycledViewPool(Utils.MaxRecyclerPool(35));
@@ -375,11 +386,11 @@ public class NavigationHomeAdapter extends TreeViewAdapter<NavigationHomeAdapter
 				} else if(!isFolderView && getEditMode() && (node.isLeaf() || getSelMode() || lastX < width/3)) {
 					if (!node.isLeaf() && getSelMode() && lastX<28*GlobalOptions.density) {
 						performIvArrowClk((ViewHolder) holder);
-					} else {
+					} else if(navListener!=null){
 						CMN.Log(lastX, width/3);
 						//a.showT("编辑节点");
 						longClickView = (ViewHolder) holder;
-						showNavEditorDlg((NavigationNode) node, null, null);
+						navListener.showEditorDlg(NavigationHomeAdapter.this, (NavigationNode) node, null, null);
 					}
 					return true;
 				} else {
@@ -388,13 +399,7 @@ public class NavigationHomeAdapter extends TreeViewAdapter<NavigationHomeAdapter
 					} else {
 						Object content = node.getContent();
 						if(content instanceof JSONObject) {
-							String url = ((JSONObject) content).getString("url");
-							if (url!=null) {
-								a.execBrowserGoTo(url);
-								if (bIsShowing) {
-									toggle();
-								}
-							}
+							navListener.UseNodeData(NavigationHomeAdapter.this, node);
 						}
 					}
 				}
@@ -411,6 +416,7 @@ public class NavigationHomeAdapter extends TreeViewAdapter<NavigationHomeAdapter
 				}
 			}
 		});
+		
 		setHasStableIds(true);
 		recyclerView.setAdapter(this);
 		
@@ -448,265 +454,40 @@ public class NavigationHomeAdapter extends TreeViewAdapter<NavigationHomeAdapter
 	};
 	
 	public void toggle() {
-		ViewGroup root = a.UIData.webcoord;
-		float targetAlpha = 1;
-		float targetTrans = 0;
-		View viewToAdd = getNavigationView();
-		if (bIsShowing=!bIsShowing) {
-			Utils.addViewToParent(viewToAdd, root, -1);
-			a.UIData.browserWidget7.setImageResource(R.drawable.chevron_recess_ic_back);
-			a.UIData.browserWidget8.setImageResource(R.drawable.ic_baseline_book_24);
-		} else {
-			targetAlpha = 0;
-			targetTrans = bottomPaddding;
-			a.UIData.browserWidget7.setImageResource(R.drawable.chevron_recess);
-			a.UIData.browserWidget8.setImageResource(R.drawable.chevron_forward);
-			a.postResoreSel();
-			etSearch.clearFocus();
-		}
-		viewToAdd
-				.animate()
-				.alpha(targetAlpha)
-				.translationY(targetTrans)
-				.setDuration(180)
-				.setListener(bIsShowing?null:animatorListenerAdapter)
-				//.start()
-		;
+//		ViewGroup root = a.UIData.webcoord;
+//		float targetAlpha = 1;
+//		float targetTrans = 0;
+//		View viewToAdd = getNavigationView();
+//		if (bIsShowing=!bIsShowing) {
+//			Utils.addViewToParent(viewToAdd, root, -1);
+//			a.UIData.browserWidget7.setImageResource(R.drawable.chevron_recess_ic_back);
+//			a.UIData.browserWidget8.setImageResource(R.drawable.ic_baseline_book_24);
+//		} else {
+//			targetAlpha = 0;
+//			targetTrans = bottomPaddding;
+//			a.UIData.browserWidget7.setImageResource(R.drawable.chevron_recess);
+//			a.UIData.browserWidget8.setImageResource(R.drawable.chevron_forward);
+//			a.postResoreSel();
+//			etSearch.clearFocus();
+//		}
+//		viewToAdd
+//				.animate()
+//				.alpha(targetAlpha)
+//				.translationY(targetTrans)
+//				.setDuration(180)
+//				.setListener(bIsShowing?null:animatorListenerAdapter)
+//				//.start()
+//		;
 	}
 	
-	NavigationNode NewNode_insertAfter;
-	boolean NewNode_isFolder;
+	boolean folderViewDirty;
 	
-	public void InsertNavNode(String url, String title) {
-		//NewNode_insertAfter = ;
-		NewNode_isFolder = false;
-		activeNavHomeBean = null;
-		showNavEditorDlg(null, url, title);
-	}
-	
-	private void showNavEditorDlg(NavigationNode editing, String url, String title) {
-		editingNavHomeBean = editing;
-		AlertDialog editNavHomeDlg = (AlertDialog) a.getReferencedObject(WeakReferenceHelper.edit_navhome);
-		if(editNavHomeDlg==null) {
-			LoginViewBinding schEngEditView = LoginViewBinding.inflate(a.getLayoutInflater(), a.root, false);
-			AlertDialog d = new AlertDialog
-					.Builder(a)
-					.setView(schEngEditView.getRoot())
-					.setTitle("编辑导航节点")
-					.setOnDismissListener(dialog -> {
-						schEngEditView.url.setText(null);
-						schEngEditView.name.setText(null);
-						editingNavHomeBean=null;
-//						if (settingsPanel!=null) {
-//							settingsPanel.hide();
-//						}
-					})
-					.setPositiveButton("确认", null)
-					.setNegativeButton("取消", null)
-					.setNeutralButton("设置", null)
-					.show();
-			d.tag = schEngEditView;
-			View.OnClickListener dlgLis = v -> {
-				switch (v.getId()) {
-					case android.R.id.button1: {
-						String new_url = Utils.getFieldInView(schEngEditView.url);
-						String new_name = Utils.getFieldInView(schEngEditView.name);
-						if (InsertNavNode_internal(NewNode_insertAfter, NewNode_isFolder, editingNavHomeBean, new_url, new_name)) {
-							d.dismiss();
-						}
-					} break;
-					case android.R.id.button2: {
-						NavHomeEditorDialogSettings settingsPanel = (NavHomeEditorDialogSettings) schEngEditView.getRoot().getTag();
-						if (settingsPanel!=null && settingsPanel.isVisible()) {
-							settingsPanel.hide();
-						} else {
-							d.dismiss();
-						}
-					} break;
-					case android.R.id.button3: {
-						ViewGroup dRoot = d.findViewById(android.R.id.content);
-						//dRoot = (ViewGroup) dRoot.getParent().getParent();
-						NavHomeEditorDialogSettings shimObj = (NavHomeEditorDialogSettings) schEngEditView.getRoot().getTag();
-						if (shimObj==null) {
-							shimObj = new NavHomeEditorDialogSettings(
-									a
-									, dRoot
-									, v.getHeight()
-									, a.opt
-									, NavigationHomeAdapter.this);
-							schEngEditView.getRoot().setTag(shimObj);
-						}
-						shimObj.toggle(dRoot);
-					} break;
-					case R.id.alertTitle: {
-						if (activeNavHomeBean!=null) {
-							showPopupMenu(v);
-						}
-					} break;
-					case R.id.url_morpt:
-					case R.id.name_morpt: {
-						ViewGroup editView = (ViewGroup) v.getParent();
-						FrameLayout panelView = (FrameLayout) d.findViewById(R.id.action_bar_root).getParent();
-						EditFieldHandler editFieldHandler = (EditFieldHandler) a.getReferencedObject(WeakReferenceHelper.edit_field);
-						if(editFieldHandler==null) {
-							a.putReferencedObject(WeakReferenceHelper.edit_field, editFieldHandler = new EditFieldHandler(a, panelView));
-						}
-						d.setCancelable(false);
-						editFieldHandler.showForEditText(panelView
-								, (EditText) editView.getChildAt(0)
-								,d
-								,editView.getTop()+d.findViewById(R.id.topPanel).getHeight()
-								,(int) (8* GlobalOptions.density));
-					} break;
-				}
-			};
-			d.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener(dlgLis);
-			d.getButton(DialogInterface.BUTTON_NEGATIVE).setOnClickListener(dlgLis);
-			View btn = d.getButton(DialogInterface.BUTTON_NEUTRAL);
-			btn.setOnClickListener(dlgLis);
-			ButtonBarLayout bp = ((ButtonBarLayout) btn.getParent());
-			bp.setAllowStacking(false);
-			View folderButton = a.getLayoutInflater().inflate(R.layout.pick_folder_button, bp, false);
-			View folderText = folderButton.findViewById(R.id.folder);
-			folderText.setOnClickListener(dlgLis);
-			//Utils.addViewToParent(folderButton, bp, 1);
-			Utils.replaceView(folderButton, bp.findViewById(R.id.spacer), false);
-			d.getTitleView().setOnClickListener(dlgLis);
-			schEngEditView.nameMorpt.setOnClickListener(dlgLis);
-			schEngEditView.urlMorpt.setOnClickListener(dlgLis);
-			if(getAlwaysShowMultilineEditField()) {
-				schEngEditView.url.setSingleLine(false);
-				schEngEditView.name.setSingleLine(false);
-			}
-			d.tag = schEngEditView;
-			schEngEditView.name.setTag(folderText);
-			a.putReferencedObject(WeakReferenceHelper.edit_navhome, editNavHomeDlg=d);
-		}
-		LoginViewBinding schEngEditView = (LoginViewBinding) editNavHomeDlg.tag;
-		TextView folderText = (TextView) schEngEditView.name.getTag();
-		if(editing!=null) {
-			url = editing.getUrl();
-			title = editing.getName();
-			folderText.setText(((NavigationNode)editing.getParent()).getName());
-		} else if(url==null){
-			url=a.currentWebView.getUrl();
-			title=a.currentWebView.getTitle();
-		}
-		if (editing!=null && !editing.isLeaf() || editing==null && NewNode_isFolder) {
-			schEngEditView.url.setEnabled(false);
-			schEngEditView.urlMorpt.setVisibility(View.INVISIBLE);
-			url = "文件夹";
-		} else {
-			schEngEditView.url.setEnabled(true);
-			schEngEditView.urlMorpt.setVisibility(View.VISIBLE);
-		}
-		schEngEditView.url.setText(url);
-		schEngEditView.name.setText(title);
-		editNavHomeDlg.setTitle(editing==null?"添加导航节点":"编辑导航节点");
-		editNavHomeDlg.show();
-		
-//		Window window = editNavHomeDlg.getWindow();
-//		WindowManager.LayoutParams lp = window.getAttributes();
-//		lp.dimAmount =0f;
-//		window.setAttributes(lp);
-	}
-	
-	private boolean InsertNavNode_internal(NavigationNode insertAfter, boolean isFolder, NavigationNode editing, String new_url, String new_name) {
-		isFolder = editing!=null&&!editing.isLeaf() || editing==null&&isFolder;
-		if (!isFolder && TextUtils.isEmpty(new_url)) {
-			a.showT("地址不能为空");
-			return false;
-		}
-		if (isFolder) {
-			if (TextUtils.isEmpty(new_name)) {
-				a.showT("名称不能为空");
-				return false;
-			}
-			new_url = null;
-		}
-		if(editing!=null) {
-			if (TextUtils.equals(new_url, editing.getUrl()) && TextUtils.equals(new_name, editing.getName())) {
-				return true;
-			}
-			editing.setUrlAndName(new_url, new_name);
-			if(isVisible()) notifyDataSetChanged();
-		} else {
-			NavigationNode np = (NavigationNode) insertAfter.getParent();
-			int index;
-			if (!insertAfter.isLeaf() && insertAfter.isExpand(currentExpChannel)) {
-				np = insertAfter;
-				index = Integer.MAX_VALUE;
-			} else {
-				index = np.getChildList().indexOf(insertAfter) + 1;
-			}
-			np.addNewChild(new_url, new_name, index);
-			
-			if(isVisible()) refreshList(false);
-		}
-		MarkDirty();
-		return true;
-	}
-	
-	private void MarkDirty() {
+	void MarkDirty() {
 		navRoot.isDirty = true;
 		folderViewDirty = true;
 	}
 	
-	public void showFolderView() {
-		if (!isFolderView) {
-			NavFolderFragment navFolderFragment=navFolderRef.get();
-			if(navFolderFragment==null) {
-				navFolderFragment = new NavFolderFragment();
-				navFolderFragment.dm = a.dm;
-				navFolderFragment.foldViewAdapter = new NavigationHomeAdapter(this);
-				navFolderRef = new WeakReference<>(navFolderFragment);
-				folderViewDirty = false;
-				navFolderFragment.foldViewAdapter.setFolderNavListener(node -> {
-					lastSelectionId = CMN.id(node.getContent());
-					boolean allExpanded = true;
-					NavigationNode targetNode = node;
-					while ((node = (NavigationNode) node.getParent())!=null) {
-						if (!node.isExpand(currentExpChannel)) {
-							node.setExpanded(currentExpChannel, true);
-							allExpanded = false;
-						}
-					}
-					boolean expandSel = true;
-					if (allExpanded) {
-						lastSelectionPos = displayNodes.indexOf(targetNode);
-						//a.showT("allExpanded"+lastSelectionPos);
-						if (lastSelectionPos==-1) {
-							allExpanded = false;
-						} else {
-							LinearLayoutManager lmm = ((LinearLayoutManager) recyclerView.getLayoutManager());
-							lmm.scrollToPositionWithOffset(lastSelectionPos, 0);
-							//CMN.Log("soft upd::"+recyclerView.getChildAt(0).getTag());
-							if (expandSel && !targetNode.isExpand(currentExpChannel)) {
-								notifyItemRangeInserted(lastSelectionPos+1
-										, addChildNodesFiltered(targetNode, lastSelectionPos+1, 0x1));
-							}
-						}
-					}
-					if (!allExpanded) {
-						if (expandSel) {
-							targetNode.setExpanded(currentExpChannel, true);
-						}
-						refreshList(false);
-					}
-					navFolderRef.get().dismiss();
-				});
-			}
-			if (!navFolderFragment.isAdded()) {
-				navFolderFragment.resizeLayout(false);
-				navFolderFragment.show(a.getSupportFragmentManager(), "vfld");
-				if (folderViewDirty) {
-					navFolderFragment.foldViewAdapter.refreshList(false);
-				}
-			}
-		}
-	}
-	
-	private void refreshList(boolean findCurrentPos) {
+	protected void refreshList(boolean findCurrentPos) {
 		if (findCurrentPos) {
 			View sv = recyclerView.getChildAt(0);
 			if (sv!=null) {
@@ -774,164 +555,24 @@ public class NavigationHomeAdapter extends TreeViewAdapter<NavigationHomeAdapter
 		longClickView = viewHolder;
 		activeNavHomeBeanPos = longClickView.getLayoutPosition();
 		activeNavHomeBean = (NavigationNode) displayNodes.get(activeNavHomeBeanPos);
-		showPopupMenu(null);
+		if (navListener!=null) {
+			navListener.showPopupMenu(this, null);
+		}
 		return true;
 	};
-	
-	private void showPopupMenu(View headerView) {
-		PopupMenuHelper popupMenu = a.getPopupMenu();
-		boolean isFolderView = headerView!=null||this.isFolderView;
-		final int tag = isFolderView?R.string.xinjianwenjianjia:R.string.duoxuanmoshi;
-		if (popupMenu.tag!=tag) {
-			final int[] texts = isFolderView?new int[]{
-					R.string.xinjianwenjianjia
-					,R.string.xinjiandaohangjiedian
-					,R.string.bianji
-					,R.string.delete
-			} : new int[] {
-					//R.string.duoxuanmoshi,
-					R.string.houtaidakai
-					,R.string.xinbiaoqianyedaikai
-					,R.string.sheweimorenye
-					,R.string.fuzhilianjie
-					,R.layout.menu_edit_and_delete
-					,R.string.share
-			};
-			PopupMenuHelper.PopupMenuListener listener;
-			if (popupMenu.tag==R.string.xinjianwenjianjia || popupMenu.tag==R.string.duoxuanmoshi) {
-				listener = popupMenu.getListener();
-			}
-			else {
-				listener = (popupMenuHelper, v, isLongClick) -> {
-					boolean ret=true;
-					boolean dismiss = !isLongClick;
-					//NavigationNode node = (NavigationNode) displayNodes.get(longClickView.getLayoutPosition());
-					NavigationNode node = activeNavHomeBean;
-					int index = activeNavHomeBeanPos;
-					boolean isFolder = !node.isLeaf();
-					View blinkView = null;
-					switch (v.getId()) {
-//					case R.string.duoxuanmoshi:{ // 多选模式
-//						if (toggleSelMode()) {
-//							if (!selection.contains(node)) {
-//								selection.add(node);
-//								markIntervalSel(node, longClickView.getLayoutPosition());
-//							}
-//						}
-//						notifyDataSetChanged();
-//					} break;
-						case R.string.houtaidakai:{ // 后台打开
-							if (isFolder) blinkView=v;
-							else a.newTab(node.getUrl(), true, true, -1);
-						} break;
-						case R.string.xinbiaoqianyedaikai:{ // 新标签页
-							if (isFolder) blinkView=v;
-							else a.newTab(node.getUrl(), false, true, -1);
-						} break;
-						case R.string.sheweimorenye:{ // 默认页
-							if (isFolder) blinkView=v;
-						} break;
-						case R.string.xinjianwenjianjia:{ // 新建文件夹
-							NewNode_isFolder = true;
-							NewNode_insertAfter = node;
-							showNavEditorDlg(null, "", node.getName());
-						} break;
-						case R.id.new_node:{ // 新建导航节点
-							NewNode_isFolder = false;
-							NewNode_insertAfter = node;
-							showNavEditorDlg(null, null, null);
-						} break;
-						case R.string.xinjiandaohangjiedian:{ // 新建导航节点
-							NewNode_isFolder = false;
-							NewNode_insertAfter = node;
-							showNavEditorDlg(null, "", "");
-						} break;
-						case R.string.bianji:{ // 编辑
-							showNavEditorDlg(node, null, null);
-						} break;
-						case R.id.delete:
-						case R.string.delete:{ // 删除
-							String title = "确认删除";
-							String name = node.getName();
-							if (name.length()>=6) {
-								title += name.substring(0, 5)+"... ";
-							} else {
-								title += name;
-							}
-							int delSz = 1;
-							if (getSelMode() && selection.contains(node)) {
-								delSz = selection.size();
-							}
-							if (delSz>1) {
-								title += "等"+delSz+"个节点吗？";
-							} else {
-								title += "吗？";
-							}
-							AlertDialog.Builder builder2 = new AlertDialog.Builder(a);
-							builder2.setTitle(title)
-									.setPositiveButton(R.string.delete, (dialog, which) -> {
-										if (getSelMode() && selection.contains(node)) {
-											NavigationNode bigNode = resolveBigNode(node, selection);
-											NavigationNode[] arr = selection.toArray(new NavigationNode[]{});
-											selection.clear();
-											for (NavigationNode n : arr) {
-												removeChild(n);
-												mRecyclerBin.add(n);
-											}
-											refreshList(false);
-										} else {
-											removeChild(node);
-											mRecyclerBin.add(node);
-											notifyItemRemoved(index);
-										}
-									})
-									.setNegativeButton(R.string.cancel, null)
-							;
-							AlertDialog dTmp = builder2.create();
-							dTmp.show();
-							((TextView)dTmp.findViewById(R.id.alertTitle)).setSingleLine(false);
-							Window window = dTmp.getWindow();
-							WindowManager.LayoutParams lp = window.getAttributes();
-							lp.dimAmount =0f;
-							window.setAttributes(lp);
-						} break;
-						case R.string.share:{ // 分享
-							if (isFolder) blinkView=v;
-							else a.shareUrlOrText(node.getUrl(), null);
-						} break;
-					}
-					if (blinkView!=null) {
-						Utils.blinkView(blinkView, false);
-					} else if (dismiss) {
-						popupMenuHelper.postDismiss(80);
-					}
-					return ret;
-				};
-			}
-			popupMenu.initLayout(texts, listener);
-			popupMenu.tag=tag;
-		}
-		if (headerView!=null) {
-			popupMenu.show(headerView, 0, 0);
-		} else if (isFolderView) {
-			popupMenu.show(recyclerView, recyclerView.mLastTouchX, recyclerView.mLastTouchY);
-		} else {
-			int[] vLocationOnScreen = new int[2];
-			recyclerView.getLocationOnScreen(vLocationOnScreen);
-			popupMenu.show(a.root, recyclerView.mLastTouchX+vLocationOnScreen[0], recyclerView.mLastTouchY+vLocationOnScreen[1]);
-		}
-		Utils.preventDefaultTouchEvent(root, -100, -100);
-	}
 	
 	@NonNull
 	@Override
 	public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-		ViewHolder ret = new ViewHolder(a.getLayoutInflater().inflate(isFolderView?R.layout.nav_list_folder_item:R.layout.nav_list_item, parent, false), isFolderView);
+		ViewHolder ret = new ViewHolder(inflater.inflate(isFolderView?R.layout.nav_list_folder_item:R.layout.nav_list_item
+				, parent
+				, false)
+				, isFolderView);
 		//ret.ivArrow.setOnClickListener(this);
 		ret.itemView.setOnClickListener(this);
 		ret.dragHandleView.setOnTouchListener(this);
 		if (isFolderView) {
-			ret.fvGoBtn.setOnClickListener(this);
+			ret.fvGoBtn.setOnClickListener(navListener);
 		}
 		ret.itemView.setOnLongClickListener(itemSortStLi);
 		//ret.dragHandleView.setVisibility(View.GONE);
@@ -946,12 +587,12 @@ public class NavigationHomeAdapter extends TreeViewAdapter<NavigationHomeAdapter
 	@Override
 	public void onBindViewHolder(ViewHolder holder, int position, @NonNull List<Object> payloads) {
 		NavigationNode node = (NavigationNode) displayNodes.get(position);
-		if (node==footNode) {
-			//holder.tvName.setText(" --- --- ");
-			holder.itemView.setVisibility(View.INVISIBLE);
-			holder.itemView.getLayoutParams().height=bottomPaddding;
-			return;
-		}
+//		if (node==footNode) {
+//			//holder.tvName.setText(" --- --- ");
+//			holder.itemView.setVisibility(View.INVISIBLE);
+//			holder.itemView.getLayoutParams().height=bottomPadding;
+//			return;
+//		}
 		holder.itemView.getLayoutParams().height=-2;
 		holder.MarkSelected(getSelMode() && selection.contains(node));
 		//CMN.Log(payloads.toArray());
@@ -1002,6 +643,7 @@ public class NavigationHomeAdapter extends TreeViewAdapter<NavigationHomeAdapter
 			holder.dragHandleView.setVisibility((getShowDragHandle()||getEditMode())?View.VISIBLE:View.GONE);
 		}
 		holder.itemView.setVisibility(View.VISIBLE);
+		holder.node = node;
 	}
 	
 	private int getOldPosition(ViewHolder holder) {
@@ -1023,7 +665,8 @@ public class NavigationHomeAdapter extends TreeViewAdapter<NavigationHomeAdapter
 		public final View dragHandleView;
 		public View fvGoBtn;
 		public boolean selected;
-		private  Drawable background;
+		private Drawable background;
+		NavigationNode node;
 		
 		public ViewHolder(View rootView, boolean isFolder) {
 			super(rootView);
@@ -1052,164 +695,6 @@ public class NavigationHomeAdapter extends TreeViewAdapter<NavigationHomeAdapter
 		}
 	}
 	
-	@Override
-	public void onClick(View view) {
-		switch (view.getId()) {
-			case R.id.ivBack:
-				if (bIsShowing) {
-					dismiss(false);
-				}
-			break;
-			case R.id.search:
-			
-			break;
-			case R.id.edit: {
-				LayerDrawable ld = (LayerDrawable) view.getTag();
-				if(ld==null) {
-					view.setBackgroundResource(R.drawable.frame_checked_layer);
-					view.setTag(ld=(LayerDrawable) view.getBackground());
-				}
-				boolean editMode = toggleEditMode();
-				if (editMode) {
-					ld.jumpToCurrentState();
-				}
-				a.showT(editMode?"编辑模式":"浏览模式");
-				if(editMode) {
-					InitDragSort();
-				}
-				if (!getShowDragHandle()) {
-					notifyDataSetChanged();
-				}
-				ld.getDrawable(1).setAlpha(editMode?255:0);
-			} break;
-			case R.id.ivOverflow:{
-				PopupMenuHelper popupMenu = a.getPopupMenu();
-				if (popupMenu.tag!=R.layout.level_12345) {
-					final int[] texts = new int[] {
-							R.string.duoxuanmoshi
-							,R.string.hangjianlianxuan
-							,R.string.foldAll
-							,R.layout.level_12345
-							,R.string.expAll
-							,R.layout.level_12345
-							,R.string.showMultilineText
-							,R.string.allowDragSort
-					};
-					PopupMenuHelper.PopupMenuListener listener = (popupMenuHelper, v, isLongClick) -> {
-						boolean ret=true;
-						boolean dismiss = !isLongClick;
-						switch (v.getId()) {
-							case R.string.duoxuanmoshi:{
-								v.setActivated(toggleSelMode());
-								notifyDataSetChanged();
-							} break;
-							case R.string.showMultilineText:{
-								v.setActivated(toggleShowMultilineText());
-								notifyDataSetChanged();
-							} break;
-							case R.string.allowDragSort:{
-								boolean dragHandle = toggleShowDragHandle();
-								v.setActivated(dragHandle);
-								if (dragHandle) {
-									InitDragSort();
-								}
-								notifyDataSetChanged();
-							} break;
-							case R.string.hangjianlianxuan:{
-								View blinkView = null;
-								if (!getSelMode()) {
-									blinkView = popupMenuHelper.lv.getChildAt(0);
-								} else {
-									int selSt = selInterval[0];
-									int selEd = selInterval[2];
-									boolean valid = selSt!=selEd;
-									if (valid) {
-										if (selSt<0 || selSt>=displayNodes.size() || CMN.id(displayNodes.get(selSt).getContent())!=selInterval[1]) {
-											valid = false;
-										}
-										if (selEd<0 || selEd>=displayNodes.size() || CMN.id(displayNodes.get(selEd).getContent())!=selInterval[3]) {
-											valid = false;
-										}
-									}
-									if (valid) {
-										if (selSt>selEd) {
-											int tmp = selEd;
-											selEd = selSt;
-											selSt = tmp;
-										}
-										boolean removeSel = !selection.contains(displayNodes.get(selSt)) && !selection.contains(displayNodes.get(selEd));
-										for (int i = selSt; i < selEd; i++) {
-											if (removeSel) {
-												selection.remove(displayNodes.get(i));
-											} else {
-												selection.add((NavigationNode) displayNodes.get(i));
-											}
-										}
-										notifyDataSetChanged();
-									} else {
-										blinkView = v;
-									}
-								}
-								if (blinkView!=null) {
-									Utils.blinkView(blinkView, false);
-									dismiss = false;
-								}
-							} break;
-							case R.string.foldAll: {
-								navRoot.collapseAll(currentExpChannel);
-								refreshList(true);
-							} break;
-							case R.string.expAll: {
-								navRoot.expandAll(currentExpChannel);
-								refreshList(true);
-							} break;
-							case R.id.level: {
-								View svp = (View) v.getParent();
-								boolean collapse = Utils.getViewIndex(svp)==3;
-								int level = Utils.getViewIndex(v)+1;
-								if (collapse) {
-									navRoot.collapseLevel(currentExpChannel, level);
-								} else {
-									navRoot.expandLevel(currentExpChannel, level);
-								}
-								refreshList(true);
-								dismiss = false;
-							} break;
-						}
-						if (dismiss) {
-							popupMenuHelper.postDismiss(80);
-						}
-						return ret;
-					};
-					popupMenu.initLayout(texts, listener);
-					popupMenu.tag=R.layout.level_12345;
-				}
-				popupMenu.modifyMenu(0, null, getSelMode());
-				popupMenu.modifyMenu(6, null, getShowMultilineText());
-				popupMenu.modifyMenu(7, null, getShowDragHandle());
-				popupMenu.show(a.root, a.root.getWidth(), 0);
-			} break;
-			case R.id.clearText:
-				etSearch.setText(null);
-				view.setVisibility(View.GONE);
-			break;
-			case R.id.search_go_btn: {
-				ViewHolder viewHolder = (ViewHolder) ((ViewGroup)view.getParent()).getTag();
-				int position = viewHolder.getLayoutPosition();
-				NavigationNode node = (NavigationNode) displayNodes.get(position);
-				//a.showT(node.getName());
-				if(folderNavListener!=null) {
-					folderNavListener.onNavToFolder(node);
-				}
-			} break;
-//			case R.id.iv_arrow: {
-//				performIvArrowClk(longClickView);
-//			} break;
-			case R.id.itemRoot: {
-				super.onClick(view);
-			} break;
-		}
-	}
 	
 	public void InitDragSort() {
 		if(touchHelper==null) {
@@ -1314,7 +799,7 @@ public class NavigationHomeAdapter extends TreeViewAdapter<NavigationHomeAdapter
 							}
 							int sz = selection.size();
 							HashSet<NavigationNode> selections = new HashSet<>(sz);
-							selections.addAll(selection); selection.clear();
+							selections.addAll(selection); selection.clear(); folderSelCnt=0;
 							np = resolveBigNode(np, selections);
 							ArrayList<NavigationNode> flattenedSelection = new ArrayList<>(selections.size());
 							TraverseChildTree(np, new TreeTraveller<NavigationNode>() {
@@ -1344,7 +829,7 @@ public class NavigationHomeAdapter extends TreeViewAdapter<NavigationHomeAdapter
 							for (int i = 0, len=flattenedSelection.size(); i < len; i++) {
 								node = flattenedSelection.get(i);
 								mp.insertNode(index+i, node);
-								selection.add(node);
+								selection.add(node); if (!node.isLeaf()) folderSelCnt++;
 							}
 							refreshList(false);
 						}
@@ -1372,8 +857,8 @@ public class NavigationHomeAdapter extends TreeViewAdapter<NavigationHomeAdapter
 			touchHelper = new ItemTouchHelper(touchHandler=new TouchSortHandler(itemTouchAdapter, ItemTouchHelper.UP | ItemTouchHelper.DOWN, 0));
 			touchHandler.touchHelper = touchHelper;
 			touchHandler.mItemPadEnd = 1;
-			touchHandler.mBottomScrollTol = bottomPaddding;
-			touchHandler.dragBackground = new ColorDrawable(Color.LTGRAY);
+			//touchHandler.mBottomScrollTol = bottomPadding;
+			touchHandler.dragBackgroundColor = Color.LTGRAY;
 			touchHelper.attachToRecyclerView(recyclerView);
 		}
 	}
@@ -1396,9 +881,10 @@ public class NavigationHomeAdapter extends TreeViewAdapter<NavigationHomeAdapter
 		}
 		for (NavigationNode node:arr) {
 			if (node.isLeaf()) {
-				while((np = (NavigationNode) node.getParent())!=null) {
+				np = node;
+				while((np = (NavigationNode) np.getParent())!=null) {
 					if (treeNodes.contains(np)) {
-						selections.remove(np);
+						selections.remove(node);
 						break;
 					}
 				}
@@ -1435,102 +921,8 @@ public class NavigationHomeAdapter extends TreeViewAdapter<NavigationHomeAdapter
 		//}
 	}
 	
-	public boolean dismiss(boolean clearSel) {
-		if(bIsShowing) {
-			if (recyclerView instanceof DragSelectRecyclerView && ((DragSelectRecyclerView) recyclerView).getDragSelectActive()) {
-				return true;
-			}
-			if (clearSel && getSelMode()
-					&& selection.size()>0
-			) {
-				selection.clear();
-				//toggleSelMode();
-				notifyDataSetChanged();
-			} else {
-				checkDirty();
-				toggle();
-			}
-			return true;
-		}
-		return false;
-	}
-	
-	
-	private void checkDirty() {
-		if (navRoot.isDirty) {
-			if (glideSaver==null) {
-				glideSaver = Glide.with(a)
-					.load(navRoot.saveTask)
-					.skipMemoryCache(true)
-					.diskCacheStrategy(DiskCacheStrategy.NONE)
-					.listener(new RequestListener<Drawable>() {
-						@Override
-						public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
-							a.showT("保存失败，请检查磁盘是否已写满！");
-							a.lastError = e;
-							CMN.Log(e);
-							return false;
-						}
-						
-						@Override
-						public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
-							//a.showT("保存成功！");
-							a.animateHomeIcon();
-							return true;
-						}
-					});
-			}
-			glideSaver.into(a.UIData.browserWidget9);
-//			try {
-//			} catch (Exception e) {
-//				CMN.Log(e);
-//				a.lastError = e;
-//				a.showT("保存失败，请检查磁盘是否写满！");
-//			}
-		}
-	}
-	
 	public void OnNavHomeEditorActions(int action) {
-		AlertDialog editNavHomeDlg = (AlertDialog) a.getReferencedObject(WeakReferenceHelper.edit_navhome);
-		if(editNavHomeDlg!=null) {
-			LoginViewBinding schEngEditView = (LoginViewBinding) editNavHomeDlg.tag;
-			int dismiss = 0;
-			switch (action) {
-				case 0: {
-					dismiss = 0x7;
-					if (editingNavHomeBean!=null && !editingNavHomeBean.isLeaf()) {
-						// 使用文件夹
-						if (bIsShowing && longClickView!=null) {
-							performIvArrowClk(longClickView);
-						}
-						dismiss = 0x1|0x2;
-					} else {
-						a.execBrowserGoTo(schEngEditView.url.getText().toString());
-					}
-				} break;
-				case 1:{
-					dismiss = 0x1;
-					schEngEditView.url.setText(a.currentWebView.getUrl());
-					schEngEditView.name.setText(a.currentWebView.getTitle());
-				} break;
-				case 2:{
-					dismiss = 0x1;
-					boolean sl = !getAlwaysShowMultilineEditField();
-					schEngEditView.url.setSingleLine(sl);
-					schEngEditView.name.setSingleLine(sl);
-				} break;
-			}
-			if((dismiss&0x1)!=0) {
-				NavHomeEditorDialogSettings settingsPanel = (NavHomeEditorDialogSettings) schEngEditView.getRoot().getTag();
-				settingsPanel.dismiss();
-			}
-			if((dismiss&0x2)!=0) {
-				editNavHomeDlg.dismiss();
-			}
-			if((dismiss&0x4)!=0) {
-				dismiss(false);
-			}
-		}
+
 	}
 	
 	private void performIvArrowClk(ViewHolder holder) {
@@ -1549,17 +941,23 @@ public class NavigationHomeAdapter extends TreeViewAdapter<NavigationHomeAdapter
 		return bIsShowing;
 	}
 	
-	@Multiline(flagPos=58, shift=0) private boolean getAlwaysShowMultilineEditField(){ a.opt.FirstFlag=a.opt.FirstFlag; throw new RuntimeException(); }
-	@Multiline(flagPos=59, shift=1) private boolean getAppendNewNavNodeToEnd(){ a.opt.FirstFlag=a.opt.FirstFlag; throw new RuntimeException(); }
-	@Multiline(flagPos=60, shift=1) private boolean getAutoExpandAllFoldersForFov(){ a.opt.FirstFlag=a.opt.FirstFlag; throw new RuntimeException(); }
+	private boolean getAutoExpandAllFoldersForFov(){
+		return false;
+	}
 	
-	@Multiline(flagPos=25) private boolean getShowMultilineText(){ a.opt.ThirdFlag=a.opt.ThirdFlag; throw new RuntimeException(); }
-	@Multiline(flagPos=25) private boolean toggleShowMultilineText(){ a.opt.ThirdFlag=a.opt.ThirdFlag; throw new IllegalArgumentException(); }
-	@Multiline(flagPos=26) private boolean getShowDragHandle(){ a.opt.ThirdFlag=a.opt.ThirdFlag; throw new RuntimeException(); }
-	@Multiline(flagPos=26) private boolean toggleShowDragHandle(){ a.opt.ThirdFlag=a.opt.ThirdFlag; throw new IllegalArgumentException(); }
-	@Multiline(flagPos=27) private boolean getSelMode(){ a.opt.ThirdFlag=a.opt.ThirdFlag; throw new RuntimeException(); }
-	@Multiline(flagPos=27) private boolean toggleSelMode(){ a.opt.ThirdFlag=a.opt.ThirdFlag; throw new IllegalArgumentException(); }
-	@Multiline(flagPos=28) private boolean getEditMode(){ a.opt.ThirdFlag=a.opt.ThirdFlag; throw new RuntimeException(); }
-	@Multiline(flagPos=28) private boolean toggleEditMode(){ a.opt.ThirdFlag=a.opt.ThirdFlag; throw new IllegalArgumentException(); }
-
+	private boolean getShowMultilineText(){
+		return navListener!=null && navListener.getShowMultilineText();
+	}
+	
+	private boolean getShowDragHandle(){
+		return navListener!=null && navListener.getShowDragHandle();
+	}
+	
+	private boolean getSelMode(){
+		return navListener!=null && navListener.getSelMode();
+	}
+	
+	private boolean getEditMode(){
+		return navListener!=null && navListener.getEditMode();
+	}
 }

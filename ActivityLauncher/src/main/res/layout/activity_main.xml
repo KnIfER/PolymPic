@@ -20,6 +20,13 @@
 			android:layout_height="match_parent"
 			/>
 
+<!--		<View-->
+<!--			android:layout_width="match_parent"-->
+<!--			android:layout_height="173px"-->
+<!--			android:background="#660000ff"-->
+<!--			android:translationY="500px"-->
+<!--			/>-->
+
 		<androidx.coordinatorlayout.widget.CoordinatorLayout
 			android:id="@+id/webcoord"
 			android:layout_width="match_parent"

@@ -111,7 +111,7 @@ public class Utils {
 	};
 	public static Rect rect = new Rect();
 	public static final boolean littleCat = Build.VERSION.SDK_INT<=Build.VERSION_CODES.KITKAT;
-	public static final boolean littleCake = Build.VERSION.SDK_INT<=23;
+	public static final boolean littleCake = Build.VERSION.SDK_INT<23;
 	public static final boolean bigCake= Build.VERSION.SDK_INT>=21;
 	public static final boolean bigMountain = Build.VERSION.SDK_INT>22;
 	public static final boolean bigMouth = Build.VERSION.SDK_INT>=Build.VERSION_CODES.O;
@@ -513,7 +513,7 @@ public class Utils {
 		return (int) (dp * GlobalOptions.density);
 	}
 	
-	public static void embedViewInCoordinatorLayout(View v) {
+	public static void embedViewInCoordinatorLayout(View v, boolean setBehaviour) {
 		ViewGroup.LayoutParams lp = v.getLayoutParams();
 		if (lp instanceof CoordinatorLayout.LayoutParams) {
 			CoordinatorLayout.LayoutParams params = (CoordinatorLayout.LayoutParams) lp;
@@ -522,7 +522,9 @@ public class Utils {
 			params.height = -1;
 			//params.topMargin = UIData.appbar.getHeight()-TargetTransY;
 			//root.setForegroundGravity();
-			params.setBehavior(new AppBarLayout.ScrollingViewBehavior(v.getContext(), null));
+			if (setBehaviour) {
+				params.setBehavior(new AppBarLayout.ScrollingViewBehavior(v.getContext(), null));
+			}
 		}
 	}
 	
@@ -573,6 +575,13 @@ public class Utils {
 			v = (View) vp;
 		}
 		return v;
+	}
+	
+	static boolean bool=true;
+	public static boolean testOnce() {
+		boolean b = bool;
+		bool = false;
+		return b;
 	}
 	
 	public static class DummyOnClick implements View.OnClickListener {
@@ -702,8 +711,9 @@ public class Utils {
 		int cc = vg.getChildCount();
 		View ca;
 		boolean longClickable = clicker instanceof View.OnLongClickListener;
+		boolean touhable = clicker instanceof View.OnTouchListener;
 		if(vg.isClickable()) {
-			click(vg, clicker, longClickable);
+			click(vg, clicker, longClickable, touhable);
 		}
 		for (int i = 0; i < cc; i++) {
 			ca = vg.getChildAt(i);
@@ -711,7 +721,7 @@ public class Utils {
 			if(ca instanceof ViewGroup) {
 				if(--depth>0) {
 					if(ca.isClickable()) {
-						click(ca, clicker, longClickable);
+						click(ca, clicker, longClickable, touhable);
 					} else {
 						setOnClickListenersOneDepth((ViewGroup) ca, clicker, depth, viewFetcher);
 					}
@@ -720,7 +730,7 @@ public class Utils {
 				int id = ca.getId();
 				if(ca.getId()!=View.NO_ID){
 					if(!(ca instanceof EditText) && ca.isEnabled()) {
-						click(ca, clicker, longClickable);
+						click(ca, clicker, longClickable, touhable);
 					}
 					if(viewFetcher!=null) {
 						for (int j = 0; j < viewFetcher.length; j++) {
@@ -739,8 +749,9 @@ public class Utils {
 		int cc = vg.getChildCount();
 		View ca;
 		boolean longClickable = clicker instanceof View.OnLongClickListener;
+		boolean touhable = clicker instanceof View.OnTouchListener;
 		if(vg.isClickable()) {
-			click(vg, clicker, longClickable);
+			click(vg, clicker, longClickable, touhable);
 		}
 		for (int i = 0; i < cc; i++) {
 			ca = vg.getChildAt(i);
@@ -748,7 +759,7 @@ public class Utils {
 			if(ca instanceof ViewGroup) {
 				if(--depth>0) {
 					if(ca.isClickable()) {
-						click(ca, clicker, longClickable);
+						click(ca, clicker, longClickable, touhable);
 					} else {
 						setOnClickListenersOneDepth((ViewGroup) ca, clicker, viewFetcher, depth);
 					}
@@ -757,7 +768,7 @@ public class Utils {
 				int id = ca.getId();
 				if(ca.getId()!=View.NO_ID){
 					if(!(ca instanceof EditText) && ca.isEnabled()) {
-						click(ca, clicker, longClickable);
+						click(ca, clicker, longClickable, touhable);
 					}
 					if(viewFetcher!=null) {
 						viewFetcher.put(ca.getId(), ca);
@@ -767,10 +778,13 @@ public class Utils {
 		}
 	}
 	
-	private static void click(View ca, View.OnClickListener clicker, boolean longClickable) {
+	private static void click(View ca, View.OnClickListener clicker, boolean longClickable, boolean touhable) {
 		ca.setOnClickListener(clicker);
 		if(longClickable&&ca.isLongClickable()) {
 			ca.setOnLongClickListener((View.OnLongClickListener) clicker);
+		}
+		if(touhable) {
+			ca.setOnTouchListener((View.OnTouchListener) clicker);
 		}
 	}
 	

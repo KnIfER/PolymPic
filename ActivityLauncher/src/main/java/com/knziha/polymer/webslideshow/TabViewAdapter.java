@@ -89,9 +89,11 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 	public CenterLinearLayoutManager layoutManager;
 	private int mItemWidth;
 	private int mItemHeight;
+	private float mRealItemHeight;
 	
 	private int padWidth;
 	private int itemPad;
+	private float titleH;
 	
 	private ColorDrawable AppWhiteDrawable;
 	private Drawable frame_web;
@@ -435,6 +437,7 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 		} else {
 			bNeedReCalculateItemWidth = true;
 		}
+		mRealItemHeight = 0;
 	}
 	
 	int MoveRangePositon;
@@ -512,7 +515,8 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 					CMN.Log("onItemClick::", newPos);
 					if (locateTo) {
 					
-					} else if(newPos>=0){
+					} else if(newPos>=0) {
+						a.fixFocusHiddenSelectionWidgets(d);
 						searchView.searchHolder.hide();
 						a.selectTab(newPos);
 						return true;
@@ -571,17 +575,26 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 	
 	private void calculateItemWidth(boolean postMeasure) {
 		DisplayMetrics dm = a.dm;
+		CMN.Log("tabView::calculateItemWidth::", dm.widthPixels, a.root.getWidth(), GlobalOptions.realWidth);
 		if(dm.widthPixels<= GlobalOptions.realWidth) { // portrait
-			mItemWidth = (int) (GlobalOptions.realWidth * 0.65);
-			int idealItemHeight = (int) (((float) mItemWidth) / dm.widthPixels * dm.heightPixels);
-			mItemHeight = Math.min(idealItemHeight, dm.heightPixels);
+			int fitWidth = a.root.getWidth();
+			int fitHeight = a.root.getHeight();
+			fitWidth = dm.widthPixels;
+			fitHeight = dm.heightPixels;
+			//ordinalFitHeight = ;
+			//fitHeight-=a.UIData.appbar.getHeight() + a.UIData.bottombar2.getHeight();
+			mItemWidth = (int) (fitWidth * 0.65);
+			int idealItemHeight = (int) (((float) mItemWidth) / fitWidth * fitHeight);
+			mItemHeight = Math.min(idealItemHeight, fitHeight);
 			CMN.Log("idealItemHeight", idealItemHeight, mItemHeight, idealItemHeight-mItemHeight);
 		} else { // landscape
 			mItemWidth = dm.widthPixels/4;
 			mItemHeight = dm.heightPixels/2;
 		}
-
+		
 		recyclerView.mItemWidth = mItemWidth;
+		
+		titleH = a.mResource.getDimension(R.dimen._35_);
 
 		if(postMeasure) {
 			a.root.postDelayed(() -> {
@@ -595,13 +608,6 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 		notifyDataSetChanged();
 	}
 	
-	void padViewpager() {
-		int pad = (a.root.getHeight() - mItemHeight - a.UIData.bottombar2.getHeight())/2;
-		recyclerView.setPadding(0, pad, 0, pad);
-		padWidth = (a.root.getWidth()-mItemWidth)/2-3*itemPad;
-		if(padWidth<0) padWidth=0;
-	}
-	
 	private boolean targetIsPage(int target) {
 		return target>=0 && target<a.TabHolders.size();
 	}
@@ -610,8 +616,10 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 	public void toggleTabView(int fromClick, View v, int forceAnimation) {
 		CMN.Log("toggleTabView???", a.currentViewImpl==null?"noImpl":"hasImpl", a.adapter_idx, fromClick);
 		boolean b1=isVisible();
-		if(a.currentViewImpl==null) {
-			a.checkCurrentTab(false);
+		int targetPos = DismissingViewHolder?-1:ViewUtils.getCenterXChildPositionV2(recyclerView) - 1;
+		int newPos = fromClick>=0?fromClick:targetPos;
+		if(a.currentViewImpl==null || (!DismissingViewHolder && newPos!=a.adapter_idx)) {
+			a.checkCurrentTab(false, newPos);
 			notifyDataSetChanged();
 		}
 		//CMN.Log("toggleTabView", currentViewImpl==null?"noImpl":"hasImpl", adapter_idx);
@@ -673,7 +681,7 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 				tabsAnimator.setDuration(235); // 220
 			}
 		if(AnimateTabsManager) {
-			toggleInternalTabViewAnima(fromClick, v, (forceAnimation&0x2)!=0);
+			toggleInternalTabViewAnima(fromClick, v, (forceAnimation&0x2)!=0, targetPos);
 		} else {
 			toggleInternalTabView(fromClick);
 		}
@@ -788,7 +796,7 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 		//CMN.Log("动画咯", post);
 		if(post) {
 			a.root.removeCallbacks(startAnimationRunnable);
-			a.root.postDelayed(startAnimationRunnable, 160);
+			a.root.postDelayed(startAnimationRunnable, 160);  // 360 调试动画
 		} else {
 			startAnimationRunnable.run();
 		}
@@ -818,7 +826,7 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 					uncoverTheTab(180);
 				} else {
 					layout.setVisibility(View.INVISIBLE);
-					//etSearch.setText("标签模式");
+					//layout.postDelayed(() -> layout.setVisibility(View.INVISIBLE), 360); // 调试动画
 				}
 				layout.implView.setVisibility(View.VISIBLE);
 				layout.onViewAttached(1);
@@ -826,7 +834,8 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 			//v.setBackgroundResource(R.drawable.surrtrip1);
 		}
 	};
-	private void toggleInternalTabViewAnima(int fromClick, View v, boolean bNeedPost) {
+	
+	private void toggleInternalTabViewAnima(int fromClick, View v, boolean bNeedPost, int targetPos) {
 		WebFrameLayout layout = a.currentViewImpl;
 		if(opt.getAnimateImageviewAlone()) {
 			if(a.webFrameLayout==null) {
@@ -856,52 +865,38 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 		}
 		tabsAnimator.pause();
 		a.mBrowserSlider.pause();
+		// target translation Y, target translation X, and target scale
 		float ttY=1, ttX=1, targetScale=mItemWidth;
 		boolean bc=fromClick>=0;
 		View appbar=a.UIData.appbar;
 		if(true|| DismissingViewHolder ||bc) {
 			int W = a.root.getWidth();
-			if(W==0) W=dm.widthPixels;
+			if (mRealItemHeight<=0) mRealItemHeight = calcRealItemHeight();
 			
-			a.mStatusBarH = Utils.getStatusBarHeight(a.mResource);
+			//CMN.Log("targetScale::mRealItemHeight::", mRealItemHeight);
 			
-			int H = a.root.getHeight()-a.mStatusBarH;
-			if(H<=0) H=dm.heightPixels;
+			int tabW = layout.getViewWidth();
+			int tabH = layout.getViewHeight();
 			
-			targetScale /= W;
+			// 计算与center_crop相对应的缩放数值
+			targetScale = Math.max(targetScale/tabW, mRealItemHeight/tabH);
 			
 			ttX=(W-W*targetScale)/2;
 			
-			ttY=(appbar.getHeight()+a.UIData.bottombar2.getHeight())/2-appbar.getTop();
+			ttY=mRealItemHeight/2+titleH+recyclerView.getPaddingTop() - tabH*targetScale/2;
 			
-			//ttY=((H/*-bottombar2.getHeight()*/)-(H-appbar.getHeight())*targetScale)/2-appbar.getHeight()-appbar.getTop();
+			//ttY=500;
 			
-			float titleH = a.mResource.getDimension(R.dimen._35_);
+			//if(!a.anioutTopBotForTab)
 			
-			//ttY=(currentWebView.layout.getHeight()*(1-targetScale))/2+(+titleH-viewpager_holder.getPaddingBottom())/2-appbar.getHeight()-appbar.getTop();
-			
-			//ttY=-((currentWebView.getHeight()*targetScale)/2-appbar.getHeight()/2)+(root.getHeight()+titleH-viewpager_holder.getPaddingBottom())/2;
-			int tabH = a.currentViewImpl.getImplHeight();
-			if(tabH==0) {
-				tabH = a.UIData.webcoord.getHeight()-a.currentViewImpl.getPaddingBottom();
-			}
-			
-			ttY=(H+titleH-viewpager_holder.getPaddingBottom()-tabH*targetScale)/2-10;
-			
-			ttY=(H+titleH-viewpager_holder.getPaddingBottom()-(tabH-a.currentViewImpl.getPaddingTop())*targetScale)/2-10;
-			
-			if(!a.anioutTopBotForTab)
+			if(layout.getPaddingTop()!=0)
 			{
+				ttY+=(-appbar.getHeight()-appbar.getTop())*targetScale;
+			} else {
 				ttY+=-appbar.getHeight()-appbar.getTop();
 			}
 			
-			//CMN.Log("AAHH", currentViewImpl.getImplHeight(), UIData.webcoord.getHeight()-currentViewImpl.getPaddingBottom());
-			//CMN.Log(H, mStatusBarH, UIData.bottombar2.getHeight(), "appbar.h="+appbar.getHeight(), "appbar.top="+appbar.getTop(), "titleH="+titleH, "bottom.h="+appbar.getTop(), "idealItemHeight2="+currentWebView.getHeight()*targetScale);
-			
-			
-			//ttY=(currentWebView.getHeight()*(1-targetScale))/2;
-			
-			//CMN.Log("ttX", currentWebView.getTranslationY(), currentWebView.getTop(), appbar.getTop(), appbar.getHeight());
+			CMN.Log("targetScale::ttY::", targetScale, ttX, ttY, tabW, tabH);
 		}
 		
 		boolean added = false;
@@ -912,8 +907,6 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 		}
 		
 		if(!DismissingViewHolder) {
-			int targetPos = layoutManager.targetPos-1;
-			targetPos = ViewUtils.getCenterXChildPositionV2(recyclerView) - 1;
 			CMN.Log("预放计算::", " target="+targetPos, " from="+fromClick, "bcc="+(fromClick-targetPos));
 			if(targetPos<0) targetPos=0;
 			int bcc=0;
@@ -961,6 +954,7 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 		a.root.removeCallbacks(removeIMCoverRunnable);
 		//recyclerView.suppressLayout(true);
 		if(!DismissingViewHolder){// 放
+			//tabsAnimator.setDuration(1000);
 			alpha1.setIntValues(bottombar2_alpha, 255);
 			alpha3.setFloatValues(appbar_alpha, 1);
 			if(added/* || bc*/) {
@@ -1000,6 +994,7 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 			//alpha2.setDuration(10);
 		}
 		else {  // 收
+			//tabsAnimator.setDuration(200);
 			alpha1.setIntValues(bottombar2_alpha, 128);
 			alpha3.setFloatValues(appbar_alpha, 0);
 			DismissingViewHolder =false;
@@ -1051,8 +1046,29 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 		//startAnimation(false);
 	}
 	
+	private float calcRealItemHeight() {
+		return a.UIData.webcoord.getHeight()
+				-recyclerView.getPaddingTop()*2-
+				titleH
+				-viewpager_holder.getPaddingBottom()
+				-itemPad;
+	}
+	
+	void padViewpager() {
+		int bottomH = a.UIData.bottombar2.getLayoutParams().height;
+		if (bottomH<=0) {
+			bottomH = a.UIData.bottombar2.getHeight();
+		}
+		int pad = (a.root.getHeight() - mItemHeight - bottomH);
+		pad/=2;
+		recyclerView.setPadding(0, pad, 0, pad);
+		padWidth = (a.root.getWidth()-mItemWidth)/2-3*itemPad;
+		if(padWidth<0) padWidth=0;
+	}
+	
 	public void uncoverTheTab(long delay) {
 		//if(true) return;
+		//delay = 1000; // 调试动画
 		if(opt.getShowWebCoverDuringTransition()) {
 			//CMN.Log("uncovering...");
 			ImageView cover = this.imageViewCover;
@@ -1075,10 +1091,14 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 	}
 	
 	public boolean coverupTheTab(WebFrameLayout layout, boolean added) {
+		//added = true; // 调试动画
 		if(opt.getShowWebCoverDuringTransition() && added) {
 			//CMN.Log("covering...");
 			if (Utils.metaKill) layout.suppressLayout(true);
 			ImageView cover = this.imageViewCover;
+			cover.setScaleType(ImageView.ScaleType.FIT_CENTER);
+			//cover.setBackgroundColor(Color.BLUE);
+			cover.setBackgroundColor(Color.WHITE);
 			cover.setAlpha(1.0f);
 			cover.setVisibility(View.VISIBLE);
 			boolean ret=true;

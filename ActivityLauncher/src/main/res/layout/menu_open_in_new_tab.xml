@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+	android:id="@string/bianji"
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="match_parent"
+	android:layout_height="wrap_content"
+	android:clickable="true">
+	<com.knziha.polymer.widgets.TextMenuView
+		android:id="@string/xinbiaoqianyedaikai"
+		style="@style/MenuTextStyle1"
+		android:text="@string/xinbiaoqianyedaikai" />
+
+	<ImageView
+		android:id="@+id/always_new_tab_morpt"
+		android:layout_width="40dp"
+		android:layout_height="@dimen/_35_"
+		android:layout_gravity="end|center_vertical"
+		android:layout_marginEnd="5dp"
+		android:background="?actionBarItemBackground"
+		android:paddingStart="8dp"
+		android:paddingTop="5dp"
+		android:paddingEnd="8dp"
+		android:paddingBottom="5dp"
+		android:src="@drawable/abc_ic_menu_overflow_material"
+		android:tint="#0DCAEE"
+		/>
+</FrameLayout>

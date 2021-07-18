@@ -33,14 +33,14 @@ public class TreeViewAdapter<VH extends RecyclerView.ViewHolder> extends Recycle
 	protected boolean findSelection;
 	
 	protected Object currentFilter;
-	protected int currentSchFlg;
+	public int currentSchFlg;
 	
 	protected TreeViewNode rootNode;
 	protected TreeViewNode footNode;
 	
 	protected boolean isFolderView = false;
 	
-	protected int currentExpChannel=0x1;
+	public int currentExpChannel=0x1;
 	protected int normalExpChannel=0x1;
 	protected int schViewExpChannel=0x1;
 	
@@ -90,6 +90,10 @@ public class TreeViewAdapter<VH extends RecyclerView.ViewHolder> extends Recycle
 			}
 		}
 		return addChildCount;
+	}
+	
+	public boolean getIsFolderView() {
+		return isFolderView;
 	}
 	
 	public interface TreeTraveller<T extends TreeViewNode> {
@@ -467,24 +471,44 @@ public class TreeViewAdapter<VH extends RecyclerView.ViewHolder> extends Recycle
      * collapse all root nodes.
      */
     public void collapseAll() {
-        // Back up the nodes are displaying.
-        List<TreeViewNode> temp = backupDisplayNodes();
-        //find all root nodes.
-        List<TreeViewNode> roots = new ArrayList<>();
-        for (TreeViewNode displayNode : displayNodes) {
-            if (displayNode.isRoot())
-                roots.add(displayNode);
-        }
-        //Close all root nodes.
-        for (TreeViewNode root : roots) {
-            if (root.isExpand(currentExpChannel)) {
-				root.collapse(currentExpChannel); removeChildNodes(root);
-			}
-        
-        }
-        notifyDiff(temp);
+//        // Back up the nodes are displaying.
+//        List<TreeViewNode> temp = backupDisplayNodes();
+//        //find all root nodes.
+//        List<TreeViewNode> roots = new ArrayList<>();
+//        for (TreeViewNode displayNode : displayNodes) {
+//            if (displayNode.isRoot())
+//                roots.add(displayNode);
+//        }
+//        //Close all root nodes.
+//        for (TreeViewNode root : roots) {
+//            if (root.isExpand(currentExpChannel)) {
+//				root.collapse(currentExpChannel); removeChildNodes(root);
+//			}
+//
+//        }
+//        notifyDiff(temp);
+		rootNode.collapseAll(currentExpChannel);
+		refreshList(true);
     }
-
+	
+	public void expandAll() {
+		rootNode.expandAll(currentExpChannel);
+		refreshList(true);
+	}
+	
+	public void collapseExpandToLevel(boolean collapse, int level) {
+		if (collapse) {
+			rootNode.collapseLevel(currentExpChannel, level);
+		} else {
+			rootNode.expandLevel(currentExpChannel, level);
+		}
+		refreshList(true);
+	}
+	
+	protected void refreshList(boolean findCurrentPos) {
+		refresh(rootNode.getChildList(isFolderView), 0);
+	}
+	
     @NonNull
     private List<TreeViewNode> backupDisplayNodes() {
         List<TreeViewNode> temp = new ArrayList<>();

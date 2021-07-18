@@ -12,7 +12,7 @@ public class AppIconModelLoader implements ModelLoader<AppIconCover, Drawable> {
 	@Nullable
 	@Override
 	public LoadData<Drawable> buildLoadData(@NonNull AppIconCover appIconCover, int width, int height, @NonNull Options options) {
-		return new LoadData<>(new AppIconCoverSignature(appIconCover.path), new AppIconCoverFetcher(appIconCover));
+		return new LoadData<>(new AppIconCoverSignature(appIconCover), new AppIconCoverFetcher(appIconCover));
 	}
 
 	@Override

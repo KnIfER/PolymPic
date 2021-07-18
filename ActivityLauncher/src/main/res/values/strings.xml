@@ -94,4 +94,5 @@ Donec feugiat ac nunc vel laoreet. In laoreet pretium fringilla. Suspendisse pot
 	<string name="ts_125">125%</string>
 	<string name="ts_150">150%</string>
 	<string name="pdf_viewer">PDF 阅读器</string>
+	<string name="has_number_of_nodes">共计%d个节点，%d个文件夹</string>
 </resources>

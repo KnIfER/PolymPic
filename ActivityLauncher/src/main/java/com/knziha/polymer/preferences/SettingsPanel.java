@@ -2,10 +2,12 @@ package com.knziha.polymer.preferences;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewPropertyAnimator;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.ScrollView;
@@ -25,14 +27,16 @@ public class SettingsPanel extends AnimatorListenerAdapter implements View.OnCli
 	public ViewGroup settingsLayout;
 	protected LinearLayout linearLayout;
 	protected boolean bIsShowing;
-	protected final int bottomPaddding;
+	protected int bottomPadding;
 	protected final Options opt;
 	protected String[][] UITexts;
 	protected int[][] UITags;
+	protected int[][] UIDrawable;
+	protected boolean isHorizontal;
 	protected boolean shouldWrapInScrollView = true;
-	protected boolean shouldRemoveAfterDismiss = true;
-	protected boolean hasDelegatePicker = false;
-	protected boolean showInPopWindow = false;
+	protected boolean bShouldRemoveAfterDismiss = true;
+	protected boolean hasDelegatePicker;
+	protected boolean showInPopWindow;
 	public PopupWindow pop;
 	protected int mPaddingLeft=10;
 	protected int mPaddingRight=10;
@@ -42,14 +46,16 @@ public class SettingsPanel extends AnimatorListenerAdapter implements View.OnCli
 	protected int mItemPaddingTop=8;
 	protected int mItemPaddingBottom=8;
 	protected int mBackgroundColor = 0xefffffff;
+	protected int mViewAttachIdx = -1;
 	protected SettingsPanel parent;
+	private SettingsPanel parentToDismiss;
 	
 	public void setEmbedded(ActionListener actionListener){
 		mPaddingLeft = 15;
 		mPaddingTop = 2;
 		mPaddingBottom = 15;
 		shouldWrapInScrollView = false;
-		shouldRemoveAfterDismiss = false;
+		bShouldRemoveAfterDismiss = false;
 		mItemPaddingLeft = 8;
 		mItemPaddingTop = 9;
 		mItemPaddingBottom = 9;
@@ -60,15 +66,19 @@ public class SettingsPanel extends AnimatorListenerAdapter implements View.OnCli
 		}
 	}
 	
+	public void setActionListener(ActionListener mActionListener) {
+		this.mActionListener = mActionListener;
+	}
+	
 	final static int MAX_FLAG_COUNT=7; // 当前支持7个标志位存储容器，其中第六第七为动态容器。
 	
 	final static int MAX_FLAG_POS_MASK=(1<<8)-1; // 长整型，位数 64，存储需要 7 位。
 	
-	final static int FLAG_IDX_SHIFT=16;
+	protected final static int FLAG_IDX_SHIFT=16;
 	
 	final static int BIT_IS_REVERSE=1<<9;
 	final static int BIT_IS_DYNAMIC=1<<10;
-	final static int BIT_HAS_ICON=1<<11;
+	protected final static int BIT_HAS_ICON=1<<11;
 	
 	// Flag-Idx  BITs   Flag-Pos
 	// 索引   选项   偏移
@@ -108,7 +118,7 @@ public class SettingsPanel extends AnimatorListenerAdapter implements View.OnCli
 		void onAction(SettingsPanel settingsPanel, int flagIdxSection, int flagPos, boolean dynamic, boolean val);
 		void onPickingDelegate(SettingsPanel settingsPanel, int flagIdxSection, int flagPos, int lastX, int lastY);
 	}
-	ActionListener mActionListener;
+	protected ActionListener mActionListener;
 	
 	public interface FlagAdapter{
 		/** 取得标志位 */
@@ -120,10 +130,10 @@ public class SettingsPanel extends AnimatorListenerAdapter implements View.OnCli
 		/** 选择动态容器 */
 		void pickDelegateForSection(int flagIdx, int pickIndex);
 	}
-	final FlagAdapter mFlagAdapter;
+	protected final FlagAdapter mFlagAdapter;
 	
 	/** 装饰动态索引 */
-	Drawable getIconForDynamicFlagBySection(int section){
+	protected Drawable getIconForDynamicFlagBySection(int section){
 		if (parent!=null) {
 			return parent.getIconForDynamicFlagBySection(section);
 		}
@@ -189,23 +199,28 @@ public class SettingsPanel extends AnimatorListenerAdapter implements View.OnCli
 		}
 	}
 	
-	public SettingsPanel(@NonNull FlagAdapter mFlagAdapter, @NonNull Options opt, String[][] UITexts, int[][] UITags) {
-		this.bottomPaddding = 0;
+	public SettingsPanel(@NonNull FlagAdapter mFlagAdapter, @NonNull Options opt, String[][] UITexts, int[][] UITags, int[][] drawable) {
+		this.bottomPadding = 0;
 		this.opt = opt;
 		this.mFlagAdapter = mFlagAdapter;
 		this.UITexts = UITexts;
 		this.UITags = UITags;
+		this.UIDrawable = drawable;
 	}
 	
 	public SettingsPanel(@NonNull Context context, @NonNull ViewGroup root, int bottomPadding, @NonNull Options opt, @NonNull FlagAdapter mFlagAdapter) {
-		this.bottomPaddding = bottomPadding;
+		this.bottomPadding = bottomPadding;
 		this.opt = opt;
 		this.mFlagAdapter = mFlagAdapter;
 		init(context, root);
 		ViewGroup sl = this.settingsLayout;
 		if (bottomPadding>0) {
 			sl.setAlpha(0);
-			sl.setTranslationY(bottomPadding);
+			if(isHorizontal) {
+				sl.setTranslationX(bottomPadding);
+			} else {
+				sl.setTranslationY(bottomPadding);
+			}
 			sl.setBackgroundColor(mBackgroundColor);
 		} else {
 			sl.setBackgroundColor(mBackgroundColor);
@@ -294,30 +309,37 @@ public class SettingsPanel extends AnimatorListenerAdapter implements View.OnCli
 		}
 	}
 	
-	public boolean toggle(ViewGroup root) {
+	public boolean toggle(ViewGroup root, SettingsPanel parentToDismiss) {
+		if (settingsLayout==null && root!=null) {
+			init(root.getContext(), root);
+		}
 		float targetAlpha = 1;
 		float targetTrans = 0;
 		if (bIsShowing=!bIsShowing) {
 			if (showInPopWindow) {
 				showPop();
 			} else {
-				Utils.addViewToParent(settingsLayout, root, -1);
+				Utils.addViewToParent(settingsLayout, root, mViewAttachIdx);
 			}
 			settingsLayout.setVisibility(View.VISIBLE);
 		} else {
 			targetAlpha = 0;
-			targetTrans = bottomPaddding;
+			targetTrans = bottomPadding;
 		}
-		settingsLayout
-				.animate()
-				.alpha(targetAlpha)
-				.translationY(targetTrans)
-				.setDuration(180)
-				.setListener(bIsShowing?null:this)
+		ViewPropertyAnimator animator = settingsLayout.animate().alpha(targetAlpha);
+		if (isHorizontal) {
+			animator.translationX(targetTrans);
+		} else {
+			animator.translationY(targetTrans);
+		}
+		animator.setDuration(180)
+				.setListener(this)
 				//.start()
 		;
 		if (!bIsShowing) {
 			onDismiss();
+		} else if (parentToDismiss!=null) {
+			this.parentToDismiss = parentToDismiss;
 		}
 		return bIsShowing;
 	}
@@ -330,17 +352,37 @@ public class SettingsPanel extends AnimatorListenerAdapter implements View.OnCli
 	
 	@Override
 	public void onAnimationEnd(Animator animation) {
-		if (!bIsShowing) {
-			if (pop!=null && showInPopWindow) {
-				pop.dismiss();
+		ValueAnimator va = (ValueAnimator) animation;
+		if (va==null || va.getAnimatedFraction()==1) {
+			if (!bIsShowing) {
 				CMN.Log("dismiss!!!");
+				if (pop!=null) {
+					pop.dismiss();
+				} else {
+					settingsLayout.setVisibility(View.GONE);
+					if (bShouldRemoveAfterDismiss) {
+						Utils.removeView(settingsLayout);
+					}
+				}
+				if (settingsLayout.getAlpha()==0 && (isHorizontal?settingsLayout.getTranslationX():settingsLayout.getTranslationY())==0) {
+					if (isHorizontal) {
+						settingsLayout.setTranslationX(bottomPadding);
+					} else {
+						settingsLayout.setTranslationY(bottomPadding);
+					}
+				}
 			} else {
-				settingsLayout.setVisibility(View.GONE);
-				if (shouldRemoveAfterDismiss) {
-					Utils.removeView(settingsLayout);
+				if (parentToDismiss!=null) {
+					if ((mBackgroundColor&0xff000000)!=0xff000000) {
+						parentToDismiss.fadeOut();
+					} else {
+						parentToDismiss.hide();
+					}
+					parentToDismiss = null;
 				}
 			}
 		}
+		
 	}
 	
 	@Override
@@ -381,7 +423,19 @@ public class SettingsPanel extends AnimatorListenerAdapter implements View.OnCli
 	
 	public void dismiss() {
 		if(bIsShowing) {
-			toggle(null);
+			toggle(null, null);
+		}
+	}
+	
+	private void fadeOut() {
+		if(bIsShowing) {
+			bIsShowing=false;
+			settingsLayout
+				.animate()
+				.alpha(0)
+				.setDuration(300)
+				.setListener(this);
+			onDismiss();
 		}
 	}
 	
@@ -389,7 +443,11 @@ public class SettingsPanel extends AnimatorListenerAdapter implements View.OnCli
 		if(bIsShowing) {
 			bIsShowing=false;
 			settingsLayout.setAlpha(0);
-			settingsLayout.setTranslationY(bottomPaddding);
+			if (isHorizontal) {
+				settingsLayout.setTranslationX(bottomPadding);
+			} else {
+				settingsLayout.setTranslationY(bottomPadding);
+			}
 			onAnimationEnd(null);
 			onDismiss();
 		}

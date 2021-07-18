@@ -115,7 +115,7 @@ public class BrowserHistory extends DialogFragment implements View.OnClickListen
 					dismiss();
 				} break;
 				case R.string.tianjiadoahang:{
-					a.getNavAdapter().InsertNavNode(viewHolder.url, viewHolder.title);
+//					a.getNavManager().InsertNavNode(viewHolder.url, viewHolder.title);
 				} break;
 				case R.string.fuzhilianjie:{
 					a.TextToClipboard(viewHolder.url, 0);
@@ -263,7 +263,7 @@ public class BrowserHistory extends DialogFragment implements View.OnClickListen
 				BrowserActivity a = (BrowserActivity) getActivity();
 				if (a!=null) {
 					ViewHolder viewHolder = (ViewHolder) Utils.getViewHolderInParents(v);
-					a.execBrowserGoTo(viewHolder.url);
+					a.execBrowserGoTo(viewHolder.url, true);
 				}
 				postDismiss(v);
 			} break;

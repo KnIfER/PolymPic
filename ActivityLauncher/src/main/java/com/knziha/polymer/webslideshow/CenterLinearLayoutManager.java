@@ -55,9 +55,13 @@ public class CenterLinearLayoutManager extends LinearLayoutManager {
 					* (MathUtils.lerp(500f, 85f, dst)) / GlobalOptions.densityDpi) / .3356);
 			CMN.Log("calculateTimeForDeceleration", bFromIdle, dx, ret);
 			if(bFromIdle || dx<300) {
+				if (!bFromIdle) {
+					return Math.max(600, ret);
+				}
 				return ret;
 			}
-			return super.calculateTimeForDeceleration(dx);
+			//return 1000;
+			return Math.max(220, Math.max(ret, super.calculateTimeForDeceleration(dx)));
 		}
 		
 		//滚动速度

@@ -17,6 +17,7 @@
 package com.knziha.polymer;
 
 import android.content.Context;
+import android.graphics.Canvas;
 import android.os.Build;
 import android.webkit.WebSettings;
 
@@ -77,7 +78,6 @@ public class AdvancedBrowserWebView extends WebViewImplExt {
 		
 		//settings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.TEXT_AUTOSIZING);
 		//settings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.SINGLE_COLUMN);
-		//settings.setSupportZoom(support);
 		
 		settings.setAllowUniversalAccessFromFileURLs(true);
 		
@@ -88,6 +88,10 @@ public class AdvancedBrowserWebView extends WebViewImplExt {
 		//settings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
 		
 		//setLayerType(View.LAYER_TYPE_HARDWARE, null);
+		
+		removeJavascriptInterface("searchBoxJavaBridge_");
+		removeJavascriptInterface("accessibility");
+		removeJavascriptInterface("accessibilityTraversal");
 	}
 	
 	///////// AdvancedNestScrollWebView START /////////
@@ -97,6 +101,4 @@ public class AdvancedBrowserWebView extends WebViewImplExt {
 	///////// AdvancedNestScrollWebView END /////////
 	
 	///////// AdvancedBrowserWebView Start /////////
-	
-	
 }

@@ -68,4 +68,15 @@ public class SubStringKey {
 		}
 		return text.substring(st, ed);
 	}
+	
+	public boolean isSameTopDomain(SubStringKey that) {
+		int top_st = text.lastIndexOf(".", ed);
+		top_st = text.lastIndexOf(".", top_st-1);
+		if (top_st==-1) top_st=st;
+		int top_st_other = that.text.lastIndexOf(".", that.ed);
+		top_st_other = that.text.lastIndexOf(".", top_st_other-1);
+		if (top_st_other==-1) top_st_other=that.st;
+		int len=ed-top_st;
+		return len==that.ed-top_st_other && text.regionMatches(top_st, that.text, top_st_other, len);
+	}
 }

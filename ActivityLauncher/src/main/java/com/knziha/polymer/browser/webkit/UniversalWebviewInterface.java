@@ -1,5 +1,6 @@
 package com.knziha.polymer.browser.webkit;
 
+import android.graphics.Canvas;
 import android.graphics.Picture;
 import android.os.Bundle;
 import android.os.Message;
@@ -109,6 +110,8 @@ public interface UniversalWebviewInterface {
 	int getContentHeight();
 	
 	void setPictureListener(WebView.PictureListener pictureListener);
+	
+	void drawToBitmap(Canvas canvas);
 	
 	//Object getTag();
 }

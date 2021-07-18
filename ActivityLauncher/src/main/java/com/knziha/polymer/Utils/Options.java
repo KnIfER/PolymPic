@@ -208,16 +208,19 @@ public class Options implements BookOptions {
 	
 	@Multiline(flagPos=0, debug=0) public boolean checkTabsOnPause(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=1) public boolean saveTabsOnPause(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
-	@Multiline(flagPos=2, debug=1) public boolean getDelayRemovingClosedTabs(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=2, debug=0) public boolean getDelayRemovingClosedTabs(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
 	
 	@Multiline(flagPos=3, shift=0) public boolean getUpdateUAOnClkLnk(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=4, shift=1) public boolean getUpdateUAOnPageSt(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=4, shift=1) public void setUpdateUAOnPageSt(boolean val){ SecondFlag=SecondFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=5, shift=1) public boolean getUpdateUAOnPageFn(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
-	@Multiline(flagPos=6, shift=1) public boolean getUpdateTextZoomOnPageSt(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=6, shift=1, debug=1) public boolean getUpdateTextZoomOnPageSt(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
 	
 	@Multiline(flagPos=7) public boolean getOnReloadIncreaseVisitCount(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=8, shift=1) public boolean getOnReloadUpdateHistory(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
+	
+	/**  升级webview.apk 后，有时加载网页会修改缩放值，导致读取值与实际值不符，且导致同一数值的更新无效。  |  Waste you battery due to Webview bugs after updating WebView.apk . */
+	@Multiline(flagPos=9, shift=1) public boolean getSetTextZoomAggressively(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
 	
 	
 	@Multiline(flagPos=19, shift=1) public static boolean getUseCustomCrashCatcher(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
@@ -240,6 +243,8 @@ public class Options implements BookOptions {
 	
 	@Multiline(flagPos=32, shift=1, debug=0) public boolean getUseStdViewAnimator(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
 	
+	@Multiline(flagPos=33, shift=1, debug=0) public boolean getNeedCntNavNodesToDel(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
+	
 	
 	
 	
@@ -249,6 +254,7 @@ public class Options implements BookOptions {
 	/** Need to Rearrange ViewPager's View order. */
 	@Multiline(flagPos=37, debug=0) public boolean getAnimateImageviewAlone(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
 
+	// 38 - 41
 	
 	@Multiline(flagPos=53, debug=1) public static boolean getRebuildToast(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=55, shift=1) public static boolean getToastRoundedCorner(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
@@ -330,6 +336,7 @@ public class Options implements BookOptions {
 		tv.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
 	}
 	
+	public final static int WebViewSettingsSource_SYSTEM=3;
 	public final static int WebViewSettingsSource_DOMAIN=6;
 	public final static int WebViewSettingsSource_TAB=7;
 	

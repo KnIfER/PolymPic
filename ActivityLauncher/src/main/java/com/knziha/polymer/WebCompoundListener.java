@@ -640,12 +640,13 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 				return;
 			}
 			//CMN.Log("OPC::", newProgress, Thread.currentThread().getId(), webviewImpl.getUrl());
-			if (!layout.PageStarted) {
-				String url = webviewImpl.getUrl();
-				if (!TextUtils.equals(url, layout.holder.url)) {
-					onPageStarted(view, url, null);
-				}
-				layout.postTime = 350;
+			if (!layout.PageStarted && layout.holder.version>1) {
+//				String url = webviewImpl.getUrl();
+//				if (!TextUtils.equals(url, layout.holder.url)) {
+//					CMN.Log("调用OPS……", url, layout.holder.url);
+//					onPageStarted(view, url, null);
+//				}
+//				layout.postTime = 350;
 			}
 			if(mWebView==a.currentWebView && layout.PageStarted) {
 				a.tabsManagerIsDirty =true;
@@ -655,10 +656,11 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 				if(lowerBound<=10) {
 					lowerBound=98;
 				}
+				//lowerBound = 1000;
 //				if(premature) {
 //					lowerBound=Math.min(80, lowerBound);
 //				}
-				if(newProgress>=lowerBound){
+				if(newProgress>=lowerBound) {
 					CMN.Log("newProgress>=98", newProgress, premature, lowerBound);
 					a.fadeOutProgressbar();
 					if(layout.PageStarted) {
@@ -723,6 +725,18 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	
 	public boolean onRenderProcessGone(WebView view, RenderProcessGoneDetail detail){
 		showT("渲染进程崩溃！", "刷新", "reload", false);
+		UniversalWebviewInterface webviewImpl = (UniversalWebviewInterface) (view instanceof UniversalWebviewInterface?view:getTag());
+//		View mWebView = (View) webviewImpl;
+//		WebFrameLayout layout = (WebFrameLayout) mWebView.getParent();
+//		webviewImpl.reload();
+//		layout.holder.version++;
+//		layout.postDelayed(new Runnable() {
+//			@Override
+//			public void run() {
+//				layout.saveIfNeeded();
+//			}
+//		}, 1000);
+		CMN.Log("渲染进程崩溃！", webviewImpl.getUrl());
 		return true;
 	}
 	
@@ -737,11 +751,12 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 			return;
 		}
 		layout.queryDomain(url, false);
+		
 		if (layout.bNeedCheckUA && a.opt.getUpdateUAOnPageSt()) {
 			// 在此处更新UA或导致页面往复重载以及冻结，慎之 | Dangerous to Update UA Here.
 			layout.updateUserAgentString();
 		}
-		if (layout.bNeedCheckTextZoom>0||true) {
+		if (layout.bNeedCheckTextZoom>0 || a.opt.getSetTextZoomAggressively()) {
 			// 若过早修改字体缩放，则加载前的页面也会收到影响。 | For Per-Website Font scale Updating.
 			layout.setTextZoom();
 		}
@@ -1006,6 +1021,8 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	
 	public static byte[] markjsBytesArr = null;
 	
+	public static byte[] erudajsBytesArr = null;
+	
 	@Multiline(file="ActivityLauncher\\src\\main\\assets\\mark.js")
 	public static int markjsBytesLen = 0;
 	
@@ -1068,6 +1085,8 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 				layout.updateUserAgentString();
 			}
 			
+			//layout.setTextZoom();
+			
 //			boolean bEnableJavaScript = mWebView.getSettings().getJavaScriptEnabled();
 //
 //			if(!bEnableJavaScript)
@@ -1078,6 +1097,10 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 			
 			/* 原天道契 */
 			webviewImpl.evaluateJavascript(PRI, null);
+			
+			//webviewImpl.evaluateJavascript("polyme.loadJs('//cdn.jsdelivr.net/npm/eruda',()=>{eruda.init();})", null);
+			//ensureErudaJS(a);
+			//webviewImpl.evaluateJavascript("polyme.loadJs('https://erdo.js',()=>{erdo.init();})", null);
 			
 			layout.frcWrp = false;
 			long flag = layout.getDelegateFlag(TextSettings, false);
@@ -1181,6 +1204,19 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		}
 	}
 	
+	public void ensureErudaJS(Context context) {
+		//WebCompoundListener.markjsBytesArr = new byte[WebCompoundListener.markjsBytesLen];
+		if(erudajsBytesArr==null) {
+			try {
+				InputStream input = context.getAssets().open("erdo.js");
+				int markjsBytesLen = input.available();
+				erudajsBytesArr = new byte[markjsBytesLen];
+				input.read(erudajsBytesArr);
+				input.close();
+			} catch (IOException e) { CMN.Log(e);}
+		}
+	}
+	
 	@Override
 	public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
 		if(handler!=null) {
@@ -1192,7 +1228,6 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	
 	public boolean shouldOverrideUrlLoading(WebView view, String url)
 	{
-		CMN.Log("SOUL::", url, Thread.currentThread().getId());
 		boolean b1 = view instanceof UniversalWebviewInterface;
 		UniversalWebviewInterface webviewImpl = (UniversalWebviewInterface) (b1?view:getTag());
 		View mWebView = (View) webviewImpl;
@@ -1200,6 +1235,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		if(!b1) {
 			unlock();
 		}
+		CMN.Log("SOUL::", url, Thread.currentThread().getId(), webviewImpl.getProgress());
 		if(layout==null||layout.implView!=mWebView) {
 			return false;
 		}
@@ -1230,26 +1266,44 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 			}
 			return true;
 		}
-		if(mWebView==a.currentWebView && layout.holder.getLuxury()) {
-			long now = CMN.now();
-			if(now>0&&now-a.supressingNxtLux<350) {
-				CMN.Log("supressingNxtLux", url);
-				//layout.setNavStacksDirty();
-				//return false;
-			} else {
-				a.supressingNxtLux = now;
-				if(!layout.hasValidUrl()) {
-					layout.clearHistroyRequested=true;
-				} else {
-					//a.LuxuriouslyLoadUrl(layout, url);
+		if(mWebView==a.currentWebView) {
+			if(WebOptions.getAlwaysOpenInNewTab(a.getMergedFlag()) && layout.holder.version>=1) {
+				if(a.checkAutoNewTabAllowed()) {
+					a.newTab(url, false, true, -1);
+					return true;
+				} else if(webviewImpl.getProgress()==100) {
+					// when Auto-New-Tab is not Allowed due to frequency limitation
+					// , dont intercept the url loading if its already in loading state
+					// (progress!=100).
 					return true;
 				}
 			}
+			if (layout.holder.getLuxury()) {
+				long now = CMN.now();
+				if(now>0&&now-a.supressingNxtLux<350) {
+					CMN.Log("supressingNxtLux", url);
+					//layout.setNavStacksDirty();
+					//return false;
+				} else {
+					a.supressingNxtLux = now;
+					if(!layout.hasValidUrl()) {
+						layout.clearHistroyRequested=true;
+					} else {
+						//a.LuxuriouslyLoadUrl(layout, url);
+						return true;
+					}
+				}
+			}
 		}
-		
+//		if (layout.getDelegateFlagIndex(BackendSettings)==WebViewSettingsSource_DOMAIN && webviewImpl.getProgress()<100) {
+//			CMN.Log("你不行你不行");
+//			// 防止一侧设置PC模式后，www <-> m 反复重载
+//			return true;
+//		}
 		// 此处设置UA，可能导致旧的页面重载而略过新的页面加载。
-		layout.queryDomain(url, a.opt.getUpdateUAOnClkLnk());
+		if(layout.queryDomain(url, a.opt.getUpdateUAOnClkLnk())) layout.bRecentNewDomainLnk++;
 		layout.setNavStacksDirty();
+		//webviewImpl.loadUrl(url); return true;
 		return false;
 	}
 	
@@ -1426,6 +1480,10 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 		if(url.startsWith("https://mark.js")&&markjsBytesArr!=null) {
 			CMN.Log("加载中", new String(markjsBytesArr, 0, 200));
 			return new WebResourceResponse("text/javascript", "utf8", new ByteArrayInputStream(markjsBytesArr));
+		}
+		if(url.contains("erdo.js")) {
+			CMN.Log("加载erdo中", new String(erudajsBytesArr, 0, 200));
+			return new WebResourceResponse("text/javascript", "utf8", new ByteArrayInputStream(erudajsBytesArr));
 		}
 		return null;
 	}

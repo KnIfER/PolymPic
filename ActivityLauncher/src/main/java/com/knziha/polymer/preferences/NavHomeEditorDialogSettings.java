@@ -13,7 +13,7 @@ import com.knziha.polymer.Utils.Options;
 import com.knziha.polymer.widgets.NavigationHomeAdapter;
 
 public class NavHomeEditorDialogSettings extends SettingsPanel {
-	final NavigationHomeAdapter navigationHomeAdapter;
+	public NavigationHomeAdapter navigationHomeAdapter;
 	public NavHomeEditorDialogSettings(Context context, ViewGroup root, int bottomPaddding, Options opt, NavigationHomeAdapter navigationHomeAdapter) {
 		super(context, root, bottomPaddding, opt, (BrowserActivity) context);
 		this.navigationHomeAdapter = navigationHomeAdapter;
@@ -27,7 +27,7 @@ public class NavHomeEditorDialogSettings extends SettingsPanel {
 		if (vg!=null) {
 			FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) settingsLayout.getLayoutParams();
 			params.width = -1;
-			params.height = vg.getHeight()-bottomPaddding;
+			params.height = vg.getHeight()- bottomPadding;
 			//params.gravity = Gravity.BOTTOM|Gravity.CENTER_HORIZONTAL;
 			//params.bottomMargin = bottomPaddding;
 			//params.height = -1;
@@ -35,8 +35,8 @@ public class NavHomeEditorDialogSettings extends SettingsPanel {
 	}
 	
 	@Override
-	public boolean toggle(ViewGroup root) {
-		super.toggle(root);
+	public boolean toggle(ViewGroup root, SettingsPanel parentToDismiss) {
+		super.toggle(root, parentToDismiss);
 		if (bIsShowing) {
 			syncHeights();
 		}
@@ -75,7 +75,7 @@ public class NavHomeEditorDialogSettings extends SettingsPanel {
 	protected void init(Context context, ViewGroup root) {
 		super.UITexts = UITexts;
 		super.UITags = UITags;
-		super.shouldRemoveAfterDismiss = false;
+		super.bShouldRemoveAfterDismiss = false;
 		super.init(context, root);
 	}
 }

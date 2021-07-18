@@ -24,9 +24,4 @@ public class CursorAdapter<T extends CursorReader> implements PagingAdapterInter
 		reader.ReadCursor(cursor, -1, 0);
 		return reader;
 	}
-	
-	@Override
-	public void startPaging(long resume_to_sort_number, int i) {
-	
-	}
 }

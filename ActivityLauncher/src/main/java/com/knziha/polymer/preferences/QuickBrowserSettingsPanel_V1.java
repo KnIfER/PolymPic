@@ -9,9 +9,9 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 
+import com.knziha.polymer.BrowserActivity;
 import com.knziha.polymer.R;
 import com.knziha.polymer.Utils.CMN;
-import com.knziha.polymer.Utils.Options;
 import com.knziha.polymer.widgets.Utils;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -22,8 +22,8 @@ public class QuickBrowserSettingsPanel_V1 extends QuickBrowserSettingsPanel{
 	View[] Panels;
 	View bottomPadding;
 	BaseAdapter adapter;
-	public QuickBrowserSettingsPanel_V1(Context context, ViewGroup root, int bottomPaddding, Options opt) {
-		super(context, root, bottomPaddding, opt);
+	public QuickBrowserSettingsPanel_V1(BrowserActivity a) {
+		super(a);
 	}
 	
 	@Override

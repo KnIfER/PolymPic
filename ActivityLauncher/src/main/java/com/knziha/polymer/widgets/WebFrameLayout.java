@@ -85,6 +85,7 @@ import static com.knziha.polymer.database.LexicalDBHelper.TABLE_ANNOTS_TEXT;
 import static com.knziha.polymer.webstorage.WebOptions.BackendSettings;
 import static com.knziha.polymer.webstorage.WebOptions.ImmersiveSettings;
 import static com.knziha.polymer.webstorage.WebOptions.LockSettings;
+import static com.knziha.polymer.webstorage.WebOptions.PC_MODE_MASK;
 import static com.knziha.polymer.webstorage.WebOptions.StorageSettings;
 import static com.knziha.polymer.webstorage.WebOptions.TextSettings;
 import static com.knziha.polymer.widgets.Utils.DummyBMRef;
@@ -108,7 +109,7 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 	public boolean hasPrune;
 	public List<Pair<Pattern, Pair<String, String>>> modifiers;
 	
-	public static String android_ua = "Mozilla/5.0 (Linux; Android " + Build.VERSION.RELEASE + "; " + Build.MODEL + ") AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Mobile Safari/537.36 OPR/58.2.2878.53403";
+	public static String android_ua = "Mozilla/5.0 (Linux; Android " + Build.VERSION.RELEASE + "; " + Build.MODEL + "; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/91.0.4072.134 Mobile Safari/537.36";
 	public static String default_ua = null;
 	
 	private final ViewConfiguration viewConfig;
@@ -128,7 +129,7 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 	
 	public BrowserActivity.TabHolder holder;
 	public UniversalWebviewInterface mWebView;
-	public View implView;
+	public View implView = this;
 	public int offsetTopAndBottom;
 	public int legalPad;
 	public int legalPart;
@@ -150,6 +151,8 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 	private NestedScrollingChildHelper mChildHelper;
 	
 	public AppBarLayout appBarLayout;
+	
+	public final ArrayList<Object> focusFucker = new ArrayList<>();
 	
 	public WeakReference<Bitmap> bm = Utils.DummyBMRef;
 	public Canvas canvas;
@@ -213,7 +216,9 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 	private boolean hideBothBars = true;
 	private boolean hideNoBars = true;
 	public boolean bNeedCheckUA;
+	
 	public int bNeedCheckTextZoom;
+	public int bRecentNewDomainLnk;
 	
 	public WebFrameLayout(@NonNull Context context, BrowserActivity.TabHolder holder) {
 		super(context);
@@ -554,11 +559,11 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 		final long now = System.currentTimeMillis();
 		final MotionEvent motion = MotionEvent.obtain(now, now, MotionEvent.ACTION_DOWN,
 				0.0f, 0.0f, 0);
-		dispatchTouchEvent(motion);
+		implView.dispatchTouchEvent(motion);
 		WebCompoundListener.CustomViewHideTime = now;
 		motion.setAction(MotionEvent.ACTION_MOVE);
 		motion.setLocation(100, 0);
-		dispatchTouchEvent(motion);
+		implView.dispatchTouchEvent(motion);
 		motion.recycle();
 	}
 	
@@ -566,7 +571,7 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 	public void stopScrollEffect() {
 		final MotionEvent motion = MotionEvent.obtain(0, 0, MotionEvent.ACTION_UP,
 				0.0f, 0.0f, 0);
-		dispatchTouchEvent(motion);
+		implView.dispatchTouchEvent(motion);
 		motion.recycle();
 	}
 	
@@ -754,11 +759,16 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 		SettingsStamp |= flag;
 	}
 	
+	// todo battery optimise
 	public void setTextZoom() {
 		int ts = WebOptions.getTextZoom(getDelegateFlag(TextSettings, false));
-		CMN.Log("setTextZoom 1::", ts=Math.min(500, Math.max(15, ts)));
 		WebSettings settings = mWebView.getSettings();
-		if (settings.getTextZoom()!=ts) {
+		CMN.Log("setTextZoom 1::", bRecentNewDomainLnk, ts=Math.min(500, Math.max(15, ts)), settings.getTextZoom());
+		if (settings.getTextZoom()!=ts || bRecentNewDomainLnk>0 && activity.opt.getSetTextZoomAggressively())
+		{
+			if(bRecentNewDomainLnk>0 && activity.opt.getSetTextZoomAggressively()) {
+				settings.setTextZoom(ts-1);
+			}
 			settings.setTextZoom(ts);
 		}
 		bNeedCheckTextZoom = 0;
@@ -1007,11 +1017,12 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 	// 设置变化、SOUL、刷新、OPS、加载网页。
 	// 搜索引擎列表，导航页，需要域数据库记录的图标。
 	// 常规访问，updateua (loadurl、刷新、onpagestart之时) 需要域数据库记录的配置信息。
-	public void queryDomain(String url, boolean updateUa) {
+	public boolean queryDomain(String url, boolean updateUa) {
 		if (!domain.matches(url))
 		{
 			SubStringKey domainKey = SubStringKey.new_hostKey(url);
 			CMN.Log("queryDomain::", CMN.tid(), domainKey, url);
+			SubStringKey last_domain = domainInfo.domainKey;
 			long flag = domainInfo.f1;
 			DomainInfo domainInfo = domainInfoMap.get(domainKey);
 			if (domainInfo!=null) {
@@ -1033,12 +1044,22 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 				}
 			}
 			if (this.domainInfo.f1!=flag) {
+				if ((this.domainInfo.f1&PC_MODE_MASK)!=(flag&PC_MODE_MASK) && mWebView.getProgress()<100) {
+					// 防止一侧设置PC模式后，www <-> m 反复重载 | avoid circular auto redirection for the same 'domain'
+					if (last_domain.isSameTopDomain(this.domain)) {
+						//CMN.Log("复制同顶级域名的用户设置：：");
+						this.domainInfo.f1 &= ~PC_MODE_MASK;
+						this.domainInfo.f1 |= flag&PC_MODE_MASK;
+					}
+				}
 				checkSettings(true, updateUa); // 域名变化
 			}
 			if (activity!=null && activity.settingsPanel!=null) {
 				activity.settingsPanel.refresh();
 			}
+			return true;
 		}
+		return false;
 	}
 	
 	public boolean updateUserAgentString() {
@@ -1048,9 +1069,11 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 		String target_ua;
 		if(pcMode) {
 			target_ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36";
+			target_ua = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36";
 		} else {
 			//CMN.Log("android_ua", android_ua);
 			target_ua = android_ua;
+			//target_ua = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36";
 			//targetUa = default_ua;
 		}
 		targetUa = target_ua;
@@ -1059,6 +1082,7 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 		if(!TextUtils.equals(settings.getUserAgentString(), target_ua)) {
 			CMN.Log("测试 ua 设置处……", CMN.tid(), target_ua);
 			settings.setUserAgentString(target_ua);
+			//mWebView.stopLoading();
 			return true;
 		}
 		return false;
@@ -1220,10 +1244,12 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 	}
 	
 	private void doCaptureBitmap(Bitmap bitmap) {
-		CMN.Log("recaptureBitmap...", holder.id, holder.version);
 		holder.lastCaptureVer = holder.version;
 		int w = implView.getWidth();
 		int h = implView.getHeight();
+		//w = getMeasuredWidth();
+		//h = getMeasuredHeight()-getPaddingTop()-getPaddingBottom();
+		CMN.Log("recaptureBitmap...", w, h, holder.id, holder.version);
 		if(w>0) {
 			float factor = 1;
 			if(w>minW) {
@@ -1234,6 +1260,7 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 			int needRam = targetW*targetH*2;
 			Bitmap bmItem = bm.get();
 			boolean reset = bmItem==null||!bmItem.isMutable()||bmItem.getAllocationByteCount()<needRam;
+			reset |= bmItem==null||bmItem.getWidth()!=targetW||bmItem.getHeight()!=targetH;
 			if(reset) {
 				if(bmItem!=null) {
 					//CMN.Log("bmItem reset");
@@ -1251,13 +1278,14 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 			} else if(reset) {
 				canvas.setBitmap(bmItem);
 			}
+			//canvas = new Canvas(bmItem);
 			canvas.setMatrix(Utils.IDENTITYXIRTAM);
 			long st = CMN.now();
 			
 			if(bitmap==null) {
 				canvas.scale(factor, factor);
 				canvas.translate(-implView.getScrollX(), -implView.getScrollY());
-				implView.draw(canvas);
+				mWebView.drawToBitmap(canvas);
 				bm = new WeakReference<>(bmItem);
 			} else {
 				canvas.drawBitmap(bitmap, null, new RectF(0,0, bmItem.getWidth(), bmItem.getHeight()), null);
@@ -1332,8 +1360,22 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 		return mWebView.getTitle();
 	}
 	
-	public int getImplHeight() {
-		return implView.getHeight();
+	public int getViewHeight() {
+		int ret = implView.getHeight();
+		if(ret==0) {
+			ret = activity.UIData.webcoord.getHeight()-getPaddingBottom()-getPaddingTop();
+		}
+		//CMN.Log("getViewHeight::", holder.title);
+		//CMN.Log("getViewHeight::", activity.UIData.webcoord.getHeight(), getPaddingBottom(), getPaddingTop());
+		return ret==0?activity.dm.heightPixels:ret;
+	}
+	
+	public int getViewWidth() {
+		int ret = implView.getWidth();
+		if(ret==0) {
+			ret = activity.UIData.webcoord.getWidth();
+		}
+		return ret==0?activity.dm.widthPixels:ret;
 	}
 	
 	public void stopLoading() {

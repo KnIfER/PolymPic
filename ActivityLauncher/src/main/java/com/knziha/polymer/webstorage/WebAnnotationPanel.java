@@ -4,30 +4,18 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
-import android.graphics.drawable.Drawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.PopupWindow;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.RequestBuilder;
-import com.bumptech.glide.load.DataSource;
-import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.bumptech.glide.load.engine.GlideException;
-import com.bumptech.glide.request.RequestListener;
-import com.bumptech.glide.request.target.Target;
 import com.knziha.polymer.BrowserActivity;
+import com.knziha.polymer.R;
 import com.knziha.polymer.Utils.CMN;
-import com.knziha.polymer.Utils.Options;
-import com.knziha.polymer.browser.AppIconCover.AppIconCover;
-import com.knziha.polymer.browser.AppIconCover.AppLoadableBean;
 import com.knziha.polymer.database.LexicalDBHelper;
 import com.knziha.polymer.databinding.HistoryItemBinding;
 import com.knziha.polymer.databinding.WebAnnotationTextBinding;
@@ -37,21 +25,22 @@ import com.knziha.polymer.paging.PagingAdapterInterface;
 import com.knziha.polymer.paging.PagingCursorAdapter;
 import com.knziha.polymer.paging.PagingRecyclerView;
 import com.knziha.polymer.paging.SimpleClassConstructor;
-import com.knziha.polymer.preferences.SettingsPanel;
+import com.knziha.polymer.webslideshow.ViewUtils;
 import com.knziha.polymer.widgets.Utils;
 
-import java.io.IOException;
 import java.util.Date;
 
-import static com.knziha.polymer.webslideshow.ImageViewTarget.FuckGlideDrawable;
 import static com.knziha.polymer.widgets.Utils.EmptyCursor;
 
-public class WebAnnotationPanel extends SettingsPanel {
-	private BrowserActivity a;
-	WebAnnotationTextBinding UIData;
+public class WebAnnotationPanel extends BrowserAppPanel {
+	static long last_visible_entry_time = 0;
 	
+	WebAnnotationTextBinding UIData;
 	PagingAdapterInterface<WebAnnotationCursorReader> dataAdapter;
 	ImageView pageAsyncLoader;
+	
+	PagingRecyclerView mAnnotsListView;
+	Date date = new Date();
 	
 	public static class WebAnnotationCursorReader implements CursorReader {
 		long row_id;
@@ -80,61 +69,40 @@ public class WebAnnotationPanel extends SettingsPanel {
 		}
 	}
 	
-	public WebAnnotationPanel(Context context, ViewGroup root, int bottomPaddding, Options opt) {
-		super(context, root, bottomPaddding, opt, (BrowserActivity) context);
+	public WebAnnotationPanel(BrowserActivity a) {
+		super(a);
 	}
 	
-	static class ViewHolder extends RecyclerView.ViewHolder {
-		final HistoryItemBinding itemData;
-		Object tag;
-		public ViewHolder(HistoryItemBinding itemData) {
-			super(itemData.root);
-			this.itemData = itemData;
-			itemData.root.setTag(this);
-		}
-	}
-	
-	Date date = new Date();
-	
-	protected class AppDataTimeRenownedBaseAdapter extends RecyclerView.Adapter<ViewHolder> {
+	protected class AppDataTimeRenownedBaseAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolder<HistoryItemBinding>> {
 		final LayoutInflater inflater;
 		AppDataTimeRenownedBaseAdapter(LayoutInflater inflater) {
 			this.inflater = inflater;
-			
 		}
 		@NonNull @Override
-		public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-			ViewHolder ret = new ViewHolder(HistoryItemBinding.inflate(inflater, parent, false));
-			ret.itemData.title.setSingleLine();
-			ret.itemData.icon.setOnClickListener(new View.OnClickListener() {
-				@Override
-				public void onClick(View v) {
-					ViewHolder vh = (ViewHolder) Utils.getViewHolderInParents(v);
-					WebAnnotationCursorReader reader = (WebAnnotationCursorReader) vh.tag;
-					if (reader!=null) {
-						a.NavigateToTab(reader.tab_id);
-						//a.showT(reader.tab_id);
-					}
-				}
-			});
+		public ViewUtils.ViewDataHolder<HistoryItemBinding> onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+			ViewUtils.ViewDataHolder<HistoryItemBinding> ret = new ViewUtils.ViewDataHolder<>(HistoryItemBinding.inflate(inflater, parent, false));
+			ret.data.title.setSingleLine();
+			ret.data.icon.setOnClickListener(WebAnnotationPanel.this);
 			return ret;
 		}
 		
 		@Override
-		public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+		public void onBindViewHolder(@NonNull ViewUtils.ViewDataHolder<HistoryItemBinding> holder, int position) {
 			WebAnnotationCursorReader reader = dataAdapter.getReaderAt(position);
 			holder.tag = reader;
+			HistoryItemBinding viewData = holder.data;
+			viewData.title.setTextSize(16.5f);
 			if (reader==null) {
-				holder.itemData.title.setText("加载中 ……");
-				holder.itemData.icon.setVisibility(View.INVISIBLE);
+				viewData.title.setText("加载中 ……");
+				viewData.icon.setVisibility(View.INVISIBLE);
 			} else {
-				holder.itemData.title.setText(reader.title);
+				viewData.title.setText(reader.title);
 				if (reader.time_text == null) {
 					date.setTime(reader.sort_number);
 					reader.time_text = date.toLocaleString();
 				}
-				holder.itemData.subtitle.setText(reader.time_text);
-				holder.itemData.icon.setVisibility(reader.tab_id>0?View.VISIBLE:View.INVISIBLE);
+				viewData.subtitle.setText(reader.time_text);
+				viewData.icon.setVisibility(reader.tab_id>0?View.VISIBLE:View.INVISIBLE);
 			}
 		}
 		
@@ -145,116 +113,95 @@ public class WebAnnotationPanel extends SettingsPanel {
 	}
 	
 	@Override
-	protected void showPop() {
-		if (pop==null) {
-			pop = new PopupWindow(a);
-			pop.setContentView(settingsLayout);
-		}
-		a.embedPopInCoordinatorLayout(pop);
-	}
-	
-	RecyclerView.Adapter ada;
-	PagingRecyclerView recyclerView;
-	
-	boolean init = false;
-	
-	
-	@Override
 	protected void init(Context context, ViewGroup root) {
 		dataAdapter = new CursorAdapter<>(EmptyCursor, new WebAnnotationCursorReader());
-		mBackgroundColor = Color.WHITE;
 		a=(BrowserActivity) context;
 		showInPopWindow = true;
-		shouldWrapInScrollView = false;
-		UIData = WebAnnotationTextBinding.inflate(a.getLayoutInflater());
+		showPopOnAppbar = true;
 		
+		UIData = WebAnnotationTextBinding.inflate(a.getLayoutInflater());
+		settingsLayout = (ViewGroup) UIData.getRoot();
 		pageAsyncLoader = new ImageView(a);
 		
-		recyclerView = UIData.annotsRv;
+		//settingsLayout.setLayerType(View.LAYER_TYPE_HARDWARE, null);
 		
-		Utils.replaceView(recyclerView, UIData.annotsRv);
+		mBackgroundColor = Color.WHITE;
 		
-		LinearLayoutManager ll;
-		recyclerView.setLayoutManager(ll = new LinearLayoutManager(a.getLayoutInflater().getContext()));
+		PagingRecyclerView recyclerView = UIData.annotsRv;
+		recyclerView.setNestedScrollingEnabled(false);
+		recyclerView.setLayoutManager(new LinearLayoutManager(a.getLayoutInflater().getContext()));
 		recyclerView.setItemAnimator(null);
 		recyclerView.setRecycledViewPool(Utils.MaxRecyclerPool(35));
 		recyclerView.setHasFixedSize(true);
-		ada = new AppDataTimeRenownedBaseAdapter(a.getLayoutInflater());
+		AppDataTimeRenownedBaseAdapter ada = new AppDataTimeRenownedBaseAdapter(a.getLayoutInflater());
 		ada.setHasStableIds(false);
 		recyclerView.setAdapter(ada);
+		recyclerView.setRecycledViewPool(Utils.MaxRecyclerPool(35));
+		this.mAnnotsListView = recyclerView;
 		
 		SQLiteDatabase db = LexicalDBHelper.getInstancedDb();
 		
-		if (false) {
-			Cursor cursor = db.rawQuery("SELECT id,creation_time,text,tab_id FROM annott ORDER BY creation_time desc", null);
-			CMN.Log("查询个数::"+cursor.getCount());
-			dataAdapter = new CursorAdapter<>(cursor, new WebAnnotationCursorReader());
-			ada.notifyDataSetChanged();
-		} else {
-			PagingCursorAdapter<WebAnnotationCursorReader> dataAdapter = new PagingCursorAdapter<>(db
-					, new SimpleClassConstructor<>(WebAnnotationCursorReader.class)
-					, length -> new WebAnnotationCursorReader[length]);
-			
-			if(!init) {
-				RequestBuilder<Drawable> glide = Glide.with(a).load(new AppIconCover(new AppLoadableBean() {
-					@Override
-					public Drawable load() throws IOException {
-						//try { Thread.sleep(200); } catch (InterruptedException ignored) { }
-						dataAdapter.startPaging(last_visible_entry_time, 20);
-						return FuckGlideDrawable;
-					}
-				}))
-				.override(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL)
-				.skipMemoryCache(true)
-				.diskCacheStrategy(DiskCacheStrategy.NONE)
-				.listener(new RequestListener<Drawable>() {
-					@Override
-					public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
-						//a.showT("onLoadFailed！");
-						CMN.Log(e);
-						return false;
-					}
-					
-					@Override
-					public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
-						//a.showT("onResourceReady！");
-						ada.notifyDataSetChanged();
-						return true;
-					}
-				});
-				
-				dataAdapter.bindTo(recyclerView)
-						//.setAsyncLoader(glide, pageAsyncLoader)
-						.sortBy("annott", "creation_time", true, "text,tab_id");
-				
-				glide.into(pageAsyncLoader);
-
+		if (db!=null) {
+			boolean bSingleThreadLoading = false;
+			if (bSingleThreadLoading) {
+				Cursor cursor = db.rawQuery("SELECT id,creation_time,text,tab_id FROM annott ORDER BY creation_time desc", null);
+				CMN.Log("查询个数::"+cursor.getCount());
+				dataAdapter = new CursorAdapter<>(cursor, new WebAnnotationCursorReader());
+				ada.notifyDataSetChanged();
+			} else {
+				PagingCursorAdapter<WebAnnotationCursorReader> dataAdapter = new PagingCursorAdapter<>(db
+						, new SimpleClassConstructor<>(WebAnnotationCursorReader.class)
+						, WebAnnotationCursorReader[]::new);
 				this.dataAdapter = dataAdapter;
-				init = true;
+				dataAdapter.bindTo(recyclerView)
+						.setAsyncLoader(a, pageAsyncLoader)
+						.sortBy(LexicalDBHelper.TABLE_ANNOTS_TEXT, LexicalDBHelper.FIELD_CREATE_TIME, true, "text,tab_id")
+						.startPaging(last_visible_entry_time, 20, 15);
 			}
 		}
-		
-		settingsLayout = (ViewGroup) UIData.getRoot();
 	}
 	
 	@Override
-	public boolean toggle(ViewGroup root) {
-		boolean ret = super.toggle(root);
-		return ret;
+	public void onClick(View v) {
+		if (v.getId()==R.id.root) {
+			ViewUtils.ViewDataHolder<HistoryItemBinding> vh = (ViewUtils.ViewDataHolder<HistoryItemBinding>) Utils.getViewHolderInParents(v);
+			WebAnnotationCursorReader reader = (WebAnnotationCursorReader) vh.tag;
+			if (reader!=null) {
+				a.NavigateToTab(reader.tab_id);
+				//a.showT(reader.tab_id);
+			}
+		}
 	}
 	
-	static long last_visible_entry_time = 0;
+//	@Override
+//	public boolean toggle(ViewGroup root) {
+//		boolean ret = super.toggle(root);
+////		if(!ret) {
+////			a.currentViewImpl.setVisibility(View.VISIBLE);
+////		}
+//		return ret;
+//	}
 	
 	@Override
 	protected void onDismiss() {
 		super.onDismiss();
-		a.toggleMenuGrid(false);
-		View ca = recyclerView.getChildAt(0);
+		View ca = mAnnotsListView.getChildAt(0);
 		if (ca!=null) {
-			ViewHolder holder = (ViewHolder) ca.getTag();
+			ViewUtils.ViewDataHolder<HistoryItemBinding> holder = (ViewUtils.ViewDataHolder<HistoryItemBinding>) ca.getTag();
 			WebAnnotationCursorReader reader = (WebAnnotationCursorReader) holder.tag;
 			last_visible_entry_time = reader.sort_number;
 //			a.showT(new Date(last_visible_entry_time).toLocaleString());
+		}
+	}
+	
+	@Override
+	protected void decorateInterceptorListener(boolean install) {
+		if (install) {
+			a.UIData.browserWidget7.setImageResource(R.drawable.chevron_recess_ic_back);
+			a.UIData.browserWidget8.setImageResource(R.drawable.ic_baseline_book_24);
+		} else {
+			a.UIData.browserWidget7.setImageResource(R.drawable.chevron_recess);
+			a.UIData.browserWidget8.setImageResource(R.drawable.chevron_forward);
 		}
 	}
 }

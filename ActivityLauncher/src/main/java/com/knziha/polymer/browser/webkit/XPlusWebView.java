@@ -1,6 +1,7 @@
 package com.knziha.polymer.browser.webkit;
 
 import android.content.Context;
+import android.graphics.Canvas;
 import android.graphics.Picture;
 import android.graphics.Rect;
 import android.net.Uri;
@@ -307,7 +308,12 @@ public class XPlusWebView extends WebView implements UniversalWebviewInterface {
 			}
 		});
 	}
-
+	
+	@Override
+	public void drawToBitmap(Canvas canvas) {
+		super.onDraw(canvas);
+	}
+	
 	RecyclerView.OnScrollChangedListener mOnScrollChangeListener;
 	
 	@Override

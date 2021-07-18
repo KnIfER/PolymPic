@@ -7,41 +7,41 @@ import android.text.TextPaint;
 import android.util.DisplayMetrics;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.PopupWindow;
 
 import androidx.appcompat.app.GlobalOptions;
 
 import com.knziha.polymer.BrowserActivity;
 import com.knziha.polymer.R;
 import com.knziha.polymer.Utils.CMN;
-import com.knziha.polymer.Utils.Options;
+import com.knziha.polymer.webstorage.BrowserAppPanel;
 import com.knziha.polymer.widgets.DescriptiveImageView;
 import com.knziha.polymer.widgets.ScrollViewTransparent;
 import com.knziha.polymer.widgets.Utils;
 
-public class MenuGrid extends SettingsPanel{
+public class MenuGrid extends BrowserAppPanel {
 	BrowserActivity a;
 	DisplayMetrics dm;
 	
 	TextPaint menu_grid_painter;
 	private ScrollViewTransparent menu_grid;
-	private AnimatorListenerAdapter menu_grid_animlis;
 	private boolean MenuClicked;
+	private int lastWidth;
+	private int lastHeight;
 	
-	public MenuGrid(Context context, ViewGroup root, int bottomPaddding, Options opt) {
-		super(context, root, bottomPaddding, opt, (BrowserActivity) context);
+	public MenuGrid(BrowserActivity a) {
+		super(a);
 	}
 	
 	@Override
 	protected void init(Context context, ViewGroup root) {
 		a=(BrowserActivity) context;
-		shouldWrapInScrollView = false;
+		showPopOnAppbar = false;
+		
 		showInPopWindow = false;
 		mBackgroundColor = 0x3E8F8F8F; // 0x3E8F8F8F
 		dm = a.dm;
 		
 		menu_grid_painter = CMN.mTextPainter;
-		
 		
 		int TargetTransY = -a.UIData.bottombar2.getHeight();
 		int legalMenuTransY = (int) (GlobalOptions.density*55);
@@ -49,20 +49,11 @@ public class MenuGrid extends SettingsPanel{
 		// init_menu_layout
 		// todo avoid
 		a.UIData.bottombar2.setOnClickListener(new Utils.DummyOnClick());
-		menu_grid_animlis = new AnimatorListenerAdapter() {
-			@Override
-			public void onAnimationEnd(Animator animation) {
-			if(!bIsShowing) {
-				menu_grid.setVisibility(View.GONE);
-//					if (opt.getTransitListBG()) {
-//						((View)menu_grid.getParent()).findViewById(R.id.menu_grid_shadow).setVisibility(View.GONE);
-//					}
-			}
-			}
-		};
 		//settingsLayout = (ViewGroup) a.UIData.menuGrid.getViewStub().inflate();
 		settingsLayout = (ViewGroup) a.inflater.inflate(R.layout.menu_grid, root, false);
-		menu_grid= (ScrollViewTransparent) settingsLayout.findViewById(R.id.menu_grid);
+		settingsLayout.setOnClickListener(this);
+		
+		menu_grid= settingsLayout.findViewById(R.id.menu_grid);
 		ViewGroup svp = (ViewGroup) menu_grid.getChildAt(0);
 		menu_grid.setTranslationY(TargetTransY + legalMenuTransY);
 		for (int i = 0; i < 2; i++) {
@@ -75,26 +66,41 @@ public class MenuGrid extends SettingsPanel{
 		}
 		
 		refreshMenuGridSize(true);
-		
-		if (!showInPopWindow) {
-			Utils.embedViewInCoordinatorLayout(settingsLayout);
-		}
 	}
 	
 	@Override
-	protected void showPop() {
-		if (pop==null) {
-			pop = new PopupWindow(a);
-			pop.setContentView(settingsLayout);
-		}
-		a.embedPopInCoordinatorLayout(pop);
-	}
-	
-	@Override
-	public boolean toggle(ViewGroup root) {
-		boolean ret = super.toggle(root);
+	public boolean toggle(ViewGroup root, SettingsPanel parentToDismiss) {
+		boolean ret = super.toggle(root, parentToDismiss);
 		menu_grid.focusable=ret;
+		if (lastWidth!=a.root.getWidth() || lastHeight!=a.root.getHeight()) {
+			refreshMenuGridSize(true);
+		}
 		return ret;
+	}
+	
+	@Override
+	protected void decorateInterceptorListener(boolean install) {
+		View[] sameView = new View[]{a.UIData.browserWidget7, a.UIData.browserWidget8};
+		for (View vue:sameView) {
+			if (true) {
+				vue.animate().
+						alpha(install?0:1)
+						.setListener(install?new AnimatorListenerAdapter() {
+							@Override
+							public void onAnimationEnd(Animator animation) {
+								vue.setVisibility(View.INVISIBLE);
+							}
+						}:null)
+						.setDuration(90);
+				if (!install) {
+					vue.setVisibility(View.VISIBLE);
+				}
+			} else {
+				vue.setAlpha(1);
+				vue.setVisibility(install?View.INVISIBLE:View.VISIBLE);
+			}
+		}
+		a.UIData.browserWidget9.setImageResource(install?R.drawable.ic_exit_to_app:R.drawable.ic_home_black_24dp);
 	}
 	
 	void test(){
@@ -154,7 +160,19 @@ public class MenuGrid extends SettingsPanel{
 		}
 		//MenuClicked = true;
 		switch (v.getId()) {
+			case R.id.browser_widget11: {
+				a.mInterceptorListenerHandled=true;
+				dismiss();
+			} break;
+			case R.id.browser_widget9: {
+				a.mInterceptorListenerHandled=true;
+				a.moveTaskToBack(false);
+				hide();
+			} break;
 			/* 历史 */
+			case R.id.root: {
+				dismiss();
+			} break;
 			case R.id.menu_icon3: {
 				a.showHistory();
 			} break;
@@ -172,38 +190,42 @@ public class MenuGrid extends SettingsPanel{
 			case R.id.menu_icon7: {
 				a.showWebAnnots();
 			} return;
+			case R.id.menu_icon8: {
+				a.showNightMode();
+			} return;
 			case R.id.menu_icon10: {
-				a.AddPDFViewerShortCut();
 			} break;
 		}
 		//v.postDelayed(() -> toggleMenuGrid(true), 250);
 	}
 	
 	public void refreshMenuGridSize(boolean init) {
+		CMN.Log("refreshMenuGridSize？？？", dm.widthPixels, this, bIsShowing||init);
 		if (bIsShowing||init) {
-			int w = dm.widthPixels;
-			if(w>dm.heightPixels) {
+			lastWidth=a.root.getWidth();
+			lastHeight=a.root.getHeight();
+			int w = lastWidth;
+			if(w>lastHeight) {
 				w -= GlobalOptions.density*18;
 			}
 			int maxWidth = Math.min(w, (int) (GlobalOptions.density*560));
 			if(Utils.actualLandscapeMode(a)) {
-				maxWidth = Math.min(dm.heightPixels, maxWidth);
+				maxWidth = Math.min(lastHeight, maxWidth);
 			}
-			//if(root.getWidth()>maxWidth)
-			{
-				menu_grid.setBackgroundResource(R.drawable.frame_top_rounded);
-				ViewGroup.MarginLayoutParams layoutParams = (ViewGroup.MarginLayoutParams) menu_grid.getLayoutParams();
-				layoutParams.width=maxWidth;
-				int shortLim = dm.heightPixels-a.UIData.bottombar2.getHeight();
-				boolean tooShort = GlobalOptions.density*200>shortLim;
-				layoutParams.height=tooShort?shortLim:-2;
-				if(GlobalOptions.isLarge) {
-					layoutParams.setMarginEnd((int) (15*GlobalOptions.density));
-					int pad = (int) (GlobalOptions.density*8);
-					int HPad = (int) (pad*2.25);
-					menu_grid.setPadding(HPad, pad/2, HPad, pad*2);
-				}
+			
+			menu_grid.setBackgroundResource(R.drawable.frame_top_rounded);
+			ViewGroup.MarginLayoutParams layoutParams = (ViewGroup.MarginLayoutParams) menu_grid.getLayoutParams();
+			int maxHeight = lastHeight;
+			CMN.Log("refreshMenuGridSize……", maxWidth, maxHeight);
+			layoutParams.width=maxWidth;
+			layoutParams.height=GlobalOptions.density*200>maxHeight?maxHeight:-2;
+			if(GlobalOptions.isLarge) {
+				layoutParams.setMarginEnd((int) (15*GlobalOptions.density));
+				int pad = (int) (GlobalOptions.density*8);
+				int HPad = (int) (pad*2.25);
+				menu_grid.setPadding(HPad, pad/2, HPad, pad*2);
 			}
+			menu_grid.requestLayout();
 		}
 	}
 }

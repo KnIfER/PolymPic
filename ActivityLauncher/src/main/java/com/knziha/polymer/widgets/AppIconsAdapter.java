@@ -179,7 +179,7 @@ public class AppIconsAdapter extends RecyclerView.Adapter<AppIconsAdapter.ViewHo
 				;
 		
 		Glide.with(iv.getContext())
-				.load(new AppIconCover(app))
+				.load(new AppIconCover(app, true))
 				.apply(options)
 				.listener(new RequestListener<Drawable>() {
 					@Override
@@ -189,7 +189,8 @@ public class AppIconsAdapter extends RecyclerView.Adapter<AppIconsAdapter.ViewHo
 					@Override
 					public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
 						DescriptiveImageView medium_thumbnail = (DescriptiveImageView) ((ImageViewTarget<?>) target).getView();
-						medium_thumbnail.setText(((AppInfoBean)((AppIconCover)model).path).appName);
+						//todo check glide
+						medium_thumbnail.setText(((AppInfoBean)((AppIconCover)model).getBeanInMemory()).appName);
 						return false;
 					}
 				})

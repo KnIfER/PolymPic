@@ -1,7 +1,6 @@
 package com.knziha.polymer.preferences;
 
 import android.animation.LayoutTransition;
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
@@ -13,7 +12,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.CookieManager;
 import android.widget.LinearLayout;
-import android.widget.PopupWindow;
 import android.widget.ScrollView;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -24,10 +22,10 @@ import com.knziha.filepicker.widget.HorizontalNumberPicker;
 import com.knziha.polymer.BrowserActivity;
 import com.knziha.polymer.R;
 import com.knziha.polymer.Utils.CMN;
-import com.knziha.polymer.Utils.Options;
 import com.knziha.polymer.databinding.QuickSettingsPanelBinding;
 import com.knziha.polymer.equalizer.EqualizerGroup;
 import com.knziha.polymer.equalizer.VerticalSeekBar;
+import com.knziha.polymer.webstorage.BrowserAppPanel;
 import com.knziha.polymer.webstorage.DomainInfo;
 import com.knziha.polymer.webstorage.WebOptions;
 import com.knziha.polymer.widgets.PopupMenuHelper;
@@ -51,7 +49,7 @@ import static com.knziha.polymer.widgets.Utils.bandLevels;
 import static com.knziha.polymer.widgets.Utils.mEqualizer;
 import static com.knziha.polymer.widgets.Utils.mGlobalEqShift;
 
-public class QuickBrowserSettingsPanel extends SettingsPanel implements SettingsPanel.ActionListener {
+public class QuickBrowserSettingsPanel extends BrowserAppPanel implements SettingsPanel.ActionListener {
 	protected BrowserActivity a;
 	protected QuickSettingsPanelBinding UIData;
 	protected View sysVolEq;
@@ -67,8 +65,8 @@ public class QuickBrowserSettingsPanel extends SettingsPanel implements Settings
 	protected HorizontalNumberPicker mTextZoomNumberPicker;
 	protected static int mScrollY;
 	
-	public QuickBrowserSettingsPanel(Context context, ViewGroup root, int bottomPaddding, Options opt) {
-		super(context, root, bottomPaddding, opt, (BrowserActivity) context);
+	public QuickBrowserSettingsPanel(BrowserActivity a) {
+		super(a);
 		mActionListener = this;
 	}
 	
@@ -102,10 +100,6 @@ public class QuickBrowserSettingsPanel extends SettingsPanel implements Settings
 		sv.addView(lv, new ViewGroup.LayoutParams(-1, -2));
 		sv.setOverScrollMode(View.OVER_SCROLL_ALWAYS);
 		settingsLayout = sv;
-		
-		if (!showInPopWindow) {
-			Utils.embedViewInCoordinatorLayout(settingsLayout);
-		}
 		
 		UIData.sysVolSwitch.setChecked(opt.getAdjustSystemVolume());
 		
@@ -526,7 +520,7 @@ public class QuickBrowserSettingsPanel extends SettingsPanel implements Settings
 	}
 	
 	@Override
-	public Drawable getIconForDynamicFlagBySection(int section) {
+	protected Drawable getIconForDynamicFlagBySection(int section) {
 		int index = mFlagAdapter.getDynamicFlagIndex(section);
 		if (index==WebViewSettingsSource_TAB) {
 			return drawables[0];
@@ -617,7 +611,7 @@ public class QuickBrowserSettingsPanel extends SettingsPanel implements Settings
 					, makeDynInt(NONE_SETTINGS_GROUP1, ActionGp_1.tianjiapdflnk.ordinal(), true)
 					, makeDynInt(NONE_SETTINGS_GROUP1, ActionGp_1.dakaipdf.ordinal(), true)
 					, makeDynInt(NONE_SETTINGS_GROUP1, ActionGp_1.dakaipdfwenjian.ordinal(), true)
-			}});
+			}}, null);
 			pdfSettings.setEmbedded(this);
 			pdfSettings.init(a, root);
 			addPanelViewBelow(pdfSettings.settingsLayout, UIData.pdfPanel);
@@ -635,7 +629,7 @@ public class QuickBrowserSettingsPanel extends SettingsPanel implements Settings
 					, makeDynInt(NONE_SETTINGS_GROUP1, ActionGp_1.xuanduanfanyi.ordinal(), true)
 					, makeDynInt(NONE_SETTINGS_GROUP1, ActionGp_1.quanwenfanyi.ordinal(), true)
 					, makeDynInt(NONE_SETTINGS_GROUP1, ActionGp_1.quanxuan.ordinal(), true)
-			}});
+			}}, null);
 			stanzaSettings.setEmbedded(this);
 			stanzaSettings.init(a, root);
 			addPanelViewBelow(stanzaSettings.settingsLayout, UIData.stanzaPanel);
@@ -748,7 +742,7 @@ public class QuickBrowserSettingsPanel extends SettingsPanel implements Settings
 					, makeDynInt(NONE_SETTINGS_GROUP1, ActionGp_1.xitong.ordinal(), true)
 					, makeDynInt(NONE_SETTINGS_GROUP1, ActionGp_1.lock.ordinal(), true)
 					, makeInt(1, 8, false) // getLockScreenOn
-			}});
+			}}, null);
 			screenSettings.setEmbedded(this);
 			screenSettings.init(a, root);
 			
@@ -761,14 +755,14 @@ public class QuickBrowserSettingsPanel extends SettingsPanel implements Settings
 					, makeDynInt(NONE_SETTINGS_GROUP1, ActionGp_1.shuping1.ordinal(), true)
 					, makeDynInt(NONE_SETTINGS_GROUP1, ActionGp_1.shuping2.ordinal(), true)
 					, makeDynInt(NONE_SETTINGS_GROUP1, ActionGp_1.shuping3.ordinal(), true)
-			}});
+			}}, null);
 			final SettingsPanel shuping = new SettingsPanel(a, opt
 					, new String[][]{new String[]{"切换竖屏：", "重力感应", "正向", "反向"}}
 					, new int[][]{new int[]{Integer.MAX_VALUE
 					, makeDynInt(NONE_SETTINGS_GROUP1, ActionGp_1.shuping1.ordinal(), true)
 					, makeDynInt(NONE_SETTINGS_GROUP1, ActionGp_1.shuping2.ordinal(), true)
 					, makeDynInt(NONE_SETTINGS_GROUP1, ActionGp_1.shuping3.ordinal(), true)
-			}});
+			}}, null);
 			hengping.setEmbedded(this);
 			hengping.init(a, root);
 			shuping.setEmbedded(this);
@@ -801,7 +795,7 @@ public class QuickBrowserSettingsPanel extends SettingsPanel implements Settings
 					, new int[][]{new int[]{Integer.MAX_VALUE
 					, makeDynInt(LockSettings, 35, true) // getLockX
 					, makeDynInt(LockSettings, 36, false) // getLockY
-			}});
+			}}, null);
 			lockSettings.setEmbedded(this);
 			lockSettings.init(a, root);
 			addPanelViewBelow(lockSettings.settingsLayout, UIData.lockPanel);
@@ -817,7 +811,7 @@ public class QuickBrowserSettingsPanel extends SettingsPanel implements Settings
 					, makeDynInt(TextSettings, 19, true) // getForcePageZoomable
 					, makeDynInt(TextSettings, 20, true) // getForceTextWrap
 					, makeDynInt(TextSettings, 22, true) // getOverrideMode
-			}});
+			}}, null);
 			textSettings.setEmbedded(this);
 			textSettings.init(a, root);
 			View textscalePicker = UIData.textscalePicker.getViewStub().inflate();
@@ -854,7 +848,7 @@ public class QuickBrowserSettingsPanel extends SettingsPanel implements Settings
 					, new String[][]{new String[]{null, "滑动隐藏顶栏", "滑动隐藏底栏"}}
 					, new int[][]{new int[]{Integer.MAX_VALUE
 					, makeDynInt(ImmersiveSettings, 16, true)
-					, makeDynInt(ImmersiveSettings, 17, false)}});
+					, makeDynInt(ImmersiveSettings, 17, false)}}, null);
 			immersiveSettings.setEmbedded(this);
 			immersiveSettings.init(a, root);
 			addPanelViewBelow(immersiveSettings.settingsLayout, UIData.immPanel);
@@ -864,25 +858,6 @@ public class QuickBrowserSettingsPanel extends SettingsPanel implements Settings
 	
 	protected void addPanelViewBelow(View settingsLayout, LinearLayout panelTitle) {
 		Utils.addViewToParent(settingsLayout, root, panelTitle);
-	}
-	
-	@SuppressLint("NewApi")
-	@Override
-	protected void showPop() {
-		if (pop==null) {
-			pop = new PopupWindow(a);
-			pop.setContentView(settingsLayout);
-		}
-		try {
-//			pop.setTouchModal(false);
-//			pop.setFocusable(true);
-//			pop.setOutsideTouchable(false);
-//			pop.setInputMethodMode(PopupWindow.INPUT_METHOD_NEEDED);
-//			pop.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
-		} catch (Exception e) {
-			// todo 自带小数输入法 | Need to embed number input method
-		}
-		a.embedPopInCoordinatorLayout(pop);
 	}
 	
 	private SettingsPanel initFrequentSettingsPanel() {
@@ -903,7 +878,7 @@ public class QuickBrowserSettingsPanel extends SettingsPanel implements Settings
 					, makeDynIcoInt(BackendSettings, 8, true) // getEnableJavaScript
 					, makeDynIcoInt(StorageSettings, 3, true) // getUseCookie
 					, makeDynIcoInt(StorageSettings, 2, true) // getRecordHistory
-			}});
+			}}, null);
 			frequentSettings.setEmbedded(this);
 			frequentSettings.init(a, root);
 			addPanelViewBelow(frequentSettings.settingsLayout, UIData.fsPannel);
@@ -989,7 +964,8 @@ public class QuickBrowserSettingsPanel extends SettingsPanel implements Settings
 	
 	@Override
 	protected void onDismiss() {
-		CMN.Log("onDismiss::", mSettingsChanged);
+		//CMN.Log("onDismiss::", mSettingsChanged);
+		super.onDismiss();
 		if (eq_panel_tracked) {
 			eq_panel_tracked = false;
 			opt.putBandLevels(bandLevels, mGlobalEqShift);
@@ -999,5 +975,16 @@ public class QuickBrowserSettingsPanel extends SettingsPanel implements Settings
 			mSettingsChanged=0;
 		}
 		mScrollY = settingsLayout.getScrollY();
+	}
+	
+	@Override
+	protected void decorateInterceptorListener(boolean install) {
+		if (install) {
+			a.UIData.browserWidget7.setImageResource(R.drawable.chevron_recess_ic_back);
+			a.UIData.browserWidget8.setImageResource(R.drawable.chevron_forward_settings);
+		} else {
+			a.UIData.browserWidget7.setImageResource(R.drawable.chevron_recess);
+			a.UIData.browserWidget8.setImageResource(R.drawable.chevron_forward);
+		}
 	}
 }

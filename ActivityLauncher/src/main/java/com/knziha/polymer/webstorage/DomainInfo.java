@@ -36,7 +36,7 @@ public class DomainInfo {
 	
 	@Multiline(flagPos=33) public boolean getApplyOverride_group_lock(){ f1=f1; throw new RuntimeException(); }
 	@Multiline(flagPos=33) public void setApplyOverride_group_lock(boolean val){ f1=f1; throw new RuntimeException(); }
-
+	
 	public void updateFlag(long val) {
 		f1 = val;
 	}

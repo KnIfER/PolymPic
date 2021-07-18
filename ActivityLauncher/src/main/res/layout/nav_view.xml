@@ -5,7 +5,7 @@
 	android:orientation="vertical"
 	android:layout_width="match_parent"
 	android:layout_height="match_parent"
-	android:elevation="10dp">
+	>
 	<com.knziha.polymer.widgets.DragSelectRecyclerView
 		android:id="@+id/recycler_view"
 		tools:listitem="@layout/bookmark_item"

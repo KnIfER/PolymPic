@@ -32,6 +32,8 @@ public class WebOptions {
 	@Multiline(flagPos=12) public static boolean getNoNetworkImage(long flag){ flag=flag; throw new RuntimeException(); }
 	@Multiline(flagPos=13) public static boolean getPremature(long flag){ flag=flag; throw new RuntimeException(); }
 	
+	public final static long PC_MODE_MASK = (1L<<7)|(1L<<11);
+	
 	// 14
 	
 	@Multiline(flagPos=15, shift=0) public static boolean getImmersiveScrollEnabled(long flag){ flag=flag; throw new RuntimeException(); }
@@ -57,5 +59,8 @@ public class WebOptions {
 	@Multiline(flagPos=34) public static void setLockEnabled(boolean val){ tmpFlag=tmpFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=35, shift=1) public static boolean getLockX(long flag){ flag=flag; throw new RuntimeException(); }
 	@Multiline(flagPos=36) public static boolean getLockY(long flag){ flag=flag; throw new RuntimeException(); }
+	
+	@Multiline(flagPos=37) public static boolean getAlwaysOpenInNewTab(long flag){ flag=flag; throw new RuntimeException(); }
+	@Multiline(flagPos=37) public static void setAlwaysOpenInNewTab(boolean val){ tmpFlag=tmpFlag; throw new RuntimeException(); }
 	
 }

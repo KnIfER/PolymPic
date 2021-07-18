@@ -3,7 +3,6 @@ package com.knziha.polymer.widgets;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.Configuration;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
@@ -22,22 +21,14 @@ import androidx.appcompat.view.menu.MenuItemImpl;
 import androidx.appcompat.view.menu.MenuPopup;
 import androidx.appcompat.view.menu.MenuPopupHelper;
 import androidx.appcompat.widget.Toolbar;
-import androidx.core.graphics.ColorUtils;
 import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
-import androidx.viewpager.widget.ViewPager;
 
-import com.google.android.material.tabs.TabLayout;
 import com.knziha.polymer.PDocViewerActivity;
 import com.knziha.polymer.R;
 import com.knziha.polymer.Toastable_Activity;
 import com.knziha.polymer.Utils.CMN;
-import com.knziha.polymer.databinding.BookmarksBinding;
 import com.knziha.polymer.databinding.NavFolderViewBinding;
-import com.knziha.polymer.pdviewer.PDocument;
-import com.knziha.polymer.pdviewer.bookmarks.AnnotListFragment;
-import com.knziha.polymer.pdviewer.bookmarks.BookMarkFragment;
-import com.knziha.polymer.pdviewer.bookmarks.FragAdapter;
 
 import java.util.ArrayList;
 
@@ -55,6 +46,7 @@ public class NavFolderFragment extends DialogFragment implements Toolbar.OnMenuI
 	int lastW;
 	int lastH;
 	
+	boolean bPickFolder=false;
 	boolean viewBound=false;
 	
 	@Override
@@ -92,9 +84,9 @@ public class NavFolderFragment extends DialogFragment implements Toolbar.OnMenuI
 				if(window!= null) {
 					WindowManager.LayoutParams  attr = window.getAttributes();
 					if(attr.width!=width || attr.height!=height) {
-						//CMN.Log("onResume_");
 						window.setFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND, WindowManager.LayoutParams.FLAG_DIM_BEHIND);
-						window.setDimAmount(0.1f);
+						//CMN.Log("onResume_", window.getAttributes().dimAmount);
+						window.setDimAmount(bPickFolder?0.6f:0.1f);
 						window.setBackgroundDrawableResource(R.drawable.popup_shadow_l);
 						folderView.root.mMaxHeight=mMaxH;
 						window.setLayout(width,height);

@@ -10,14 +10,45 @@ import com.shockwave.pdfium.treeview.TreeViewNode;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 
 class NavigationNode extends TreeViewNode<JSONObject>
 {
-	public static int cc;
 	JSONArray children;
-	public NavigationNode(@NonNull JSONObject itemData) {
+	String id;
+	Object tag;
+	
+	/** RootNode-Only Data */String id_prefix;
+	/** RootNode-Only Data */long id_max;
+	/** RootNode-Only Data */HashMap<String, NavigationNode> id_table;
+	/** RootNode-Only Data */HashMap<String, NavigationNode> url_table;
+	
+	public NavigationNode(NavigationNode rootNode, @NonNull JSONObject itemData) {
 		super(itemData);
-		cc++;
+		HashMap<String, NavigationNode> id_table;
+		HashMap<String, NavigationNode> url_table;
+		if (rootNode==null) {
+			this.id_prefix = content.getString("id_prefix");
+			if (id_prefix==null) {
+				id_prefix = "";
+			}
+			this.id_max = content.getLongValue("id_max");
+			this.id_table = id_table = new HashMap<>((int)Math.max(content.getIntValue("count")*1.5, 1024));
+			this.url_table = url_table = new HashMap<>((int)Math.max(content.getIntValue("count")*1.5, 1024));
+			rootNode = this;
+		} else {
+			id_table = rootNode.id_table;
+			url_table = rootNode.url_table;
+		}
+		if (id_table!=null) {
+			id = content.getString("id");
+			if (id==null) {
+				id = rootNode.generateNewId();
+				content.put("id", id);
+			}
+			id_table.put(id, this);
+		}
 		JSONArray children = content.getJSONArray("children");
 		if (children!=null) {
 			this.children = children;
@@ -28,7 +59,7 @@ class NavigationNode extends TreeViewNode<JSONObject>
 			for (; i < len; i++) {
 				child = children.getJSONObject(i);
 				if (child!=null) {
-					NavigationNode node = new NavigationNode(child);
+					NavigationNode node = new NavigationNode(rootNode, child);
 					childList.add(node);
 					node.parent=this;
 					if (!node.isLeaf()) {
@@ -36,7 +67,27 @@ class NavigationNode extends TreeViewNode<JSONObject>
 					}
 				}
 			}
+		} else {
+			String url = getUrl();
+			if (url!=null) {
+				url_table.put(url, this);
+			}
 		}
+	}
+	
+	/** RootNode-Only Method */
+	protected String generateNewId() {
+		if (++id_max<=0) {
+			id_max = 1;
+			id_prefix += "X";
+		}
+		String ret = id_prefix + Long.toHexString(id_max);
+		if (id_table.containsKey(ret)) {
+			id_max = 1;
+			id_prefix += "X";
+			ret = id_prefix + Long.toHexString(id_max);
+		}
+		return ret;
 	}
 	
 	public static void removeChild(NavigationNode hotNode) {
@@ -187,7 +238,7 @@ class NavigationNode extends TreeViewNode<JSONObject>
 		if(url==null) {
 			child.put("children", new JSONArray());
 		}
-		NavigationNode childNode = new NavigationNode(child);
+		NavigationNode childNode = new NavigationNode(getRootNode(), child);
 		if(url==null) {
 			foldListValid = false;
 			childNode.ensureTree();
@@ -196,6 +247,14 @@ class NavigationNode extends TreeViewNode<JSONObject>
 		children.add(index, child);
 		childNode.parent = this;
 		return childNode;
+	}
+	
+	private NavigationNode getRootNode() {
+		TreeViewNode node = this;
+		while(node.getParent()!=null) {
+			node = node.getParent();
+		}
+		return (NavigationNode)node;
 	}
 	
 	private void ensureTree() {
@@ -221,5 +280,14 @@ class NavigationNode extends TreeViewNode<JSONObject>
 	
 	public boolean checkHarmony() {
 		return childList.size()==children.size();
+	}
+	
+	public List<String> getIdsPath() {
+		ArrayList<String> parentIds = new ArrayList<>();
+		TreeViewNode p = this;
+		while((p=p.getParent())!=null) {
+			parentIds.add(((NavigationNode)p).id);
+		}
+		return parentIds;
 	}
 }

@@ -1,5 +1,6 @@
 package com.knziha.polymer.paging;
 
+import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.drawable.Drawable;
@@ -9,20 +10,24 @@ import android.widget.ImageView;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.bumptech.glide.RequestBuilder;
 import com.bumptech.glide.load.DataSource;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.load.engine.GlideException;
 import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.browser.AppIconCover.AppIconCover;
-import com.knziha.polymer.browser.AppIconCover.AppInfoBean;
+import com.knziha.polymer.browser.AppIconCover.AppLoadableBean;
 
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.knziha.polymer.webslideshow.ImageViewTarget.FuckGlideDrawable;
 
@@ -33,6 +38,7 @@ public class PagingCursorAdapter<T extends CursorReader> implements PagingAdapte
 	Queue<Pair<Integer, SimpleCursorPage<T>>> insertQueue = new ConcurrentLinkedQueue<>();
 	Queue<SimpleCursorPage<T>> dataQueue = new ConcurrentLinkedQueue<>();
 	Queue<SimpleCursorPage<T>> updateQueue = new ConcurrentLinkedQueue<>();
+	AtomicInteger dataQueue_size = new AtomicInteger();
 	
 	int number_of_rows_detected;
 	final ConstructorInterface<T> mRowConstructor;
@@ -40,7 +46,7 @@ public class PagingCursorAdapter<T extends CursorReader> implements PagingAdapte
 	final SQLiteDatabase db;
 	
 	private ImageView pageAsyncLoader;
-	private boolean glide_init = true;
+	private boolean glide_initialized = true;
 	private RequestBuilder<Drawable> glide;
 	
 	private int pageSz = 20;
@@ -84,22 +90,30 @@ public class PagingCursorAdapter<T extends CursorReader> implements PagingAdapte
 		if (page.rows==null) {
 			ret = null;
 			CMN.Log("重新加载数据……");
-			init_glide();
-			glide.load(new AppIconCover(new PageAsyncLoaderBean(number_of_rows_detected, page, false)))
-					.into(pageAsyncLoader);
+			if (glide!=null) {
+				init_glide();
+				glide.load(new AppIconCover(new PageAsyncLoaderBean(number_of_rows_detected, page, false)))
+						.into(pageAsyncLoader);
+			} else {
+				ReLoadPage(page);
+				ret = page.rows[(int) (offsetedPos-page.pos)];
+			}
 		} else {
 			ret = page.rows[(int) (offsetedPos-page.pos)];
 		}
-//		if(dataQueue.size()>pageDataSz) {
-//			SimpleCursorPage<T> toRemove;
-//			int toRemoveCnt = dataQueue.size()-pageDataSz;
-//			while((toRemove=dataQueue.poll())!=null && toRemoveCnt>0) {
-//				if (toRemove.rows!=null) {
-//					toRemove.rows = null;
-//					toRemoveCnt--;
-//				}
-//			}
-//		}
+		if(dataQueue_size.get()>pageDataSz) {
+			SimpleCursorPage<T> toRemove;
+			int toRemoveCnt = dataQueue.size()-pageDataSz;
+			int removed = 0;
+			while((toRemove=dataQueue.poll())!=null && toRemoveCnt>0) {
+				if (toRemove.rows!=null) {
+					toRemove.rows = null;
+					toRemoveCnt--;
+				}
+				removed++;
+			}
+			dataQueue_size.addAndGet(-removed);
+		}
 		return ret;
 	}
 	
@@ -108,10 +122,10 @@ public class PagingCursorAdapter<T extends CursorReader> implements PagingAdapte
 		return this;
 	}
 	
-	public PagingCursorAdapter<T> setAsyncLoader(RequestBuilder<Drawable> glide, ImageView pageAsyncLoader) {
-		this.glide = glide;
+	public PagingCursorAdapter<T> setAsyncLoader(Context context, ImageView pageAsyncLoader) {
+		this.glide = Glide.with(context).load((String)null);
 		this.pageAsyncLoader = pageAsyncLoader;
-		glide_init = false;
+		glide_initialized = false;
 		return this;
 	}
 	
@@ -120,7 +134,7 @@ public class PagingCursorAdapter<T extends CursorReader> implements PagingAdapte
 		this.sortField = sortField;
 		this.dataFields = dataFields;
 		this.DESC = desc;
-		glide_init = false;
+		glide_initialized = false;
 		return this;
 	}
 	
@@ -138,12 +152,44 @@ public class PagingCursorAdapter<T extends CursorReader> implements PagingAdapte
 				+ " ORDER BY " + sortField + " " + (DESC?"DESC":"ASC")  + " LIMIT " + pageSz;
 	}
 	
-	@Override
-	public void startPaging(long resume_to_sort_number, int init_page) {
+	
+	public void startPaging(long resume_to_sort_number, int init_load_size, int page_size) {
+		pages.clear();
+		number_of_rows_detected = 0;
+		pageSz = page_size;
+		if (glide!=null) {
+			glide_initialized = false;
+			glide.load(new AppIconCover(() -> {
+				//try { Thread.sleep(200); } catch (InterruptedException ignored) { }
+				startPagingInternal(resume_to_sort_number, init_load_size);
+				return FuckGlideDrawable;
+			}))
+			.override(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL)
+			.skipMemoryCache(true)
+			.diskCacheStrategy(DiskCacheStrategy.NONE)
+			.listener(new RequestListener<Drawable>() {
+				@Override
+				public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
+					CMN.Log(e);
+					return false;
+				}
+				@Override
+				public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
+					recyclerView.getAdapter().notifyDataSetChanged();
+					return true;
+				}
+			})
+			.into(pageAsyncLoader);
+		} else {
+			startPagingInternal(resume_to_sort_number, init_load_size);
+		}
+	}
+	
+	public void startPagingInternal(long resume_to_sort_number, int init_load_size) {
 		pages.clear();
 		remakeSql();
 		number_of_rows_detected = 0;
-		PreparePageAt(init_page, resume_to_sort_number);
+		PreparePageAt(init_load_size, resume_to_sort_number);
 	}
 	
 	Runnable mGrowRunnable = new Runnable() {
@@ -168,7 +214,7 @@ public class PagingCursorAdapter<T extends CursorReader> implements PagingAdapte
 		}
 	};
 	
-	class PageAsyncLoaderBean extends AppInfoBean {
+	class PageAsyncLoaderBean implements AppLoadableBean {
 		final int st;
 		final SimpleCursorPage<T> page;
 		final boolean dir;
@@ -192,7 +238,6 @@ public class PagingCursorAdapter<T extends CursorReader> implements PagingAdapte
 			}
 			return FuckGlideDrawable;
 		}
-		
 		@Override
 		public boolean equals(@Nullable Object o) {
 			if (this == o) return true;
@@ -200,11 +245,15 @@ public class PagingCursorAdapter<T extends CursorReader> implements PagingAdapte
 			PageAsyncLoaderBean other = ((PageAsyncLoaderBean) o);
 			return dir==other.dir && page==other.page;
 		}
+		@Override
+		public int hashCode() {
+			return Objects.hash(page, dir);
+		}
 	}
 	
 	private void PrepareNxtPage(SimpleCursorPage<T> page, boolean dir) {
 		//CMN.Log("PrepareNxtPage::???", dir, mGrowingPage);
-		if (!glide_init || recyclerView!=null && (mGrowingPage!=page || mGrowingPageDir!=dir)) {
+		if (!glide_initialized || recyclerView!=null && (mGrowingPage!=page || mGrowingPageDir!=dir)) {
 			//CMN.Log("PrepareNxtPage::", dir, page);
 			if (glide!=null) {
 				mGrowingPage = page;
@@ -223,7 +272,7 @@ public class PagingCursorAdapter<T extends CursorReader> implements PagingAdapte
 	}
 	
 	private void init_glide() {
-		if (!glide_init) {
+		if (!glide_initialized) {
 			pageAsyncLoader.setTag(null);
 			glide = glide.listener(new RequestListener<Drawable>() {
 				@Override
@@ -254,7 +303,7 @@ public class PagingCursorAdapter<T extends CursorReader> implements PagingAdapte
 					return true;
 				}
 			});
-			glide_init = true;
+			glide_initialized = true;
 		}
 	}
 	
@@ -300,6 +349,7 @@ public class PagingCursorAdapter<T extends CursorReader> implements PagingAdapte
 				}
 				page.rows = rows.toArray(mRowArrConstructor.newInstance(rows.size()));
 				dataQueue.add(page);
+				dataQueue_size.incrementAndGet();
 			}
 		} catch (Exception e) {
 			CMN.Log(e);
@@ -377,6 +427,7 @@ public class PagingCursorAdapter<T extends CursorReader> implements PagingAdapte
 					}
 				}
 				dataQueue.add(page);
+				dataQueue_size.incrementAndGet();
 				ret = page;
 				//number_of_rows_detected += page.number_of_row;
 			}

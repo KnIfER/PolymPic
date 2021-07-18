@@ -626,6 +626,50 @@ public class TestHelper {
 		});
 	}
 	
+	public static void injectTestListener(BrowserActivity browser) {
+		browser.mInterceptorListener = v -> {
+			switch (v.getId()) {
+				case R.id.browser_widget9:
+					System.exit(0);
+				break;
+				
+				//currentWebView.loadUrl("polyme://nav.index");
+				//currentWebView.loadUrl("file:///android_asset/index.html");
+
+
+//				currentWebView.evaluateJavascript("window._docAnnots", new ValueCallback<String>() {
+//					@Override
+//					public void onReceiveValue(String value) {
+//						CMN.Log(value);
+//					}
+//				});
+
+//				currentWebView.evaluateJavascript("window._PPMInst.RestoreAnnots()", new ValueCallback<String>() {
+//					@Override
+//					public void onReceiveValue(String value) {
+//						CMN.Log(value);
+//					}
+//				});
+				
+				//showDownloadDialog(null);
+//				fixTopBar = !fixTopBar;
+//				decideTopBotBH();
+//				decideWebviewPadding();
+//				showT("fixTopBar : "+fixTopBar);
+			
+			}
+		};
+	}
+	
+	public void testSth() {
+		CMN.Log("testEmptyMethod");
+		testEmptyMethod();
+	}
+	
+	private void testEmptyMethod() {
+	
+	}
+	
 	static class SimplePage{
 		long st_fd;
 		long st_id;

@@ -5,13 +5,12 @@ import androidx.annotation.NonNull;
 import com.bumptech.glide.load.Key;
 
 import java.security.MessageDigest;
-import java.util.Objects;
 
 public class AppIconCoverSignature implements Key {
-	public final AppLoadableBean path;
+	public final AppIconCover cover;
 
-	public AppIconCoverSignature(AppLoadableBean path) {
-		this.path = path;
+	public AppIconCoverSignature(AppIconCover cover) {
+		this.cover = cover;
 	}
 
 	@Override
@@ -24,13 +23,13 @@ public class AppIconCoverSignature implements Key {
 		if (this == o) return true;
 		if (o instanceof AppIconCoverSignature) {
 			AppIconCoverSignature that = (AppIconCoverSignature) o;
-			return Objects.equals(path, that.path);
+			return cover.equals(that.cover);
 		}
 		return false;
 	}
 	
 	@Override
 	public int hashCode() {
-		return Objects.hash(path);
+		return cover.hashCode();
 	}
 }

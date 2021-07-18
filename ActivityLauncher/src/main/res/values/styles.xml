@@ -99,6 +99,11 @@
 		<item name="android:background">?attr/listChoiceBackgroundIndicator</item>
 	</style>
 
+	<style name="TextViewTheme">
+<!--		<item name="colorAccent">#000000</item>-->
+<!--		<item name="colorPrimary">#000000</item>-->
+	</style>
+
 	<style name="pop_menu_animation" parent="android:Animation">
 		<item name="android:windowEnterAnimation">@anim/pop_menu_enter</item>
 		<item name="android:windowExitAnimation">@anim/pop_menu_exit</item>

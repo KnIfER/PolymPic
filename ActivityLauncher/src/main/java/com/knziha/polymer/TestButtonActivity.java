@@ -1,6 +1,7 @@
 package com.knziha.polymer;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Rect;
@@ -34,6 +35,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.widgets.PopupMenuHelper;
 import com.knziha.polymer.widgets.Utils;
+import com.knziha.polymer.widgets.WebFrameLayout;
 import com.knziha.polymer.widgets.iammert.MultiSearchView;
 import com.shockwave.pdfium.bookmarks.BookMarkEntry;
 import com.shockwave.pdfium.treeview.TreeViewAdapter;
@@ -45,6 +47,9 @@ import java.util.List;
 
 public class TestButtonActivity extends Toastable_Activity implements View.OnClickListener {
 	AlertDialog alert;
+	private WebView webview;
+	
+	boolean bool;
 	
 	@Override
 	protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -53,6 +58,51 @@ public class TestButtonActivity extends Toastable_Activity implements View.OnCli
 		setContentView(R.layout.test_button);
 		
 		root = findViewById(R.id.root);
+		webview = findViewById(R.id.webview);
+		
+		AdvancedBrowserWebView v = new AdvancedBrowserWebView(this);
+		Utils.replaceView(v, webview);
+		webview=v;
+		
+		v.layout = new WebFrameLayout(this, new BrowserActivity.TabHolder());
+		v.layout.setImplementation(v);
+		v.layout.updateUserAgentString();
+		v.layout.setTextZoom();
+		
+		//v.layout.setBackEndSettings();
+		
+		//webview.getSettings().setBlockNetworkImage(false);
+		//CMN.Log("getJavaScriptEnabled::"+webview.getSettings().getJavaScriptEnabled());
+		
+		//webview.getSettings().setJavaScriptEnabled(true);
+		
+		
+		webview.setWebViewClient(new WebViewClient(){
+			@Override
+			public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+				return false;
+			}
+			
+			@Override
+			public void onPageStarted(WebView view, String url, Bitmap favicon) {
+				view.getSettings().setJavaScriptEnabled(false);
+			}
+			
+			@Override
+			public void onPageFinished(WebView view, String url) {
+				view.getSettings().setJavaScriptEnabled(true);
+			}
+		});
+		
+		webview.loadUrl("https://www.bing.com");
+		webview.postDelayed(new Runnable() {
+			@Override
+			public void run() {
+				webview.loadUrl("https://live.kuaishou.com/u/3xya8diheaydhdm/3x8bqm5zwivpaau?did=web_436066112a1c0580fa88818194107634");
+			}
+		}, 1000);
+		
+		
 		
 		alert = new androidx.appcompat.app.AlertDialog.Builder(this)
 				.setSingleChoiceLayout(R.layout.singlechoice_plain)
@@ -82,8 +132,8 @@ public class TestButtonActivity extends Toastable_Activity implements View.OnCli
 //			root.addView(webview);
 //			webview.loadUrl("https://cn.bing.com/search?q=Test"+i);
 //		}
-		testWebSeq.run();
-		testPopupView();
+		//testWebSeq.run();
+		//testPopupView();
 	}
 	ArrayList<WebView> wvs = new ArrayList<>();
 	String[] data = new String[]{

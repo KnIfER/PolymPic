@@ -4,15 +4,12 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.os.Build;
-import android.os.Bundle;
 import android.view.ActionMode;
 import android.view.MotionEvent;
 import android.view.View;
-import android.webkit.WebBackForwardList;
 import android.webkit.WebView;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.knziha.polymer.BrowserActivity;
@@ -102,35 +99,17 @@ public class WebViewImplExt extends WebView implements UniversalWebviewInterface
 		return computeVerticalScrollRange();
 	}
 	
+	@Override
+	public void drawToBitmap(Canvas canvas) {
+		super.onDraw(canvas);
+	}
+	
 	public int getContentWidth(){
 		return computeHorizontalScrollRange();
 	}
 	
 	public int getContentOffset(){
 		return this.computeVerticalScrollOffset();
-	}
-	
-	@Override
-	public void loadDataWithBaseURL(String baseUrl,String data,String mimeType,String encoding,String historyUrl) {
-		super.loadDataWithBaseURL(baseUrl, data, mimeType, encoding, historyUrl);
-		//if(!baseUrl.equals("about:blank"))
-		layout.isloading=true;
-	}
-	
-	
-	@Override
-	public void loadUrl(String url) {
-		super.loadUrl(url);
-		CMN.Log("loadUrl: "+url.equals("about:blank"));
-		//if(!url.equals("about:blank"))
-		layout.isloading=true;
-	}
-	
-	@Nullable
-	@Override
-	public WebBackForwardList restoreState(@NonNull Bundle inState) {
-		CMN.Log("restoreState: ");
-		return super.restoreState(inState);
 	}
 	
 	@SuppressLint("NewApi")
@@ -166,11 +145,11 @@ public class WebViewImplExt extends WebView implements UniversalWebviewInterface
 	@Override
 	public boolean postDelayed(Runnable action, long delayMillis) {
 		CMN.Log("postDelayed", action, delayMillis);
-		if(layout!=null&&!layout.isWebHold&&action.getClass().getName().contains("FloatingActionMode")) {
-			CMN.Log("contextMenu_boost");
-//			action.run();
-//			return true;
-		}
+//		if(layout!=null&&!layout.isWebHold&&action.getClass().getName().contains("FloatingActionMode")) {
+//			CMN.Log("contextMenu_boost");
+////			action.run();
+////			return true;
+//		}
 		return super.postDelayed(action, delayMillis);
 	}
 	
