@@ -1,4 +1,4 @@
-package com.knziha.polymer.widgets;
+package com.knziha.polymer.webfeature;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -31,6 +31,9 @@ import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.browser.AppIconCover.AppIconCover;
 import com.knziha.polymer.browser.AppIconCover.AppLoadableBean;
 import com.knziha.polymer.webslideshow.TouchSortHandler;
+import com.knziha.polymer.widgets.DragSelectRecyclerView;
+import com.knziha.polymer.widgets.EditTextmy;
+import com.knziha.polymer.widgets.Utils;
 import com.shockwave.pdfium.treeview.TreeViewAdapter;
 import com.shockwave.pdfium.treeview.TreeViewNode;
 
@@ -46,7 +49,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import static com.knziha.polymer.webslideshow.ImageViewTarget.FuckGlideDrawable;
-import static com.knziha.polymer.widgets.NavigationNode.removeChild;
+import static com.knziha.polymer.webfeature.NavigationNode.removeChild;
 
 public class NavigationHomeAdapter extends TreeViewAdapter<NavigationHomeAdapter.ViewHolder>
 		implements View.OnTouchListener, DragSelectRecyclerView.IDragSelectAdapter {

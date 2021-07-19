@@ -10,6 +10,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.recyclerview.widget.RecyclerView.OnScrollChangedListener;
 
+import com.knziha.polymer.Utils.CMN;
+
 import static androidx.appcompat.widget.AppCompatEditText.UrlFucker;
 
 public class EditTextmy extends EditText {
@@ -51,7 +53,11 @@ public class EditTextmy extends EditText {
 	
 	@Override
 	public boolean postDelayed(Runnable action, long delayMillis) {
+		CMN.Log("postDelayed", action);
 		if (bNeverBlink && action.getClass().getName().contains("Blink")) {
+			return false;
+		}
+		if (bNeverBlink && action.getClass().getName().contains("Float")) {
 			return false;
 		}
 		return super.postDelayed(action, delayMillis);

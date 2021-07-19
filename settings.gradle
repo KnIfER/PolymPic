@@ -19,6 +19,8 @@ include ':twowaygridview'
 
 include ':multiline'
 
+include ':drag_sort_lib'
+
 
 include ':GlideModule:glide'
 include ':GlideModule:gif_decoder'

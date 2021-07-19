@@ -15,6 +15,7 @@ import androidx.appcompat.app.GlobalOptions;
 import com.knziha.filepicker.model.GlideCacheModule;
 import com.knziha.filepicker.settings.FilePickerOptions;
 import com.knziha.polymer.pdviewer.bookdata.BookOptions;
+import com.knziha.polymer.widgets.Utils;
 import com.knziha.polymer.widgets.XYTouchRecorder;
 
 import org.adrianwalker.multilinestring.Multiline;
@@ -136,11 +137,14 @@ public class Options implements BookOptions {
 	@Multiline(flagPos=15) public static boolean setInDarkMode(boolean val){ FirstFlag=FirstFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=16) public static boolean isFullScreen(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=16) public static boolean setFullScreen(boolean val){ FirstFlag=FirstFlag; throw new RuntimeException(); }
-	@Multiline(flagPos=17, shift=1) public static boolean getTransitSplashScreen(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=17, shift=1) public boolean getTransitSplashScreen(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=17, shift=1) public void setTransitSplashScreen(boolean val){ FirstFlag=FirstFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=18, shift=1) public static boolean getTransitSearchHints(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=19, shift=0) public static boolean getLimitHints(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=20) public boolean getTextPanel(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=20) public void setTextPanel(boolean val){ FirstFlag=FirstFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=21) public boolean getV1Initialized(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
+	@Multiline(flagPos=21) public void setV1Initialized(boolean val){ FirstFlag=FirstFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=22, shift=1) public boolean getUseBackKeyClearWebViewFocus(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=23, shift=1) public boolean getSelectAllOnFocus(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=24, shift=1) public boolean getShowImeImm(){ FirstFlag=FirstFlag; throw new RuntimeException(); }
@@ -255,6 +259,9 @@ public class Options implements BookOptions {
 	@Multiline(flagPos=37, debug=0) public boolean getAnimateImageviewAlone(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
 
 	// 38 - 41
+	/** 在网站请求APP跳转后，短时间内禁止URL跳转（默认关闭）。 */
+	@Multiline(flagPos=42) public boolean getRequestAppNoFurtherLoading(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
+	
 	
 	@Multiline(flagPos=53, debug=1) public static boolean getRebuildToast(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
 	@Multiline(flagPos=55, shift=1) public static boolean getToastRoundedCorner(){ SecondFlag=SecondFlag; throw new RuntimeException(); }
@@ -443,5 +450,11 @@ public class Options implements BookOptions {
 	public boolean getSingleTapClearSel() {
 		return true;
 	}
-
+	
+	public void initializeV1() {
+		if (!getV1Initialized())
+		{
+			setTransitSplashScreen(Utils.version>=23);
+		}
+	}
 }

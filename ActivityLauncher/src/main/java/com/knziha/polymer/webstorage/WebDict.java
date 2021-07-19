@@ -7,9 +7,9 @@ import android.view.ViewGroup;
 import android.view.ViewStub;
 
 import com.knziha.polymer.R;
+import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.databinding.SearchEnginesItemBinding;
 import com.knziha.polymer.widgets.SuperItemListener;
-import com.knziha.polymer.widgets.Utils;
 
 public class WebDict {
 	public String url;
@@ -26,17 +26,21 @@ public class WebDict {
 			isEditing = expand;
 		}
 		ViewGroup inflated = (ViewGroup) itemData.tick.getTag();
-		if(inflated==null&&expand) {
+		
+		if(expand && inflated==null) {
 			ViewStub stub = itemData.moreOptions.getViewStub();
 			if(stub!=null) {
 				stub.setOnInflateListener(null);
 				inflated = (ViewGroup) stub.inflate();
-				Utils.setOnClickListenersOneDepth(inflated, onClickListener, 3, null);
+				//Utils.setOnClickListenersOneDepth(inflated, onClickListener, 3, null);
 				itemData.tick.setTag(inflated);
 			}
 		}
-		if(inflated!=null&&inflated.getVisibility()==View.VISIBLE^expand) {
-			//CMN.Log("expandEditView……", name);
+		CMN.Log("expandEditView…… ?? ", animate, expand, name, inflated);
+		if(inflated!=null)
+		CMN.Log("expandEditView…… ?? ", inflated.getVisibility()==View.VISIBLE, expand);
+		if(inflated!=null&&((inflated.getVisibility()==View.VISIBLE^expand))) {
+			CMN.Log("expandEditView……", name);
 			expandViewInner(inflated, itemData.getRoot(), expand, animate);
 		}
 	}
@@ -71,7 +75,7 @@ public class WebDict {
 			if(stub!=null) {
 				stub.setOnInflateListener(null);
 				inflated = (ViewGroup) stub.inflate();
-				Utils.setOnClickListenersOneDepth(inflated, onClickListener, 3, null);
+				//Utils.setOnClickListenersOneDepth(inflated, onClickListener, 3, null);
 				storageV.setTag(inflated);
 			}
 		}

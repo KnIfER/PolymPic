@@ -1,4 +1,4 @@
-package com.knziha.polymer.webstorage;
+package com.knziha.polymer.webfeature;
 
 import android.content.Context;
 import android.database.Cursor;
@@ -113,7 +113,7 @@ public class WebAnnotationPanel extends BrowserAppPanel {
 	}
 	
 	@Override
-	protected void init(Context context, ViewGroup root) {
+	public void init(Context context, ViewGroup root) {
 		dataAdapter = new CursorAdapter<>(EmptyCursor, new WebAnnotationCursorReader());
 		a=(BrowserActivity) context;
 		showInPopWindow = true;

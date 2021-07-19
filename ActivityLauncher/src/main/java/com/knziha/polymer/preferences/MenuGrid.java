@@ -13,7 +13,7 @@ import androidx.appcompat.app.GlobalOptions;
 import com.knziha.polymer.BrowserActivity;
 import com.knziha.polymer.R;
 import com.knziha.polymer.Utils.CMN;
-import com.knziha.polymer.webstorage.BrowserAppPanel;
+import com.knziha.polymer.webfeature.BrowserAppPanel;
 import com.knziha.polymer.widgets.DescriptiveImageView;
 import com.knziha.polymer.widgets.ScrollViewTransparent;
 import com.knziha.polymer.widgets.Utils;
@@ -33,7 +33,7 @@ public class MenuGrid extends BrowserAppPanel {
 	}
 	
 	@Override
-	protected void init(Context context, ViewGroup root) {
+	public void init(Context context, ViewGroup root) {
 		a=(BrowserActivity) context;
 		showPopOnAppbar = false;
 		
@@ -48,7 +48,7 @@ public class MenuGrid extends BrowserAppPanel {
 		
 		// init_menu_layout
 		// todo avoid
-		a.UIData.bottombar2.setOnClickListener(new Utils.DummyOnClick());
+		a.UIData.bottombar2.setOnClickListener(Utils.DummyOnClick);
 		//settingsLayout = (ViewGroup) a.UIData.menuGrid.getViewStub().inflate();
 		settingsLayout = (ViewGroup) a.inflater.inflate(R.layout.menu_grid, root, false);
 		settingsLayout.setOnClickListener(this);
@@ -65,7 +65,7 @@ public class MenuGrid extends BrowserAppPanel {
 			}
 		}
 		
-		refreshMenuGridSize(true);
+		//refreshMenuGridSize(true);
 	}
 	
 	@Override
@@ -200,7 +200,6 @@ public class MenuGrid extends BrowserAppPanel {
 	}
 	
 	public void refreshMenuGridSize(boolean init) {
-		CMN.Log("refreshMenuGridSize？？？", dm.widthPixels, this, bIsShowing||init);
 		if (bIsShowing||init) {
 			lastWidth=a.root.getWidth();
 			lastHeight=a.root.getHeight();
@@ -212,18 +211,21 @@ public class MenuGrid extends BrowserAppPanel {
 			if(Utils.actualLandscapeMode(a)) {
 				maxWidth = Math.min(lastHeight, maxWidth);
 			}
-			
 			menu_grid.setBackgroundResource(R.drawable.frame_top_rounded);
 			ViewGroup.MarginLayoutParams layoutParams = (ViewGroup.MarginLayoutParams) menu_grid.getLayoutParams();
-			int maxHeight = lastHeight;
-			CMN.Log("refreshMenuGridSize……", maxWidth, maxHeight);
+			int maxHeight = a.currentViewImpl.getViewHeight();
 			layoutParams.width=maxWidth;
-			layoutParams.height=GlobalOptions.density*200>maxHeight?maxHeight:-2;
+			layoutParams.height=GlobalOptions.density*200>maxHeight?maxHeight+mInnerBottomPadding:-2;
+			//layoutParams.height= (int) (GlobalOptions.density*100)+mInnerBottomPadding;
+			//layoutParams.height= 721;
+			//CMN.Log("refreshMenuGridSize::", layoutParams.width, layoutParams.height, maxHeight, mInnerBottomPadding);
 			if(GlobalOptions.isLarge) {
 				layoutParams.setMarginEnd((int) (15*GlobalOptions.density));
 				int pad = (int) (GlobalOptions.density*8);
 				int HPad = (int) (pad*2.25);
-				menu_grid.setPadding(HPad, pad/2, HPad, pad*2);
+				menu_grid.setPadding(HPad, pad/2, HPad, pad*2+mInnerBottomPadding);
+			} else {
+				menu_grid.setPadding(0, 0, 0, mInnerBottomPadding);
 			}
 			menu_grid.requestLayout();
 		}

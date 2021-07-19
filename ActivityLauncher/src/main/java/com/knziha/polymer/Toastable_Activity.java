@@ -93,7 +93,7 @@ public class Toastable_Activity extends AppCompatActivity {
 	public float ColorMultiplier_Web=1;
 	public float ColorMultiplier_Web2=1;
 
-	protected EditTextmy etSearch;
+	public EditTextmy etSearch;
 
 	protected ObjectAnimator objectAnimator;
 	
@@ -172,6 +172,7 @@ public class Toastable_Activity extends AppCompatActivity {
 		SFStamp=opt.getSecondFlag();
 		TFStamp=opt.getThirdFlag();
 		inflater=getLayoutInflater();
+		opt.initializeV1();
 		imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
 
 		mConfiguration = new Configuration(getResources().getConfiguration());

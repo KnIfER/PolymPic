@@ -65,7 +65,7 @@ public class HorizontalSettingsPanel extends SettingsPanel implements View.OnTou
 	}
 	
 	@Override
-	protected void init(Context context, ViewGroup root) {
+	public void init(Context context, ViewGroup root) {
 		//settingsLayout = getLayoutInflater().inflate(R.layout.test_settings, UIData.webcoord, false);
 		if (settingsLayout!=null) {
 			return;

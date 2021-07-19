@@ -1260,7 +1260,7 @@ public class WebFrameLayout extends FrameLayout implements NestedScrollingChild,
 			int needRam = targetW*targetH*2;
 			Bitmap bmItem = bm.get();
 			boolean reset = bmItem==null||!bmItem.isMutable()||bmItem.getAllocationByteCount()<needRam;
-			reset |= bmItem==null||bmItem.getWidth()!=targetW||bmItem.getHeight()!=targetH;
+			//reset |= bmItem==null||bmItem.getWidth()!=targetW||bmItem.getHeight()!=targetH;
 			if(reset) {
 				if(bmItem!=null) {
 					//CMN.Log("bmItem reset");

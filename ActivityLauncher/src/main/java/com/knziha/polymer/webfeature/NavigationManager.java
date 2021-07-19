@@ -1,4 +1,4 @@
-package com.knziha.polymer.widgets;
+package com.knziha.polymer.webfeature;
 
 import android.content.Context;
 import android.content.DialogInterface;
@@ -35,8 +35,12 @@ import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.WeakReferenceHelper;
 import com.knziha.polymer.browser.AppIconCover.AppIconCover;
 import com.knziha.polymer.databinding.LoginViewBinding;
-import com.knziha.polymer.preferences.NavHomeEditorDialogSettings;
-import com.knziha.polymer.webstorage.BrowserAppPanel;
+import com.knziha.polymer.widgets.DragSelectRecyclerView;
+import com.knziha.polymer.widgets.EditFieldHandler;
+import com.knziha.polymer.widgets.EditTextmy;
+import com.knziha.polymer.widgets.PopupMenuHelper;
+import com.knziha.polymer.widgets.TextWatcherAdapter;
+import com.knziha.polymer.widgets.Utils;
 import com.shockwave.pdfium.treeview.TreeViewNode;
 
 import org.adrianwalker.multilinestring.Multiline;
@@ -60,7 +64,7 @@ public class NavigationManager extends BrowserAppPanel implements NavViewListene
 	}
 	
 	@Override
-	protected void init(Context context, ViewGroup root) {
+	public void init(Context context, ViewGroup root) {
 		showPopOnAppbar = true;
 		
 		a = (BrowserActivity) context;

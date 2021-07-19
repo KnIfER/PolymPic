@@ -126,6 +126,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 	
 	AppToastManager appToastMngr;
 	public long lastTitleSuppressTime;
+	private long lastAppReqTm;
 	
 	public boolean dismissAppToast() {
 		if(appToastMngr!=null&&appToastMngr.visible()) {
@@ -641,12 +642,12 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 			}
 			//CMN.Log("OPC::", newProgress, Thread.currentThread().getId(), webviewImpl.getUrl());
 			if (!layout.PageStarted && layout.holder.version>1) {
-//				String url = webviewImpl.getUrl();
-//				if (!TextUtils.equals(url, layout.holder.url)) {
-//					CMN.Log("调用OPS……", url, layout.holder.url);
-//					onPageStarted(view, url, null);
-//				}
-//				layout.postTime = 350;
+				String url = webviewImpl.getUrl();
+				if (!TextUtils.equals(url, layout.holder.url)) {
+					CMN.Log("手动调用OPS……", url, layout.holder.url); // | some page will change the href and wont trigger.
+					onPageStarted(view, url, null);
+				}
+				layout.postTime = 350;
 			}
 			if(mWebView==a.currentWebView && layout.PageStarted) {
 				a.tabsManagerIsDirty =true;
@@ -1295,6 +1296,12 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 				}
 			}
 		}
+		if (lastAppReqTm!=0) {
+			if (a.opt.getRequestAppNoFurtherLoading() && CMN.now()-lastAppReqTm<350) {
+				return true;
+			}
+			lastAppReqTm = 0;
+		}
 //		if (layout.getDelegateFlagIndex(BackendSettings)==WebViewSettingsSource_DOMAIN && webviewImpl.getProgress()<100) {
 //			CMN.Log("你不行你不行");
 //			// 防止一侧设置PC模式后，www <-> m 反复重载
@@ -1315,6 +1322,9 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 				appScheme = Utils.getSubStrWord(appScheme, 0, idx);
 			}
 			showT(appScheme+" 请求打开外部APP", "继续", url, false);
+			if (a.opt.getRequestAppNoFurtherLoading()) {
+				lastAppReqTm = CMN.now();
+			}
 		}
 	}
 	

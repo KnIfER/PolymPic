@@ -24,7 +24,7 @@ public class TextMenuView extends TextView {
 
 	public TextMenuView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
 		super(context, attrs, defStyleAttr);
-		leftDrawable = getResources().getDrawable(R.drawable.ic_yes);
+		leftDrawable = getResources().getDrawable(R.drawable.ic_yes_blue);
 		leftDrawable.setBounds(0, 0, leftDrawable.getIntrinsicWidth(), leftDrawable.getIntrinsicHeight());
 	}
 	

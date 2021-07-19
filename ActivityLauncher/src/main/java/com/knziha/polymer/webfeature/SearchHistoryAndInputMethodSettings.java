@@ -1,10 +1,11 @@
-package com.knziha.polymer.preferences;
+package com.knziha.polymer.webfeature;
 
 import android.content.Context;
 import android.view.ViewGroup;
 
 import com.knziha.polymer.BrowserActivity;
 import com.knziha.polymer.Utils.Options;
+import com.knziha.polymer.preferences.SettingsPanel;
 import com.knziha.polymer.widgets.Utils;
 
 public class SearchHistoryAndInputMethodSettings extends SettingsPanel {
@@ -44,7 +45,7 @@ public class SearchHistoryAndInputMethodSettings extends SettingsPanel {
 	}
 	
 	@Override
-	protected void init(Context context, ViewGroup root) {
+	public void init(Context context, ViewGroup root) {
 		super.UITexts = UITexts;
 		super.UITags = UITags;
 		super.init(context, root);

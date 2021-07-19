@@ -39,7 +39,7 @@ public class PopupMenuHelper implements View.OnClickListener, View.OnLongClickLi
 
 	public PopupMenuHelper(Context context, int[] texts, PopupMenuListener listener) {
 		this.context = context;
-		this.leftDrawable = context.getResources().getDrawable(R.drawable.ic_yes);
+		this.leftDrawable = context.getResources().getDrawable(R.drawable.ic_yes_blue);
 		lv = new LinearLayout(context);
 		lv.setOrientation(LinearLayout.VERTICAL);
 		if (texts!=null) {

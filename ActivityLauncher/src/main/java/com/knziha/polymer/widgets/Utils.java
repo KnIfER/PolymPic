@@ -524,6 +524,8 @@ public class Utils {
 			//root.setForegroundGravity();
 			if (setBehaviour) {
 				params.setBehavior(new AppBarLayout.ScrollingViewBehavior(v.getContext(), null));
+			} else {
+				params.setBehavior(null);
 			}
 		}
 	}
@@ -567,11 +569,21 @@ public class Utils {
 		}
 	}
 	
-	public static View getNthParent(View v, int i) {
+	public static View getNthParentNonNull(View v, int i) {
 		ViewParent vp;
 		while(i-->0) {
 			vp = v.getParent();
 			if (!(vp instanceof View)) break;
+			v = (View) vp;
+		}
+		return v;
+	}
+	
+	public static View getNthParentNullable(View v, int i) {
+		ViewParent vp;
+		while(i-->0) {
+			vp = v.getParent();
+			if (!(vp instanceof View)) return null;
 			v = (View) vp;
 		}
 		return v;
@@ -584,12 +596,7 @@ public class Utils {
 		return b;
 	}
 	
-	public static class DummyOnClick implements View.OnClickListener {
-		@Override
-		public void onClick(View v) {
-
-		}
-	}
+	public final static View.OnClickListener DummyOnClick  = v -> { };
 	
 	public static boolean isKeyboardShown(View rootView) {
 		final int softKeyboardHeight = 100;

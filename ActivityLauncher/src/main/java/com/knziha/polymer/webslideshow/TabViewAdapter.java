@@ -473,6 +473,7 @@ public class TabViewAdapter extends RecyclerView.Adapter<ViewUtils.ViewDataHolde
 		if(d==null){
 			d = new Dialog(a);
 			d.setCancelable(true);
+			d.requestWindowFeature(Window.FEATURE_NO_TITLE);
 			d.setCanceledOnTouchOutside(true);
 			d.show();
 			if (!Utils.bigCake) {

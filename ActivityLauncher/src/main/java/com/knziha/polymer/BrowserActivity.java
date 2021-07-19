@@ -11,7 +11,6 @@ import android.app.SearchManager;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
@@ -42,6 +41,7 @@ import android.text.TextWatcher;
 import android.text.method.LinkMovementMethod;
 import android.text.style.ClickableSpan;
 import android.text.style.RelativeSizeSpan;
+import android.text.util.Linkify;
 import android.view.ActionMode;
 import android.view.GestureDetector;
 import android.view.Gravity;
@@ -51,6 +51,7 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.animation.AccelerateDecelerateInterpolator;
@@ -64,7 +65,6 @@ import android.webkit.WebViewClient;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
-import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -78,8 +78,6 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.GlobalOptions;
-import androidx.appcompat.widget.DropDownListView;
-import androidx.appcompat.widget.ListPopupWindow;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.content.pm.ShortcutInfoCompat;
 import androidx.core.content.pm.ShortcutManagerCompat;
@@ -100,7 +98,6 @@ import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.math.MathUtils;
 import com.knziha.polymer.Utils.CMN;
-import com.knziha.polymer.Utils.Options;
 import com.knziha.polymer.Utils.RgxPlc;
 import com.knziha.polymer.browser.BlockingDlgs;
 import com.knziha.polymer.browser.DownloadHandlerStd;
@@ -112,18 +109,19 @@ import com.knziha.polymer.browser.webkit.XPlusWebView;
 import com.knziha.polymer.browser.webkit.XWalkWebView;
 import com.knziha.polymer.database.LexicalDBHelper;
 import com.knziha.polymer.databinding.ActivityMainBinding;
-import com.knziha.polymer.databinding.LoginViewBinding;
-import com.knziha.polymer.databinding.SearchEnginesItemBinding;
 import com.knziha.polymer.databinding.SearchHintsItemBinding;
 import com.knziha.polymer.preferences.MenuGrid;
-import com.knziha.polymer.preferences.NightMode;
-import com.knziha.polymer.preferences.QuickBrowserSettingsPanel;
-import com.knziha.polymer.preferences.SearchHistoryAndInputMethodSettings;
 import com.knziha.polymer.preferences.SettingsPanel;
 import com.knziha.polymer.qrcode.QRActivity;
 import com.knziha.polymer.qrcode.QRGenerator;
 import com.knziha.polymer.toolkits.Utils.BU;
 import com.knziha.polymer.toolkits.Utils.ReusableByteOutputStream;
+import com.knziha.polymer.webfeature.NavigationManager;
+import com.knziha.polymer.webfeature.NightMode;
+import com.knziha.polymer.webfeature.QuickBrowserSettingsPanel;
+import com.knziha.polymer.webfeature.SearchEnginesManager;
+import com.knziha.polymer.webfeature.SearchHistoryAndInputMethodSettings;
+import com.knziha.polymer.webfeature.WebAnnotationPanel;
 import com.knziha.polymer.webslideshow.TabViewAdapter;
 import com.knziha.polymer.webslideshow.ViewUtils;
 import com.knziha.polymer.webslideshow.WebPic.WebPic;
@@ -131,8 +129,6 @@ import com.knziha.polymer.webstorage.BrowserDownloads;
 import com.knziha.polymer.webstorage.BrowserHistory;
 import com.knziha.polymer.webstorage.DomainInfo;
 import com.knziha.polymer.webstorage.SardineCloud;
-import com.knziha.polymer.webstorage.WebAnnotationPanel;
-import com.knziha.polymer.webstorage.WebDict;
 import com.knziha.polymer.webstorage.WebOptions;
 import com.knziha.polymer.webstorage.WebStacksSer;
 import com.knziha.polymer.webstorage.WebViewSettingsDialog;
@@ -142,11 +138,8 @@ import com.knziha.polymer.widgets.DescriptiveImageView;
 import com.knziha.polymer.widgets.DialogWithTag;
 import com.knziha.polymer.widgets.EditFieldHandler;
 import com.knziha.polymer.widgets.MergedWebOptWidget;
-import com.knziha.polymer.widgets.NavigationManager;
 import com.knziha.polymer.widgets.PDFPrintManager;
-import com.knziha.polymer.widgets.PopupBackground;
 import com.knziha.polymer.widgets.PopupMenuHelper;
-import com.knziha.polymer.widgets.SuperItemListener;
 import com.knziha.polymer.widgets.TextMenuView;
 import com.knziha.polymer.widgets.TwoColumnAdapter;
 import com.knziha.polymer.widgets.Utils;
@@ -176,7 +169,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static androidx.appcompat.app.GlobalOptions.realWidth;
 import static com.knziha.polymer.Utils.Options.WebViewSettingsSource_DOMAIN;
 import static com.knziha.polymer.Utils.Options.WebViewSettingsSource_TAB;
 import static com.knziha.polymer.Utils.Options.getLimitHints;
@@ -187,7 +179,6 @@ import static com.knziha.polymer.WebCompoundListener.PrintStartTime;
 import static com.knziha.polymer.WebCompoundListener.httpPattern;
 import static com.knziha.polymer.WebCompoundListener.requestPattern;
 import static com.knziha.polymer.browser.webkit.WebViewHelper.bAdvancedMenu;
-import static com.knziha.polymer.browser.webkit.WebViewHelper.getTypedTagInAncestors;
 import static com.knziha.polymer.webslideshow.ViewUtils.ViewDataHolder;
 import static com.knziha.polymer.webstorage.WebOptions.BackendSettings;
 import static com.knziha.polymer.webstorage.WebOptions.ImmersiveSettings;
@@ -252,22 +243,12 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	
 	public Object mXWalkDelegate;
 	
-	ArrayList<WebDict> WebDicts = new  ArrayList<>(64);
-	private WebDict editingSchEngBean;
-	private View currentSchEngItemView;
-	private boolean isSyncSchEngShown;
-	private boolean isSchEngsDirty;
-	private String currentWebDictUrl;
-	private BaseAdapter searchEngineAdapter;
+	public String currentWebDictUrl;
+	public SearchEnginesManager searchEnginesManager = new SearchEnginesManager(this);
 	
 	public TabViewAdapter tabViewAdapter;
 	private RecyclerView.Adapter/*<ViewDataHolder<SearchHintsItemBinding>>*/ adaptermy2;
 	
-	private ListPopupWindow searchEnginePopup;
-	private PopupBackground layoutListener;
-	private PopupWindow polypopup;
-	private View polypopupview;
-	private boolean polysearching;
 	private CoordinatorLayout.Behavior bottombarScrollBehaviour;
 	private CoordinatorLayout.Behavior bottombarHideBehaviour;
 	private AppBarLayout.LayoutParams toolbatLP;
@@ -322,15 +303,16 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	private boolean IsShowingSearchHistory;
 	private boolean IsReqCheckingNxtResume;
 	
-	private int _45_;
+	public int _45_;
 	
 	public SettingsPanel settingsPanel;
 	public PopupWindow   settingsPopup;
 	public boolean settingsBelowAppbar;
 	private NavigationManager navManager;
 	private long lastOpenedTab;
-	private ViewGroup actionBarRoot;
 	private long LastAutoNewTabTime;
+	
+	private View actionBarRoot;
 	
 	@Override
 	public void onConfigurationChanged(@NonNull Configuration newConfig) {
@@ -352,6 +334,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			}
 			targetH*=GlobalOptions.density;
 			UIData.bottombar2.getLayoutParams().height = (int) (targetH);
+			decideWebviewPadding(currentViewImpl);
 		}
 		if(settingsPanel!=null) {
 			root.postDelayed(postOnConfigurationChanged, 200);
@@ -364,8 +347,12 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			if(settingsPopup!=null) {
 				//settingsPopup.dismiss();
 				embedPopInCoordinatorLayout(settingsPopup, settingsBelowAppbar);
-			} else if(settingsPanel!=null){
-				settingsPanel.setBottomPadding(UIData.bottombar2.getHeight());
+			} else if(settingsPanel!=null ){
+				int pad = UIData.bottombar2.getHeight();
+				if (UIData.appbar.getTop()>=0) {
+					pad+=UIData.appbar.getHeight();
+				}
+				settingsPanel.setInnerBottomPadding(pad);
 			}
 			MenuGrid menuGrid = (MenuGrid) getReferencedObject(WeakReferenceHelper.menu_grid);
 			if(menuGrid!=null) {
@@ -402,8 +389,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			super.onBackPressed();
 			return;
 		}
-		if(searchEnginePopup!=null && searchEnginePopup.isShowing()) {
-			searchEnginePopup.dismiss();
+		if(searchEnginesManager.isVisible()) {
+			searchEnginesManager.toggle();
 		} else if(settingsPanel!=null) {
 			hideSettingsPanel();
 		} else if(navManager !=null && navManager.dismiss(true)) {
@@ -425,8 +412,6 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		super.onCreate(savedInstanceState);
 		CMN.Log("getting mid 0 ...", Thread.currentThread().getId(), Build.VERSION.SDK_INT);
 		
-		TestHelper.testAddWebDicts(WebDicts);
-		currentWebDictUrl = WebDicts.get(0).url;
 		
 		Window win = getWindow();
 		//getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN|WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
@@ -439,10 +424,10 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			supportRequestWindowFeature(Window.FEATURE_ACTION_MODE_OVERLAY);
 		}
 		
-		
 		//win.setFlags(WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED, WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED);
 		
-		boolean transit = Options.getTransitSplashScreen();
+		boolean transit = opt.getTransitSplashScreen();
+		//transit = false;
 		if(!transit) setTheme(R.style.AppThemeRaw);
 		
 		UIData = DataBindingUtil.setContentView(this, R.layout.activity_main);
@@ -474,12 +459,14 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			ObjectAnimator fadeInContents = ObjectAnimator.ofFloat(root, "alpha", 0, 1);
 			fadeInContents.setInterpolator(new AccelerateDecelerateInterpolator());
 			fadeInContents.setDuration(350);
-			fadeInContents.addListener(new AnimatorListenerAdapter() {
-				@Override
-				public void onAnimationEnd(Animator animation) {
-					win.setBackgroundDrawable(new ColorDrawable(0));
-				}
-			});
+			if (Utils.version>=23) { // 较旧版本的安卓，设置背景会有闪烁。
+				fadeInContents.addListener(new AnimatorListenerAdapter() {
+					@Override
+					public void onAnimationEnd(Animator animation) {
+						win.setBackgroundDrawable(new ColorDrawable(0));
+					}
+				});
+			}
 			root.post(fadeInContents::start);
 		}
 		
@@ -489,8 +476,36 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		setOnClickListenersOneDepth(UIData.toolbarContent, this, 1, null);
 		
 		UIData.browserWidget10.setOnLongClickListener(this);
-		
 		etSearch=UIData.etSearch;
+		if(Utils.littleCake) {
+			actionBarRoot = Utils.getNthParentNullable(root, 2);
+			if (actionBarRoot instanceof ViewGroup && actionBarRoot.getId()==R.id.action_bar_root) {
+				etSearch.setCustomSelectionActionModeCallback(new ActionMode.Callback() {
+					View actionModeBar;
+					Runnable restoreAbility = () -> {
+						if (actionModeBar!=null) {
+							Utils.addViewToParent(actionModeBar , (ViewGroup) actionBarRoot, 1);
+						}
+					};
+					@Override public boolean onPrepareActionMode(ActionMode mode, Menu menu) { return false; }
+					@Override public void onDestroyActionMode(ActionMode mode) {
+						actionBarRoot.postDelayed(restoreAbility, 800); // 因为动画所以延迟调用 | wait for animation to end
+					}
+					@Override public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+						actionBarRoot.removeCallbacks(restoreAbility);
+						actionModeBar = actionBarRoot.findViewById(R.id.action_mode_bar);
+						if (actionModeBar!=null) {
+							Utils.removeView(actionModeBar);
+						}
+						return true;
+					}
+					@Override public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+						return false;
+					}
+				});
+			}
+		}
+		
 		progressbar_background=UIData.progressbar.getBackground();
 		webtitle=UIData.webtitle;
 		toolbatLP=(AppBarLayout.LayoutParams) UIData.toolbar.getLayoutParams();
@@ -531,6 +546,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		return UIData.bottombar2.getBackground();
 	}
 	
+	/** 吾何人哉？幻界之主，九方之神人也 */
 	@Override
 	protected void onPause() {
 		super.onPause();
@@ -839,23 +855,6 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		
 		//TestHelper.insertMegaAnnotsTextToHistory(historyCon, 1000);
 		
-		if(false)
-		if(Utils.littleCake) {
-			View p2th = Utils.getNthParent(root, 2);
-			if (p2th!=null && p2th.getId()==R.id.action_bar_root) {
-				actionBarRoot = (ViewGroup) p2th;
-				Utils.replaceView(Utils.getNthParent(root, 1), p2th);
-			}
-//			root.postDelayed(new Runnable() {
-//				@Override
-//				public void run() {
-//					if (actionBarRoot!=null && actionBarRoot.getParent()==null) {
-//						Utils.replaceView(actionBarRoot, root);
-//						actionBarRoot.addView(root, 0);
-//					}
-//				}
-//			}, 10000);
-		}
 		
 		root.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
 			int lastW, lastH;
@@ -910,8 +909,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			}
 			AttachWebAt(idx, init?0:3);
 		}
+		checkImmersiveMode();
 		decideWebviewPadding(currentViewImpl);
-		decideTopBotBehaviours();
 	}
 	
 	private void updateQRBtn() {
@@ -2251,29 +2250,24 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		if(attachView) {
 			//if(pseudoAdd==0)
 			{
-				int cc=UIData.webcoord.getChildCount();
 				View ca;
-				for (int j = 0; j < cc; j++) {
+				for (int j = 0; j < UIData.webcoord.getChildCount(); j++) {
 					if((ca=UIData.webcoord.getChildAt(j))instanceof WebFrameLayout
 							&&ca!=weblayout
 							&&(pseudoAdd==0||ca!=mBrowserSlider.webla&&ca!=currentViewImpl)
 					) {
-						UIData.webcoord.removeViewAt(j);
-						j--;
-						cc--;
+						try {
+							UIData.webcoord.removeViewAt(j);
+							j--;
+						} catch (Exception e) {
+							// todo fix java.lang.ClassCastException: com.google.android.material.appbar.AppBarLayout$LayoutParams cannot be cast to androidx.coordinatorlayout.widget.CoordinatorLayout$LayoutParams
+							// 	 occurred when switch tab( immersive scroll enabled, hide bottom bar only ) to  tab( immersive scroll enabled, hide top bar only )
+							CMN.Log(e);
+						}
 					}
 				}
 			}
-			ViewGroup svp = (ViewGroup) weblayout.getParent();
-			if(svp!=null) { // sanity check
-				if(add=svp!=UIData.webcoord) {
-					svp.removeView(weblayout);
-				}
-			}
-			if(add) {
-				//UIData.webcoord.addView(weblayout);
-				UIData.webcoord.addView(weblayout, 0);
-			}
+			add = Utils.addViewToParent(weblayout, UIData.webcoord, 0);
 			decideWebviewPadding(weblayout); // Attach检查
 			weblayout.onViewAttached(0);
 		}
@@ -2393,9 +2387,11 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			lp.setBehavior(scrollingBH);
 		}
 		if((fixBotBar||fixAll) && !bottombarHidden) {
-			pb = appbar_height;
+			pb = UIData.bottombar2.getLayoutParams().height;
+			if (pb<=0) pb = UIData.bottombar2.getHeight();
+			if (pb<=0) pb = appbar_height;
 		}
-		CMN.Log("decideWebviewPadding::", bottombarHidden, pt, pb);
+		//CMN.Log("decideWebviewPadding::", bottombarHidden, pt, pb);
 		weblayout.setPadding(0,pt,0,pb);
 	}
 	
@@ -2433,200 +2429,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		}
 		switch (vid){
 			case R.id.ivBack:{ // 搜索引擎弹窗 //searpop
-				int polypopupW = (int) (_45_*1.5);
-				int searchEnginePopupW = (int) (etSearch.getWidth()*0.90);
-				searchEnginePopupW = Math.min(searchEnginePopupW, (int)Math.max(realWidth, 555*GlobalOptions.density));
-				if(searchEnginePopup==null) {
-					layoutListener = UIData.layoutListener;
-					searchEnginePopup = new ListPopupWindow(BrowserActivity.this);
-					SuperItemListener schEngItemLis = new SuperItemListener() {
-						boolean isLongClicked;
-						boolean longClick;
-						@Override
-						public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-							onClick(view);
-						}
-						
-						@Override
-						public boolean onLongClick(View v) {
-							isLongClicked=true;
-							longClick=true;
-							onClick(v);
-							return longClick;
-						}
-						
-						@Override
-						public void onClick(View v) {
-							SearchEnginesItemBinding itemData = (SearchEnginesItemBinding) getTypedTagInAncestors(v, 3, SearchEnginesItemBinding.class);
-							if(itemData!=null) {
-								int position = (int) itemData.title.getTag();
-								int id = v.getId();
-								switch (id) {
-									case R.id.search_engines: {
-										currentWebDictUrl = ((WebDict) itemData.businessCard.getTag()).url;
-										searchEnginePopup.dismiss();
-										searchEngineAdapter.notifyDataSetChanged();
-									} break;
-									case R.id.up:
-									case R.id.down: {
-										boolean up=id==R.id.up;
-										if(up?position>0:position<WebDicts.size()-1) {
-											WebDict webDictItem = WebDicts.set(up?position-1:position+1, WebDicts.get(position));
-											WebDicts.set(position, webDictItem);
-											searchEngineAdapter.notifyDataSetChanged();
-										}
-										isSchEngsDirty=true;
-									} break;
-									case R.id.edit:{
-										showEditSchEngDlg((WebDict) itemData.businessCard.getTag());
-									} break;
-									case R.id.delete:{
-										WebDicts.remove(position);
-										searchEngineAdapter.notifyDataSetChanged();
-										isSchEngsDirty=true;
-									} break;
-								}
-							}
-							else {
-								showEditSchEngDlg(null);
-							}
-						}
-					};
-					GestureDetector mDetector = new GestureDetector(BrowserActivity.this
-							, new GestureDetector.SimpleOnGestureListener() {
-						@Override
-						public boolean onFling(MotionEvent e1, MotionEvent e2,
-											   float velocityX, float velocityY) {
-							View ca = currentSchEngItemView;
-							if(ca!=null && Math.abs(velocityX)*1.2f>Math.abs(velocityY)) {
-								Object tag = ca.getTag();
-								if(velocityX!=0) {
-									if(tag instanceof SearchEnginesItemBinding) {
-										SearchEnginesItemBinding itemData = (SearchEnginesItemBinding) tag;
-										WebDict webDictItem = (WebDict) itemData.businessCard.getTag();
-										webDictItem.expandEditView(itemData, schEngItemLis, velocityX<0, true);
-									} else {
-										WebDict.expandSyncView(ca, schEngItemLis, isSyncSchEngShown=velocityX<0, true);
-									}
-									return true;
-								}
-							}
-							return false;
-						}
-					});
-					searchEnginePopup.tag = (View.OnTouchListener) (v13, event) -> {
-						ViewGroup vg = (ViewGroup) v13;
-						if(event.getActionMasked()== MotionEvent.ACTION_DOWN) {
-							float y = event.getY();
-							View ca=null;
-							int i=0,len=vg.getChildCount();
-							for(;i<len;i++) {
-								ca=vg.getChildAt(i);
-								if(ca.getBottom()>y) {
-									break;
-								}
-							}
-							currentSchEngItemView = i<len?ca:null;
-						}
-						return mDetector.onTouchEvent(event);
-					};
-					searchEnginePopup.tag1 = schEngItemLis;
-					searchEnginePopup.setAdapter(searchEngineAdapter = new BaseAdapter() {
-						public int getCount() {
-							return WebDicts.size()+1;
-						}
-						public Object getItem(int position) {
-							return position>=0&&position<WebDicts.size()?WebDicts.get(position):null;
-						}
-						public long getItemId(int position) {
-							return 0;
-						}
-						public int getViewTypeCount() {
-							return 2;
-						}
-						public int getItemViewType(int position) {
-							return position>=0&&position<WebDicts.size()?0:1;
-						}
-						public View getView(int position, View convertView, ViewGroup parent) {
-							if(position>=0&&position<WebDicts.size()) {
-								SearchEnginesItemBinding itemData;
-								if(convertView==null) {
-									itemData = SearchEnginesItemBinding.inflate(getLayoutInflater(), parent, false);
-									convertView = itemData.getRoot();
-									//convertView.setOnClickListener(BrowserActivity.this);
-									convertView.setTag(itemData);
-								} else {
-									itemData = (SearchEnginesItemBinding) convertView.getTag();
-								}
-								WebDict webDictItem = WebDicts.get(position);
-								itemData.businessCard.setTag(webDictItem);
-								itemData.title.setTag(position);
-								String name=webDictItem.name;
-								itemData.title.setText(name==null?"Untitled":name);
-								itemData.tick.setVisibility(TextUtils.equals(currentWebDictUrl, webDictItem.url)?View.VISIBLE:View.GONE);
-								webDictItem.expandEditView(itemData, schEngItemLis, webDictItem.isEditing, false);
-							} else {
-								if(convertView==null) {
-									convertView = getLayoutInflater().inflate(R.layout.search_engines_add, parent, false);
-								}
-								WebDict.expandSyncView(convertView, schEngItemLis, isSyncSchEngShown, false);
-							}
-							return convertView;
-						}
-					});
-					searchEnginePopup.setOnItemClickListener(schEngItemLis);
-					searchEnginePopup.setAnchorView(findViewById(R.id.popline));
-					//searchEnginePopup.setOverlapAnchor(true); //21 禁开
-					searchEnginePopup.setDropDownAlwaysVisible(true);
-					searchEnginePopup.setOnDismissListener(() -> {
-						layoutListener.setVisibility(View.GONE);
-						layoutListener.popup=null;
-						polypopup.dismiss();
-						if(isSchEngsDirty) {
-							// todo save and load search engines
-							isSchEngsDirty = false;
-						}
-					});
-					
-					//searchEnginePopup.mPopup.setEnterTransition(null);
-					polypopupview = LayoutInflater.from(this).inflate(R.layout.polymer, root, false);
-					polypopupview.setOnClickListener(v1 -> {
-						polysearching=!polysearching;
-						polypopupview.setAlpha(polysearching?1:0.25f);
-						showT(polysearching?"聚合搜索":"已关闭");
-						//m_currentToast.setGravity(Gravity.TOP, 0, appbar.getHeight());
-					});
-					polypopupview.setAlpha(polysearching?1:0.25f);
-					polypopup = new PopupWindow(polypopupview, polypopupW, polypopupW, false);
-					polypopup.setOutsideTouchable(false);
-					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-						polypopup.setEnterTransition(null);
-						polypopup.setExitTransition(null);
-					}
-				}
-				//searchEnginePopup.setInputMethodMode(PopupWindow.INPUT_METHOD_NEEDED);
-				if(searchEnginePopup.isShowing()) {
-					searchEnginePopup.dismiss();
-				} else {
-					int iconWidth = UIData.ivBack.getWidth();
-					int etSearch_getWidth = root.getWidth()-iconWidth*2;
-					searchEnginePopup.Selection=5;
-					layoutListener.popup = searchEnginePopup;
-					layoutListener.setVisibility(View.VISIBLE);
-					//layoutListener.supressNextUpdate=true;
-					searchEnginePopup.setWidth(searchEnginePopupW);
-					searchEnginePopup.setHeight(-2);
-					searchEnginePopup.show();
-					((DropDownListView)searchEnginePopup.getListView())
-							.setOnDispatchTouchListener((View.OnTouchListener) searchEnginePopup.tag);
-					//searchEnginePopup.mDropDownList.getLayoutParams().height=-2;
-					//searchEnginePopup.mDropDownList.requestLayout();
-					//((ViewGroup)searchEnginePopup.mDropDownList.getParent()).getLayoutParams().height=-2;
-					//((ViewGroup)searchEnginePopup.mDropDownList.getParent()).requestLayout();
-					//polypopup.showAtLocation(ivBack, Gravity.RIGHT|Gravity.TOP,10, appbar.getHeight());
-					polypopup.showAsDropDown(UIData.ivBack,iconWidth+((etSearch_getWidth+searchEnginePopupW+iconWidth)-(polypopupW))/2, -polypopupW/2);
-				}
-				//searchEnginePopup.show();
+				searchEnginesManager.toggle();
 			} break;
 			case R.id.search_engines_add: {
 			
@@ -3012,80 +2815,6 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		return navManager;
 	}
 	
-	/** 吾何人哉？幻界之主，九方之神人也 */
-	private void showEditSchEngDlg(WebDict editing) {
-		editingSchEngBean = editing;
-		AlertDialog editSchEngDlg = (AlertDialog) getReferencedObject(WeakReferenceHelper.edit_scheng);
-		if(editSchEngDlg==null) {
-			LoginViewBinding schEngEditView = LoginViewBinding.inflate(getLayoutInflater(), root, false);
-			AlertDialog d = new AlertDialog
-					.Builder(BrowserActivity.this)
-					.setView(schEngEditView.getRoot())
-					.setTitle("添加搜索引擎")
-					.setOnDismissListener(dialog -> {
-						schEngEditView.url.setText(null);
-						schEngEditView.name.setText(null);
-						editingSchEngBean=null;
-					})
-					.setPositiveButton("确认", null)
-					.setNegativeButton("取消", null)
-					.show();
-			d.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener(v -> {
-				String url = Utils.getFieldInView(schEngEditView.url);
-				String name = Utils.getFieldInView(schEngEditView.name);
-				if(url.startsWith("http")) {
-					if(editingSchEngBean==null) {
-						WebDicts.add(new WebDict(url, name));
-					} else {
-						editingSchEngBean.url = url;
-						editingSchEngBean.name = name;
-					}
-					isSchEngsDirty=true;
-					if(searchEngineAdapter!=null) {
-						searchEngineAdapter.notifyDataSetChanged();
-					}
-					d.dismiss();
-				} else {
-					showT("无效的URL地址");
-				}
-			});
-			d.getTitleView().setOnLongClickListener(v -> {
-				for(WebDict webDictItem:WebDicts) {
-					webDictItem.isEditing = false;
-				}
-				if(searchEngineAdapter!=null) {
-					searchEngineAdapter.notifyDataSetChanged();
-				}
-				return true;
-			});
-			View.OnClickListener lis = v14 -> {
-				ViewGroup editView = (ViewGroup) v14.getParent();
-				FrameLayout panelView = (FrameLayout) d.findViewById(R.id.action_bar_root).getParent();
-				EditFieldHandler editFieldHandler = (EditFieldHandler) getReferencedObject(WeakReferenceHelper.edit_field);
-				if(editFieldHandler==null) {
-					putReferencedObject(WeakReferenceHelper.edit_field, editFieldHandler = new EditFieldHandler(BrowserActivity.this, panelView));
-				}
-				d.setCancelable(false);
-				editFieldHandler.showForEditText(panelView
-						, (EditText) editView.getChildAt(0)
-						,d
-						,editView.getTop()+d.findViewById(R.id.topPanel).getHeight()
-						,(int) (8* GlobalOptions.density));
-			};
-			schEngEditView.nameMorpt.setOnClickListener(lis);
-			schEngEditView.urlMorpt.setOnClickListener(lis);
-			d.tag = schEngEditView;
-			putReferencedObject(WeakReferenceHelper.edit_scheng, editSchEngDlg=d);
-		}
-		if(editingSchEngBean!=null) {
-			LoginViewBinding schEngEditView = (LoginViewBinding) editSchEngDlg.tag;
-			schEngEditView.url.setText(editingSchEngBean.url);
-			schEngEditView.name.setText(editingSchEngBean.name);
-		}
-		editSchEngDlg.setTitle(editing==null?"添加搜索引擎":"修改搜索引擎");
-		editSchEngDlg.show();
-	}
-	
 	public void copyText(String text) {
 		ClipboardManager clipboard = (ClipboardManager) this.getSystemService(Context.CLIPBOARD_SERVICE);
 		clipboard.setPrimaryClip(ClipData.newPlainText("PLOD", text));
@@ -3162,7 +2891,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			if (UIData.bottombar2.getBottom()<=UIData.webcoord.getHeight()) {
 				padding += UIData.bottombar2.getHeight();
 			}
-			wenAnnots.setBottomPadding(padding);
+			wenAnnots.setInnerBottomPadding(padding);
 		}
 //		if (menuGrid!=null && vis) {
 //			//modThreeBtnForMenuGrid(false, true);
@@ -3207,7 +2936,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			if (UIData.bottombar2.getBottom()<=UIData.webcoord.getHeight()) {
 				padding += UIData.bottombar2.getHeight();
 			}
-			quickSettings.setBottomPadding(padding);
+			quickSettings.setInnerBottomPadding(padding);
 		}
 		settingsPanel = vis?quickSettings:null;
 //		if (menuGrid!=null && vis) {
@@ -3943,7 +3672,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 							WebOptions.setAlwaysOpenInNewTab(false);
 							currentWebHolder.flag = WebOptions.tmpFlag;
 						}
-						WebViewHelper.LookForANobleSteedCorrespondingWithDrawnClasses(Utils.getNthParent(v,1), 0, ViewGroup.class, TextMenuView.class).setActivated(alwaysInNewTab);
+						WebViewHelper.LookForANobleSteedCorrespondingWithDrawnClasses(Utils.getNthParentNonNull(v,1), 0, ViewGroup.class, TextMenuView.class).setActivated(alwaysInNewTab);
 						return true;
 					}
 				};
@@ -4848,7 +4577,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	public void onActionModeStarted(ActionMode mode) {
 		View v = getCurrentFocus();
 		//CMN.Log("-->onActionModeStarted", v);
-		if (!bAdvancedMenu && (v==currentWebView || Utils.getNthParent(v, 2)==currentWebView)) {
+		if (!bAdvancedMenu && v!=null && (v==currentWebView || Utils.getNthParentNonNull(v, 2)==currentWebView)) {
 			MenuItem.OnMenuItemClickListener listener = this.currentViewImpl;
 			mode.setTitle(null);
 			mode.setSubtitle(null);

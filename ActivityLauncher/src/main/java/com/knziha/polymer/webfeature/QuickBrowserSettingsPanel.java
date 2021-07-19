@@ -1,4 +1,4 @@
-package com.knziha.polymer.preferences;
+package com.knziha.polymer.webfeature;
 
 import android.animation.LayoutTransition;
 import android.content.Context;
@@ -25,7 +25,7 @@ import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.databinding.QuickSettingsPanelBinding;
 import com.knziha.polymer.equalizer.EqualizerGroup;
 import com.knziha.polymer.equalizer.VerticalSeekBar;
-import com.knziha.polymer.webstorage.BrowserAppPanel;
+import com.knziha.polymer.preferences.SettingsPanel;
 import com.knziha.polymer.webstorage.DomainInfo;
 import com.knziha.polymer.webstorage.WebOptions;
 import com.knziha.polymer.widgets.PopupMenuHelper;
@@ -71,7 +71,7 @@ public class QuickBrowserSettingsPanel extends BrowserAppPanel implements Settin
 	}
 	
 	@Override
-	protected void init(Context context, ViewGroup root) {
+	public void init(Context context, ViewGroup root) {
 		a=(BrowserActivity) context;
 		
 		showInPopWindow = true;
@@ -80,7 +80,7 @@ public class QuickBrowserSettingsPanel extends BrowserAppPanel implements Settin
 		drawables = new Drawable[]{
 			mResource.getDrawable(R.drawable.ic_viewpager_carousel_1)
 			, mResource.getDrawable(R.drawable.ic_domain_bk)
-			, mResource.getDrawable(R.drawable.ic_polymer1)
+			, mResource.getDrawable(R.drawable.ic_polymer_blue)
 		};
 		for (Drawable drawable:drawables) {
 			drawable.setBounds(0, 0, drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight());
@@ -362,7 +362,7 @@ public class QuickBrowserSettingsPanel extends BrowserAppPanel implements Settin
 							,R.string.ts_125
 							,R.string.ts_150
 						};
-						popupMenu.leftDrawable = a.mResource.getDrawable(R.drawable.ic_yes);
+						popupMenu.leftDrawable = a.mResource.getDrawable(R.drawable.ic_yes_blue);
 						popupMenu.initLayout(texts, (popupMenuHelper, v, isLongClick) -> {
 							int value = 110;
 							switch (v.getId()) {
@@ -457,7 +457,7 @@ public class QuickBrowserSettingsPanel extends BrowserAppPanel implements Settin
 					,R.string.wangzhan
 					,R.string.genduo
 			};
-			popupMenu.leftDrawable = a.mResource.getDrawable(R.drawable.ic_yes);
+			popupMenu.leftDrawable = a.mResource.getDrawable(R.drawable.ic_yes_blue);
 			popupMenu.initLayout(texts, (popupMenuHelper, v, isLongClick) -> {
 				int pickDelegateIndex = -1;
 				switch (v.getId()) {
@@ -516,7 +516,7 @@ public class QuickBrowserSettingsPanel extends BrowserAppPanel implements Settin
 		} else if (index==WebViewSettingsSource_DOMAIN) {
 			return R.drawable.ic_domain_bk;
 		}
-		return R.drawable.ic_polymer1;
+		return R.drawable.ic_polymer_blue;
 	}
 	
 	@Override

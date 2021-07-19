@@ -25,7 +25,7 @@ import com.knziha.polymer.widgets.XYLinearLayout;
 
 public class SettingsPanel extends AnimatorListenerAdapter implements View.OnClickListener {
 	public ViewGroup settingsLayout;
-	protected LinearLayout linearLayout;
+	public LinearLayout linearLayout;
 	protected boolean bIsShowing;
 	protected int bottomPadding;
 	protected final Options opt;
@@ -42,6 +42,7 @@ public class SettingsPanel extends AnimatorListenerAdapter implements View.OnCli
 	protected int mPaddingRight=10;
 	protected int mPaddingTop=0;
 	protected int mPaddingBottom=0;
+	protected int mInnerBottomPadding=0;
 	protected int mItemPaddingLeft=5;
 	protected int mItemPaddingTop=8;
 	protected int mItemPaddingBottom=8;
@@ -107,10 +108,10 @@ public class SettingsPanel extends AnimatorListenerAdapter implements View.OnCli
 		return ret;
 	}
 	
-	public void setBottomPadding(int padding) {
+	public void setInnerBottomPadding(int padding) {
 		if (!showInPopWindow) {
 			View v = settingsLayout.getChildAt(0);
-			v.setPadding(0, 0, 0, padding);
+			v.setPadding(0, 0, 0, mInnerBottomPadding = padding);
 		}
 	}
 	
@@ -230,7 +231,7 @@ public class SettingsPanel extends AnimatorListenerAdapter implements View.OnCli
 		}
 	}
 	
-	protected void init(Context context, ViewGroup root) {
+	public void init(Context context, ViewGroup root) {
 		//settingsLayout = getLayoutInflater().inflate(R.layout.test_settings, UIData.webcoord, false);
 		if (settingsLayout!=null) {
 			return;

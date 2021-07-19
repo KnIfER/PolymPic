@@ -1,4 +1,4 @@
-package com.knziha.polymer.preferences;
+package com.knziha.polymer.webfeature;
 
 import android.content.Context;
 import android.util.DisplayMetrics;
@@ -6,7 +6,6 @@ import android.view.ViewGroup;
 
 import com.knziha.polymer.BrowserActivity;
 import com.knziha.polymer.R;
-import com.knziha.polymer.webstorage.BrowserAppPanel;
 
 public class NightMode extends BrowserAppPanel {
 	BrowserActivity a;
@@ -17,7 +16,7 @@ public class NightMode extends BrowserAppPanel {
 	}
 	
 	@Override
-	protected void init(Context context, ViewGroup root) {
+	public void init(Context context, ViewGroup root) {
 		a = (BrowserActivity) context;
 		showInPopWindow = true;
 		showPopOnAppbar = true;

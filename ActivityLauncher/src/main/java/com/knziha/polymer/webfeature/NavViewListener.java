@@ -1,4 +1,4 @@
-package com.knziha.polymer.widgets;
+package com.knziha.polymer.webfeature;
 
 import android.view.View;
 

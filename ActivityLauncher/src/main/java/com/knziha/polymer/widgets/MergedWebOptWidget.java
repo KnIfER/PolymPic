@@ -27,7 +27,7 @@ public class MergedWebOptWidget extends HorizontalSettingsPanel {
 						, makeInt(WebViewSettingsSource_TAB, flagPos, reversed)
 						, makeInt(WebViewSettingsSource_DOMAIN, flagPos, reversed)
 				}}, new int[][]{new int[]{0
-						, R.drawable.ic_polymer1
+						, R.drawable.ic_polymer_blue
 						, R.drawable.ic_viewpager_carousel_1
 						, R.drawable.ic_domain_bk
 				}});

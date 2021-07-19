@@ -1,4 +1,4 @@
-package com.knziha.polymer.webstorage;
+package com.knziha.polymer.webfeature;
 
 import android.animation.Animator;
 import android.animation.ValueAnimator;
@@ -8,6 +8,7 @@ import android.widget.PopupWindow;
 import androidx.annotation.CallSuper;
 
 import com.knziha.polymer.BrowserActivity;
+import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.preferences.SettingsPanel;
 import com.knziha.polymer.widgets.Utils;
 
@@ -62,7 +63,7 @@ public class BrowserAppPanel extends SettingsPanel {
 				if (a.UIData.appbar.getTop()>=0) {
 					pad+=a.UIData.appbar.getHeight();
 				}
-				setBottomPadding(pad);
+				setInnerBottomPadding(pad);
 			}
 		} else if(a.settingsPanel == this){
 			a.hideSettingsPanel();
