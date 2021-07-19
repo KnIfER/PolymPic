@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
 	xmlns:tools="http://schemas.android.com/tools"
-	android:id="@+id/search_engines"
+	android:id="@+id/search_engine_edit"
 	android:layout_width="match_parent"
 	android:layout_height="45dp"
 	android:orientation="horizontal"
@@ -9,15 +9,16 @@
 	android:visibility="gone"
 	tools:visibility="visible">
 	<TextView
-		android:id="@+id/up"
-		android:text="上移"
-		android:drawableLeft="@drawable/ic_menu_arrow_up_black_24dp"
+		android:id="@+id/ivBack"
+		android:text="返回"
+		android:drawableLeft="@drawable/abc_ic_ab_back_material"
+		android:drawableTint="#000"
 		style="@style/sch_eng_morpt" />
 
 	<TextView
-		android:id="@+id/down"
-		android:text="下移"
-		android:drawableLeft="@drawable/ic_menu_arrow_down_black_24dp"
+		android:id="@+id/deelte"
+		android:text="删除"
+		android:drawableLeft="@drawable/ic_clear_black_24dp"
 		style="@style/sch_eng_morpt"
 		/>
 
@@ -29,9 +30,10 @@
 		/>
 
 	<TextView
-		android:id="@+id/delete"
-		android:text="删除"
-		android:drawableLeft="@drawable/ic_clear_black_24dp"
+		android:id="@+id/drag_handle"
+		android:text="排序"
+		android:drawableLeft="@drawable/ic_baseline_drag_handle_24"
+		android:drawableTint="#000"
 		style="@style/sch_eng_morpt"
 		/>
 </LinearLayout>

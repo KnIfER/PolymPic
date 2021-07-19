@@ -115,7 +115,7 @@
 							android:id="@+id/ivSearchTabs"
 							android:layout_width="@dimen/_45_"
 							android:layout_height="match_parent"
-							android:src="@drawable/ic_viewpager_carousel"
+							android:src="@drawable/ic_viewpager_carousel_search"
 							android:background="?actionBarItemBackground"
 							android:padding="8.8dp"/>
 						<ImageView

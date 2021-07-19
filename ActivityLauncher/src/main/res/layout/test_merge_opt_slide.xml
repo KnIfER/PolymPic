@@ -18,7 +18,7 @@
 		android:paddingStart="5dp"
 		android:paddingTop=   "8dp"
 		android:paddingBottom="8dp"
-		android:drawableStart="@drawable/ic_polymer1"
+		android:drawableStart="@drawable/ic_polymer_blue"
 		android:maxLines="1"
 		android:ellipsize="end"
 		/>

@@ -3,7 +3,7 @@
 	<FrameLayout
 		xmlns:android="http://schemas.android.com/apk/res/android"
 		xmlns:tools="http://schemas.android.com/tools"
-		android:id="@+id/search_engines"
+		android:id="@+id/search_engine_item"
 		android:layout_width="match_parent"
 		android:layout_height="45dp"
 		>
@@ -14,6 +14,7 @@
 			android:orientation="horizontal"
 			>
 			<ImageView
+				android:id="@+id/icon"
 				android:layout_width="30dp"
 				android:layout_height="match_parent"
 				/>
@@ -36,7 +37,7 @@
 				android:id="@+id/tick"
 				android:layout_width="35dp"
 				android:layout_height="match_parent"
-				android:src="@drawable/ic_yes"
+				android:src="@drawable/ic_yes_blue"
 				android:layout_marginRight="3dp"
 				/>
 		</LinearLayout>
