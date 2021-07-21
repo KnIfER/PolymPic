@@ -41,8 +41,8 @@ import android.text.TextWatcher;
 import android.text.method.LinkMovementMethod;
 import android.text.style.ClickableSpan;
 import android.text.style.RelativeSizeSpan;
-import android.text.util.Linkify;
 import android.view.ActionMode;
+import android.view.Display;
 import android.view.GestureDetector;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -51,7 +51,6 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.animation.AccelerateDecelerateInterpolator;
@@ -119,7 +118,7 @@ import com.knziha.polymer.toolkits.Utils.ReusableByteOutputStream;
 import com.knziha.polymer.webfeature.NavigationManager;
 import com.knziha.polymer.webfeature.NightMode;
 import com.knziha.polymer.webfeature.QuickBrowserSettingsPanel;
-import com.knziha.polymer.webfeature.SearchEnginesManager;
+import com.knziha.polymer.webfeature.WebDictsManager;
 import com.knziha.polymer.webfeature.SearchHistoryAndInputMethodSettings;
 import com.knziha.polymer.webfeature.WebAnnotationPanel;
 import com.knziha.polymer.webslideshow.TabViewAdapter;
@@ -213,6 +212,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	public View.OnClickListener mInterceptorListener;
 	View searchbartitle;
 	public TextView webtitle;
+	private boolean etSearch_scrolled;
 	
 	public boolean tabsManagerIsDirty;
 	public ImageView imageViewCover;
@@ -244,7 +244,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	public Object mXWalkDelegate;
 	
 	public String currentWebDictUrl;
-	public SearchEnginesManager searchEnginesManager = new SearchEnginesManager(this);
+	public WebDictsManager webDictsManager = new WebDictsManager(this);
 	
 	public TabViewAdapter tabViewAdapter;
 	private RecyclerView.Adapter/*<ViewDataHolder<SearchHintsItemBinding>>*/ adaptermy2;
@@ -263,7 +263,6 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	int printSY;
 	float printScale;
 	public BrowserSlider mBrowserSlider;
-	private boolean etSearch_scrolled;
 	public LexicalDBHelper historyCon;
 	
 //	private Cursor ActiveUrlCursor=Utils.EmptyCursor;
@@ -314,6 +313,10 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	
 	private View actionBarRoot;
 	
+	public boolean 黑狗贱畜; // 败坏秧苗
+	public boolean 此校领导;
+	public boolean 假义伪道; // 犬儒狗生！
+	
 	@Override
 	public void onConfigurationChanged(@NonNull Configuration newConfig) {
 		CMN.Log("onConfigurationChanged");
@@ -321,7 +324,9 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		mResource = getResources();
 		mStatusBarH = Utils.getStatusBarHeight(mResource);
 		mConfiguration.setTo(newConfig);
-		getWindowManager().getDefaultDisplay().getMetrics(dm);
+		Display display = getWindowManager().getDefaultDisplay();
+		display.getMetrics(dm);
+		GlobalOptions.rotation = display.getRotation();
 		tabViewAdapter.onConfigurationChanged();
 		if(!GlobalOptions.isLarge) {
 			// 压扁你，底部工具栏！
@@ -389,8 +394,8 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			super.onBackPressed();
 			return;
 		}
-		if(searchEnginesManager.isVisible()) {
-			searchEnginesManager.toggle();
+		if(webDictsManager.isVisible()) {
+			UIData.layoutListener.onTouchEvent(null);
 		} else if(settingsPanel!=null) {
 			hideSettingsPanel();
 		} else if(navManager !=null && navManager.dismiss(true)) {
@@ -2252,11 +2257,16 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			{
 				View ca;
 				for (int j = 0; j < UIData.webcoord.getChildCount(); j++) {
-					if((ca=UIData.webcoord.getChildAt(j))instanceof WebFrameLayout
+					if((ca=UIData.webcoord.getChildAt(j)) instanceof WebFrameLayout
 							&&ca!=weblayout
 							&&(pseudoAdd==0||ca!=mBrowserSlider.webla&&ca!=currentViewImpl)
 					) {
 						try {
+							CMN.Log("移除多余的你::", UIData.webcoord.getChildAt(j));
+							if (!(ca.getLayoutParams() instanceof CoordinatorLayout.LayoutParams)) {
+								ca.setLayoutParams(new CoordinatorLayout.LayoutParams(-1, -1));
+								CMN.Log("不是的！！！");
+							}
 							UIData.webcoord.removeViewAt(j);
 							j--;
 						} catch (Exception e) {
@@ -2268,7 +2278,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				}
 			}
 			add = Utils.addViewToParent(weblayout, UIData.webcoord, 0);
-			decideWebviewPadding(weblayout); // Attach检查
+			decideWebviewPadding(weblayout);  CMN.Log("Attach检查 padding...");
 			weblayout.onViewAttached(0);
 		}
 		if(pseudoAdd==1 || pseudoAdd==4) {
@@ -2365,7 +2375,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 	}
 	
 	/** 根据沉浸式滚动设置当前网页视图PADDING */
-	private void decideWebviewPadding(View weblayout) {
+	private void decideWebviewPadding(WebFrameLayout weblayout) {
 		if (weblayout==null) {
 			return;
 		}
@@ -2379,6 +2389,12 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		int appbar_height = (int) mResource.getDimension(R.dimen._45_);
 		int pt = 0;
 		int pb = 0;
+		
+		long flag = weblayout.getDelegateFlag(ImmersiveSettings, false);
+		boolean fixAll=!WebOptions.getImmersiveScrollEnabled(flag);
+		boolean fixTopBar=!WebOptions.getImmersiveScroll_HideTopBar(flag);
+		boolean fixBotBar=!WebOptions.getImmersiveScroll_HideBottomBar(flag);
+		
 		if(fixTopBar||fixAll) {
 			//lpw.topMargin=bottombar_height;
 			lp.setBehavior(null);
@@ -2429,7 +2445,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 		}
 		switch (vid){
 			case R.id.ivBack:{ // 搜索引擎弹窗 //searpop
-				searchEnginesManager.toggle();
+				webDictsManager.toggle();
 			} break;
 			case R.id.search_engines_add: {
 			
@@ -2717,11 +2733,6 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 				}
 				getNavManager().toggle(UIData.webcoord, null);
 			break;
-			case R.id.browser_widget11:
-				// todo MenuClicked=menuGrid!=null;
-				mWebListener.dismissAppToast();
-				showMenuGrid();
-			break;
 			case R.id.browser_widget10:
 //				if (true) {
 //					// test new tabs
@@ -2731,6 +2742,11 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 //					break;
 //				}
 				tabViewAdapter.toggle(v);
+			break;
+			case R.id.browser_widget11:
+				// todo MenuClicked=menuGrid!=null;
+				mWebListener.dismissAppToast();
+				showMenuGrid();
 			break;
 			case R.id.etSearch:{
 				if (keyboard_hidden) {
@@ -2776,6 +2792,7 @@ public class BrowserActivity extends Toastable_Activity implements View.OnClickL
 			} break;
 			case R.id.browser_widget4:{
 				etSearch.setText(null);
+				currentViewImpl.searchTerm = null;
 				if(opt.getShowKeyIMEOnClean()) {
 					imm.showSoftInput(etSearch, 0);
 					keyboard_hidden = false;

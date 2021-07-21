@@ -7,6 +7,26 @@
 		android:layout_width="match_parent"
 		android:layout_height="45dp"
 		>
+		<!--		<ImageView-->
+		<!--			android:layout_width="35dp"-->
+		<!--			android:layout_height="match_parent"-->
+		<!--			android:src="@drawable/atom_variant"-->
+		<!--			android:layout_marginRight="3dp"-->
+		<!--			android:layout_gravity="right"-->
+		<!--			android:alpha="0.5"-->
+		<!--			/>-->
+
+		<ImageView
+			android:id="@+id/more_var"
+			android:layout_width="35dp"
+			android:layout_height="match_parent"
+			android:src="@drawable/delta"
+			android:layout_gravity="right"
+			android:alpha="0.8"
+			android:background="?attr/actionBarItemBackground"
+			android:visibility="gone"
+			/>
+
 		<LinearLayout
 			android:id="@+id/business_card"
 			android:layout_width="match_parent"
@@ -38,7 +58,6 @@
 				android:layout_width="35dp"
 				android:layout_height="match_parent"
 				android:src="@drawable/ic_yes_blue"
-				android:layout_marginRight="3dp"
 				/>
 		</LinearLayout>
 
@@ -46,7 +65,7 @@
 			android:id="@+id/more_options"
 			android:layout_width="match_parent"
 			android:layout_height="match_parent"
-			android:layout="@layout/search_engines_swipe"
+			android:layout="@layout/search_engines_edit"
 			/>
 	</FrameLayout>
 </layout>

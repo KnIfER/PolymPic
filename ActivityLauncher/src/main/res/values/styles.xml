@@ -233,13 +233,11 @@
 		<item name="android:layout_height">match_parent</item>
 		<item name="android:gravity">center</item>
 		<item name="android:paddingStart">2px</item>
-		<item name="android:paddingEnd">  2px</item>
-		<item name="android:layout_marginRight">1dp</item>
+		<item name="android:paddingEnd">  3px</item>
 		<item name="android:textSize">15dp</item>
 <!--		<item name="android:textColor">#fff</item>-->
 <!--		<item name="android:textStyle">bold</item>-->
-		<item name="android:background">?attr/listChoiceBackgroundIndicator</item>
-<!--		<item name="android:longClickable">true</item>-->
+		<item name="android:background">?attr/actionBarItemBackground</item>
 	</style>
 
 	<style name="login_edit_fields">

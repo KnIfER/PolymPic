@@ -5,13 +5,16 @@ import android.os.Build;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.ListPopupWindow;
 
-public class PopupBackground extends View {
-	public ListPopupWindow popup;
+import java.util.ArrayList;
+
+public class PopupBackground extends ViewGroup {
+	public final ArrayList<ListPopupWindow> popups = new ArrayList<>();
 	public boolean supressNextUpdate;
 	ViewTreeObserver.OnGlobalLayoutListener layoutListener;
 	
@@ -32,14 +35,21 @@ public class PopupBackground extends View {
 		}
 	}
 	
+	@Override
+	protected void onLayout(boolean changed, int l, int t, int r, int b) {
+	
+	}
+	
 	private void checkPopup() {
 		//CMN.Log("监听 监听");
-		if(popup!=null && popup.isShowing()) {
+		if(popups.size()>0) {
 			if(supressNextUpdate) {
 				supressNextUpdate=false;
 			} else {
 				//CMN.Log("更新 更新");
-				popup.show();
+				for (int i = popups.size()-1; i >=0 ; i--) {
+					if (popups.get(i).isShowing()) popups.get(i).show();
+				}
 			}
 		}
 	}
@@ -58,9 +68,11 @@ public class PopupBackground extends View {
 	
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
-		if(popup!=null) {
-			popup.dismiss();
-			popup=null;
+		if (event==null || event.getActionMasked()==MotionEvent.ACTION_DOWN) {
+			int i = popups.size()-1;
+			if (i>=0) {
+				popups.remove(i).dismiss();
+			}
 		}
 		return true;
 	}

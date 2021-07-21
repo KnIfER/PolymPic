@@ -8,7 +8,6 @@ import android.widget.PopupWindow;
 import androidx.annotation.CallSuper;
 
 import com.knziha.polymer.BrowserActivity;
-import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.preferences.SettingsPanel;
 import com.knziha.polymer.widgets.Utils;
 
@@ -60,7 +59,7 @@ public class BrowserAppPanel extends SettingsPanel {
 			a.settingsPanel = this;
 			if (!showInPopWindow) {
 				int pad = a.UIData.bottombar2.getHeight();
-				if (a.UIData.appbar.getTop()>=0) {
+				if (!showPopOnAppbar && a.UIData.appbar.getTop()>=0) {
 					pad+=a.UIData.appbar.getHeight();
 				}
 				setInnerBottomPadding(pad);

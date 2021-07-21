@@ -23,7 +23,7 @@ import com.knziha.polymer.Utils.CMN;
 import com.knziha.polymer.Utils.MyReceiver;
 import com.knziha.polymer.database.LexicalDBHelper;
 import com.knziha.polymer.toolkits.Utils.BU;
-import com.knziha.polymer.webstorage.WebDict;
+import com.knziha.polymer.webfeature.WebDict;
 import com.knziha.polymer.webstorage.WebOptions.WebTypes;
 import com.knziha.polymer.widgets.Utils;
 
@@ -431,11 +431,58 @@ public class TestHelper {
 	}
 	
 	public static void testAddWebDicts(ArrayList<WebDict> WebDicts) {
+		ArrayList<WebDict> children;
+		
 		WebDicts.add(new WebDict("https://www.baidu.com/s?wd=%s", "百度一下"));
+		
+		
+		WebDict hanyu = new WebDict("https://hanyu.baidu.com/s?wd=%s", "汉语词典");
+		children = hanyu.getChildren();
+		children.add(new WebDict("https://hanyu.baidu.com/s?wd=%s", "百度汉语"));
+		children.add(new WebDict("https://www.zdic.net/hans/%s", "汉典"));
+		children.add(new WebDict("http://www.guoxuedashi.net/so.php?sokeytm=%s", "国学大师"));
+		WebDicts.add(hanyu);
+		
+		
+		WebDict waiguo = new WebDict("https://hanyu.baidu.com/s?wd=%s", "外语翻译");
+		children = waiguo.getChildren();
+		children.add(new WebDict("https://hanyu.baidu.com/s?wd=%s", "百度汉语"));
+		children.add(new WebDict("https://www.zdic.net/hans/%s", "汉典"));
+		children.add(new WebDict("http://www.guoxuedashi.net/so.php?sokeytm=%s", "国学大师"));
+		WebDicts.add(waiguo);
+		
+		
+		WebDict sogou = new WebDict("https://m.sogou.com/web/searchList.jsp?ie=utf8&keyword=%s", "搜狗搜索");
+		children = sogou.getChildren();
+		children.add(new WebDict("https://m.sogou.com/web/searchList.jsp?ie=utf8&keyword=%s", "搜狗搜索"));
+		children.add(new WebDict("https://m.sogou.com/web/searchList.jsp?&insite=zhihu.com&keyword=%s", "知乎搜索"));
+		children.add(new WebDict("https://weixin.sogou.com/weixinwap.jsp?&query=%s", "微信"));
+		WebDicts.add(sogou);
+		
+
+		WebDict sci = new WebDict("https://www.sciengine.com/search/search?queryField_a=%s", "学术搜索");
+		children = sci.getChildren();
+		children.add(new WebDict("https://www.sciengine.com/search/search?queryField_a=%s", "科学通报"));
+		children.add(new WebDict("https://xueshu.baidu.com/s?wd=%s&ie=utf-8", "百度学术"));
+		children.add(new WebDict("https://www.aminer.cn/search/pub?t=b&q=%s", "AMiner"));
+		children.add(new WebDict("https://oaister.worldcat.org/search?q=%s&qt=sort&se=yr&sd=desc&qt=sort_yr_desc", "OAIster"));
+		WebDicts.add(sci);
+		
+		
+		WebDict tech = new WebDict("https://stackoverflow.com/search?q=%s", "技术搜索");
+		children = tech.getChildren();
+		children.add(new WebDict("https://stackoverflow.com/search?q=%s", "StackOverflow"));
+		children.add(new WebDict("https://www.google.com/search?q=%s", "谷歌搜索"));
+		children.add(new WebDict("https://kaifa.baidu.com/searchPage?wd=%s", "百度IT"));
+		WebDicts.add(tech);
+		
+		
+		WebDicts.add(new WebDict("https://www.jianshu.com/search?q=%s", "简书搜索"));
+		
 		WebDicts.add(new WebDict("https://cn.bing.com/search?q=%s", "必应搜索"));
 		//WebDicts.add(new WebDict("https://www.sogou.com/sogou?query=%s&insite=zhihu.com&pid=sogou-wsse-ff111e4a5406ed40", "搜狗 | 知乎搜索"));
 		//WebDicts.add(new WebDict("https://m.sogou.com/web/searchList.jsp?&insite=zhihu.com&pid=sogou-waps-21a38ed2ee0c2c08&keyword=%s", "搜狗 | 知乎搜索"));
-		WebDicts.add(new WebDict("https://m.sogou.com/web/searchList.jsp?&insite=zhihu.com&keyword=%s", "搜狗 | 知乎搜索"));
+		
 	}
 	
 	public static void async(Runnable run){

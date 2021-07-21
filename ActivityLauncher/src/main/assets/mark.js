@@ -1528,6 +1528,7 @@ var Maya;
         console.log('Restoring'+window._docAnnots+'\n'+document.body.getElementsByClassName('PLOD_HL').length);
         window._docAnnotsArr = [];
         var list = window._docAnnots.split('…');
+        var suc=false;
         for(var i=0;i<list.length;i++) {
             var note = list[i].split(/[,|]/g); // legacy support for | sep
             //var note = list[i].split(',');
@@ -1537,8 +1538,14 @@ var Maya;
               if(dsl) {
                   console.log('range_'+dsl);
                   this.HighlightRange(dsl, note, i);
+                  suc = true;
               }
             }
+        }
+        if(!suc) {
+          var rtn = window.rtRANN||0;
+          if(rtn<3)setTimeout(RestoreAnnots, 350);
+          window.rtRANN=rtn+1;
         }
       }
     }, {

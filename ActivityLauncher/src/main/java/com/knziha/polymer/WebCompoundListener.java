@@ -324,7 +324,7 @@ public class WebCompoundListener extends WebViewClient implements DownloadListen
 			Pattern p = Pattern.compile("^https?://www\\.jianshu\\.com/");
 			SiteRule rule = new SiteRule();
 			rule.ts = 118; // 120
-			rule.JS = "polyme.craft('style','.collapse-free-content{height:auto!important} .call-app-btn{visibility:hidden}')";
+			rule.JS = "polyme.craft('style','.collapse-free-content{height:auto!important} .call-app-btn{visibility:hidden} .col-xs-offset-8{margin-left:0!important} .aside {position:unset!important}')";
 			SiteConfigsByPattern.add(new Pair<>(p, rule));
 		}
 		

@@ -101,7 +101,7 @@
 									android:textSize="18sp"
 									android:text="主页"
 									android:background="#8f8f8f"
-									/>
+									tools:ignore="RtlSymmetry" />
 							</FrameLayout>
 						</FrameLayout>
 						<ImageView
@@ -282,6 +282,7 @@
 					android:layout_height="match_parent"
 					android:layout_weight="1"
 					android:layout_y="-1px"
+					android:background="@drawable/surrtrip1"
 					android:src="@drawable/ic_window_black_24dp" />
 				<android.widget.ImageView
 					android:id="@+id/browser_widget11"
@@ -292,7 +293,6 @@
 					android:src="@drawable/ic_menu_24dp" />
 			</com.knziha.polymer.widgets.LineaSlidog>
 		</androidx.coordinatorlayout.widget.CoordinatorLayout>
-
 
 		<com.knziha.polymer.widgets.PopupBackground
 			android:id="@+id/layoutListener"

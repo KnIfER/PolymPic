@@ -5,7 +5,7 @@
 	android:layout_width="match_parent"
 	android:layout_height="45dp"
 	android:orientation="horizontal"
-	android:background="#ECAAFFFF"
+	android:background="@drawable/ic_se_edit_gradient"
 	android:visibility="gone"
 	tools:visibility="visible">
 	<TextView
@@ -13,10 +13,12 @@
 		android:text="返回"
 		android:drawableLeft="@drawable/abc_ic_ab_back_material"
 		android:drawableTint="#000"
-		style="@style/sch_eng_morpt" />
+		style="@style/sch_eng_morpt"
+		android:longClickable="true"
+		/>
 
 	<TextView
-		android:id="@+id/deelte"
+		android:id="@+id/delete"
 		android:text="删除"
 		android:drawableLeft="@drawable/ic_clear_black_24dp"
 		style="@style/sch_eng_morpt"

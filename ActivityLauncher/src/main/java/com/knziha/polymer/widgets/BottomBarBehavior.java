@@ -28,7 +28,7 @@ public class BottomBarBehavior extends CoordinatorLayout.Behavior<View> {
     @Override  
     public void onNestedPreScroll(@NonNull CoordinatorLayout coordinatorLayout, @NonNull View child, @NonNull View target, int dx, int dy, @NonNull int[] consumed, int type) {  
         super.onNestedPreScroll(coordinatorLayout, child, target, dx, dy, consumed, type);  
-		CMN.Log("onNestedPreScroll", dy);
+		//CMN.Log("onNestedPreScroll", dy);
         if (type == ViewCompat.TYPE_TOUCH) {
             if (dy > 10) {
                 if(!hiding)
